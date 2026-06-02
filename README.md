@@ -124,6 +124,8 @@ The run mode (ROS live / video-only / video+ROS) is determined by the `video` an
 
 Default config file. Copy and edit to create environment-specific configs.
 
+The config fully replaces `seabird_config.py` — `beacon_detector_config.py` does not import it at all. Camera intrinsics and the body-to-camera rotation matrix are derived at load time from the `camera` block.
+
 **Top-level fields**
 
 | Key | Type | Default | Description |
@@ -135,9 +137,16 @@ Default config file. Copy and edit to create environment-specific configs.
 | `true_dist` | float | `0.4826` | Known ground-truth distance to target in metres (ROS mode) |
 | `save` | bool | `false` | Write annotated output video alongside input (video modes) |
 | `log` | bool | `false` | Write per-frame CSV detection log |
-| `video` | string \| null | `null` | Path to video file for video-only mode. Set to a path to activate. |
+| `video` | string \| null | `null` | Path to video file for video-only mode |
 | `ros_video` | string \| null | `null` | Path to video file for video+ROS mode. Takes priority over `video`. |
 | `topics` | object | see below | ROS topic name overrides |
+| `camera` | object | see below | Camera intrinsics and mount geometry |
+| `paths` | object | see below | Filesystem paths for scripts, datasets, logs |
+| `isaac` | object | see below | Isaac Sim USD prim paths |
+| `buoys` | object | see below | Buoy physical properties and world positions |
+| `drone_spawn` | object | see below | Drone initial position and orientation in simulation |
+| `px4` | object | see below | PX4 flight controller parameters |
+| `labeler` | object | see below | Dataset labeler settings |
 
 **`topics` object**
 
@@ -148,6 +157,71 @@ Default config file. Copy and edit to create environment-specific configs.
 | `gps_origin` | `"/mavros/global_position/gp_origin"` | GPS reference origin for ENU→GPS conversion |
 | `detections_pub` | `"/seabird/beacon_detections"` | Topic detections are published to |
 
+**`camera` object**
+
+Matches the ZED 2i wide-lens parameters used in `seabird_config.py`. `fx`, `fy`, `cx`, `cy`, the body-to-camera rotation matrix, and the mount offset array are computed automatically by `load_config()` — do not add them to the file.
+
+| Key | Default | Description |
+|---|---|---|
+| `focal_length_mm` | `2.1` | Lens focal length in millimetres |
+| `h_aperture_mm` | `6.0` | Horizontal sensor size in millimetres |
+| `v_aperture_mm` | `4.5` | Vertical sensor size in millimetres |
+| `clipping_near` | `0.1` | Near clip plane in metres |
+| `clipping_far` | `200.0` | Far clip plane in metres |
+| `img_w` | `640` | Render/stream width in pixels |
+| `img_h` | `480` | Render/stream height in pixels |
+| `mount_offset_xyz` | `[0.30, 0.0, 0.05]` | Camera position relative to drone body frame in metres (FLU) |
+| `pitch_deg` | `15.0` | Nose-down camera tilt in degrees |
+
+**`paths` object**
+
+| Key | Default | Description |
+|---|---|---|
+| `scripts_dir` | `"~/seabird/scripts"` | ROS scripts and Python modules |
+| `dataset_dir` | `"~/seabird_dataset"` | Training data and debug frames |
+| `logs_dir` | `"~/seabird/logs"` | Runtime logs |
+| `px4_dir` | `"~/seabird/PX4-Autopilot"` | PX4 firmware checkout |
+| `assets_dir` | `"~/seabird/assets"` | USD assets and meshes |
+
+**`isaac` object**
+
+| Key | Default | Description |
+|---|---|---|
+| `drone_prim_path` | `"/World/Iris"` | Root USD prim for the drone |
+| `drone_body_path` | `"/World/Iris/body"` | Drone body prim |
+| `camera_prim_path` | `"/World/Iris/body/front_cam"` | Camera prim |
+
+**`buoys` object**
+
+| Key | Default | Description |
+|---|---|---|
+| `radius_m` | `0.2286` | Physical buoy radius in metres (18" diameter) |
+| `classes` | `{"red_buoy": 0, "green_buoy": 1, "blue_buoy": 2}` | YOLO class index mapping |
+| `positions` | see `beacon_config.json` | Known world-frame XYZ positions for each buoy (bbox centre) |
+
+**`drone_spawn` object**
+
+| Key | Default | Description |
+|---|---|---|
+| `position` | `[0.0, -8.0, 2.5]` | Spawn position in Isaac world frame (metres) |
+| `quat_wxyz` | `[0.707, 0.0, 0.0, -0.707]` | Spawn orientation as `[w, x, y, z]` quaternion (facing −Y toward buoys) |
+
+**`px4` object**
+
+| Key | Default | Description |
+|---|---|---|
+| `connection_type` | `"tcpin"` | MAVLink connection type passed to MAVSDK/pymavlink |
+| `takeoff_alt_m` | `1.25` | `MIS_TAKEOFF_ALT` parameter value in metres |
+
+**`labeler` object**
+
+| Key | Default | Description |
+|---|---|---|
+| `save_every_n` | `10` | Save a labelled frame every N render frames |
+| `max_frames` | `2000` | Stop after this many saved frames |
+| `debug_mode` | `true` | Draw bounding boxes on debug images |
+| `min_bbox_px` | `6` | Minimum bounding-box side length in pixels to save |
+
 **Run mode selection**
 
 | `ros_video` | `video` | Mode |
@@ -156,7 +230,7 @@ Default config file. Copy and edit to create environment-specific configs.
 | null | path string | Video file only, no ROS |
 | null | null | ROS live camera mode |
 
-**Example — remap to a second ZED camera and a different detection topic**
+**Example — remap to a second ZED camera**
 
 ```json
 {
@@ -174,13 +248,24 @@ Default config file. Copy and edit to create environment-specific configs.
     "drone_pose":     "/mavros/local_position/pose",
     "gps_origin":     "/mavros/global_position/gp_origin",
     "detections_pub": "/seabird/beacon_detections_cam2"
+  },
+  "camera": {
+    "focal_length_mm": 2.1,
+    "h_aperture_mm":   6.0,
+    "v_aperture_mm":   4.5,
+    "clipping_near":   0.1,
+    "clipping_far":  200.0,
+    "img_w":          640,
+    "img_h":          480,
+    "mount_offset_xyz": [0.30, 0.0, 0.05],
+    "pitch_deg":       15.0
   }
 }
 ```
 
-### How topic overrides work
+### How topic and intrinsic overrides work
 
-`BeaconCamera` normally reads `DRONE_POSE_TOPIC` and `GPS_TOPIC` from module-level constants in `beacon_camera.py`. `beacon_detector_config.py` creates a subclass of `BeaconCamera` at runtime via `_make_beacon_camera(topics)`, capturing the config topic strings by closure and overriding `open()` and `open_for_video()`. The original `beacon_camera.py` is not modified.
+`BeaconCamera` normally reads topic names from module-level constants in `beacon_camera.py` and reads intrinsics (`FX`, `FY`, `CX`, `CY`, `IMG_W`, `IMG_H`) from `seabird_config.py`. `beacon_detector_config.py` creates a subclass of `BeaconCamera` at runtime via `_make_beacon_camera(topics, cfg_camera)`, capturing all config values by closure and overriding both the topic subscriptions and `_on_camera_info`. Neither `beacon_camera.py` nor `seabird_config.py` is modified.
 
 ---
 

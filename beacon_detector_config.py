@@ -2,28 +2,15 @@
 """
 beacon_detector_config.py — beacon_detector.py driven by a JSON configuration file.
 
-All runtime parameters (model paths, confidence threshold, display flag, ROS topic
-names) are loaded from a JSON config file instead of command-line arguments.
+All runtime parameters (model paths, thresholds, ROS topics, camera intrinsics,
+and mount geometry) are loaded from a JSON config file. seabird_config.py is not
+imported — the JSON config is the single source of truth for all Seabird parameters.
 
 Usage:
     python3 beacon_detector_config.py                           # uses beacon_config.json
     python3 beacon_detector_config.py --config my_config.json  # custom config path
 
-Config file keys:
-    model        — path to YOLO beacon model
-    crop_model   — path to YOLO lit-area isolation model
-    conf         — detection confidence threshold (float, 0–1)
-    display      — show live cv2 window in ROS mode (bool)
-    true_dist    — known ground-truth distance to object in metres (float)
-    save         — save annotated output video alongside input (bool, video modes)
-    log          — write CSV detection log (bool)
-    video        — path to video file for video-only mode (string or null)
-    ros_video    — path to video file for video+ROS mode (string or null)
-    topics       — object with ROS topic overrides:
-        camera_prefix   — ZED topic prefix  (default: /zed/zed_node)
-        drone_pose      — drone pose topic  (default: /mavros/local_position/pose)
-        gps_origin      — GPS origin topic  (default: /mavros/global_position/gp_origin)
-        detections_pub  — detection publish topic (default: /seabird/beacon_detections)
+See beacon_config.json for the full schema and default values.
 """
 
 import sys
@@ -51,13 +38,26 @@ _DEFAULT_TOPICS = {
     "detections_pub": "/seabird/beacon_detections",
 }
 
+_DEFAULT_CAMERA = {
+    "focal_length_mm":  2.1,
+    "h_aperture_mm":    6.0,
+    "v_aperture_mm":    4.5,
+    "clipping_near":    0.1,
+    "clipping_far":   200.0,
+    "img_w":           640,
+    "img_h":           480,
+    "mount_offset_xyz": [0.30, 0.0, 0.05],
+    "pitch_deg":        15.0,
+}
+
 
 # ── Config loader ─────────────────────────────────────────────────────────────
 
 def load_config(path: str) -> dict:
     """
-    Load and validate the JSON config file.
-    Missing keys fall back to defaults so partial configs are valid.
+    Load the JSON config file. Missing keys fall back to defaults.
+    Computes derived camera values (fx, fy, cx, cy, rotation matrix, mount offset)
+    so callers never need to import seabird_config.
     """
     with open(path) as fh:
         raw = json.load(fh)
@@ -72,8 +72,40 @@ def load_config(path: str) -> dict:
         "log":        bool(raw.get("log",         False)),
         "video":      raw.get("video",      None),
         "ros_video":  raw.get("ros_video",  None),
-        "topics":     {**_DEFAULT_TOPICS, **raw.get("topics", {})},
+        "topics":     {**_DEFAULT_TOPICS,  **raw.get("topics",  {})},
+        "camera":     {**_DEFAULT_CAMERA,  **raw.get("camera",  {})},
+        "paths":      raw.get("paths",      {}),
+        "isaac":      raw.get("isaac",      {}),
+        "buoys":      raw.get("buoys",      {}),
+        "drone_spawn":raw.get("drone_spawn",{}),
+        "px4":        raw.get("px4",        {}),
+        "labeler":    raw.get("labeler",    {}),
     }
+
+    # Compute derived camera intrinsics and mount geometry
+    cam = cfg["camera"]
+    fl, ha, va = cam["focal_length_mm"], cam["h_aperture_mm"], cam["v_aperture_mm"]
+    w,  h      = cam["img_w"], cam["img_h"]
+    cam["fx"] = fl * w / ha
+    cam["fy"] = fl * h / va
+    cam["cx"] = w / 2.0
+    cam["cy"] = h / 2.0
+    cam["_mount_offset"] = np.array(cam["mount_offset_xyz"], dtype=np.float64)
+
+    # Body-to-camera rotation: Isaac FLU body frame → OpenCV camera frame,
+    # then pitched nose-down by pitch_deg.
+    #   cam_X (right)   = -body_Y
+    #   cam_Y (down)    = -body_Z
+    #   cam_Z (forward) =  body_X
+    pr = np.radians(cam["pitch_deg"])
+    _R_base = np.array([[0, -1,  0],
+                         [0,  0, -1],
+                         [1,  0,  0]], dtype=np.float64)
+    _R_pitch = np.array([[1,            0,           0],
+                          [0,  np.cos(pr), -np.sin(pr)],
+                          [0,  np.sin(pr),  np.cos(pr)]], dtype=np.float64)
+    cam["_R_body_to_cam"] = _R_pitch @ _R_base
+
     return cfg
 
 
@@ -83,31 +115,66 @@ _BeaconCameraBase = None  # set by _import_ros()
 
 
 def _import_ros():
-    global rclpy, String, camera_to_world, _BeaconCameraBase
+    global rclpy, String, _BeaconCameraBase
     import rclpy as _rclpy; rclpy = _rclpy
     from std_msgs.msg import String as _Str; String = _Str
-    from seabird_config import camera_to_world as _c2w; camera_to_world = _c2w
     from beacon_camera import BeaconCamera as _BC; _BeaconCameraBase = _BC
 
 
-def _make_beacon_camera(topics: dict):
+def _camera_to_world(p_cam, drone_pos, drone_quat_wxyz, mount_offset, R_body_to_cam):
     """
-    Return a BeaconCamera instance whose ROS topic names are taken from *topics*.
-    Creates a subclass at call-time (after _import_ros()) so the topic strings
-    are captured by closure rather than relying on beacon_camera module constants.
+    Transform a 3D point from camera frame to world frame (ENU).
+    Replaces seabird_config.camera_to_world using values from the JSON config.
+      p_cam:             (3,) point in OpenCV camera frame (X-right, Y-down, Z-forward)
+      drone_pos:         (3,) drone position in world frame
+      drone_quat_wxyz:   (4,) [w, x, y, z] quaternion
+      mount_offset:      cfg["camera"]["_mount_offset"]  (np.ndarray)
+      R_body_to_cam:     cfg["camera"]["_R_body_to_cam"] (3x3 np.ndarray)
+    """
+    from scipy.spatial.transform import Rotation
+    p_body = R_body_to_cam.T @ np.asarray(p_cam) + mount_offset
+    w, x, y, z = drone_quat_wxyz
+    R_body_to_world = Rotation.from_quat([x, y, z, w]).as_matrix()
+    return R_body_to_world @ p_body + np.asarray(drone_pos)
+
+
+def _make_beacon_camera(topics: dict, cfg_camera: dict):
+    """
+    Return a BeaconCamera instance whose ROS topic names and camera intrinsics
+    are taken from the JSON config. Creates a subclass at call-time (after
+    _import_ros()) so all values are captured by closure — seabird_config.py
+    is never imported.
     """
     from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
     from sensor_msgs.msg import Image, CameraInfo
     from geometry_msgs.msg import PoseStamped
     from geographic_msgs.msg import GeoPointStamped
+    from camera_interface import Intrinsics
     import message_filters
 
-    camera_prefix   = topics["camera_prefix"]
+    camera_prefix    = topics["camera_prefix"]
     drone_pose_topic = topics["drone_pose"]
     gps_topic        = topics["gps_origin"]
     detections_topic = topics["detections_pub"]
 
+    fx, fy   = cfg_camera["fx"],    cfg_camera["fy"]
+    cx, cy   = cfg_camera["cx"],    cfg_camera["cy"]
+    img_w    = cfg_camera["img_w"]
+    img_h    = cfg_camera["img_h"]
+
     class _ConfiguredBeaconCamera(_BeaconCameraBase):
+        def _on_camera_info(self, _msg):
+            if self._intrinsics is not None:
+                return
+            self._intrinsics = Intrinsics(
+                fx=fx, fy=fy, cx=cx, cy=cy, width=img_w, height=img_h
+            )
+            self.get_logger().info(
+                f"Intrinsics set from config: fx={fx:.1f} fy={fy:.1f} "
+                f"cx={cx:.1f} cy={cy:.1f} {img_w}x{img_h}"
+            )
+            self.destroy_subscription(self._info_sub)
+
         def open(self):
             if self._is_open:
                 return True
@@ -557,7 +624,7 @@ def run_video_ros(cfg: dict) -> None:
 
     blink_detector = BlinkDetector()
     rclpy.init()
-    cam        = _make_beacon_camera(topics)
+    cam        = _make_beacon_camera(topics, cfg["camera"])
     model      = YOLO(model_path)
     crop_model = YOLO(crop_model_path)
     print(f"[beacon-ros-video] Beacon model : {model_path}  conf≥{conf}")
@@ -697,7 +764,7 @@ def main(cfg: dict) -> None:
     os.makedirs(DEBUG_DIR, exist_ok=True)
 
     rclpy.init()
-    cam = _make_beacon_camera(topics)
+    cam = _make_beacon_camera(topics, cfg["camera"])
 
     if not cam.open():
         print("[beacon] Failed to open camera")
@@ -803,7 +870,11 @@ def main(cfg: dict) -> None:
                 world_pos  = None
                 gps_coords = None
                 if d.position_3d is not None and drone_pos is not None:
-                    world_pos = camera_to_world(d.position_3d, drone_pos, drone_quat)
+                    world_pos = _camera_to_world(
+                        d.position_3d, drone_pos, drone_quat,
+                        cfg["camera"]["_mount_offset"],
+                        cfg["camera"]["_R_body_to_cam"],
+                    )
                     origin    = cam.get_gps_origin()
                     if origin is not None:
                         lat, lon, alt = local_enu_to_gps(world_pos, *origin)
