@@ -1,0 +1,894 @@
+#!/usr/bin/env python3
+"""
+beacon_detector_config.py — beacon_detector.py driven by a JSON configuration file.
+
+All runtime parameters (model paths, confidence threshold, display flag, ROS topic
+names) are loaded from a JSON config file instead of command-line arguments.
+
+Usage:
+    python3 beacon_detector_config.py                           # uses beacon_config.json
+    python3 beacon_detector_config.py --config my_config.json  # custom config path
+
+Config file keys:
+    model        — path to YOLO beacon model
+    crop_model   — path to YOLO lit-area isolation model
+    conf         — detection confidence threshold (float, 0–1)
+    display      — show live cv2 window in ROS mode (bool)
+    true_dist    — known ground-truth distance to object in metres (float)
+    save         — save annotated output video alongside input (bool, video modes)
+    log          — write CSV detection log (bool)
+    video        — path to video file for video-only mode (string or null)
+    ros_video    — path to video file for video+ROS mode (string or null)
+    topics       — object with ROS topic overrides:
+        camera_prefix   — ZED topic prefix  (default: /zed/zed_node)
+        drone_pose      — drone pose topic  (default: /mavros/local_position/pose)
+        gps_origin      — GPS origin topic  (default: /mavros/global_position/gp_origin)
+        detections_pub  — detection publish topic (default: /seabird/beacon_detections)
+"""
+
+import sys
+import argparse
+import os
+sys.path.insert(0, os.path.expanduser("~/seabird/scripts"))
+
+import csv
+import numpy as np
+from typing import Tuple
+import json
+import time
+import cv2
+
+from blink_detector import BlinkDetector, _get_blink_detector
+
+EARTH_RADIUS_M = 6378137.0
+
+_DEFAULT_CONFIG = "beacon_config.json"
+
+_DEFAULT_TOPICS = {
+    "camera_prefix":  "/zed/zed_node",
+    "drone_pose":     "/mavros/local_position/pose",
+    "gps_origin":     "/mavros/global_position/gp_origin",
+    "detections_pub": "/seabird/beacon_detections",
+}
+
+
+# ── Config loader ─────────────────────────────────────────────────────────────
+
+def load_config(path: str) -> dict:
+    """
+    Load and validate the JSON config file.
+    Missing keys fall back to defaults so partial configs are valid.
+    """
+    with open(path) as fh:
+        raw = json.load(fh)
+
+    cfg = {
+        "model":      raw.get("model",      "models/one_beacon.pt"),
+        "crop_model": raw.get("crop_model", "models/best_crop.pt"),
+        "conf":       float(raw.get("conf",      0.5)),
+        "display":    bool(raw.get("display",    False)),
+        "true_dist":  float(raw.get("true_dist", 0.4826)),
+        "save":       bool(raw.get("save",        False)),
+        "log":        bool(raw.get("log",         False)),
+        "video":      raw.get("video",      None),
+        "ros_video":  raw.get("ros_video",  None),
+        "topics":     {**_DEFAULT_TOPICS, **raw.get("topics", {})},
+    }
+    return cfg
+
+
+# ── Lazily imported only when ROS mode is used ────────────────────────────────
+
+_BeaconCameraBase = None  # set by _import_ros()
+
+
+def _import_ros():
+    global rclpy, String, camera_to_world, _BeaconCameraBase
+    import rclpy as _rclpy; rclpy = _rclpy
+    from std_msgs.msg import String as _Str; String = _Str
+    from seabird_config import camera_to_world as _c2w; camera_to_world = _c2w
+    from beacon_camera import BeaconCamera as _BC; _BeaconCameraBase = _BC
+
+
+def _make_beacon_camera(topics: dict):
+    """
+    Return a BeaconCamera instance whose ROS topic names are taken from *topics*.
+    Creates a subclass at call-time (after _import_ros()) so the topic strings
+    are captured by closure rather than relying on beacon_camera module constants.
+    """
+    from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
+    from sensor_msgs.msg import Image, CameraInfo
+    from geometry_msgs.msg import PoseStamped
+    from geographic_msgs.msg import GeoPointStamped
+    import message_filters
+
+    camera_prefix   = topics["camera_prefix"]
+    drone_pose_topic = topics["drone_pose"]
+    gps_topic        = topics["gps_origin"]
+    detections_topic = topics["detections_pub"]
+
+    class _ConfiguredBeaconCamera(_BeaconCameraBase):
+        def open(self):
+            if self._is_open:
+                return True
+            qos = QoSProfile(
+                reliability=ReliabilityPolicy.BEST_EFFORT,
+                history=HistoryPolicy.KEEP_LAST,
+                depth=1,
+            )
+            self._info_sub = self.create_subscription(
+                CameraInfo,
+                f"{camera_prefix}/rgb/color/rect/camera_info",
+                self._on_camera_info,
+                qos,
+            )
+            rgb_sub = message_filters.Subscriber(
+                self, Image, f"{camera_prefix}/rgb/color/rect/image", qos_profile=qos
+            )
+            depth_sub = message_filters.Subscriber(
+                self, Image, f"{camera_prefix}/depth/depth_registered", qos_profile=qos
+            )
+            self._sync = message_filters.ApproximateTimeSynchronizer(
+                [rgb_sub, depth_sub], queue_size=5, slop=0.05
+            )
+            self._sync.registerCallback(self._on_synced_frame)
+            self.detection_pub = self.create_publisher(String, detections_topic, 10)
+            self._pose_sub = self.create_subscription(
+                PoseStamped, drone_pose_topic, self._on_drone_pose, qos
+            )
+            origin_qos = QoSProfile(
+                reliability=ReliabilityPolicy.RELIABLE,
+                durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                depth=1,
+            )
+            self._origin_sub = self.create_subscription(
+                GeoPointStamped, gps_topic, self._on_gps_origin, origin_qos
+            )
+            self._is_open = True
+            self.get_logger().info("BeaconCamera open — waiting for frames…")
+            return True
+
+        def open_for_video(self):
+            if self._is_open:
+                return True
+            qos = QoSProfile(
+                reliability=ReliabilityPolicy.BEST_EFFORT,
+                history=HistoryPolicy.KEEP_LAST,
+                depth=1,
+            )
+            self.detection_pub = self.create_publisher(String, detections_topic, 10)
+            self._pose_sub = self.create_subscription(
+                PoseStamped, drone_pose_topic, self._on_drone_pose, qos
+            )
+            origin_qos = QoSProfile(
+                reliability=ReliabilityPolicy.RELIABLE,
+                durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                depth=1,
+            )
+            self._origin_sub = self.create_subscription(
+                GeoPointStamped, gps_topic, self._on_gps_origin, origin_qos
+            )
+            self._is_open = True
+            self.get_logger().info("BeaconCamera open (video-file mode) — pose + GPS only")
+            return True
+
+    return _ConfiguredBeaconCamera(topic_prefix=camera_prefix)
+
+
+# ── Color classification ───────────────────────────────────────────────────────
+
+_SAT_MIN = 60
+_VAL_MIN = 160
+
+_HUE_BANDS = [
+    (  0, 20, "red"),
+    ( 65, 30, "green"),
+    (120, 15, "blue"),
+    (165, 15, "red"),
+]
+
+_RED_THRESHOLD = 0.1
+
+
+def _hue_votes(hues: np.ndarray) -> dict:
+    n = max(len(hues), 1)
+    hues_f = hues.astype(np.float32)
+    matched = np.zeros(len(hues), dtype=bool)
+    label_counts: dict = {}
+
+    for center, half, label in _HUE_BANDS:
+        dist = np.abs(hues_f - center)
+        dist = np.minimum(dist, 180.0 - dist)
+        in_band = (dist <= half) & ~matched
+        label_counts[label] = label_counts.get(label, 0) + int(np.sum(in_band))
+        matched |= in_band
+
+    result = {"red": 0, "green": 0, "blue": 0, "other": int(np.sum(~matched))}
+    for label, count in label_counts.items():
+        result[label] = result.get(label, 0) + count
+    return {k: result[k] / n for k in result}
+
+
+def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray, float, dict]:
+    _empty_votes = {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0}
+    if bgr_crop is None or bgr_crop.size == 0:
+        return "unknown", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0, _empty_votes
+
+    hsv = cv2.cvtColor(bgr_crop, cv2.COLOR_BGR2HSV)
+    h, s, v = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
+
+    light_mask = ((s >= _SAT_MIN) & (v >= _VAL_MIN)).astype(np.uint8) * 255
+
+    lit_pixels   = np.count_nonzero(light_mask)
+    total_pixels = bgr_crop.shape[0] * bgr_crop.shape[1]
+    color_conf   = lit_pixels / max(total_pixels, 1)
+
+    if lit_pixels < 5:
+        very_bright = (v >= 220)
+        bright_count = int(np.count_nonzero(very_bright))
+        if bright_count > total_pixels * 0.1:
+            intensity = float(np.mean(v[very_bright]) / 255.0)
+            return "white", float(bright_count / total_pixels), light_mask, intensity, _empty_votes
+        return "unknown", 0.0, light_mask, 0.0, _empty_votes
+
+    hues      = h[light_mask > 0]
+    intensity = float(np.mean(v[light_mask > 0]) / 255.0)
+
+    votes = _hue_votes(hues)
+
+    if votes["red"] >= _RED_THRESHOLD:
+        color = "red"
+    else:
+        winner = max(("green", "blue"), key=lambda c: votes[c])
+        color = winner if votes[winner] >= 0.30 else "unknown"
+
+    return color, color_conf, light_mask, intensity, votes
+
+
+def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
+                         conf: float = 0.3) -> Tuple[str, float, np.ndarray, float, dict]:
+    _empty = ("unknown", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0,
+              {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0})
+    if beacon_crop is None or beacon_crop.size == 0:
+        return _empty
+
+    h, w = beacon_crop.shape[:2]
+    display_mask = np.zeros((h, w), dtype=np.uint8)
+
+    results = crop_model(beacon_crop.copy(), conf=conf, verbose=False)
+    boxes   = results[0].boxes
+
+    if len(boxes) == 0:
+        return classify_beacon_color(beacon_crop)
+
+    if results[0].masks is not None:
+        best_idx = int(np.argmax([float(b.conf[0]) for b in boxes]))
+        seg_mask = results[0].masks.data[best_idx].cpu().numpy()
+        seg_resized = cv2.resize(seg_mask, (w, h), interpolation=cv2.INTER_NEAREST)
+        display_mask = (seg_resized > 0.5).astype(np.uint8) * 255
+    else:
+        best_box = max(boxes, key=lambda b: float(b.conf[0]))
+        lx1, ly1, lx2, ly2 = map(int, best_box.xyxy[0].tolist())
+        lx1 = max(0, lx1); ly1 = max(0, ly1)
+        lx2 = min(w, lx2); ly2 = min(h, ly2)
+        if lx2 > lx1 and ly2 > ly1:
+            display_mask[ly1:ly2, lx1:lx2] = 255
+
+    if not display_mask.any():
+        return classify_beacon_color(beacon_crop)
+
+    rows = np.any(display_mask > 0, axis=1)
+    cols = np.any(display_mask > 0, axis=0)
+    rmin, rmax = np.where(rows)[0][[0, -1]]
+    cmin, cmax = np.where(cols)[0][[0, -1]]
+    lit_region = beacon_crop[rmin:rmax + 1, cmin:cmax + 1]
+
+    color, color_conf, _, intensity, votes = classify_beacon_color(lit_region)
+    return color, color_conf, display_mask, intensity, votes
+
+
+# ── Detection logger ──────────────────────────────────────────────────────────
+
+_LOG_HEADER = [
+    "timestamp", "frame", "color", "color_confidence", "intensity",
+    "vote_red", "vote_green", "vote_blue", "vote_other",
+    "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
+    "pos3d_x", "pos3d_y", "pos3d_z",
+]
+
+
+def _open_log(path: str):
+    fh = open(path, "w", newline="")
+    writer = csv.writer(fh)
+    writer.writerow(_LOG_HEADER)
+    print(f"[beacon] Logging detections → {path}")
+    return fh, writer
+
+
+def _write_log_row(log_writer, frame_idx: int, color: str,
+                   color_conf: float, intensity: float, votes: dict,
+                   det_conf: float, bbox, tracking_id: int = -1,
+                   pos3d=None) -> None:
+    x1, y1, x2, y2 = bbox
+    px = py = pz = ""
+    if pos3d is not None:
+        px, py, pz = f"{pos3d[0]:.4f}", f"{pos3d[1]:.4f}", f"{pos3d[2]:.4f}"
+    log_writer.writerow([
+        f"{time.time():.3f}", frame_idx,
+        color, f"{color_conf:.4f}", f"{intensity:.4f}",
+        f"{votes.get('red',0):.4f}", f"{votes.get('green',0):.4f}",
+        f"{votes.get('blue',0):.4f}", f"{votes.get('other',0):.4f}",
+        f"{det_conf:.4f}", x1, y1, x2, y2, tracking_id,
+        px, py, pz,
+    ])
+
+
+# ── Helper ────────────────────────────────────────────────────────────────────
+
+def local_enu_to_gps(world_pos: np.ndarray,
+                     origin_lat: float,
+                     origin_lon: float,
+                     origin_alt: float) -> Tuple[float, float, float]:
+    east, north, up = world_pos[0], world_pos[1], world_pos[2]
+    dlat = np.degrees(north / EARTH_RADIUS_M)
+    dlon = np.degrees(east / (EARTH_RADIUS_M * np.cos(np.radians(origin_lat))))
+    return (origin_lat + dlat, origin_lon + dlon, origin_alt + up)
+
+
+# ── Video test mode (no ROS) ───────────────────────────────────────────────────
+
+_COLOR_BGR = {
+    "red":     (0,   0,   255),
+    "green":   (0,   200,   0),
+    "blue":    (255,  80,   0),
+    "white":   (255, 255, 255),
+    "unknown": (180, 180, 180),
+}
+
+
+def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
+                    log_writer=None, frame_idx: int = 0,
+                    blink_detector: BlinkDetector = None,
+                    video_ts: float = None) -> np.ndarray:
+    for box in boxes:
+        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+        conf  = float(box.conf[0])
+        cls   = int(box.cls[0])
+        label = names.get(cls, str(cls))
+
+        crop = frame[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
+        beacon_color, color_conf, light_mask, intensity, votes = isolate_and_classify(crop, crop_model)
+        draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
+
+        blink_info = None
+        if blink_detector is not None:
+            ts = video_ts if video_ts is not None else time.time()
+            blink_info = blink_detector.update(ts, beacon_color, intensity)
+
+        cv2.rectangle(frame, (x1, y1), (x2, y2), draw_color, 2)
+
+        if light_mask is not None and light_mask.any():
+            lm_full = np.zeros(frame.shape[:2], dtype=np.uint8)
+            lm_h = min(light_mask.shape[0], y2 - y1)
+            lm_w = min(light_mask.shape[1], x2 - x1)
+            lm_full[y1:y1+lm_h, x1:x1+lm_w] = light_mask[:lm_h, :lm_w]
+            tint = np.zeros_like(frame)
+            tint[:] = draw_color
+            frame[lm_full > 0] = cv2.addWeighted(frame, 0.5, tint, 0.5, 0)[lm_full > 0]
+
+        txt = (f"{label} [{beacon_color}] det={conf:.2f} int={intensity:.2f} "
+               f"r={votes['red']:.0%} g={votes['green']:.0%} b={votes['blue']:.0%}")
+        if blink_info:
+            if blink_info["is_blinking"]:
+                txt += f" blink={blink_info['blink_hz']:.2f}Hz"
+            elif blink_info["is_blinking"] is None:
+                txt += " blink=?"
+        cv2.putText(frame, txt, (x1, max(y1 - 6, 10)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, draw_color, 1)
+
+        print(f"  {txt}  bbox=({x1},{y1},{x2},{y2})")
+
+        if log_writer is not None:
+            _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
+                           intensity, votes, conf, (x1, y1, x2, y2))
+
+    return frame
+
+
+def run_video(cfg: dict) -> None:
+    """Run beacon detection on a local video file. No ROS required."""
+    video_path      = cfg["video"]
+    model_path      = cfg["model"]
+    crop_model_path = cfg["crop_model"]
+    save_output     = cfg["save"]
+    conf            = cfg["conf"]
+    log             = cfg["log"]
+
+    try:
+        from ultralytics import YOLO
+    except ImportError:
+        print("[beacon-video] ultralytics not installed: pip install ultralytics")
+        return
+
+    if not os.path.exists(model_path):
+        print(f"[beacon-video] Model not found: {model_path}")
+        return
+
+    if not os.path.exists(crop_model_path):
+        print(f"[beacon-video] Crop model not found: {crop_model_path}")
+        return
+
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print(f"[beacon-video] Cannot open video: {video_path}")
+        return
+
+    model      = YOLO(model_path)
+    crop_model = YOLO(crop_model_path)
+    fps    = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    total  = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    print(f"[beacon-video] {video_path}  {width}x{height} @ {fps:.1f}fps  {total} frames")
+    print(f"[beacon-video] Beacon model : {model_path}  conf≥{conf}")
+    print(f"[beacon-video] Crop model   : {crop_model_path}")
+    print("[beacon-video] Press 'q' to quit, SPACE to pause")
+
+    writer = None
+    if save_output:
+        out_path = os.path.splitext(video_path)[0] + "_beacon_out.mp4"
+        fourcc   = cv2.VideoWriter_fourcc(*"mp4v")
+        writer   = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
+        print(f"[beacon-video] Saving output → {out_path}")
+
+    log_fh = log_writer = None
+    if log:
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        log_path = os.path.splitext(video_path)[0] + f"_beacon_log_{ts}.csv"
+        log_fh, log_writer = _open_log(log_path)
+
+    blink_detector = BlinkDetector()
+    frame_idx     = 0
+    paused        = False
+    display_frame = None
+
+    cv2.namedWindow("Beacon Detector — Video Test", cv2.WINDOW_AUTOSIZE)
+
+    try:
+        while True:
+            if not paused:
+                ret, raw = cap.read()
+                if not ret:
+                    print("[beacon-video] End of video")
+                    break
+                frame_idx += 1
+
+                display_frame = raw.copy()
+                video_ts = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+                results = model(raw, conf=conf, verbose=False)
+                boxes   = results[0].boxes
+                names   = results[0].names
+
+                print(f"Frame {frame_idx}/{total} — {len(boxes)} detection(s)")
+                display_frame = _annotate_frame(display_frame, boxes, names, crop_model,
+                                                log_writer=log_writer, frame_idx=frame_idx,
+                                                blink_detector=blink_detector,
+                                                video_ts=video_ts)
+
+                if writer:
+                    writer.write(display_frame)
+
+            if display_frame is not None:
+                cv2.imshow("Beacon Detector — Video Test", display_frame)
+            key = cv2.waitKey(10 if not paused else 50) & 0xFF
+            if key == ord("q"):
+                break
+            elif key == ord(" "):
+                paused = not paused
+
+    except KeyboardInterrupt:
+        print("\n[beacon-video] Interrupted")
+    finally:
+        cap.release()
+        if writer:
+            writer.release()
+        if log_fh:
+            log_fh.close()
+        cv2.destroyAllWindows()
+        print(f"[beacon-video] Done — {frame_idx} frames processed")
+
+
+# ── Video + ROS mode ──────────────────────────────────────────────────────────
+
+def run_video_ros(cfg: dict) -> None:
+    """Read frames from a local video file and publish detections to ROS."""
+    video_path      = cfg["ros_video"]
+    model_path      = cfg["model"]
+    crop_model_path = cfg["crop_model"]
+    save_output     = cfg["save"]
+    conf            = cfg["conf"]
+    log             = cfg["log"]
+    display         = cfg["display"]
+    topics          = cfg["topics"]
+
+    _import_ros()
+
+    try:
+        from ultralytics import YOLO
+    except ImportError:
+        print("[beacon-ros-video] ultralytics not installed: pip install ultralytics")
+        return
+
+    if not os.path.exists(model_path):
+        print(f"[beacon-ros-video] Model not found: {model_path}")
+        return
+
+    if not os.path.exists(crop_model_path):
+        print(f"[beacon-ros-video] Crop model not found: {crop_model_path}")
+        return
+
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print(f"[beacon-ros-video] Cannot open video: {video_path}")
+        return
+
+    fps    = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    total  = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    print(f"[beacon-ros-video] {video_path}  {width}x{height} @ {fps:.1f}fps  {total} frames")
+    print(f"[beacon-ros-video] Model: {model_path}  conf≥{conf}")
+    print(f"[beacon-ros-video] Publishing → {topics['detections_pub']}")
+    if display:
+        print("[beacon-ros-video] Press 'q' to quit, SPACE to pause")
+
+    writer = None
+    if save_output:
+        out_path = os.path.splitext(video_path)[0] + "_beacon_ros_out.mp4"
+        fourcc   = cv2.VideoWriter_fourcc(*"mp4v")
+        writer   = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
+        print(f"[beacon-ros-video] Saving output → {out_path}")
+
+    log_fh = log_writer = None
+    if log:
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        log_path = os.path.splitext(video_path)[0] + f"_beacon_log_{ts}.csv"
+        log_fh, log_writer = _open_log(log_path)
+
+    blink_detector = BlinkDetector()
+    rclpy.init()
+    cam        = _make_beacon_camera(topics)
+    model      = YOLO(model_path)
+    crop_model = YOLO(crop_model_path)
+    print(f"[beacon-ros-video] Beacon model : {model_path}  conf≥{conf}")
+    print(f"[beacon-ros-video] Crop model   : {crop_model_path}")
+
+    if not cam.open_for_video():
+        print("[beacon-ros-video] Failed to open ROS node")
+        rclpy.shutdown()
+        cap.release()
+        return
+
+    frame_idx     = 0
+    paused        = False
+    display_frame = None
+
+    if display:
+        cv2.namedWindow("Beacon Detector — Video + ROS", cv2.WINDOW_AUTOSIZE)
+
+    try:
+        while rclpy.ok():
+            rclpy.spin_once(cam, timeout_sec=0.0)
+
+            if not paused:
+                ret, raw = cap.read()
+                if not ret:
+                    print("[beacon-ros-video] End of video")
+                    break
+                frame_idx += 1
+
+                drone_pos, _ = cam.get_drone_pose()
+                display_frame = raw.copy()
+                video_ts = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+
+                results = model(raw, conf=conf, verbose=False)
+                boxes   = results[0].boxes
+
+                print(f"Frame {frame_idx}/{total} — {len(boxes)} detection(s)")
+
+                for box in boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                    det_conf = float(box.conf[0])
+
+                    crop = display_frame[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
+                    beacon_color, color_conf, light_mask, intensity, votes = isolate_and_classify(crop, crop_model)
+                    draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
+
+                    blink_info = blink_detector.update(video_ts, beacon_color, intensity)
+
+                    cv2.rectangle(display_frame, (x1, y1), (x2, y2), draw_color, 2)
+
+                    if light_mask is not None and light_mask.any():
+                        lm_full = np.zeros(display_frame.shape[:2], dtype=np.uint8)
+                        lm_h = min(light_mask.shape[0], y2 - y1)
+                        lm_w = min(light_mask.shape[1], x2 - x1)
+                        lm_full[y1:y1+lm_h, x1:x1+lm_w] = light_mask[:lm_h, :lm_w]
+                        tint = np.zeros_like(display_frame)
+                        tint[:] = draw_color
+                        display_frame[lm_full > 0] = cv2.addWeighted(
+                            display_frame, 0.5, tint, 0.5, 0
+                        )[lm_full > 0]
+
+                    label_txt = (
+                        f"beacon [{beacon_color}] det={det_conf:.2f} int={intensity:.2f} "
+                        f"r={votes['red']:.0%} g={votes['green']:.0%} b={votes['blue']:.0%}"
+                    )
+                    if blink_info["is_blinking"]:
+                        label_txt += f" blink={blink_info['blink_hz']:.2f}Hz"
+                    elif blink_info["is_blinking"] is None:
+                        label_txt += " blink=?"
+                    cv2.putText(display_frame, label_txt, (x1, max(y1 - 6, 10)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, draw_color, 1)
+
+                    msg = String()
+                    msg.data = json.dumps({
+                        "color":            beacon_color,
+                        "blink":            blink_info,
+                        "label":            "beacon",
+                        "color_confidence": color_conf,
+                        "intensity":        intensity,
+                        "hue_votes":        votes,
+                        "confidence":       det_conf,
+                        "bbox":             [x1, y1, x2, y2],
+                        "position_3d":      None,
+                        "world_position":   None,
+                        "gps_position":     None,
+                        "drone_position":   drone_pos.tolist() if drone_pos is not None else None,
+                        "tracking_id":      -1,
+                        "timestamp":        time.time(),
+                    })
+                    cam.detection_pub.publish(msg)
+                    print(f"  {label_txt}")
+
+                    if log_writer is not None:
+                        _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
+                                       intensity, votes, det_conf, (x1, y1, x2, y2))
+
+                if writer:
+                    writer.write(display_frame)
+
+            if display:
+                if display_frame is not None:
+                    cv2.imshow("Beacon Detector — Video + ROS", display_frame)
+                key = cv2.waitKey(10 if not paused else 50) & 0xFF
+                if key == ord("q"):
+                    break
+                elif key == ord(" "):
+                    paused = not paused
+
+    except KeyboardInterrupt:
+        print("\n[beacon-ros-video] Interrupted")
+    finally:
+        cap.release()
+        if writer:
+            writer.release()
+        if log_fh:
+            log_fh.close()
+        cam.close()
+        if display:
+            cv2.destroyAllWindows()
+        rclpy.shutdown()
+        print(f"[beacon-ros-video] Done — {frame_idx} frames processed")
+
+
+# ── Main loop (ROS live mode) ─────────────────────────────────────────────────
+
+def main(cfg: dict) -> None:
+    model_path      = cfg["model"]
+    crop_model_path = cfg["crop_model"]
+    display         = cfg["display"]
+    log             = cfg["log"]
+    topics          = cfg["topics"]
+
+    _import_ros()
+
+    DEBUG_DIR    = os.path.expanduser("~/seabird_dataset/beacon_debug")
+    SAVE_EVERY_N = 30
+    os.makedirs(DEBUG_DIR, exist_ok=True)
+
+    rclpy.init()
+    cam = _make_beacon_camera(topics)
+
+    if not cam.open():
+        print("[beacon] Failed to open camera")
+        rclpy.shutdown()
+        return
+
+    if not os.path.exists(model_path):
+        print(f"[beacon] Model not found: {model_path}")
+        cam.close()
+        rclpy.shutdown()
+        return
+
+    if not os.path.exists(crop_model_path):
+        print(f"[beacon] Crop model not found: {crop_model_path}")
+        cam.close()
+        rclpy.shutdown()
+        return
+
+    from ultralytics import YOLO
+    print(f"[beacon] Loading model: {model_path}")
+    print(f"[beacon] Loading crop model: {crop_model_path}")
+    crop_model = YOLO(crop_model_path)
+    if not cam.enable_detection(model_path):
+        print("[beacon] Detection failed to start")
+        cam.close()
+        rclpy.shutdown()
+        return
+
+    print("[beacon] Detection ENABLED — class: beacon (color determined by CV)")
+    print(f"[beacon] Publishing → {topics['detections_pub']}")
+
+    if display:
+        cv2.namedWindow("Beacon Detector", cv2.WINDOW_AUTOSIZE)
+
+    log_fh = log_writer = None
+    if log:
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        log_path = os.path.join(DEBUG_DIR, f"beacon_log_{ts}.csv")
+        log_fh, log_writer = _open_log(log_path)
+
+    frame_count        = 0
+    intrinsics_printed = False
+
+    try:
+        while rclpy.ok():
+            if not cam.grab():
+                continue
+
+            frame_count += 1
+            rgb        = cam.get_rgb()
+            depth      = cam.get_depth()
+            intr       = cam._intrinsics
+            drone_pos, drone_quat = cam.get_drone_pose()
+
+            if intr and not intrinsics_printed:
+                print(f"[beacon] Intrinsics ready: {intr.width}x{intr.height} "
+                      f"fx={intr.fx:.1f} fy={intr.fy:.1f}")
+                intrinsics_printed = True
+
+            if rgb is None:
+                continue
+
+            dets = cam.get_detections()
+
+            for d in dets:
+                x1, y1, x2, y2 = d.bbox_2d
+
+                crop = rgb[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
+                beacon_color, color_conf, light_mask, intensity, votes = isolate_and_classify(crop, crop_model)
+                blink_info = _get_blink_detector(d.tracking_id).update(
+                    time.time(), beacon_color, intensity
+                )
+
+                draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
+
+                cv2.rectangle(rgb, (x1, y1), (x2, y2), draw_color, 2)
+
+                if light_mask is not None and light_mask.any():
+                    lm_full = np.zeros(rgb.shape[:2], dtype=np.uint8)
+                    lm_h = min(light_mask.shape[0], y2 - y1)
+                    lm_w = min(light_mask.shape[1], x2 - x1)
+                    lm_full[y1:y1+lm_h, x1:x1+lm_w] = light_mask[:lm_h, :lm_w]
+                    tint = np.zeros_like(rgb)
+                    tint[:] = draw_color
+                    rgb[lm_full > 0] = cv2.addWeighted(
+                        rgb, 0.5, tint, 0.5, 0
+                    )[lm_full > 0]
+
+                label_txt = (
+                    f"beacon [{beacon_color}] conf={d.confidence:.2f} int={intensity:.2f} "
+                    f"r={votes['red']:.0%} g={votes['green']:.0%} b={votes['blue']:.0%}"
+                )
+                if blink_info["is_blinking"]:
+                    label_txt += f" blink={blink_info['blink_hz']:.2f}Hz"
+                elif blink_info["is_blinking"] is None:
+                    label_txt += " blink=?"
+                if d.tracking_id >= 0:
+                    label_txt += f" #{d.tracking_id}"
+
+                cv2.putText(rgb, label_txt, (x1, y1 - 6),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, draw_color, 1)
+
+                world_pos  = None
+                gps_coords = None
+                if d.position_3d is not None and drone_pos is not None:
+                    world_pos = camera_to_world(d.position_3d, drone_pos, drone_quat)
+                    origin    = cam.get_gps_origin()
+                    if origin is not None:
+                        lat, lon, alt = local_enu_to_gps(world_pos, *origin)
+                        gps_coords    = {"latitude": lat, "longitude": lon, "altitude": alt}
+
+                    cv2.putText(
+                        rgb,
+                        f"W({world_pos[0]:.1f},{world_pos[1]:.1f},{world_pos[2]:.1f})",
+                        (x1, y2 + 14),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.35, draw_color, 1,
+                    )
+
+                msg = String()
+                msg.data = json.dumps({
+                    "color":            beacon_color,
+                    "blink":            blink_info,
+                    "label":            "beacon",
+                    "color_confidence": color_conf,
+                    "intensity":        intensity,
+                    "hue_votes":        votes,
+                    "confidence":       float(d.confidence),
+                    "bbox":           list(d.bbox_2d),
+                    "position_3d":    d.position_3d.tolist() if d.position_3d is not None else None,
+                    "world_position": world_pos.tolist()     if world_pos     is not None else None,
+                    "gps_position":   gps_coords,
+                    "drone_position": drone_pos.tolist()     if drone_pos     is not None else None,
+                    "tracking_id":    d.tracking_id,
+                    "timestamp":      time.time(),
+                })
+                cam.detection_pub.publish(msg)
+
+                if log_writer is not None:
+                    _write_log_row(log_writer, frame_count, beacon_color, color_conf,
+                                   intensity, votes, float(d.confidence), d.bbox_2d,
+                                   tracking_id=d.tracking_id,
+                                   pos3d=d.position_3d)
+
+                print(f"[beacon] {label_txt}"
+                      + (f" pos3d=({d.position_3d[2]:.2f}m)" if d.position_3d is not None else ""))
+
+            if display and rgb is not None:
+                cv2.imshow("Beacon Detector", rgb)
+                if cv2.waitKey(10) & 0xFF == ord("q"):
+                    break
+
+            if frame_count % SAVE_EVERY_N == 0 and rgb is not None:
+                out_path = os.path.join(DEBUG_DIR, f"frame_{frame_count:06d}.png")
+                cv2.imwrite(out_path, rgb)
+                print(f"[beacon] Saved {out_path}")
+
+    except KeyboardInterrupt:
+        print("\n[beacon] Interrupted")
+    finally:
+        if log_fh:
+            log_fh.close()
+        cam.close()
+        cv2.destroyAllWindows()
+        rclpy.shutdown()
+        print(f"[beacon] Done — {frame_count} frames processed")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="beacon_detector_config",
+        description="Beacon detector configured via a JSON file",
+    )
+    parser.add_argument(
+        "--config", "-cfg",
+        default=_DEFAULT_CONFIG,
+        metavar="CONFIG_PATH",
+        help=f"Path to JSON config file (default: {_DEFAULT_CONFIG})",
+    )
+    args = parser.parse_args()
+
+    if not os.path.exists(args.config):
+        print(f"[beacon] Config not found: {args.config}")
+        print(f"[beacon] Create one based on beacon_config.json or pass --config <path>")
+        sys.exit(1)
+
+    cfg = load_config(args.config)
+    print(f"[beacon] Loaded config: {args.config}")
+
+    if cfg["ros_video"] is not None:
+        run_video_ros(cfg)
+    elif cfg["video"] is not None:
+        run_video(cfg)
+    else:
+        main(cfg)

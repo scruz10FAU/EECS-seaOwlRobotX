@@ -9,6 +9,8 @@ Detection pipeline for colored, optionally blinking, beacon lights mounted on a 
 | File | Role |
 |---|---|
 | `beacon_detector.py` | Entry point. Color classification pipeline, video and ROS live modes. |
+| `beacon_detector_config.py` | JSON-configured version of `beacon_detector.py`. Loads all arguments and ROS topic names from `beacon_config.json` instead of command-line flags. |
+| `beacon_config.json` | Default configuration file for `beacon_detector_config.py`. Controls model paths, thresholds, run mode, and ROS topic overrides. |
 | `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
 | `beacon_camera.py` | `BeaconCamera` ROS2 node — ZED camera subscriptions and pose/GPS callbacks. |
 | `batch_detect.py` | Headless batch processor — runs detection over multiple video files and writes a CSV + summary. |
@@ -100,6 +102,85 @@ python3 beacon_detector.py -v footage.mp4           # video file, no ROS
 ```
 
 `position_3d`, `world_position`, and `gps_position` are `null` if depth or pose data is unavailable.
+
+---
+
+## beacon_detector_config.py
+
+A drop-in alternative to `beacon_detector.py` that reads all runtime parameters from a JSON file instead of command-line flags. Useful when the same node needs to run with different topic namespaces or model paths across deployments without modifying source code.
+
+The detection logic, color classification, blink estimation, and ROS publishing are identical to `beacon_detector.py`. The only differences are how configuration is loaded and how `BeaconCamera` topic names are resolved.
+
+### Usage
+
+```
+python3 beacon_detector_config.py                          # uses beacon_config.json
+python3 beacon_detector_config.py --config custom.json    # use a different config file
+```
+
+The run mode (ROS live / video-only / video+ROS) is determined by the `video` and `ros_video` fields in the config rather than by which flag is passed.
+
+### beacon_config.json
+
+Default config file. Copy and edit to create environment-specific configs.
+
+**Top-level fields**
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `model` | string | `"models/one_beacon.pt"` | Path to stage-1 YOLO beacon model |
+| `crop_model` | string | `"models/best_crop.pt"` | Path to stage-2 lit-area isolation model |
+| `conf` | float | `0.5` | Detection confidence threshold |
+| `display` | bool | `false` | Show OpenCV window in ROS live mode |
+| `true_dist` | float | `0.4826` | Known ground-truth distance to target in metres (ROS mode) |
+| `save` | bool | `false` | Write annotated output video alongside input (video modes) |
+| `log` | bool | `false` | Write per-frame CSV detection log |
+| `video` | string \| null | `null` | Path to video file for video-only mode. Set to a path to activate. |
+| `ros_video` | string \| null | `null` | Path to video file for video+ROS mode. Takes priority over `video`. |
+| `topics` | object | see below | ROS topic name overrides |
+
+**`topics` object**
+
+| Key | Default | Description |
+|---|---|---|
+| `camera_prefix` | `"/zed/zed_node"` | Prefix for all ZED camera topics |
+| `drone_pose` | `"/mavros/local_position/pose"` | Drone local position + orientation |
+| `gps_origin` | `"/mavros/global_position/gp_origin"` | GPS reference origin for ENU→GPS conversion |
+| `detections_pub` | `"/seabird/beacon_detections"` | Topic detections are published to |
+
+**Run mode selection**
+
+| `ros_video` | `video` | Mode |
+|---|---|---|
+| path string | any | Video file + ROS publishing |
+| null | path string | Video file only, no ROS |
+| null | null | ROS live camera mode |
+
+**Example — remap to a second ZED camera and a different detection topic**
+
+```json
+{
+  "model": "models/one_beacon.pt",
+  "crop_model": "models/best_crop.pt",
+  "conf": 0.5,
+  "display": false,
+  "true_dist": 0.4826,
+  "save": false,
+  "log": false,
+  "video": null,
+  "ros_video": null,
+  "topics": {
+    "camera_prefix":  "/zed2/zed_node",
+    "drone_pose":     "/mavros/local_position/pose",
+    "gps_origin":     "/mavros/global_position/gp_origin",
+    "detections_pub": "/seabird/beacon_detections_cam2"
+  }
+}
+```
+
+### How topic overrides work
+
+`BeaconCamera` normally reads `DRONE_POSE_TOPIC` and `GPS_TOPIC` from module-level constants in `beacon_camera.py`. `beacon_detector_config.py` creates a subclass of `BeaconCamera` at runtime via `_make_beacon_camera(topics)`, capturing the config topic strings by closure and overriding `open()` and `open_for_video()`. The original `beacon_camera.py` is not modified.
 
 ---
 
