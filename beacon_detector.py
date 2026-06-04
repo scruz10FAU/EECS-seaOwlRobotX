@@ -297,15 +297,13 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), draw_color, 2)
 
-        # Tint the lit pixels
         if light_mask is not None and light_mask.any():
             lm_full = np.zeros(frame.shape[:2], dtype=np.uint8)
             lm_h = min(light_mask.shape[0], y2 - y1)
             lm_w = min(light_mask.shape[1], x2 - x1)
             lm_full[y1:y1+lm_h, x1:x1+lm_w] = light_mask[:lm_h, :lm_w]
-            tint = np.zeros_like(frame)
-            tint[:] = draw_color
-            frame[lm_full > 0] = cv2.addWeighted(frame, 0.5, tint, 0.5, 0)[lm_full > 0]
+            contours, _ = cv2.findContours(lm_full, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(frame, contours, -1, draw_color, 2)
 
         txt = (f"{label} [{beacon_color}] det={conf:.2f} int={intensity:.2f} "
                f"r={votes['red']:.0%} g={votes['green']:.0%} b={votes['blue']:.0%}")
@@ -556,11 +554,8 @@ def run_video_ros(video_path: str,
                         lm_h = min(light_mask.shape[0], y2 - y1)
                         lm_w = min(light_mask.shape[1], x2 - x1)
                         lm_full[y1:y1+lm_h, x1:x1+lm_w] = light_mask[:lm_h, :lm_w]
-                        tint = np.zeros_like(display_frame)
-                        tint[:] = draw_color
-                        display_frame[lm_full > 0] = cv2.addWeighted(
-                            display_frame, 0.5, tint, 0.5, 0
-                        )[lm_full > 0]
+                        contours, _ = cv2.findContours(lm_full, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                        cv2.drawContours(display_frame, contours, -1, draw_color, 2)
 
                     label_txt = (
                         f"beacon [{beacon_color}] det={det_conf:.2f} int={intensity:.2f} "
@@ -720,17 +715,13 @@ def main(model: str = "models/one_beacon.pt",
 
                 cv2.rectangle(rgb, (x1, y1), (x2, y2), draw_color, 2)
 
-                # Overlay light mask back onto the frame (tinted)
                 if light_mask is not None and light_mask.any():
                     lm_full = np.zeros(rgb.shape[:2], dtype=np.uint8)
                     lm_h = min(light_mask.shape[0], y2 - y1)
                     lm_w = min(light_mask.shape[1], x2 - x1)
                     lm_full[y1:y1+lm_h, x1:x1+lm_w] = light_mask[:lm_h, :lm_w]
-                    tint = np.zeros_like(rgb)
-                    tint[:] = draw_color
-                    rgb[lm_full > 0] = cv2.addWeighted(
-                        rgb, 0.5, tint, 0.5, 0
-                    )[lm_full > 0]
+                    contours, _ = cv2.findContours(lm_full, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    cv2.drawContours(rgb, contours, -1, draw_color, 2)
 
                 label_txt = (
                     f"beacon [{beacon_color}] conf={d.confidence:.2f} int={intensity:.2f} "
