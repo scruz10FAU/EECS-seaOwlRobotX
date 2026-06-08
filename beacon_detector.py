@@ -142,6 +142,8 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
 
     # Per-pixel hue vote — majority of lit pixels determines the color.
     votes = _hue_votes(hues)
+    votes["mean_hue"]   = float(np.mean(hues))
+    votes["median_hue"] = float(np.median(hues))
 
     # Red gets priority: if enough red pixels are present, call it red even if
     # blue background pixels outnumber them slightly. When the beacon is off the
