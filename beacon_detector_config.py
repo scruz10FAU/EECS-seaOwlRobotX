@@ -70,6 +70,7 @@ def load_config(path: str) -> dict:
         "true_dist":  float(raw.get("true_dist", 0.4826)),
         "save":       bool(raw.get("save",        False)),
         "log":        bool(raw.get("log",         False)),
+        "save_crops": bool(raw.get("save_crops",  False)),
         "video":      raw.get("video",      None),
         "ros_video":  raw.get("ros_video",  None),
         "topics":     {**_DEFAULT_TOPICS,  **raw.get("topics",  {})},
@@ -247,11 +248,18 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
 _SAT_MIN = 60
 _VAL_MIN = 160
 
+# Previous bands (revert here if needed):
+# _HUE_BANDS = [
+#     (  0, 20, "red"),
+#     ( 65, 30, "green"),
+#     (120, 15, "blue"),   # 105–135°
+#     (165, 15, "red"),    # 150–180°
+# ]
 _HUE_BANDS = [
-    (  0, 20, "red"),
-    ( 65, 30, "green"),
-    (120, 15, "blue"),
-    (165, 15, "red"),
+    (  0, 20, "red"),    # 0–20°
+    ( 65, 30, "green"),  # 35–95°
+    (157, 22, "red"),    # 135–179° — expanded to catch purple-tinted red LEDs; processed before blue so the 135° boundary goes to red
+    (120, 15, "blue"),   # 105–134° — only claims hues not already taken by red
 ]
 
 _RED_THRESHOLD = 0.1
@@ -326,7 +334,8 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
     boxes   = results[0].boxes
 
     if len(boxes) == 0:
-        return classify_beacon_color(beacon_crop)
+        color, color_conf, light_mask, intensity, votes = classify_beacon_color(beacon_crop)
+        return color, color_conf, light_mask, intensity, votes, beacon_crop
 
     if results[0].masks is not None:
         best_idx = int(np.argmax([float(b.conf[0]) for b in boxes]))
@@ -342,7 +351,8 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
             display_mask[ly1:ly2, lx1:lx2] = 255
 
     if not display_mask.any():
-        return classify_beacon_color(beacon_crop)
+        color, color_conf, light_mask, intensity, votes = classify_beacon_color(beacon_crop)
+        return color, color_conf, light_mask, intensity, votes, beacon_crop
 
     rows = np.any(display_mask > 0, axis=1)
     cols = np.any(display_mask > 0, axis=0)
@@ -351,7 +361,7 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
     lit_region = beacon_crop[rmin:rmax + 1, cmin:cmax + 1]
 
     color, color_conf, _, intensity, votes = classify_beacon_color(lit_region)
-    return color, color_conf, display_mask, intensity, votes
+    return color, color_conf, display_mask, intensity, votes, lit_region
 
 
 # ── Detection logger ──────────────────────────────────────────────────────────
@@ -416,15 +426,22 @@ _COLOR_BGR = {
 def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                     log_writer=None, frame_idx: int = 0,
                     blink_detector: BlinkDetector = None,
-                    video_ts: float = None) -> np.ndarray:
-    for box in boxes:
+                    video_ts: float = None,
+                    save_crops_dir: str = None) -> np.ndarray:
+    clean = frame.copy()  # unmodified source for crops — keeps drawn annotations out of saved images
+    for det_idx, box in enumerate(boxes):
         x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
         conf  = float(box.conf[0])
         cls   = int(box.cls[0])
         label = names.get(cls, str(cls))
 
-        crop = frame[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-        beacon_color, color_conf, light_mask, intensity, votes = isolate_and_classify(crop, crop_model)
+        crop = clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
+        beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
+
+        if save_crops_dir is not None and lit_region.size > 0:
+            fname = (f"crop_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                     f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}.png")
+            cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
         draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
         blink_info = None
@@ -469,6 +486,7 @@ def run_video(cfg: dict) -> None:
     save_output     = cfg["save"]
     conf            = cfg["conf"]
     log             = cfg["log"]
+    save_crops      = cfg.get("save_crops", False)
 
     try:
         from ultralytics import YOLO
@@ -513,6 +531,12 @@ def run_video(cfg: dict) -> None:
         log_path = os.path.splitext(video_path)[0] + f"_beacon_log_{ts}.csv"
         log_fh, log_writer = _open_log(log_path)
 
+    crops_dir = None
+    if save_crops:
+        crops_dir = os.path.splitext(video_path)[0] + "_beacon_crops"
+        os.makedirs(crops_dir, exist_ok=True)
+        print(f"[beacon-video] Saving crops → {crops_dir}/")
+
     blink_detector = BlinkDetector()
     frame_idx     = 0
     paused        = False
@@ -539,7 +563,8 @@ def run_video(cfg: dict) -> None:
                 display_frame = _annotate_frame(display_frame, boxes, names, crop_model,
                                                 log_writer=log_writer, frame_idx=frame_idx,
                                                 blink_detector=blink_detector,
-                                                video_ts=video_ts)
+                                                video_ts=video_ts,
+                                                save_crops_dir=crops_dir)
 
                 if writer:
                     writer.write(display_frame)
@@ -576,6 +601,7 @@ def run_video_ros(cfg: dict) -> None:
     log             = cfg["log"]
     display         = cfg["display"]
     topics          = cfg["topics"]
+    save_crops      = cfg.get("save_crops", False)
 
     _import_ros()
 
@@ -621,6 +647,12 @@ def run_video_ros(cfg: dict) -> None:
         log_path = os.path.splitext(video_path)[0] + f"_beacon_log_{ts}.csv"
         log_fh, log_writer = _open_log(log_path)
 
+    crops_dir = None
+    if save_crops:
+        crops_dir = os.path.splitext(video_path)[0] + "_beacon_crops"
+        os.makedirs(crops_dir, exist_ok=True)
+        print(f"[beacon-ros-video] Saving crops → {crops_dir}/")
+
     blink_detector = BlinkDetector()
     rclpy.init()
     cam        = _make_beacon_camera(topics, cfg["camera"])
@@ -662,12 +694,12 @@ def run_video_ros(cfg: dict) -> None:
 
                 print(f"Frame {frame_idx}/{total} — {len(boxes)} detection(s)")
 
-                for box in boxes:
+                for det_idx, box in enumerate(boxes):
                     x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
                     det_conf = float(box.conf[0])
 
-                    crop = display_frame[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-                    beacon_color, color_conf, light_mask, intensity, votes = isolate_and_classify(crop, crop_model)
+                    crop = raw[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
+                    beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
                     draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
                     blink_info = blink_detector.update(video_ts, beacon_color, intensity)
@@ -716,6 +748,11 @@ def run_video_ros(cfg: dict) -> None:
                     if log_writer is not None:
                         _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
                                        intensity, votes, det_conf, (x1, y1, x2, y2))
+
+                    if crops_dir is not None and lit_region.size > 0:
+                        fname = (f"crop_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                                 f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}.png")
+                        cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
 
                 if writer:
                     writer.write(display_frame)
@@ -801,6 +838,13 @@ def main(cfg: dict) -> None:
         log_path = os.path.join(DEBUG_DIR, f"beacon_log_{ts}.csv")
         log_fh, log_writer = _open_log(log_path)
 
+    save_crops = cfg.get("save_crops", False)
+    crops_dir = None
+    if save_crops:
+        crops_dir = os.path.join(DEBUG_DIR, "beacon_crops")
+        os.makedirs(crops_dir, exist_ok=True)
+        print(f"[beacon] Saving crops → {crops_dir}/")
+
     frame_count        = 0
     intrinsics_printed = False
 
@@ -824,12 +868,13 @@ def main(cfg: dict) -> None:
                 continue
 
             dets = cam.get_detections()
+            rgb_clean = rgb.copy()  # snapshot before drawing so crops are annotation-free
 
             for d in dets:
                 x1, y1, x2, y2 = d.bbox_2d
 
-                crop = rgb[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-                beacon_color, color_conf, light_mask, intensity, votes = isolate_and_classify(crop, crop_model)
+                crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
+                beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
                 blink_info = _get_blink_detector(d.tracking_id).update(
                     time.time(), beacon_color, intensity
                 )
@@ -904,6 +949,11 @@ def main(cfg: dict) -> None:
                                    intensity, votes, float(d.confidence), d.bbox_2d,
                                    tracking_id=d.tracking_id,
                                    pos3d=d.position_3d)
+
+                if crops_dir is not None and lit_region.size > 0:
+                    fname = (f"crop_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
+                             f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}.png")
+                    cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
 
                 print(f"[beacon] {label_txt}"
                       + (f" pos3d=({d.position_3d[2]:.2f}m)" if d.position_3d is not None else ""))

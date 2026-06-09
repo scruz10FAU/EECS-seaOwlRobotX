@@ -67,6 +67,11 @@ python3 beacon_detector.py -v footage.mp4           # video file, no ROS
 | `--display / -d` | off | Show OpenCV window (ROS and ROS-video modes) |
 | `--save / -s` | off | Write annotated output video (video modes) |
 | `--log / -l` | off | Write per-frame CSV log |
+| `--save-crops / -sc` | off | Save each beacon bounding-box crop as a PNG for post-run analysis |
+
+### Crop output (--save-crops)
+
+When `--save-crops` is set, the raw bounding-box crop passed to the color classifier is written to disk for every detection. Files are named `crop_f{frame:06d}_d{det_idx:02d}_{color}.png` and saved in a directory alongside the input video: `<video_stem>_beacon_crops/`. In ROS live mode the directory is `~/seabird_dataset/beacon_debug/beacon_crops/` and filenames use the YOLO tracking ID instead of a per-frame detection index (`_t{tracking_id:02d}_`).
 
 ### CSV log columns
 
@@ -137,6 +142,7 @@ The config fully replaces `seabird_config.py` — `beacon_detector_config.py` do
 | `true_dist` | float | `0.4826` | Known ground-truth distance to target in metres (ROS mode) |
 | `save` | bool | `false` | Write annotated output video alongside input (video modes) |
 | `log` | bool | `false` | Write per-frame CSV detection log |
+| `save_crops` | bool | `false` | Save each beacon bounding-box crop as a PNG for post-run color classification analysis |
 | `video` | string \| null | `null` | Path to video file for video-only mode |
 | `ros_video` | string \| null | `null` | Path to video file for video+ROS mode. Takes priority over `video`. |
 | `topics` | object | see below | ROS topic name overrides |

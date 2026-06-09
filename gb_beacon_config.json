@@ -8,7 +8,7 @@
   "log":        false,
   "save_crops": true,
   "video":      null,
-  "ros_video":  "../beacon_videos/reduced_DJI.mp4",
+  "ros_video":  "../beacon_videos/blink_green.mp4",
   "topics": {
     "camera_prefix":  "/zed/zed_node",
     "drone_pose":     "/mavros/local_position/pose",
