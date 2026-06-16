@@ -162,16 +162,15 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
     is never imported.
     """
     from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
-    from sensor_msgs.msg import Image, CameraInfo
+    from sensor_msgs.msg import Image
     from geometry_msgs.msg import PoseStamped
     from geographic_msgs.msg import GeoPointStamped
     from camera_interface import Intrinsics
     import message_filters
 
-    camera_prefix     = topics["camera_prefix"]
-    image_topic       = topics["image"]
-    camera_info_topic = topics["camera_info"]
-    depth_topic       = topics["depth"]
+    camera_prefix    = topics["camera_prefix"]
+    image_topic      = topics["image"]
+    depth_topic      = topics["depth"]
     drone_pose_topic  = topics["drone_pose"]
     gps_topic         = topics["gps_origin"]
     detections_topic  = topics["detections_pub"]
@@ -182,9 +181,9 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
     img_h    = cfg_camera["img_h"]
 
     class _ConfiguredBeaconCamera(_BeaconCameraBase):
-        def _on_camera_info(self, _msg):
-            if self._intrinsics is not None:
-                return
+        def open(self):
+            if self._is_open:
+                return True
             self._intrinsics = Intrinsics(
                 fx=fx, fy=fy, cx=cx, cy=cy, width=img_w, height=img_h
             )
@@ -192,21 +191,10 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
                 f"Intrinsics set from config: fx={fx:.1f} fy={fy:.1f} "
                 f"cx={cx:.1f} cy={cy:.1f} {img_w}x{img_h}"
             )
-            self.destroy_subscription(self._info_sub)
-
-        def open(self):
-            if self._is_open:
-                return True
             qos = QoSProfile(
                 reliability=ReliabilityPolicy.BEST_EFFORT,
                 history=HistoryPolicy.KEEP_LAST,
                 depth=1,
-            )
-            self._info_sub = self.create_subscription(
-                CameraInfo,
-                camera_info_topic,
-                self._on_camera_info,
-                qos,
             )
             rgb_sub = message_filters.Subscriber(
                 self, Image, image_topic, qos_profile=qos
