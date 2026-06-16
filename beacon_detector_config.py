@@ -33,10 +33,25 @@ _DEFAULT_CONFIG = "beacon_config.json"
 
 _DEFAULT_TOPICS = {
     "camera_prefix":  "/zed/zed_node",
+    "image":          "/zed/zed_node/rgb/color/rect/image",
+    "camera_info":    "/zed/zed_node/rgb/color/rect/camera_info",
+    "depth":          "/zed/zed_node/depth/depth_registered",
     "drone_pose":     "/mavros/local_position/pose",
     "gps_origin":     "/mavros/global_position/gp_origin",
     "detections_pub": "/seabird/beacon_detections",
 }
+
+def _merge_topics(raw: dict) -> dict:
+    merged = {**_DEFAULT_TOPICS, **raw}
+    prefix = merged["camera_prefix"]
+    if "image" not in raw:
+        merged["image"] = f"{prefix}/rgb/color/rect/image"
+    if "camera_info" not in raw:
+        merged["camera_info"] = f"{prefix}/rgb/color/rect/camera_info"
+    if "depth" not in raw:
+        merged["depth"] = f"{prefix}/depth/depth_registered"
+    return merged
+
 
 _DEFAULT_CAMERA = {
     "focal_length_mm":  2.1,
@@ -73,7 +88,7 @@ def load_config(path: str) -> dict:
         "save_crops": bool(raw.get("save_crops",  False)),
         "video":      raw.get("video",      None),
         "ros_video":  raw.get("ros_video",  None),
-        "topics":     {**_DEFAULT_TOPICS,  **raw.get("topics",  {})},
+        "topics":     _merge_topics(raw.get("topics", {})),
         "camera":     {**_DEFAULT_CAMERA,  **raw.get("camera",  {})},
         "paths":      raw.get("paths",      {}),
         "isaac":      raw.get("isaac",      {}),
@@ -153,10 +168,13 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
     from camera_interface import Intrinsics
     import message_filters
 
-    camera_prefix    = topics["camera_prefix"]
-    drone_pose_topic = topics["drone_pose"]
-    gps_topic        = topics["gps_origin"]
-    detections_topic = topics["detections_pub"]
+    camera_prefix     = topics["camera_prefix"]
+    image_topic       = topics["image"]
+    camera_info_topic = topics["camera_info"]
+    depth_topic       = topics["depth"]
+    drone_pose_topic  = topics["drone_pose"]
+    gps_topic         = topics["gps_origin"]
+    detections_topic  = topics["detections_pub"]
 
     fx, fy   = cfg_camera["fx"],    cfg_camera["fy"]
     cx, cy   = cfg_camera["cx"],    cfg_camera["cy"]
@@ -186,15 +204,15 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
             )
             self._info_sub = self.create_subscription(
                 CameraInfo,
-                f"{camera_prefix}/rgb/color/rect/camera_info",
+                camera_info_topic,
                 self._on_camera_info,
                 qos,
             )
             rgb_sub = message_filters.Subscriber(
-                self, Image, f"{camera_prefix}/rgb/color/rect/image", qos_profile=qos
+                self, Image, image_topic, qos_profile=qos
             )
             depth_sub = message_filters.Subscriber(
-                self, Image, f"{camera_prefix}/depth/depth_registered", qos_profile=qos
+                self, Image, depth_topic, qos_profile=qos
             )
             self._sync = message_filters.ApproximateTimeSynchronizer(
                 [rgb_sub, depth_sub], queue_size=5, slop=0.05
