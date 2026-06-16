@@ -9,6 +9,7 @@ only loaded when ROS mode is actually invoked.
 import threading
 import numpy as np
 
+from cv_bridge import CvBridge
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
@@ -21,6 +22,8 @@ import message_filters
 from camera_interface import CameraInterface, CameraConfig, Detection, Intrinsics
 from seabird_config import IMG_W, IMG_H, FX, FY, CX, CY
 from yolo_detector import YoloDetector
+
+_bridge = CvBridge()
 
 DEFAULT_TOPIC_PREFIX = "/zed/zed_node"
 DRONE_POSE_TOPIC     = "/mavros/local_position/pose"
@@ -208,11 +211,14 @@ class BeaconCamera(Node):
         self.destroy_subscription(self._info_sub)
 
     def _on_synced_frame(self, rgb_msg, depth_msg):
-        channels = len(rgb_msg.data) // (rgb_msg.height * rgb_msg.width)
-        rgb = np.frombuffer(rgb_msg.data, dtype=np.uint8).reshape(
-            rgb_msg.height, rgb_msg.width, channels
-        )
-        bgr   = rgb[:, :, :3][:, :, ::-1].copy()
+        if rgb_msg.encoding in ('bgr8', 'yuv422', 'yuv422_yuy2'):
+            bgr = _bridge.imgmsg_to_cv2(rgb_msg, desired_encoding='bgr8')
+        else:
+            channels = len(rgb_msg.data) // (rgb_msg.height * rgb_msg.width)
+            rgb = np.frombuffer(rgb_msg.data, dtype=np.uint8).reshape(
+                rgb_msg.height, rgb_msg.width, channels
+            )
+            bgr = rgb[:, :, :3][:, :, ::-1].copy()
         depth = np.frombuffer(depth_msg.data, dtype=np.float32).reshape(
             depth_msg.height, depth_msg.width
         ).copy()

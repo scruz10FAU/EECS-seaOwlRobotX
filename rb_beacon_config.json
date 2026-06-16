@@ -6,7 +6,7 @@
   "true_dist":  0.4826,
   "save":       false,
   "log":        false,
-  "save_crops": true,
+  "save_crops": false,
   "video":      null,
   "ros_video":  "../beacon_videos/blink_red.mp4",
   "topics": {
