@@ -940,12 +940,12 @@ def main(cfg: dict) -> None:
                     "intensity":        intensity,
                     "hue_votes":        votes,
                     "confidence":       float(d.confidence),
-                    "bbox":           list(d.bbox_2d),
+                    "bbox":           [int(v) for v in d.bbox_2d],
                     "position_3d":    d.position_3d.tolist() if d.position_3d is not None else None,
                     "world_position": world_pos.tolist()     if world_pos     is not None else None,
                     "gps_position":   gps_coords,
                     "drone_position": drone_pos.tolist()     if drone_pos     is not None else None,
-                    "tracking_id":    d.tracking_id,
+                    "tracking_id":    int(d.tracking_id),
                     "timestamp":      time.time(),
                 })
                 cam.detection_pub.publish(msg)
