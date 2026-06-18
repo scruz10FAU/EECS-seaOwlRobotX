@@ -941,7 +941,7 @@ def main(cfg: dict) -> None:
                     "hue_votes":        votes,
                     "confidence":       float(d.confidence),
                     "bbox":           [int(v) for v in d.bbox_2d],
-                    "position_3d":    d.position_3d.tolist() if d.position_3d is not None else None,
+                    "position_3d":    np.array(d.position_3d).tolist() if d.position_3d is not None else None,
                     "world_position": world_pos.tolist()     if world_pos     is not None else None,
                     "gps_position":   gps_coords,
                     "drone_position": drone_pos.tolist()     if drone_pos     is not None else None,
