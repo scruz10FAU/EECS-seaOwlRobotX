@@ -219,9 +219,23 @@ class BeaconCamera(Node):
                 rgb_msg.height, rgb_msg.width, channels
             )
             bgr = rgb[:, :, :3][:, :, ::-1].copy()
-        depth = np.frombuffer(depth_msg.data, dtype=np.float32).reshape(
-            depth_msg.height, depth_msg.width
-        ).copy()
+        enc = depth_msg.encoding
+        if enc == '32FC1':
+            depth = np.frombuffer(depth_msg.data, dtype=np.float32).reshape(
+                depth_msg.height, depth_msg.width
+            ).copy()
+        elif enc == '16UC1':
+            depth = np.frombuffer(depth_msg.data, dtype=np.uint16).reshape(
+                depth_msg.height, depth_msg.width
+            ).astype(np.float32) * 0.001
+        else:
+            depth = np.frombuffer(depth_msg.data, dtype=np.uint8).reshape(
+                depth_msg.height, depth_msg.width
+            ).astype(np.float32)
+        if depth.shape != (bgr.shape[0], bgr.shape[1]):
+            import cv2 as _cv2
+            depth = _cv2.resize(depth, (bgr.shape[1], bgr.shape[0]),
+                                interpolation=_cv2.INTER_NEAREST)
         with self._frame_lock:
             self._rgb       = bgr
             self._depth     = depth
