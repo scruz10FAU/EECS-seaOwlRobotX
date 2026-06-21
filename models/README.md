@@ -6,3 +6,4 @@
 | best_crop.pt | Real light area of beacon detection | best_crop_reduced2.pt | All images and labels from original dataset | None |
 | SIM_rgb.pt | Beacon color classification in IsaacSIM with domain randomization | n/a | IsaacSIM images with domain randomization | None |
 | SIM_beacontop.pt | Beacon + top classification in IsaacSIM | n/a | IsaacSIM images with domain randomization | None |
+| SIM_rgb_real-tuned.pt | Sim2real beacon color classification | SIM_rgb.pt | IsaacSIM images with domain randomization + real images | Only on real images |
