@@ -5,7 +5,7 @@
   "display":    false,
   "true_dist":  0.4826,
   "save":       false,
-  "log":        false,
+  "log":        true,
   "save_crops": false,
   "video":      null,
   "ros_video":  null,
