@@ -85,7 +85,8 @@ def load_config(path: str) -> dict:
         "true_dist":  float(raw.get("true_dist", 0.4826)),
         "save":       bool(raw.get("save",        False)),
         "log":        bool(raw.get("log",         False)),
-        "save_crops": bool(raw.get("save_crops",  False)),
+        "save_crops":      bool(raw.get("save_crops",      False)),
+        "save_det_images": bool(raw.get("save_det_images", False)),
         "video":      raw.get("video",      None),
         "ros_video":  raw.get("ros_video",  None),
         "topics":     _merge_topics(raw.get("topics", {})),
@@ -377,6 +378,7 @@ _LOG_HEADER = [
     "vote_red", "vote_green", "vote_blue", "vote_other",
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
     "pos3d_x", "pos3d_y", "pos3d_z",
+    "blink_is_blinking", "blink_hz", "blink_phase",
 ]
 
 
@@ -391,11 +393,15 @@ def _open_log(path: str):
 def _write_log_row(log_writer, frame_idx: int, color: str,
                    color_conf: float, intensity: float, votes: dict,
                    det_conf: float, bbox, tracking_id: int = -1,
-                   pos3d=None) -> None:
+                   pos3d=None, blink_info: dict = None) -> None:
     x1, y1, x2, y2 = bbox
     px = py = pz = ""
     if pos3d is not None:
         px, py, pz = f"{pos3d[0]:.4f}", f"{pos3d[1]:.4f}", f"{pos3d[2]:.4f}"
+    bi = blink_info or {}
+    blink_blinking = "" if bi.get("is_blinking") is None else str(bi.get("is_blinking"))
+    blink_hz    = f"{bi['blink_hz']:.3f}" if bi.get("blink_hz") is not None else ""
+    blink_phase = bi.get("phase", "")
     log_writer.writerow([
         f"{time.time():.3f}", frame_idx,
         color, f"{color_conf:.4f}", f"{intensity:.4f}",
@@ -403,6 +409,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         f"{votes.get('blue',0):.4f}", f"{votes.get('other',0):.4f}",
         f"{det_conf:.4f}", x1, y1, x2, y2, tracking_id,
         px, py, pz,
+        blink_blinking, blink_hz, blink_phase,
     ])
 
 
@@ -479,7 +486,8 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
 
         if log_writer is not None:
             _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
-                           intensity, votes, conf, (x1, y1, x2, y2))
+                           intensity, votes, conf, (x1, y1, x2, y2),
+                           blink_info=blink_info)
 
     return frame
 
@@ -753,7 +761,8 @@ def run_video_ros(cfg: dict) -> None:
 
                     if log_writer is not None:
                         _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
-                                       intensity, votes, det_conf, (x1, y1, x2, y2))
+                                       intensity, votes, det_conf, (x1, y1, x2, y2),
+                                       blink_info=blink_info)
 
                     if crops_dir is not None and lit_region.size > 0:
                         fname = (f"crop_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
@@ -850,6 +859,13 @@ def main(cfg: dict) -> None:
         crops_dir = os.path.join(DEBUG_DIR, "beacon_crops")
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon] Saving crops → {crops_dir}/")
+
+    save_det_images = cfg.get("save_det_images", False)
+    det_images_dir = None
+    if save_det_images:
+        det_images_dir = os.path.join(DEBUG_DIR, "beacon_det_images")
+        os.makedirs(det_images_dir, exist_ok=True)
+        print(f"[beacon] Saving detection images → {det_images_dir}/")
 
     frame_count        = 0
     intrinsics_printed = False
@@ -954,12 +970,30 @@ def main(cfg: dict) -> None:
                     _write_log_row(log_writer, frame_count, beacon_color, color_conf,
                                    intensity, votes, float(d.confidence), d.bbox_2d,
                                    tracking_id=d.tracking_id,
-                                   pos3d=d.position_3d)
+                                   pos3d=d.position_3d,
+                                   blink_info=blink_info)
 
                 if crops_dir is not None and lit_region.size > 0:
                     fname = (f"crop_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
                              f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}.png")
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
+
+                if det_images_dir is not None:
+                    pad = 20
+                    h_img, w_img = rgb_clean.shape[:2]
+                    ix1 = max(x1 - pad, 0)
+                    iy1 = max(y1 - pad, 0)
+                    ix2 = min(x2 + pad, w_img)
+                    iy2 = min(y2 + pad, h_img)
+                    det_crop = rgb_clean[iy1:iy2, ix1:ix2].copy()
+                    blink_tag = ""
+                    if blink_info.get("is_blinking") is True:
+                        blink_tag = f"_blink{blink_info['blink_hz']:.2f}hz"
+                    elif blink_info.get("is_blinking") is False:
+                        blink_tag = "_steady"
+                    fname = (f"det_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
+                             f"_conf{int(d.confidence*100):02d}{blink_tag}.png")
+                    cv2.imwrite(os.path.join(det_images_dir, fname), det_crop)
 
                 print(f"[beacon] {label_txt}"
                       + (f" pos3d=({d.position_3d[2]:.2f}m)" if d.position_3d is not None else ""))

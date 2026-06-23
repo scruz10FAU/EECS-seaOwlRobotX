@@ -7,6 +7,7 @@
   "save":       false,
   "log":        true,
   "save_crops": false,
+  "save_det_images": true,
   "video":      null,
   "ros_video":  null,
 
