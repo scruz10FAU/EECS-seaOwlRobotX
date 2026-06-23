@@ -1,0 +1,2 @@
+timestamp,frame,color,color_confidence,intensity,vote_red,vote_green,vote_blue,vote_other,det_confidence,x1,y1,x2,y2,tracking_id,pos3d_x,pos3d_y,pos3d_z
+1782240996.219,128,unknown,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.8621,602,308,686,377,-1,,,
