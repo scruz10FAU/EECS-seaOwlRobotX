@@ -1005,7 +1005,7 @@ if __name__ == "__main__":
 
     cfg = load_config(args.config)
     print(f"[beacon] Loaded config: {args.config}")
-
+    
     if cfg["ros_video"] is not None:
         run_video_ros(cfg)
     elif cfg["video"] is not None:
