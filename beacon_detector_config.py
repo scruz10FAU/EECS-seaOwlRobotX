@@ -798,7 +798,7 @@ def main(cfg: dict) -> None:
 
     _import_ros()
 
-    DEBUG_DIR    = os.path.expanduser("~/seabird_dataset/beacon_debug")
+    DEBUG_DIR    = os.path.expanduser("seabird_dataset/beacon_debug")
     SAVE_EVERY_N = 30
     os.makedirs(DEBUG_DIR, exist_ok=True)
 
