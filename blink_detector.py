@@ -7,17 +7,18 @@ Imported by beacon_detector.py.  No ROS or OpenCV dependency.
 
 from collections import deque, Counter
 
-_BLINK_WINDOW_SEC          = 4.0   # rolling window length for blink estimation (seconds)
-_BLINK_MIN_DATA_SEC        = 2.0   # return "unknown" until this many seconds of samples are in the window
+_BLINK_WINDOW_SEC          = 8.0   # rolling window length for blink estimation (seconds)
+_BLINK_MIN_DATA_SEC        = 4.0   # return "unknown" until this many seconds of samples are in the window
 _BLINK_INTENSITY_MIN_SWING = 0.05  # blue beacon: min peak-to-peak intensity swing to qualify as blinking
-_BLINK_HZ_RANGE            = (0.5, 2.0)  # valid blink frequency range — centered on 1 Hz target
+_BLINK_HZ_RANGE            = (0.2, 2.0)  # valid blink frequency range — widened to catch slow beacons
 _BLINK_MIN_EDGES           = 3     # rising edges needed (= 2 complete periods in the window)
 _BLINK_MIN_EDGE_GAP        = 0.20  # debounce: ignore edges closer than this (filters threshold chatter)
-_BLINK_MAX_OFF_SEC         = 1.0   # blue beacon: max consecutive off-state duration; longer = slow drift
-_BLINK_MAX_IOI_SEC         = 2.0   # blue beacon: max IOI (= max period for 0.5 Hz, the lowest valid freq)
-_BLINK_MAX_IOI_SEC_COLOR   = 2.5   # color beacons: extra 0.5 s slack absorbs YOLO detection gaps that can
-                                   # make one IOI appear as ~2 periods (e.g. gap swallows one green cycle)
+_BLINK_MAX_OFF_SEC         = 3.0   # blue beacon: max consecutive off-state duration
+_BLINK_MAX_IOI_SEC         = 5.0   # blue beacon: max IOI (= max period for 0.2 Hz, the lowest valid freq)
+_BLINK_MAX_IOI_SEC_COLOR   = 5.5   # color beacons: extra slack for YOLO detection gaps
 _BLINK_MIN_ON_OFF_GAP      = 0.40  # blue beacon: on/off mean separation must be ≥ 40% of total swing
+_BLINK_COLOR_CONF_MIN      = 0.10  # min color_confidence to count a non-blue reading as signal
+_BLINK_GAP_OFF_SEC         = 0.5   # gap between consecutive detections longer than this = beacon was off
 
 
 class BlinkDetector:
@@ -32,8 +33,13 @@ class BlinkDetector:
     def __init__(self):
         self._samples: deque = deque()  # (timestamp, color, intensity)
 
-    def update(self, ts: float, color: str, intensity: float) -> dict:
-        self._samples.append((ts, color, intensity))
+    def update(self, ts: float, color: str, intensity: float, color_conf: float = 1.0) -> dict:
+        # A gap longer than the threshold means the beacon was off (YOLO couldn't detect it).
+        # Inject a synthetic off-marker so rising-edge detection sees the transition.
+        if self._samples and (ts - self._samples[-1][0]) > _BLINK_GAP_OFF_SEC:
+            off_ts = self._samples[-1][0] + _BLINK_GAP_OFF_SEC / 2
+            self._samples.append((off_ts, "_off_", 0.0, 0.0))
+        self._samples.append((ts, color, intensity, color_conf))
         cutoff = ts - _BLINK_WINDOW_SEC
         while self._samples and self._samples[0][0] < cutoff:
             self._samples.popleft()
@@ -46,6 +52,7 @@ class BlinkDetector:
         timestamps  = [s[0] for s in self._samples]
         colors      = [s[1] for s in self._samples]
         intensities = [s[2] for s in self._samples]
+        color_confs = [s[3] if len(s) > 3 else 1.0 for s in self._samples]
 
         data_span = timestamps[-1] - timestamps[0]
 
@@ -54,50 +61,39 @@ class BlinkDetector:
         if data_span < _BLINK_MIN_DATA_SEC:
             return {"is_blinking": None, "blink_color": "unknown", "blink_hz": None, "phase": "unknown"}
 
-        # Determine signal type from dominant non-blue color in window
-        color_counts = Counter(c for c in colors if c not in ("blue", "unknown"))
+        # Determine signal type from dominant non-blue color in window.
+        # Require minimum color_confidence to avoid red/green noise (e.g. from a
+        # dimming blue beacon) forcing the wrong detection mode.
+        color_counts = Counter(
+            c for c, cc in zip(colors, color_confs)
+            if c not in ("blue", "unknown", "_off_") and cc >= _BLINK_COLOR_CONF_MIN
+        )
         if color_counts:
             blink_color = color_counts.most_common(1)[0][0]
             on_flags = [c == blink_color for c in colors]
         else:
-            # All blue — detect oscillations relative to the window mean.
-            # Requires a minimum peak-to-peak swing so flat/steady signals don't
-            # generate spurious rising edges.
+            # Blue beacon: use detection presence/absence as the on/off signal.
+            # "_off_" markers (injected for detection gaps) and "unknown" frames
+            # are the off state; everything else is on.
             blink_color = "blue"
-            swing = max(intensities) - min(intensities)
-            if swing < _BLINK_INTENSITY_MIN_SWING:
-                phase = "on" if intensities[-1] >= (sum(intensities) / len(intensities)) else "off"
-                return {"is_blinking": False, "blink_color": "blue", "blink_hz": None, "phase": phase}
-            mean_intensity = sum(intensities) / len(intensities)
-            on_flags = [i >= mean_intensity for i in intensities]
+            on_flags = [c not in ("_off_", "unknown") for c in colors]
 
-            # Reject slow intensity drifts that stay below the mean for longer than
-            # the maximum half-period of a valid blink (1 s at the 0.5 Hz floor).
-            # Camera-motion noise produces sustained "off" runs of 1-2 s; true 1 Hz
-            # blinks produce off runs of ~0.5 s.
-            _off_dur, _off_t0 = 0.0, None
-            for _t, _f in zip(timestamps, on_flags):
-                if not _f:
-                    if _off_t0 is None:
-                        _off_t0 = _t
-                    _off_dur = max(_off_dur, _t - _off_t0)
-                else:
-                    _off_t0 = None
-            if _off_dur > _BLINK_MAX_OFF_SEC:
-                return {"is_blinking": False, "blink_color": "blue", "blink_hz": None,
-                        "phase": "on" if on_flags[-1] else "off"}
+            # Fallback intensity check: if all samples are "on" with no off markers,
+            # try oscillation-based detection (steady blue with no gaps).
+            if all(on_flags):
+                live_intensities = [i for c, i in zip(colors, intensities)
+                                    if c not in ("_off_", "unknown")]
+                if not live_intensities:
+                    return {"is_blinking": False, "blink_color": "blue",
+                            "blink_hz": None, "phase": "unknown"}
+                swing = max(live_intensities) - min(live_intensities)
+                if swing < _BLINK_INTENSITY_MIN_SWING:
+                    return {"is_blinking": False, "blink_color": "blue",
+                            "blink_hz": None, "phase": "on"}
+                mean_intensity = sum(live_intensities) / len(live_intensities)
+                on_flags = [i >= mean_intensity if c not in ("_off_", "unknown") else False
+                            for c, i in zip(colors, intensities)]
 
-            # The mean "on" intensity and mean "off" intensity must be well-separated.
-            # If the split at the dynamic mean divides near-constant noise, the on/off
-            # means are almost identical — not a real blink signal.
-            _n_on  = sum(1 for f in on_flags if f)
-            _n_off = sum(1 for f in on_flags if not f)
-            if _n_on and _n_off:
-                _on_mean  = sum(intensities[j] for j, f in enumerate(on_flags) if     f) / _n_on
-                _off_mean = sum(intensities[j] for j, f in enumerate(on_flags) if not f) / _n_off
-                if (_on_mean - _off_mean) < _BLINK_MIN_ON_OFF_GAP * swing:
-                    return {"is_blinking": False, "blink_color": "blue", "blink_hz": None,
-                            "phase": "on" if on_flags[-1] else "off"}
 
         phase = "on" if on_flags[-1] else "off"
 

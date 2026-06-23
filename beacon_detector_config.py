@@ -453,7 +453,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
         blink_info = None
         if blink_detector is not None:
             ts = video_ts if video_ts is not None else time.time()
-            blink_info = blink_detector.update(ts, beacon_color, intensity)
+            blink_info = blink_detector.update(ts, beacon_color, intensity, color_conf)
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), draw_color, 2)
 
@@ -708,7 +708,7 @@ def run_video_ros(cfg: dict) -> None:
                     beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
                     draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
-                    blink_info = blink_detector.update(video_ts, beacon_color, intensity)
+                    blink_info = blink_detector.update(video_ts, beacon_color, intensity, color_conf)
 
                     cv2.rectangle(display_frame, (x1, y1), (x2, y2), draw_color, 2)
 
@@ -882,7 +882,7 @@ def main(cfg: dict) -> None:
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
                 beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
                 blink_info = _get_blink_detector(d.tracking_id).update(
-                    time.time(), beacon_color, intensity
+                    time.time(), beacon_color, intensity, color_conf
                 )
 
                 draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
