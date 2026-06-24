@@ -7,3 +7,7 @@
 | SIM_rgb.pt | Beacon color classification in IsaacSIM with domain randomization | n/a | IsaacSIM images with domain randomization | None |
 | SIM_beacontop.pt | Beacon + top classification in IsaacSIM | n/a | IsaacSIM images with domain randomization | None |
 | SIM_rgb_real-tuned.pt | Sim2real beacon color classification | SIM_rgb.pt | IsaacSIM images with domain randomization + real images | Only on real images |
+| SIM_beacon_only.pt | Beacon-only classification in IsaacSIM | n/a | Same as SIM_beacontop.pt | None |
+| SIM_top_only.pt | Light area of beacon detection | n/a | Same as SIM_beacontop.pt | None |
+
+Note that all the SIM_ models are currently only trained on non-flashing beacon images.
