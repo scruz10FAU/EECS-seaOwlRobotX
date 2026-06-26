@@ -306,22 +306,22 @@ The crop is taken from the clean (un-annotated) frame with 20 px padding on each
 
 ### Target matching (target_color / target_blinking)
 
-Setting `target_color` and/or `target_blinking` adds a `target_match` column to the CSV log. Each row gets `True` if the detection satisfies all non-null criteria, `False` otherwise. Leaving both `null` omits the column entirely (empty string).
+Setting `target_color` and/or `target_blinking` populates three columns in the CSV log: `target_color`, `target_blinking`, and `target_match`. All three are empty strings when both config values are `null`.
 
 | `target_color` | `target_blinking` | `target_match = True` when |
 |---|---|---|
 | `"blue"` | `true` | color is blue AND confirmed blinking |
 | `"blue"` | `null` | color is blue (any blink state) |
 | `null` | `true` | confirmed blinking (any color) |
-| `null` | `null` | *(column left empty)* |
+| `null` | `null` | *(all three columns left empty)* |
 
 `target_blinking: true` requires `is_blinking = True` — rows where blink is still undecided (`None`) count as `False`.
 
 ### CSV log columns (ROS live mode)
 
-`timestamp, frame, color, color_confidence, intensity, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2, tracking_id, pos3d_x, pos3d_y, pos3d_z, blink_is_blinking, blink_hz, blink_phase[, target_match]`
+`timestamp, frame, color, color_confidence, intensity, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2, tracking_id, pos3d_x, pos3d_y, pos3d_z, blink_is_blinking, blink_hz, blink_phase, target_color, target_blinking, target_match`
 
-`target_match` is only present when at least one of `target_color` / `target_blinking` is set. Log files are written to `~/seabird_dataset/beacon_debug/beacon_log_<YYYYMMDD_HHMMSS>.csv` and flushed after every row.
+`target_color`, `target_blinking`, and `target_match` are empty strings when neither is configured. Log files are written to `~/seabird_dataset/beacon_debug/beacon_log_<YYYYMMDD_HHMMSS>.csv` and flushed after every row.
 
 ### How topic and intrinsic overrides work
 

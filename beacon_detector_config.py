@@ -381,7 +381,7 @@ _LOG_HEADER = [
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
     "pos3d_x", "pos3d_y", "pos3d_z",
     "blink_is_blinking", "blink_hz", "blink_phase",
-    "target_match",
+    "target_color", "target_blinking", "target_match",
 ]
 
 
@@ -407,9 +407,11 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
     blink_hz    = f"{bi['blink_hz']:.3f}" if bi.get("blink_hz") is not None else ""
     blink_phase = bi.get("phase", "")
     if target_color is None and target_blinking is None:
-        target_match = ""
+        tc_col = tb_col = target_match = ""
     else:
-        color_ok   = target_color    is None or color == target_color
+        tc_col = target_color   if target_color   is not None else ""
+        tb_col = str(target_blinking) if target_blinking is not None else ""
+        color_ok    = target_color    is None or color == target_color
         blinking_ok = target_blinking is None or bi.get("is_blinking") == target_blinking
         target_match = str(color_ok and blinking_ok)
     log_writer.writerow([
@@ -420,7 +422,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         f"{det_conf:.4f}", x1, y1, x2, y2, tracking_id,
         px, py, pz,
         blink_blinking, blink_hz, blink_phase,
-        target_match,
+        tc_col, tb_col, target_match,
     ])
 
 
