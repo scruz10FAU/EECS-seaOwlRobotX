@@ -74,14 +74,35 @@ python3 beacon_detector.py -v footage.mp4           # video file, no ROS
 | `--save / -s` | off | Write annotated output video (video modes) |
 | `--log / -l` | off | Write per-frame CSV log |
 | `--save-crops / -sc` | off | Save each beacon bounding-box crop as a PNG for post-run analysis |
+| `--save-det-images / -sdi` | off | Save each detection as a padded image with color and blink status in the filename |
+| `--target-color / -tc` | `None` | Expected beacon color (e.g. `blue`). Adds `target_color` and `target_match` columns to the CSV log. |
+| `--target-blinking / -tb` | `None` | Expected blink state (`true` or `false`). Adds `target_blinking` and `target_match` columns to the CSV log. |
 
 ### Crop output (--save-crops)
 
 When `--save-crops` is set, the raw bounding-box crop passed to the color classifier is written to disk for every detection. Files are named `crop_f{frame:06d}_d{det_idx:02d}_{color}.png` and saved in a directory alongside the input video: `<video_stem>_beacon_crops/`. In ROS live mode the directory is `~/seabird_dataset/beacon_debug/beacon_crops/` and filenames use the YOLO tracking ID instead of a per-frame detection index (`_t{tracking_id:02d}_`).
 
+### Detection image output (--save-det-images)
+
+When `--save-det-images` is set, a padded crop of each detection is saved to `<video_stem>_beacon_det_images/` (video modes) or `~/seabird_dataset/beacon_debug/det_images/` (ROS live mode). Filenames encode the detected color and blink status: `det_f{frame:06d}_d{det_idx:02d}_{color}_conf{conf:02d}[_blink{hz:.2f}hz|_steady].png`. In ROS live mode the detection index is replaced with the YOLO tracking ID (`_t{tracking_id:02d}_`).
+
+### Target matching (--target-color / --target-blinking)
+
+Setting either flag adds three columns to the CSV log: `target_color`, `target_blinking`, and `target_match`. `target_match` is `True` when all non-null criteria are satisfied, `False` otherwise. All three columns are empty strings when neither flag is set.
+
+| `--target-color` | `--target-blinking` | `target_match = True` when |
+|---|---|---|
+| `blue` | `true` | color is blue AND confirmed blinking |
+| `blue` | *(omitted)* | color is blue (any blink state) |
+| *(omitted)* | `true` | confirmed blinking (any color) |
+
+`--target-blinking true` requires `is_blinking = True` — rows where blink is still undecided count as `False`.
+
 ### CSV log columns
 
-`timestamp, frame, color, color_confidence, intensity, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2, tracking_id, pos3d_x, pos3d_y, pos3d_z, blink_is_blinking, blink_hz, blink_phase`
+`timestamp, frame, color, color_confidence, intensity, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2, tracking_id, pos3d_x, pos3d_y, pos3d_z, blink_is_blinking, blink_hz, blink_phase, target_color, target_blinking, target_match`
+
+`target_color`, `target_blinking`, and `target_match` are empty strings when neither `--target-color` nor `--target-blinking` is set.
 
 ### ROS topics (live and ROS-video modes)
 

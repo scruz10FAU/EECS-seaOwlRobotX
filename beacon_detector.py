@@ -226,6 +226,8 @@ _LOG_HEADER = [
     "vote_red", "vote_green", "vote_blue", "vote_other",
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
     "pos3d_x", "pos3d_y", "pos3d_z",
+    "blink_is_blinking", "blink_hz", "blink_phase",
+    "target_color", "target_blinking", "target_match",
 ]
 
 
@@ -241,11 +243,24 @@ def _open_log(path: str):
 def _write_log_row(log_writer, frame_idx: int, color: str,
                    color_conf: float, intensity: float, votes: dict,
                    det_conf: float, bbox, tracking_id: int = -1,
-                   pos3d=None) -> None:
+                   pos3d=None, blink_info: dict = None,
+                   target_color=None, target_blinking=None) -> None:
     x1, y1, x2, y2 = bbox
     px = py = pz = ""
     if pos3d is not None:
         px, py, pz = f"{pos3d[0]:.4f}", f"{pos3d[1]:.4f}", f"{pos3d[2]:.4f}"
+    bi = blink_info or {}
+    blink_blinking = "" if bi.get("is_blinking") is None else str(bi.get("is_blinking"))
+    blink_hz    = f"{bi['blink_hz']:.3f}" if bi.get("blink_hz") is not None else ""
+    blink_phase = bi.get("phase", "")
+    if target_color is None and target_blinking is None:
+        tc_col = tb_col = target_match = ""
+    else:
+        tc_col = target_color if target_color is not None else ""
+        tb_col = str(target_blinking) if target_blinking is not None else ""
+        color_ok    = target_color    is None or color == target_color
+        blinking_ok = target_blinking is None or bi.get("is_blinking") == target_blinking
+        target_match = str(color_ok and blinking_ok)
     log_writer.writerow([
         f"{time.time():.3f}", frame_idx,
         color, f"{color_conf:.4f}", f"{intensity:.4f}",
@@ -253,6 +268,8 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         f"{votes.get('blue',0):.4f}", f"{votes.get('other',0):.4f}",
         f"{det_conf:.4f}", x1, y1, x2, y2, tracking_id,
         px, py, pz,
+        blink_blinking, blink_hz, blink_phase,
+        tc_col, tb_col, target_match,
     ])
 
 
@@ -283,7 +300,9 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                     log_writer=None, frame_idx: int = 0,
                     blink_detector: BlinkDetector = None,
                     video_ts: float = None,
-                    save_crops_dir: str = None) -> np.ndarray:
+                    save_crops_dir: str = None,
+                    save_det_images_dir: str = None,
+                    target_color=None, target_blinking=None) -> np.ndarray:
     """Draw detections + color classification on a single BGR frame."""
     clean = frame.copy()  # unmodified source for crops — keeps drawn annotations out of saved images
     for det_idx, box in enumerate(boxes):
@@ -303,7 +322,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
         blink_info = None
         if blink_detector is not None:
             ts = video_ts if video_ts is not None else time.time()
-            blink_info = blink_detector.update(ts, beacon_color, intensity)
+            blink_info = blink_detector.update(ts, beacon_color, intensity, color_conf)
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), draw_color, 2)
 
@@ -327,9 +346,27 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
 
         print(f"  {txt}  bbox=({x1},{y1},{x2},{y2})")
 
+        if save_det_images_dir is not None:
+            pad = 20
+            h_img, w_img = clean.shape[:2]
+            ix1 = max(x1 - pad, 0); iy1 = max(y1 - pad, 0)
+            ix2 = min(x2 + pad, w_img); iy2 = min(y2 + pad, h_img)
+            det_crop = clean[iy1:iy2, ix1:ix2].copy()
+            bi = blink_info or {}
+            blink_tag = ""
+            if bi.get("is_blinking") is True:
+                blink_tag = f"_blink{bi['blink_hz']:.2f}hz"
+            elif bi.get("is_blinking") is False:
+                blink_tag = "_steady"
+            fname = (f"det_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                     f"_conf{int(conf*100):02d}{blink_tag}.png")
+            cv2.imwrite(os.path.join(save_det_images_dir, fname), det_crop)
+
         if log_writer is not None:
             _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
-                           intensity, votes, conf, (x1, y1, x2, y2))
+                           intensity, votes, conf, (x1, y1, x2, y2),
+                           blink_info=blink_info,
+                           target_color=target_color, target_blinking=target_blinking)
 
     return frame
 
@@ -340,7 +377,9 @@ def run_video(video_path: str,
               save_output: bool = False,
               conf: float = 0.5,
               log: bool = False,
-              save_crops: bool = False) -> None:
+              save_crops: bool = False,
+              save_det_images: bool = False,
+              target_color=None, target_blinking=None) -> None:
     """
     Run beacon detection + color classification on a local video file.
     No ROS required — uses ultralytics.YOLO directly.
@@ -396,6 +435,12 @@ def run_video(video_path: str,
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon-video] Saving crops → {crops_dir}/")
 
+    det_images_dir = None
+    if save_det_images:
+        det_images_dir = os.path.splitext(video_path)[0] + "_beacon_det_images"
+        os.makedirs(det_images_dir, exist_ok=True)
+        print(f"[beacon-video] Saving detection images → {det_images_dir}/")
+
     blink_detector = BlinkDetector()
     frame_idx     = 0
     paused        = False
@@ -423,7 +468,10 @@ def run_video(video_path: str,
                                                 log_writer=log_writer, frame_idx=frame_idx,
                                                 blink_detector=blink_detector,
                                                 video_ts=video_ts,
-                                                save_crops_dir=crops_dir)
+                                                save_crops_dir=crops_dir,
+                                                save_det_images_dir=det_images_dir,
+                                                target_color=target_color,
+                                                target_blinking=target_blinking)
 
                 if writer:
                     writer.write(display_frame)
@@ -457,7 +505,9 @@ def run_video_ros(video_path: str,
                   conf: float = 0.5,
                   log: bool = False,
                   display: bool = False,
-                  save_crops: bool = False) -> None:
+                  save_crops: bool = False,
+                  save_det_images: bool = False,
+                  target_color=None, target_blinking=None) -> None:
     """
     Read frames from a local video file and publish detections to ROS.
 
@@ -520,6 +570,12 @@ def run_video_ros(video_path: str,
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon-ros-video] Saving crops → {crops_dir}/")
 
+    det_images_dir = None
+    if save_det_images:
+        det_images_dir = os.path.splitext(video_path)[0] + "_beacon_det_images"
+        os.makedirs(det_images_dir, exist_ok=True)
+        print(f"[beacon-ros-video] Saving detection images → {det_images_dir}/")
+
     blink_detector = BlinkDetector()
     rclpy.init()
     cam        = BeaconCamera()
@@ -574,7 +630,7 @@ def run_video_ros(video_path: str,
                         cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
                     draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
-                    blink_info = blink_detector.update(video_ts, beacon_color, intensity)
+                    blink_info = blink_detector.update(video_ts, beacon_color, intensity, color_conf)
 
                     cv2.rectangle(display_frame, (x1, y1), (x2, y2), draw_color, 2)
 
@@ -597,6 +653,21 @@ def run_video_ros(video_path: str,
                     cv2.putText(display_frame, label_txt, (x1, max(y1 - 6, 10)),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, draw_color, 1)
 
+                    if det_images_dir is not None:
+                        pad = 20
+                        h_img, w_img = raw.shape[:2]
+                        ix1 = max(x1 - pad, 0); iy1 = max(y1 - pad, 0)
+                        ix2 = min(x2 + pad, w_img); iy2 = min(y2 + pad, h_img)
+                        det_crop = raw[iy1:iy2, ix1:ix2].copy()
+                        blink_tag = ""
+                        if blink_info.get("is_blinking") is True:
+                            blink_tag = f"_blink{blink_info['blink_hz']:.2f}hz"
+                        elif blink_info.get("is_blinking") is False:
+                            blink_tag = "_steady"
+                        fname = (f"det_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                                 f"_conf{int(det_conf*100):02d}{blink_tag}.png")
+                        cv2.imwrite(os.path.join(det_images_dir, fname), det_crop)
+
                     # Publish to ROS
                     msg = String()
                     msg.data = json.dumps({
@@ -607,7 +678,7 @@ def run_video_ros(video_path: str,
                         "intensity":        intensity,
                         "hue_votes":        votes,
                         "confidence":       det_conf,
-                        "bbox":             [x1, y1, x2, y2],
+                        "bbox":             [int(x1), int(y1), int(x2), int(y2)],
                         "position_3d":      None,
                         "world_position":   None,
                         "gps_position":     None,
@@ -620,7 +691,9 @@ def run_video_ros(video_path: str,
 
                     if log_writer is not None:
                         _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
-                                       intensity, votes, det_conf, (x1, y1, x2, y2))
+                                       intensity, votes, det_conf, (x1, y1, x2, y2),
+                                       blink_info=blink_info,
+                                       target_color=target_color, target_blinking=target_blinking)
 
                 if writer:
                     writer.write(display_frame)
@@ -656,7 +729,9 @@ def main(model: str = "models/one_beacon.pt",
          true_distance: float = 0.4826,
          crop_model_path: str = "models/best_crop.pt",
          log: bool = False,
-         save_crops: bool = False) -> None:
+         save_crops: bool = False,
+         save_det_images: bool = False,
+         target_color=None, target_blinking=None) -> None:
 
     _import_ros()   # pull in ROS2 / camera_interface / seabird_config
 
@@ -712,6 +787,12 @@ def main(model: str = "models/one_beacon.pt",
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon] Saving crops → {crops_dir}/")
 
+    det_images_dir = None
+    if save_det_images:
+        det_images_dir = os.path.join(DEBUG_DIR, "det_images")
+        os.makedirs(det_images_dir, exist_ok=True)
+        print(f"[beacon] Saving detection images → {det_images_dir}/")
+
     frame_count       = 0
     intrinsics_printed = False
 
@@ -747,7 +828,7 @@ def main(model: str = "models/one_beacon.pt",
                     fname = f"crop_f{frame_count:06d}_id{d.tracking_id}_{beacon_color}.png"
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
                 blink_info = _get_blink_detector(d.tracking_id).update(
-                    time.time(), beacon_color, intensity
+                    time.time(), beacon_color, intensity, color_conf
                 )
                 # ─────────────────────────────────────────────────────────────
 
@@ -794,6 +875,21 @@ def main(model: str = "models/one_beacon.pt",
                         cv2.FONT_HERSHEY_SIMPLEX, 0.35, draw_color, 1,
                     )
 
+                if det_images_dir is not None:
+                    pad = 20
+                    h_img, w_img = rgb_clean.shape[:2]
+                    ix1 = max(x1 - pad, 0); iy1 = max(y1 - pad, 0)
+                    ix2 = min(x2 + pad, w_img); iy2 = min(y2 + pad, h_img)
+                    det_crop = rgb_clean[iy1:iy2, ix1:ix2].copy()
+                    blink_tag = ""
+                    if blink_info.get("is_blinking") is True:
+                        blink_tag = f"_blink{blink_info['blink_hz']:.2f}hz"
+                    elif blink_info.get("is_blinking") is False:
+                        blink_tag = "_steady"
+                    fname = (f"det_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
+                             f"_conf{int(d.confidence*100):02d}{blink_tag}.png")
+                    cv2.imwrite(os.path.join(det_images_dir, fname), det_crop)
+
                 # ── Publish ──────────────────────────────────────────────────
                 msg = String()
                 msg.data = json.dumps({
@@ -804,12 +900,12 @@ def main(model: str = "models/one_beacon.pt",
                     "intensity":        intensity,
                     "hue_votes":        votes,
                     "confidence":       float(d.confidence),
-                    "bbox":           list(d.bbox_2d),
+                    "bbox":           [int(v) for v in d.bbox_2d],
                     "position_3d":    d.position_3d.tolist() if d.position_3d is not None else None,
                     "world_position": world_pos.tolist()     if world_pos     is not None else None,
                     "gps_position":   gps_coords,
                     "drone_position": drone_pos.tolist()     if drone_pos     is not None else None,
-                    "tracking_id":    d.tracking_id,
+                    "tracking_id":    int(d.tracking_id),
                     "timestamp":      time.time(),
                 })
                 cam.detection_pub.publish(msg)
@@ -818,7 +914,9 @@ def main(model: str = "models/one_beacon.pt",
                     _write_log_row(log_writer, frame_count, beacon_color, color_conf,
                                    intensity, votes, float(d.confidence), d.bbox_2d,
                                    tracking_id=d.tracking_id,
-                                   pos3d=d.position_3d)
+                                   pos3d=d.position_3d,
+                                   blink_info=blink_info,
+                                   target_color=target_color, target_blinking=target_blinking)
 
                 print(f"[beacon] {label_txt}"
                       + (f" pos3d=({d.position_3d[2]:.2f}m)" if d.position_3d is not None else ""))
@@ -906,16 +1004,45 @@ if __name__ == "__main__":
         action="store_true",
         help="Save each beacon bounding-box crop as a PNG for post-run analysis",
     )
+    parser.add_argument(
+        "--save-det-images", "-sdi",
+        action="store_true",
+        help="Save each detection as a padded image with color and blink status in the filename",
+    )
+    parser.add_argument(
+        "--target-color", "-tc",
+        default=None,
+        type=str,
+        metavar="COLOR",
+        help="Expected beacon color (e.g. 'blue'). Adds target_color/target_match columns to CSV log.",
+    )
+    parser.add_argument(
+        "--target-blinking", "-tb",
+        default=None,
+        choices=["true", "false"],
+        metavar="true|false",
+        help="Expected blink state ('true' = blinking, 'false' = steady). Adds target_blinking/target_match columns to CSV log.",
+    )
     args = parser.parse_args()
+
+    target_blinking = None
+    if args.target_blinking is not None:
+        target_blinking = args.target_blinking.lower() == "true"
 
     if args.ros_video is not None:
         run_video_ros(args.ros_video, model_path=args.model, crop_model_path=args.crop_model,
                       save_output=args.save, conf=args.conf, log=args.log,
-                      display=args.display, save_crops=args.save_crops)
+                      display=args.display, save_crops=args.save_crops,
+                      save_det_images=args.save_det_images,
+                      target_color=args.target_color, target_blinking=target_blinking)
     elif args.video is not None:
         run_video(args.video, model_path=args.model, crop_model_path=args.crop_model,
                   save_output=args.save, conf=args.conf, log=args.log,
-                  save_crops=args.save_crops)
+                  save_crops=args.save_crops,
+                  save_det_images=args.save_det_images,
+                  target_color=args.target_color, target_blinking=target_blinking)
     else:
         main(args.model, args.display, args.true_dist, crop_model_path=args.crop_model,
-             log=args.log, save_crops=args.save_crops)
+             log=args.log, save_crops=args.save_crops,
+             save_det_images=args.save_det_images,
+             target_color=args.target_color, target_blinking=target_blinking)
