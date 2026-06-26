@@ -7,6 +7,9 @@
   "save":       false,
   "log":        true,
   "save_crops": false,
+  "save_det_images": true,
+  "target_color":    null,
+  "target_blinking": true,
   "video":      null,
   "ros_video":  null,
 

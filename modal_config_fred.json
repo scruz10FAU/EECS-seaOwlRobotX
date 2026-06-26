@@ -1,0 +1,82 @@
+{
+  "model":      "models/one_beacon.pt",
+  "crop_model": "models/best_crop.pt",
+  "conf":       0.5,
+  "display":    false,
+  "true_dist":  0.4826,
+  "save":       false,
+  "log":        true,
+  "save_crops": false,
+  "save_det_images": true,
+  "target_color":    "red",
+  "target_blinking": false,
+  "video":      null,
+  "ros_video":  null,
+
+  "topics": {
+    "camera_prefix":  "/hires_front_small_color",
+    "image":          "/hires_front_small_color",
+    "camera_info":    "/hires_front_small_color/camera_info",
+    "depth":          "/tof_depth",
+    "drone_pose":     "/vvhub_body_wrt_local/pose",
+    "gps_origin":     "/fmu/out/vehicle_gps_position",
+    "detections_pub": "/seabird/beacon_detections"
+  },
+
+  "paths": {
+    "scripts_dir": "~/seabird/scripts",
+    "dataset_dir": "~/seabird_dataset",
+    "logs_dir":    "~/seabird/logs",
+    "px4_dir":     "~/seabird/PX4-Autopilot",
+    "assets_dir":  "~/seabird/assets"
+  },
+
+  "isaac": {
+    "drone_prim_path":  "/World/Iris",
+    "drone_body_path":  "/World/Iris/body",
+    "camera_prim_path": "/hires_front_small_color"
+  },
+
+  "camera": {
+    "focal_length_mm":  2.1,
+    "h_aperture_mm":    6.0,
+    "v_aperture_mm":    4.5,
+    "clipping_near":    0.1,
+    "clipping_far":   200.0,
+    "img_w":           640,
+    "img_h":           480,
+    "mount_offset_xyz": [0.30, 0.0, 0.05],
+    "pitch_deg":        15.0
+  },
+
+  "buoys": {
+    "radius_m": 0.2286,
+    "classes": {
+      "red_buoy":   0,
+      "green_buoy": 1,
+      "blue_buoy":  2
+    },
+    "positions": {
+      "red_buoy":   [ 3.079, -13.458,  0.150],
+      "green_buoy": [-3.284, -14.000,  0.000],
+      "blue_buoy":  [ 0.000, -15.299,  0.000]
+    }
+  },
+
+  "drone_spawn": {
+    "position":  [0.0, -8.0, 2.5],
+    "quat_wxyz": [0.707, 0.0, 0.0, -0.707]
+  },
+
+  "px4": {
+    "connection_type": "tcpin",
+    "takeoff_alt_m":   1.25
+  },
+
+  "labeler": {
+    "save_every_n": 10,
+    "max_frames":   2000,
+    "debug_mode":   true,
+    "min_bbox_px":  6
+  }
+}

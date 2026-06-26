@@ -1,2 +1,3 @@
-timestamp,frame,color,color_confidence,intensity,vote_red,vote_green,vote_blue,vote_other,det_confidence,x1,y1,x2,y2,tracking_id,pos3d_x,pos3d_y,pos3d_z
-1782240996.219,128,unknown,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.8621,602,308,686,377,-1,,,
+version https://git-lfs.github.com/spec/v1
+oid sha256:f77f1baf375ff6d577bec061c0e4a9f4526bee126241ec8a3d9951dcdbbd93ab
+size 253

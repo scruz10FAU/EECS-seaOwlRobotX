@@ -9,10 +9,16 @@ Detection pipeline for colored, optionally blinking, beacon lights mounted on a 
 | File | Role |
 |---|---|
 | `beacon_detector.py` | Entry point. Color classification pipeline, video and ROS live modes. |
+<<<<<<< HEAD
 | `beacon_detector_config.py` | JSON-configured version of `beacon_detector.py`. Loads all arguments and ROS topic names from `beacon_config.json` instead of command-line flags. |
 | `beacon_config.json` | Default configuration file for `beacon_detector_config.py`. Controls model paths, thresholds, run mode, and ROS topic overrides. |
 | `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
 | `beacon_camera.py` | `BeaconCamera` ROS2 node — ZED camera subscriptions and pose/GPS callbacks. |
+| `beacon_detector_config.py` | JSON-configured version of `beacon_detector.py`. Loads all arguments and ROS topic names from a JSON config file instead of command-line flags. |
+| `beacon_config.json` | Default configuration file for `beacon_detector_config.py`. Controls model paths, thresholds, run mode, and ROS topic overrides. |
+| `modal_config.json` | Config for Modal AI VOXL hardware. Overrides camera/depth topics, drone pose, and GPS topics for that platform. |
+| `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
+| `beacon_camera.py` | `BeaconCamera` ROS2 node — camera image subscriptions, depth decoding, and pose/GPS callbacks. |
 | `batch_detect.py` | Headless batch processor — runs detection over multiple video files and writes a CSV + summary. |
 
 ---
@@ -75,7 +81,7 @@ When `--save-crops` is set, the raw bounding-box crop passed to the color classi
 
 ### CSV log columns
 
-`timestamp, frame, color, color_confidence, intensity, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2, tracking_id, pos3d_x, pos3d_y, pos3d_z`
+`timestamp, frame, color, color_confidence, intensity, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2, tracking_id, pos3d_x, pos3d_y, pos3d_z, blink_is_blinking, blink_hz, blink_phase`
 
 ### ROS topics (live and ROS-video modes)
 
@@ -143,6 +149,9 @@ The config fully replaces `seabird_config.py` — `beacon_detector_config.py` do
 | `save` | bool | `false` | Write annotated output video alongside input (video modes) |
 | `log` | bool | `false` | Write per-frame CSV detection log |
 | `save_crops` | bool | `false` | Save each beacon bounding-box crop as a PNG for post-run color classification analysis |
+| `save_det_images` | bool | `false` | Save a padded bbox crop for every detection, with color and blink status in the filename (ROS live mode only) |
+| `target_color` | string \| null | `null` | Expected beacon color (`"red"`, `"green"`, `"blue"`, etc.). When set, a `target_match` column is added to the CSV log. |
+| `target_blinking` | bool \| null | `null` | Expected blink state (`true` = blinking, `false` = steady). Combined with `target_color` for the `target_match` column. |
 | `video` | string \| null | `null` | Path to video file for video-only mode |
 | `ros_video` | string \| null | `null` | Path to video file for video+ROS mode. Takes priority over `video`. |
 | `topics` | object | see below | ROS topic name overrides |
@@ -162,6 +171,15 @@ The config fully replaces `seabird_config.py` — `beacon_detector_config.py` do
 | `drone_pose` | `"/mavros/local_position/pose"` | Drone local position + orientation |
 | `gps_origin` | `"/mavros/global_position/gp_origin"` | GPS reference origin for ENU→GPS conversion |
 | `detections_pub` | `"/seabird/beacon_detections"` | Topic detections are published to |
+| `camera_prefix` | `"/zed/zed_node"` | Prefix used to derive `image`, `camera_info`, and `depth` if those keys are absent |
+| `image` | `"{prefix}/rgb/color/rect/image"` | Full topic path for the RGB image stream |
+| `camera_info` | `"{prefix}/rgb/color/rect/camera_info"` | Full topic path for camera info (optional — intrinsics are set from the `camera` block) |
+| `depth` | `"{prefix}/depth/depth_registered"` | Full topic path for the depth image |
+| `drone_pose` | `"/mavros/local_position/pose"` | Drone local position + orientation (`PoseStamped`) |
+| `gps_origin` | `"/mavros/global_position/gp_origin"` | GPS reference origin for ENU→GPS conversion (`GeoPointStamped`) |
+| `detections_pub` | `"/seabird/beacon_detections"` | Topic detections are published to |
+
+If `image`, `camera_info`, or `depth` are omitted from the config, they are derived automatically from `camera_prefix` using the ZED path convention. Set them explicitly when the camera driver does not follow that convention (e.g. `modal_config.json` sets `"image": "/hires_front_small_color"` and `"depth": "/tof_depth"`).
 
 **`camera` object**
 
@@ -272,6 +290,42 @@ Matches the ZED 2i wide-lens parameters used in `seabird_config.py`. `fx`, `fy`,
 ### How topic and intrinsic overrides work
 
 `BeaconCamera` normally reads topic names from module-level constants in `beacon_camera.py` and reads intrinsics (`FX`, `FY`, `CX`, `CY`, `IMG_W`, `IMG_H`) from `seabird_config.py`. `beacon_detector_config.py` creates a subclass of `BeaconCamera` at runtime via `_make_beacon_camera(topics, cfg_camera)`, capturing all config values by closure and overriding both the topic subscriptions and `_on_camera_info`. Neither `beacon_camera.py` nor `seabird_config.py` is modified.
+### Detection image output (save_det_images)
+
+When `save_det_images` is `true`, a padded bounding-box crop is saved for every detection in ROS live mode. Images are written to `~/seabird_dataset/beacon_debug/beacon_det_images/` with filenames that encode the detection result:
+
+```
+det_f000030_t01_blue_conf65_blink0.25hz.png   ← blinking confirmed
+det_f000031_t01_blue_conf72_steady.png         ← confirmed not blinking
+det_f000032_t01_blue_conf58.png                ← blink status still deciding
+```
+
+Fields: `det_f{frame}_t{tracking_id}_{color}_conf{det_conf%}[_blink{hz}hz|_steady]`
+
+The crop is taken from the clean (un-annotated) frame with 20 px padding on each side.
+
+### Target matching (target_color / target_blinking)
+
+Setting `target_color` and/or `target_blinking` adds a `target_match` column to the CSV log. Each row gets `True` if the detection satisfies all non-null criteria, `False` otherwise. Leaving both `null` omits the column entirely (empty string).
+
+| `target_color` | `target_blinking` | `target_match = True` when |
+|---|---|---|
+| `"blue"` | `true` | color is blue AND confirmed blinking |
+| `"blue"` | `null` | color is blue (any blink state) |
+| `null` | `true` | confirmed blinking (any color) |
+| `null` | `null` | *(column left empty)* |
+
+`target_blinking: true` requires `is_blinking = True` — rows where blink is still undecided (`None`) count as `False`.
+
+### CSV log columns (ROS live mode)
+
+`timestamp, frame, color, color_confidence, intensity, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2, tracking_id, pos3d_x, pos3d_y, pos3d_z, blink_is_blinking, blink_hz, blink_phase[, target_match]`
+
+`target_match` is only present when at least one of `target_color` / `target_blinking` is set. Log files are written to `~/seabird_dataset/beacon_debug/beacon_log_<YYYYMMDD_HHMMSS>.csv` and flushed after every row.
+
+### How topic and intrinsic overrides work
+
+`BeaconCamera` normally reads topic names from module-level constants in `beacon_camera.py` and reads intrinsics (`FX`, `FY`, `CX`, `CY`, `IMG_W`, `IMG_H`) from `seabird_config.py`. `beacon_detector_config.py` creates a subclass of `BeaconCamera` at runtime via `_make_beacon_camera(topics, cfg_camera)`, capturing all config values by closure and overriding the topic subscriptions. Camera intrinsics are applied immediately when `open()` is called — no `camera_info` message is required. Neither `beacon_camera.py` nor `seabird_config.py` is modified.
 
 ---
 
@@ -281,6 +335,7 @@ Standalone module — no ROS or OpenCV dependency. Imported directly by `beacon_
 
 ### BlinkDetector
 
+<<<<<<< HEAD
 Maintains a 4-second rolling window of `(timestamp, color, intensity)` samples and estimates whether the beacon is blinking and at what frequency.
 
 ```python
@@ -291,6 +346,18 @@ result = detector.update(ts, color, intensity)
 
 `is_blinking` has three states:
 - `None` — not enough data yet (window < 2 s)
+Maintains an 8-second rolling window of `(timestamp, color, intensity, color_conf)` samples and estimates whether the beacon is blinking and at what frequency.
+
+```python
+detector = BlinkDetector()
+result = detector.update(ts, color, intensity, color_conf)
+# result: {"is_blinking": True|False|None, "blink_color": str, "blink_hz": float|None, "phase": "on"|"off"|"unknown"}
+```
+
+`color_conf` is the `color_confidence` value from `classify_beacon_color`. It is used to filter out low-confidence non-blue readings (e.g. a dimming blue beacon misclassified as red) that would otherwise force the detector into the wrong color mode.
+
+`is_blinking` has three states:
+- `None` — not enough data yet (window < 4 s)
 - `False` — confirmed not blinking
 - `True` — confirmed blinking at `blink_hz` Hz
 
@@ -299,6 +366,9 @@ result = detector.update(ts, color, intensity)
 **Red / Green beacons:** A rising edge is a transition from `blue` (beacon off, housing visible) to the signal color (beacon on). Edge timing gives the blink period.
 
 **Blue beacons:** Edges are detected from intensity oscillations relative to the window mean. Requires a minimum peak-to-peak intensity swing (`_BLINK_INTENSITY_MIN_SWING = 0.05`) to rule out ambient noise.
+**Red / Green beacons:** A rising edge is a transition from `blue` (beacon off, housing visible) to the signal color (beacon on). Only non-blue readings with `color_conf ≥ 0.10` are counted when selecting the dominant signal color — this prevents low-confidence noise from a dimming blue beacon triggering the wrong detection path.
+
+**Blue beacons:** On/off state is determined from detection presence and absence rather than intensity oscillations. When the beacon turns off, YOLO stops detecting it entirely; the resulting gap in the sample stream is the primary blink signal. A synthetic `_off_` marker is injected whenever two consecutive samples are more than `_BLINK_GAP_OFF_SEC` (0.5 s) apart, making the off period visible to the rising-edge detector. `unknown` samples (YOLO detected but color classification failed) are also treated as off. If no gaps or unknowns appear in the window, the detector falls back to intensity oscillation detection.
 
 Guards applied before declaring `True`:
 
@@ -310,6 +380,10 @@ Guards applied before declaring `True`:
 | Max inter-onset interval (2.0 s blue / 2.5 s color) | Rejects windows where a YOLO detection gap swallows a full cycle |
 | Max consecutive off duration (1.0 s, blue only) | Rejects slow intensity drifts |
 | On/off mean separation (blue only) | Ensures the signal has real amplitude, not noise around the mean |
+| Minimum data span (4 s) | Avoids decisions on too little history |
+| Minimum rising edges (3 for blue, 2 for red/green) | Requires at least one complete blink cycle |
+| Duty-cycle check (non-blue, 2-edge case) | Rejects solid beacons whose color-classification noise produces exactly 2 spurious edges while `on_fraction > 65%` |
+| Max inter-onset interval (5.0 s blue / 5.5 s color) | Rejects windows where a YOLO detection gap swallows a full cycle |
 
 ### Key constants
 
@@ -321,6 +395,14 @@ Guards applied before declaring `True`:
 | `_BLINK_MIN_EDGE_GAP` | 0.20 s | Debounce: minimum gap between rising edges |
 | `_BLINK_MAX_IOI_SEC` | 2.0 s | Max inter-onset interval for blue beacons |
 | `_BLINK_MAX_IOI_SEC_COLOR` | 2.5 s | Max inter-onset interval for red/green (absorbs YOLO detection gaps) |
+| `_BLINK_WINDOW_SEC` | 8.0 s | Rolling window length |
+| `_BLINK_MIN_DATA_SEC` | 4.0 s | Minimum history before deciding |
+| `_BLINK_HZ_RANGE` | 0.2–2.0 Hz | Valid blink frequency range |
+| `_BLINK_MIN_EDGE_GAP` | 0.20 s | Debounce: minimum gap between rising edges |
+| `_BLINK_GAP_OFF_SEC` | 0.5 s | Detection gap longer than this injects an off marker |
+| `_BLINK_COLOR_CONF_MIN` | 0.10 | Minimum `color_conf` for a non-blue reading to count as signal |
+| `_BLINK_MAX_IOI_SEC` | 5.0 s | Max inter-onset interval for blue beacons |
+| `_BLINK_MAX_IOI_SEC_COLOR` | 5.5 s | Max inter-onset interval for red/green (absorbs YOLO detection gaps) |
 
 ### Helper
 
@@ -335,6 +417,7 @@ Returns the `BlinkDetector` for a given YOLO tracking ID, creating one on first 
 ## beacon_camera.py
 
 ROS2 node that wraps ZED camera subscriptions, depth synchronization, drone pose, and GPS origin. Imported by `beacon_detector.py` inside `_import_ros()` so ROS packages are never loaded unless ROS mode is actually invoked.
+ROS2 node that wraps camera subscriptions, depth synchronization, drone pose, and GPS origin. Imported by `beacon_detector.py` inside `_import_ros()` so ROS packages are never loaded unless ROS mode is actually invoked.
 
 ### BeaconCamera(Node)
 
@@ -374,6 +457,29 @@ cam = BeaconCamera(topic_prefix="/zed/zed_node")
 
 RGB and depth frames are synchronized with `message_filters.ApproximateTimeSynchronizer` (50 ms slop).
 
+=======
+| `image` topic | `sensor_msgs/Image` | RGB frames (synced with depth) |
+| `depth` topic | `sensor_msgs/Image` | Depth map — any encoding (see below) |
+| `drone_pose` topic | `geometry_msgs/PoseStamped` | Drone ENU position + quaternion |
+| `gps_origin` topic | `geographic_msgs/GeoPointStamped` | GPS reference origin |
+
+Topic names come from the config file (see [How topic and intrinsic overrides work](#how-topic-and-intrinsic-overrides-work)). The `camera_info` subscription is not required — intrinsics are set from config values when `open()` is called.
+
+RGB and depth frames are synchronized with `message_filters.ApproximateTimeSynchronizer` (50 ms slop).
+
+**Depth decoding**
+
+The depth callback decodes the raw message based on `encoding`:
+
+| Encoding | dtype | Scale |
+|---|---|---|
+| `32FC1` | `float32` | metres, no scaling |
+| `16UC1` | `uint16` | × 0.001 → metres |
+| `8UC1` / other | `uint8` | raw value, no scaling |
+
+If the decoded depth map has a different resolution than the RGB frame (e.g. 240×180 ToF vs 640×480 RGB), it is resized to match using `cv2.INTER_NEAREST` to preserve depth values without interpolation.
+
+>>>>>>> f10da998325ddcef98ca03469b382d31e4867027
 ---
 
 ## batch_detect.py
