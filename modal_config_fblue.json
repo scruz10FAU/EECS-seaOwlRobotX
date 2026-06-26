@@ -8,8 +8,8 @@
   "log":        true,
   "save_crops": false,
   "save_det_images": true,
-  "target_color":    null,
-  "target_blinking": true,
+  "target_color":    "blue",
+  "target_blinking": false,
   "video":      null,
   "ros_video":  null,
 

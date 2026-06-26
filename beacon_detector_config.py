@@ -87,6 +87,8 @@ def load_config(path: str) -> dict:
         "log":        bool(raw.get("log",         False)),
         "save_crops":      bool(raw.get("save_crops",      False)),
         "save_det_images": bool(raw.get("save_det_images", False)),
+        "target_color":    raw.get("target_color",    None),
+        "target_blinking": raw.get("target_blinking", None),
         "video":      raw.get("video",      None),
         "ros_video":  raw.get("ros_video",  None),
         "topics":     _merge_topics(raw.get("topics", {})),
@@ -379,6 +381,7 @@ _LOG_HEADER = [
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
     "pos3d_x", "pos3d_y", "pos3d_z",
     "blink_is_blinking", "blink_hz", "blink_phase",
+    "target_match",
 ]
 
 
@@ -393,7 +396,8 @@ def _open_log(path: str):
 def _write_log_row(log_writer, frame_idx: int, color: str,
                    color_conf: float, intensity: float, votes: dict,
                    det_conf: float, bbox, tracking_id: int = -1,
-                   pos3d=None, blink_info: dict = None) -> None:
+                   pos3d=None, blink_info: dict = None,
+                   target_color=None, target_blinking=None) -> None:
     x1, y1, x2, y2 = bbox
     px = py = pz = ""
     if pos3d is not None:
@@ -402,6 +406,12 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
     blink_blinking = "" if bi.get("is_blinking") is None else str(bi.get("is_blinking"))
     blink_hz    = f"{bi['blink_hz']:.3f}" if bi.get("blink_hz") is not None else ""
     blink_phase = bi.get("phase", "")
+    if target_color is None and target_blinking is None:
+        target_match = ""
+    else:
+        color_ok   = target_color    is None or color == target_color
+        blinking_ok = target_blinking is None or bi.get("is_blinking") == target_blinking
+        target_match = str(color_ok and blinking_ok)
     log_writer.writerow([
         f"{time.time():.3f}", frame_idx,
         color, f"{color_conf:.4f}", f"{intensity:.4f}",
@@ -410,6 +420,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         f"{det_conf:.4f}", x1, y1, x2, y2, tracking_id,
         px, py, pz,
         blink_blinking, blink_hz, blink_phase,
+        target_match,
     ])
 
 
@@ -487,7 +498,9 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
         if log_writer is not None:
             _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
                            intensity, votes, conf, (x1, y1, x2, y2),
-                           blink_info=blink_info)
+                           blink_info=blink_info,
+                           target_color=cfg.get("target_color"),
+                           target_blinking=cfg.get("target_blinking"))
 
     return frame
 
@@ -762,7 +775,9 @@ def run_video_ros(cfg: dict) -> None:
                     if log_writer is not None:
                         _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
                                        intensity, votes, det_conf, (x1, y1, x2, y2),
-                                       blink_info=blink_info)
+                                       blink_info=blink_info,
+                                       target_color=cfg.get("target_color"),
+                                       target_blinking=cfg.get("target_blinking"))
 
                     if crops_dir is not None and lit_region.size > 0:
                         fname = (f"crop_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
@@ -971,7 +986,9 @@ def main(cfg: dict) -> None:
                                    intensity, votes, float(d.confidence), d.bbox_2d,
                                    tracking_id=d.tracking_id,
                                    pos3d=d.position_3d,
-                                   blink_info=blink_info)
+                                   blink_info=blink_info,
+                                   target_color=cfg.get("target_color"),
+                                   target_blinking=cfg.get("target_blinking"))
 
                 if crops_dir is not None and lit_region.size > 0:
                     fname = (f"crop_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
