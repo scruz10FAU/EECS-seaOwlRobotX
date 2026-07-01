@@ -897,6 +897,7 @@ def main(cfg: dict) -> None:
             depth      = cam.get_depth()
             intr       = cam._intrinsics
             drone_pos, drone_quat = cam.get_drone_pose()
+            frame_ts   = cam.get_frame_timestamp() or time.time()
 
             if intr and not intrinsics_printed:
                 print(f"[beacon] Intrinsics ready: {intr.width}x{intr.height} "
@@ -915,7 +916,7 @@ def main(cfg: dict) -> None:
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
                 beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
                 blink_info = _get_blink_detector(d.tracking_id).update(
-                    time.time(), beacon_color, intensity, color_conf
+                    frame_ts, beacon_color, intensity, color_conf
                 )
 
                 draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))

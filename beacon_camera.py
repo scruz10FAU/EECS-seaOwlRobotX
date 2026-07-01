@@ -46,6 +46,7 @@ class BeaconCamera(Node):
         self._depth      = None
         self._intrinsics = None
         self._new_frame  = False
+        self._frame_ts   = None
         self._frame_lock = threading.Lock()
 
         self._drone_pos       = None
@@ -176,6 +177,10 @@ class BeaconCamera(Node):
         with self._frame_lock:
             return self._depth.copy() if self._depth is not None else None
 
+    def get_frame_timestamp(self) -> float:
+        with self._frame_lock:
+            return self._frame_ts
+
     def get_drone_pose(self):
         with self._pose_lock:
             if self._drone_pos is None:
@@ -236,9 +241,11 @@ class BeaconCamera(Node):
             import cv2 as _cv2
             depth = _cv2.resize(depth, (bgr.shape[1], bgr.shape[0]),
                                 interpolation=_cv2.INTER_NEAREST)
+        ts = rgb_msg.header.stamp.sec + rgb_msg.header.stamp.nanosec * 1e-9
         with self._frame_lock:
             self._rgb       = bgr
             self._depth     = depth
+            self._frame_ts  = ts
             self._new_frame = True
 
     def _on_drone_pose(self, msg):

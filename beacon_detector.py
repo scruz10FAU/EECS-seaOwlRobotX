@@ -806,6 +806,7 @@ def main(model: str = "models/one_beacon.pt",
             depth      = cam.get_depth()
             intr       = cam._intrinsics
             drone_pos, drone_quat = cam.get_drone_pose()
+            frame_ts   = cam.get_frame_timestamp() or time.time()
 
             if intr and not intrinsics_printed:
                 print(f"[beacon] Intrinsics ready: {intr.width}x{intr.height} "
@@ -828,7 +829,7 @@ def main(model: str = "models/one_beacon.pt",
                     fname = f"crop_f{frame_count:06d}_id{d.tracking_id}_{beacon_color}.png"
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
                 blink_info = _get_blink_detector(d.tracking_id).update(
-                    time.time(), beacon_color, intensity, color_conf
+                    frame_ts, beacon_color, intensity, color_conf
                 )
                 # ─────────────────────────────────────────────────────────────
 
