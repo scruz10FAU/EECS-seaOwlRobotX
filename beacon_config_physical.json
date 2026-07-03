@@ -1,0 +1,38 @@
+{
+  "_comment": "beacon_config_physical.json — physical drone (modal_config.json topics)",
+
+  "model":      "models/one_beacon630.pt",
+  "crop_model": "models/best_crop630.pt",
+  "conf":       0.45,
+  "display":    false,
+
+  "topics": {
+    "image":          "/hires_front_small_color",
+    "camera_info":    "/hires_front_small_color/camera_info",
+    "depth":          "/tof_depth",
+    "drone_pose":     "/vvhub_body_wrt_local/pose",
+    "gps_origin":     "/fmu/out/vehicle_gps_position",
+    "detections_pub": "/seabird/beacon_detections",
+    "buoy_pub":       "/seabird/buoy_detections",
+    "debug_image":    "/seabird/debug_image"
+  },
+
+  "camera": {
+    "focal_length_mm":  2.1,
+    "h_aperture_mm":    6.0,
+    "v_aperture_mm":    4.5,
+    "img_w":           640,
+    "img_h":           480,
+    "mount_offset_xyz": [0.30, 0.0, 0.05],
+    "pitch_deg":        15.0
+  },
+
+  "detection": {
+    "confirm_frames": 3,
+    "pub_cooldown_s": 1.0,
+    "depth_min_m":    1.0,
+    "depth_max_m":    80.0,
+    "min_area_frac":  0.001,
+    "stage2_conf":    0.30
+  }
+}

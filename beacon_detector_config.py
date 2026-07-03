@@ -16,7 +16,7 @@ See beacon_config.json for the full schema and default values.
 import sys
 import argparse
 import os
-sys.path.insert(0, os.path.expanduser("~/seabird/scripts"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import csv
 import numpy as np
@@ -210,17 +210,21 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
             )
             self._sync.registerCallback(self._on_synced_frame)
             self.detection_pub = self.create_publisher(String, detections_topic, 10)
-            self._pose_sub = self.create_subscription(
-                PoseStamped, drone_pose_topic, self._on_drone_pose, qos
-            )
-            origin_qos = QoSProfile(
-                reliability=ReliabilityPolicy.RELIABLE,
-                durability=DurabilityPolicy.TRANSIENT_LOCAL,
-                depth=1,
-            )
-            self._origin_sub = self.create_subscription(
-                GeoPointStamped, gps_topic, self._on_gps_origin, origin_qos
-            )
+            _buoy_topic = topics.get("buoy_pub", "/seabird/buoy_detections")
+            self.buoy_pub = self.create_publisher(String, _buoy_topic, 10) if _buoy_topic else None
+            if drone_pose_topic:
+                self._pose_sub = self.create_subscription(
+                    PoseStamped, drone_pose_topic, self._on_drone_pose, qos
+                )
+            if gps_topic:
+                origin_qos = QoSProfile(
+                    reliability=ReliabilityPolicy.RELIABLE,
+                    durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                    depth=1,
+                )
+                self._origin_sub = self.create_subscription(
+                    GeoPointStamped, gps_topic, self._on_gps_origin, origin_qos
+                )
             self._is_open = True
             self.get_logger().info("BeaconCamera open — waiting for frames…")
             return True
@@ -234,17 +238,21 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
                 depth=1,
             )
             self.detection_pub = self.create_publisher(String, detections_topic, 10)
-            self._pose_sub = self.create_subscription(
-                PoseStamped, drone_pose_topic, self._on_drone_pose, qos
-            )
-            origin_qos = QoSProfile(
-                reliability=ReliabilityPolicy.RELIABLE,
-                durability=DurabilityPolicy.TRANSIENT_LOCAL,
-                depth=1,
-            )
-            self._origin_sub = self.create_subscription(
-                GeoPointStamped, gps_topic, self._on_gps_origin, origin_qos
-            )
+            _buoy_topic = topics.get("buoy_pub", "/seabird/buoy_detections")
+            self.buoy_pub = self.create_publisher(String, _buoy_topic, 10) if _buoy_topic else None
+            if drone_pose_topic:
+                self._pose_sub = self.create_subscription(
+                    PoseStamped, drone_pose_topic, self._on_drone_pose, qos
+                )
+            if gps_topic:
+                origin_qos = QoSProfile(
+                    reliability=ReliabilityPolicy.RELIABLE,
+                    durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                    depth=1,
+                )
+                self._origin_sub = self.create_subscription(
+                    GeoPointStamped, gps_topic, self._on_gps_origin, origin_qos
+                )
             self._is_open = True
             self.get_logger().info("BeaconCamera open (video-file mode) — pose + GPS only")
             return True
@@ -983,6 +991,22 @@ def main(cfg: dict) -> None:
                     "timestamp":      time.time(),
                 })
                 cam.detection_pub.publish(msg)
+
+                if getattr(cam, "buoy_pub", None) is not None:
+                    _bx1, _by1, _bx2, _by2 = [int(v) for v in d.bbox_2d]
+                    _buoy = String()
+                    _buoy.data = json.dumps({
+                        "color":      beacon_color,
+                        "centroid":   [(_bx1 + _bx2) // 2, (_by1 + _by2) // 2],
+                        "bbox":       [_bx1, _by1, _bx2 - _bx1, _by2 - _by1],
+                        "area_px":    float((_bx2 - _bx1) * (_by2 - _by1)),
+                        "depth_m":    float(d.position_3d[2]) if d.position_3d is not None else None,
+                        "pos_cam":    np.array(d.position_3d).tolist() if d.position_3d is not None else None,
+                        "confidence": round(float(d.confidence), 4),
+                        "img_wh":     [cfg["camera"]["img_w"], cfg["camera"]["img_h"]],
+                        "stamp":      round(time.time(), 3),
+                    })
+                    cam.buoy_pub.publish(_buoy)
 
                 if log_writer is not None:
                     _write_log_row(log_writer, frame_count, beacon_color, color_conf,

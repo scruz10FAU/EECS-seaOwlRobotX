@@ -9,17 +9,163 @@ Detection pipeline for colored, optionally blinking, beacon lights mounted on a 
 | File | Role |
 |---|---|
 | `beacon_detector.py` | Entry point. Color classification pipeline, video and ROS live modes. |
-<<<<<<< HEAD
-| `beacon_detector_config.py` | JSON-configured version of `beacon_detector.py`. Loads all arguments and ROS topic names from `beacon_config.json` instead of command-line flags. |
-| `beacon_config.json` | Default configuration file for `beacon_detector_config.py`. Controls model paths, thresholds, run mode, and ROS topic overrides. |
-| `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
-| `beacon_camera.py` | `BeaconCamera` ROS2 node — ZED camera subscriptions and pose/GPS callbacks. |
-| `beacon_detector_config.py` | JSON-configured version of `beacon_detector.py`. Loads all arguments and ROS topic names from a JSON config file instead of command-line flags. |
-| `beacon_config.json` | Default configuration file for `beacon_detector_config.py`. Controls model paths, thresholds, run mode, and ROS topic overrides. |
-| `modal_config.json` | Config for Modal AI VOXL hardware. Overrides camera/depth topics, drone pose, and GPS topics for that platform. |
+| `beacon_detector_config.py` | JSON-configured version of `beacon_detector.py`. Loads all arguments and ROS topic names from a JSON config file instead of command-line flags. Works with any camera — not ZED-specific. |
+| `beacon_config.json` | Default configuration file for `beacon_detector_config.py`. |
+| `beacon_config_physical.json` | Config for physical drone (ModalAI VOXL2 / Starling 2). Uses modal camera and ToF depth topics. |
+| `beacon_config_sim.json` | Config for Isaac Sim. Uses `/iris_0/front_cam/*` topics; pose and GPS are disabled. |
+| `modal_config.json` | Reference config for Modal AI VOXL hardware topic names. |
+| `sweep_lawnmower.py` | Autonomous boustrophedon (lawnmower) flight mission. Searches a 5 ft × 5 ft area. |
+| `data_recorder.py` | ROS2 node that saves camera frames and detection labels to disk during a mission. |
+| `start_seabird_beacon.sh` | Mission launcher. Starts the detector, sweep, and recorder as tagged, logged child processes. |
 | `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
 | `beacon_camera.py` | `BeaconCamera` ROS2 node — camera image subscriptions, depth decoding, and pose/GPS callbacks. |
 | `batch_detect.py` | Headless batch processor — runs detection over multiple video files and writes a CSV + summary. |
+
+---
+
+## start_seabird_beacon.sh
+
+Mission launcher that starts all three nodes as tagged, color-coded child processes with unified terminal output and per-component log files.
+
+**Run from the directory containing all component scripts:**
+
+```bash
+./start_seabird_beacon.sh                                          # Isaac Sim (default)
+DETECTOR_ARGS="--config beacon_config_physical.json" \
+  ./start_seabird_beacon.sh                                        # physical drone
+DETECTOR_ARGS="--no-yolo" ./start_seabird_beacon.sh               # HSV-only fallback
+MUTE=SWEEP ./start_seabird_beacon.sh                              # suppress SWEEP output
+```
+
+**Components started (in order):**
+
+| Tag | Script | Color |
+|---|---|---|
+| `DETECTOR` | `beacon_detector_config.py` | green |
+| `SWEEP` | `sweep_lawnmower.py` | magenta |
+| `RECORDER` | `data_recorder.py` | cyan |
+
+**Logs** are written to `logs/<timestamp>/` in the working directory — one `.log` and one `.stderr` per component, plus a `launch.log` recording start times and exit codes.
+
+**Stop:** Ctrl-C. The trap sends SIGTERM to all children, waits 3 s, then SIGKILLs any survivors.
+
+### Safety warning
+
+RC takeover requires `COM_RC_OVERRIDE` to be non-zero. Verify before every flight:
+
+```
+pxh> param show COM_RC_OVERRIDE   # must be non-zero (3 = offboard + auto)
+```
+
+Note: `NAV_RCL_ACT=0` disables the RC-loss failsafe — the mission continues if the RC signal drops. Use Ctrl-C in this terminal to abort.
+
+---
+
+## sweep_lawnmower.py
+
+Flies a boustrophedon (lawnmower) pattern over a **5 ft × 5 ft search area** (1.524 m × 1.524 m), centred on the drone spawn origin. Rows run east–west, advancing northward by `LAWN_ROW_SPACING_M` per row.
+
+### Search area constants
+
+```python
+LAWN_ROW_SPACING_M = 0.5     # 0.5 m gap between E-W rows (~4 rows in the 5 ft area)
+LAWN_NORTH_M       =  0.762  # northern edge  (+2.5 ft from origin)
+LAWN_SOUTH_M       = -0.762  # southern edge  (−2.5 ft from origin)
+LAWN_EAST_M        =  0.762  # eastern edge   (+2.5 ft from origin)
+LAWN_WEST_M        = -0.762  # western edge   (−2.5 ft from origin)
+```
+
+To change the search area, edit these four constants. All values are in metres (NED frame, relative to the spawn origin).
+
+### Mission configuration
+
+| Constant | Value | Description |
+|---|---|---|
+| `TAKEOFF_ALT_M` | `5.0` | Takeoff altitude in metres |
+| `WAYPOINT_TOL_M` | `2.5` | Distance tolerance to declare a waypoint reached |
+| `WAYPOINT_TIMEOUT` | `60.0` | Max seconds to spend flying toward any single waypoint |
+| `HOVER_STABILIZE_S` | `8.0` | Seconds to hover after takeoff before starting the sweep |
+| `TARGET_COLORS` | `{"red","green","blue"}` | Mission ends early when all colors are detected |
+| `MAVSDK_ADDRESS` | `"udp://:14540"` | MAVSDK connection string |
+
+### Behaviour
+
+- Subscribes to `/seabird/buoy_detections` in a background thread. Stops the sweep as soon as all `TARGET_COLORS` are detected.
+- Publishes the executed flight path on `/seabird/flight_path` (`nav_msgs/Path`) and `/seabird/path_marker` (`visualization_msgs/Marker`) for RViz2.
+- On completion (or early exit), returns to launch and lands.
+
+### PX4 parameters (set once)
+
+```
+pxh> param set MPC_XY_CRUISE 2.0
+pxh> param set MPC_XY_VEL_MAX 3.0
+pxh> param set MPC_Z_VEL_MAX_UP 1.5
+pxh> param set MPC_Z_VEL_MAX_DN 1.0
+pxh> param set SYS_HAS_MAG 0
+pxh> param set COM_ARM_MAG_STR 0
+pxh> param set EKF2_ABL_LIM 5.0
+pxh> param save
+```
+
+---
+
+## beacon_detector_config.py
+
+A drop-in alternative to `beacon_detector.py` that reads all runtime parameters from a JSON file instead of command-line flags. Works with any camera — not ZED-specific. Topic names, model paths, camera intrinsics, and detection thresholds are all driven by the config file.
+
+Three changes were made relative to the original `beacon_detector_config.py` to support non-ZED cameras and the Seabird mission:
+
+1. **`sys.path`** points to `dirname(__file__)` so the script can be run from any directory.
+2. **Null-gated subscriptions** — `drone_pose` and `gps_origin` topics are skipped when set to `null` in the config (required for Isaac Sim, which has no pose/GPS topics).
+3. **Dual publish** — every detection is also published to `buoy_pub` (`/seabird/buoy_detections`) so `sweep_lawnmower.py` receives it without modification.
+
+### Usage
+
+```bash
+python3 beacon_detector_config.py                                  # uses beacon_config.json
+python3 beacon_detector_config.py --config beacon_config_physical.json
+python3 beacon_detector_config.py --config beacon_config_sim.json
+```
+
+The run mode (ROS live / video-only / video+ROS) is determined by the `video` and `ros_video` fields in the config.
+
+---
+
+## Config files
+
+### beacon_config_physical.json — Physical drone (ModalAI Starling 2 / VOXL2)
+
+Uses the modal camera driver and ToF depth sensor topics.
+
+| Field | Value |
+|---|---|
+| `topics.image` | `/hires_front_small_color` |
+| `topics.camera_info` | `/hires_front_small_color/camera_info` |
+| `topics.depth` | `/tof_depth` |
+| `topics.drone_pose` | `/vvhub_body_wrt_local/pose` |
+| `topics.gps_origin` | `/fmu/out/vehicle_gps_position` |
+
+**Prerequisites before launching:**
+- Modal camera driver running (publishes `/hires_front_small_color` and `/tof_depth`)
+- VVHub running (publishes `/vvhub_body_wrt_local/pose`)
+- micro-ROS agent running (bridges PX4 → `/fmu/out/vehicle_gps_position`)
+
+### beacon_config_sim.json — Isaac Sim
+
+Uses the Pegasus Simulator front camera. Pose and GPS are disabled (`null`) since the simulation does not provide them.
+
+| Field | Value |
+|---|---|
+| `topics.image` | `/iris_0/front_cam/rgb` |
+| `topics.camera_info` | `/iris_0/front_cam/camera_info` |
+| `topics.depth` | `/iris_0/front_cam/depth` |
+| `topics.drone_pose` | `null` |
+| `topics.gps_origin` | `null` |
+
+**Prerequisites before launching:**
+- Isaac Sim running with the marina scene
+- Drone spawned via `init_scene.py` (`[init] Done`)
+- PX4 SITL running (`make px4_sitl none_iris`)
 
 ---
 
@@ -73,36 +219,10 @@ python3 beacon_detector.py -v footage.mp4           # video file, no ROS
 | `--display / -d` | off | Show OpenCV window (ROS and ROS-video modes) |
 | `--save / -s` | off | Write annotated output video (video modes) |
 | `--log / -l` | off | Write per-frame CSV log |
-| `--save-crops / -sc` | off | Save each beacon bounding-box crop as a PNG for post-run analysis |
+| `--save-crops / -sc` | off | Save each beacon bounding-box crop as a PNG |
 | `--save-det-images / -sdi` | off | Save each detection as a padded image with color and blink status in the filename |
-| `--target-color / -tc` | `None` | Expected beacon color (e.g. `blue`). Adds `target_color` and `target_match` columns to the CSV log. |
-| `--target-blinking / -tb` | `None` | Expected blink state (`true` or `false`). Adds `target_blinking` and `target_match` columns to the CSV log. |
-
-### Crop output (--save-crops)
-
-When `--save-crops` is set, the raw bounding-box crop passed to the color classifier is written to disk for every detection. Files are named `crop_f{frame:06d}_d{det_idx:02d}_{color}.png` and saved in a directory alongside the input video: `<video_stem>_beacon_crops/`. In ROS live mode the directory is `~/seabird_dataset/beacon_debug/beacon_crops/` and filenames use the YOLO tracking ID instead of a per-frame detection index (`_t{tracking_id:02d}_`).
-
-### Detection image output (--save-det-images)
-
-When `--save-det-images` is set, a padded crop of each detection is saved to `<video_stem>_beacon_det_images/` (video modes) or `~/seabird_dataset/beacon_debug/det_images/` (ROS live mode). Filenames encode the detected color and blink status: `det_f{frame:06d}_d{det_idx:02d}_{color}_conf{conf:02d}[_blink{hz:.2f}hz|_steady].png`. In ROS live mode the detection index is replaced with the YOLO tracking ID (`_t{tracking_id:02d}_`).
-
-### Target matching (--target-color / --target-blinking)
-
-Setting either flag adds three columns to the CSV log: `target_color`, `target_blinking`, and `target_match`. `target_match` is `True` when all non-null criteria are satisfied, `False` otherwise. All three columns are empty strings when neither flag is set.
-
-| `--target-color` | `--target-blinking` | `target_match = True` when |
-|---|---|---|
-| `blue` | `true` | color is blue AND confirmed blinking |
-| `blue` | *(omitted)* | color is blue (any blink state) |
-| *(omitted)* | `true` | confirmed blinking (any color) |
-
-`--target-blinking true` requires `is_blinking = True` — rows where blink is still undecided count as `False`.
-
-### CSV log columns
-
-`timestamp, frame, color, color_confidence, intensity, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2, tracking_id, pos3d_x, pos3d_y, pos3d_z, blink_is_blinking, blink_hz, blink_phase, target_color, target_blinking, target_match`
-
-`target_color`, `target_blinking`, and `target_match` are empty strings when neither `--target-color` nor `--target-blinking` is set.
+| `--target-color / -tc` | `None` | Expected beacon color (`blue`, `red`, etc.) |
+| `--target-blinking / -tb` | `None` | Expected blink state (`true` or `false`) |
 
 ### ROS topics (live and ROS-video modes)
 
@@ -137,236 +257,12 @@ Setting either flag adds three columns to the CSV log: `target_color`, `target_b
 
 ---
 
-## beacon_detector_config.py
-
-A drop-in alternative to `beacon_detector.py` that reads all runtime parameters from a JSON file instead of command-line flags. Useful when the same node needs to run with different topic namespaces or model paths across deployments without modifying source code.
-
-The detection logic, color classification, blink estimation, and ROS publishing are identical to `beacon_detector.py`. The only differences are how configuration is loaded and how `BeaconCamera` topic names are resolved.
-
-### Usage
-
-```
-python3 beacon_detector_config.py                          # uses beacon_config.json
-python3 beacon_detector_config.py --config custom.json    # use a different config file
-```
-
-The run mode (ROS live / video-only / video+ROS) is determined by the `video` and `ros_video` fields in the config rather than by which flag is passed.
-
-### beacon_config.json
-
-Default config file. Copy and edit to create environment-specific configs.
-
-The config fully replaces `seabird_config.py` — `beacon_detector_config.py` does not import it at all. Camera intrinsics and the body-to-camera rotation matrix are derived at load time from the `camera` block.
-
-**Top-level fields**
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `model` | string | `"models/one_beacon.pt"` | Path to stage-1 YOLO beacon model |
-| `crop_model` | string | `"models/best_crop.pt"` | Path to stage-2 lit-area isolation model |
-| `conf` | float | `0.5` | Detection confidence threshold |
-| `display` | bool | `false` | Show OpenCV window in ROS live mode |
-| `true_dist` | float | `0.4826` | Known ground-truth distance to target in metres (ROS mode) |
-| `save` | bool | `false` | Write annotated output video alongside input (video modes) |
-| `log` | bool | `false` | Write per-frame CSV detection log |
-| `save_crops` | bool | `false` | Save each beacon bounding-box crop as a PNG for post-run color classification analysis |
-| `save_det_images` | bool | `false` | Save a padded bbox crop for every detection, with color and blink status in the filename (ROS live mode only) |
-| `target_color` | string \| null | `null` | Expected beacon color (`"red"`, `"green"`, `"blue"`, etc.). When set, a `target_match` column is added to the CSV log. |
-| `target_blinking` | bool \| null | `null` | Expected blink state (`true` = blinking, `false` = steady). Combined with `target_color` for the `target_match` column. |
-| `video` | string \| null | `null` | Path to video file for video-only mode |
-| `ros_video` | string \| null | `null` | Path to video file for video+ROS mode. Takes priority over `video`. |
-| `topics` | object | see below | ROS topic name overrides |
-| `camera` | object | see below | Camera intrinsics and mount geometry |
-| `paths` | object | see below | Filesystem paths for scripts, datasets, logs |
-| `isaac` | object | see below | Isaac Sim USD prim paths |
-| `buoys` | object | see below | Buoy physical properties and world positions |
-| `drone_spawn` | object | see below | Drone initial position and orientation in simulation |
-| `px4` | object | see below | PX4 flight controller parameters |
-| `labeler` | object | see below | Dataset labeler settings |
-
-**`topics` object**
-
-| Key | Default | Description |
-|---|---|---|
-| `camera_prefix` | `"/zed/zed_node"` | Prefix for all ZED camera topics |
-| `drone_pose` | `"/mavros/local_position/pose"` | Drone local position + orientation |
-| `gps_origin` | `"/mavros/global_position/gp_origin"` | GPS reference origin for ENU→GPS conversion |
-| `detections_pub` | `"/seabird/beacon_detections"` | Topic detections are published to |
-| `camera_prefix` | `"/zed/zed_node"` | Prefix used to derive `image`, `camera_info`, and `depth` if those keys are absent |
-| `image` | `"{prefix}/rgb/color/rect/image"` | Full topic path for the RGB image stream |
-| `camera_info` | `"{prefix}/rgb/color/rect/camera_info"` | Full topic path for camera info (optional — intrinsics are set from the `camera` block) |
-| `depth` | `"{prefix}/depth/depth_registered"` | Full topic path for the depth image |
-| `drone_pose` | `"/mavros/local_position/pose"` | Drone local position + orientation (`PoseStamped`) |
-| `gps_origin` | `"/mavros/global_position/gp_origin"` | GPS reference origin for ENU→GPS conversion (`GeoPointStamped`) |
-| `detections_pub` | `"/seabird/beacon_detections"` | Topic detections are published to |
-
-If `image`, `camera_info`, or `depth` are omitted from the config, they are derived automatically from `camera_prefix` using the ZED path convention. Set them explicitly when the camera driver does not follow that convention (e.g. `modal_config.json` sets `"image": "/hires_front_small_color"` and `"depth": "/tof_depth"`).
-
-**`camera` object**
-
-Matches the ZED 2i wide-lens parameters used in `seabird_config.py`. `fx`, `fy`, `cx`, `cy`, the body-to-camera rotation matrix, and the mount offset array are computed automatically by `load_config()` — do not add them to the file.
-
-| Key | Default | Description |
-|---|---|---|
-| `focal_length_mm` | `2.1` | Lens focal length in millimetres |
-| `h_aperture_mm` | `6.0` | Horizontal sensor size in millimetres |
-| `v_aperture_mm` | `4.5` | Vertical sensor size in millimetres |
-| `clipping_near` | `0.1` | Near clip plane in metres |
-| `clipping_far` | `200.0` | Far clip plane in metres |
-| `img_w` | `640` | Render/stream width in pixels |
-| `img_h` | `480` | Render/stream height in pixels |
-| `mount_offset_xyz` | `[0.30, 0.0, 0.05]` | Camera position relative to drone body frame in metres (FLU) |
-| `pitch_deg` | `15.0` | Nose-down camera tilt in degrees |
-
-**`paths` object**
-
-| Key | Default | Description |
-|---|---|---|
-| `scripts_dir` | `"~/seabird/scripts"` | ROS scripts and Python modules |
-| `dataset_dir` | `"~/seabird_dataset"` | Training data and debug frames |
-| `logs_dir` | `"~/seabird/logs"` | Runtime logs |
-| `px4_dir` | `"~/seabird/PX4-Autopilot"` | PX4 firmware checkout |
-| `assets_dir` | `"~/seabird/assets"` | USD assets and meshes |
-
-**`isaac` object**
-
-| Key | Default | Description |
-|---|---|---|
-| `drone_prim_path` | `"/World/Iris"` | Root USD prim for the drone |
-| `drone_body_path` | `"/World/Iris/body"` | Drone body prim |
-| `camera_prim_path` | `"/World/Iris/body/front_cam"` | Camera prim |
-
-**`buoys` object**
-
-| Key | Default | Description |
-|---|---|---|
-| `radius_m` | `0.2286` | Physical buoy radius in metres (18" diameter) |
-| `classes` | `{"red_buoy": 0, "green_buoy": 1, "blue_buoy": 2}` | YOLO class index mapping |
-| `positions` | see `beacon_config.json` | Known world-frame XYZ positions for each buoy (bbox centre) |
-
-**`drone_spawn` object**
-
-| Key | Default | Description |
-|---|---|---|
-| `position` | `[0.0, -8.0, 2.5]` | Spawn position in Isaac world frame (metres) |
-| `quat_wxyz` | `[0.707, 0.0, 0.0, -0.707]` | Spawn orientation as `[w, x, y, z]` quaternion (facing −Y toward buoys) |
-
-**`px4` object**
-
-| Key | Default | Description |
-|---|---|---|
-| `connection_type` | `"tcpin"` | MAVLink connection type passed to MAVSDK/pymavlink |
-| `takeoff_alt_m` | `1.25` | `MIS_TAKEOFF_ALT` parameter value in metres |
-
-**`labeler` object**
-
-| Key | Default | Description |
-|---|---|---|
-| `save_every_n` | `10` | Save a labelled frame every N render frames |
-| `max_frames` | `2000` | Stop after this many saved frames |
-| `debug_mode` | `true` | Draw bounding boxes on debug images |
-| `min_bbox_px` | `6` | Minimum bounding-box side length in pixels to save |
-
-**Run mode selection**
-
-| `ros_video` | `video` | Mode |
-|---|---|---|
-| path string | any | Video file + ROS publishing |
-| null | path string | Video file only, no ROS |
-| null | null | ROS live camera mode |
-
-**Example — remap to a second ZED camera**
-
-```json
-{
-  "model": "models/one_beacon.pt",
-  "crop_model": "models/best_crop.pt",
-  "conf": 0.5,
-  "display": false,
-  "true_dist": 0.4826,
-  "save": false,
-  "log": false,
-  "video": null,
-  "ros_video": null,
-  "topics": {
-    "camera_prefix":  "/zed2/zed_node",
-    "drone_pose":     "/mavros/local_position/pose",
-    "gps_origin":     "/mavros/global_position/gp_origin",
-    "detections_pub": "/seabird/beacon_detections_cam2"
-  },
-  "camera": {
-    "focal_length_mm": 2.1,
-    "h_aperture_mm":   6.0,
-    "v_aperture_mm":   4.5,
-    "clipping_near":   0.1,
-    "clipping_far":  200.0,
-    "img_w":          640,
-    "img_h":          480,
-    "mount_offset_xyz": [0.30, 0.0, 0.05],
-    "pitch_deg":       15.0
-  }
-}
-```
-
-### How topic and intrinsic overrides work
-
-`BeaconCamera` normally reads topic names from module-level constants in `beacon_camera.py` and reads intrinsics (`FX`, `FY`, `CX`, `CY`, `IMG_W`, `IMG_H`) from `seabird_config.py`. `beacon_detector_config.py` creates a subclass of `BeaconCamera` at runtime via `_make_beacon_camera(topics, cfg_camera)`, capturing all config values by closure and overriding both the topic subscriptions and `_on_camera_info`. Neither `beacon_camera.py` nor `seabird_config.py` is modified.
-### Detection image output (save_det_images)
-
-When `save_det_images` is `true`, a padded bounding-box crop is saved for every detection in ROS live mode. Images are written to `~/seabird_dataset/beacon_debug/beacon_det_images/` with filenames that encode the detection result:
-
-```
-det_f000030_t01_blue_conf65_blink0.25hz.png   ← blinking confirmed
-det_f000031_t01_blue_conf72_steady.png         ← confirmed not blinking
-det_f000032_t01_blue_conf58.png                ← blink status still deciding
-```
-
-Fields: `det_f{frame}_t{tracking_id}_{color}_conf{det_conf%}[_blink{hz}hz|_steady]`
-
-The crop is taken from the clean (un-annotated) frame with 20 px padding on each side.
-
-### Target matching (target_color / target_blinking)
-
-Setting `target_color` and/or `target_blinking` populates three columns in the CSV log: `target_color`, `target_blinking`, and `target_match`. All three are empty strings when both config values are `null`.
-
-| `target_color` | `target_blinking` | `target_match = True` when |
-|---|---|---|
-| `"blue"` | `true` | color is blue AND confirmed blinking |
-| `"blue"` | `null` | color is blue (any blink state) |
-| `null` | `true` | confirmed blinking (any color) |
-| `null` | `null` | *(all three columns left empty)* |
-
-`target_blinking: true` requires `is_blinking = True` — rows where blink is still undecided (`None`) count as `False`.
-
-### CSV log columns (ROS live mode)
-
-`timestamp, frame, color, color_confidence, intensity, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2, tracking_id, pos3d_x, pos3d_y, pos3d_z, blink_is_blinking, blink_hz, blink_phase, target_color, target_blinking, target_match`
-
-`target_color`, `target_blinking`, and `target_match` are empty strings when neither is configured. Log files are written to `~/seabird_dataset/beacon_debug/beacon_log_<YYYYMMDD_HHMMSS>.csv` and flushed after every row.
-
-### How topic and intrinsic overrides work
-
-`BeaconCamera` normally reads topic names from module-level constants in `beacon_camera.py` and reads intrinsics (`FX`, `FY`, `CX`, `CY`, `IMG_W`, `IMG_H`) from `seabird_config.py`. `beacon_detector_config.py` creates a subclass of `BeaconCamera` at runtime via `_make_beacon_camera(topics, cfg_camera)`, capturing all config values by closure and overriding the topic subscriptions. Camera intrinsics are applied immediately when `open()` is called — no `camera_info` message is required. Neither `beacon_camera.py` nor `seabird_config.py` is modified.
-
----
-
 ## blink_detector.py
 
 Standalone module — no ROS or OpenCV dependency. Imported directly by `beacon_detector.py` and `batch_detect.py`.
 
 ### BlinkDetector
 
-<<<<<<< HEAD
-Maintains a 4-second rolling window of `(timestamp, color, intensity)` samples and estimates whether the beacon is blinking and at what frequency.
-
-```python
-detector = BlinkDetector()
-result = detector.update(ts, color, intensity)
-# result: {"is_blinking": True|False|None, "blink_color": str, "blink_hz": float|None, "phase": "on"|"off"|"unknown"}
-```
-
-`is_blinking` has three states:
-- `None` — not enough data yet (window < 2 s)
 Maintains an 8-second rolling window of `(timestamp, color, intensity, color_conf)` samples and estimates whether the beacon is blinking and at what frequency.
 
 ```python
@@ -375,7 +271,7 @@ result = detector.update(ts, color, intensity, color_conf)
 # result: {"is_blinking": True|False|None, "blink_color": str, "blink_hz": float|None, "phase": "on"|"off"|"unknown"}
 ```
 
-`color_conf` is the `color_confidence` value from `classify_beacon_color`. It is used to filter out low-confidence non-blue readings (e.g. a dimming blue beacon misclassified as red) that would otherwise force the detector into the wrong color mode.
+`color_conf` is the `color_confidence` value from `classify_beacon_color`. It is used to filter out low-confidence non-blue readings that would otherwise force the detector into the wrong color mode.
 
 `is_blinking` has three states:
 - `None` — not enough data yet (window < 4 s)
@@ -384,46 +280,22 @@ result = detector.update(ts, color, intensity, color_conf)
 
 ### Algorithm
 
-**Red / Green beacons:** A rising edge is a transition from `blue` (beacon off, housing visible) to the signal color (beacon on). Edge timing gives the blink period.
+**Red / Green beacons:** A rising edge is a transition from `blue` (beacon off, housing visible) to the signal color (beacon on). Only non-blue readings with `color_conf ≥ 0.10` are counted when selecting the dominant signal color.
 
-**Blue beacons:** Edges are detected from intensity oscillations relative to the window mean. Requires a minimum peak-to-peak intensity swing (`_BLINK_INTENSITY_MIN_SWING = 0.05`) to rule out ambient noise.
-**Red / Green beacons:** A rising edge is a transition from `blue` (beacon off, housing visible) to the signal color (beacon on). Only non-blue readings with `color_conf ≥ 0.10` are counted when selecting the dominant signal color — this prevents low-confidence noise from a dimming blue beacon triggering the wrong detection path.
-
-**Blue beacons:** On/off state is determined from detection presence and absence rather than intensity oscillations. When the beacon turns off, YOLO stops detecting it entirely; the resulting gap in the sample stream is the primary blink signal. A synthetic `_off_` marker is injected whenever two consecutive samples are more than `_BLINK_GAP_OFF_SEC` (0.5 s) apart, making the off period visible to the rising-edge detector. `unknown` samples (YOLO detected but color classification failed) are also treated as off. If no gaps or unknowns appear in the window, the detector falls back to intensity oscillation detection.
-
-Guards applied before declaring `True`:
-
-| Guard | Purpose |
-|---|---|
-| Minimum data span (2 s) | Avoids decisions on too little history |
-| Minimum rising edges (3 for blue, 2 for red/green) | Requires at least one complete blink cycle |
-| Duty-cycle check (non-blue, 2-edge case) | Rejects solid beacons whose color-classification noise produces exactly 2 spurious edges while `on_fraction > 65%` |
-| Max inter-onset interval (2.0 s blue / 2.5 s color) | Rejects windows where a YOLO detection gap swallows a full cycle |
-| Max consecutive off duration (1.0 s, blue only) | Rejects slow intensity drifts |
-| On/off mean separation (blue only) | Ensures the signal has real amplitude, not noise around the mean |
-| Minimum data span (4 s) | Avoids decisions on too little history |
-| Minimum rising edges (3 for blue, 2 for red/green) | Requires at least one complete blink cycle |
-| Duty-cycle check (non-blue, 2-edge case) | Rejects solid beacons whose color-classification noise produces exactly 2 spurious edges while `on_fraction > 65%` |
-| Max inter-onset interval (5.0 s blue / 5.5 s color) | Rejects windows where a YOLO detection gap swallows a full cycle |
+**Blue beacons:** On/off state is determined from detection presence and absence rather than intensity oscillations. When the beacon turns off, YOLO stops detecting it entirely; the resulting gap in the sample stream is the primary blink signal. A synthetic `_off_` marker is injected whenever two consecutive samples are more than `_BLINK_GAP_OFF_SEC` (0.5 s) apart.
 
 ### Key constants
 
 | Constant | Value | Meaning |
 |---|---|---|
-| `_BLINK_WINDOW_SEC` | 4.0 s | Rolling window length |
-| `_BLINK_MIN_DATA_SEC` | 2.0 s | Minimum history before deciding |
-| `_BLINK_HZ_RANGE` | 0.5–2.0 Hz | Valid blink frequency range |
-| `_BLINK_MIN_EDGE_GAP` | 0.20 s | Debounce: minimum gap between rising edges |
-| `_BLINK_MAX_IOI_SEC` | 2.0 s | Max inter-onset interval for blue beacons |
-| `_BLINK_MAX_IOI_SEC_COLOR` | 2.5 s | Max inter-onset interval for red/green (absorbs YOLO detection gaps) |
-| `_BLINK_WINDOW_SEC` | 8.0 s | Rolling window length |
-| `_BLINK_MIN_DATA_SEC` | 4.0 s | Minimum history before deciding |
-| `_BLINK_HZ_RANGE` | 0.2–2.0 Hz | Valid blink frequency range |
-| `_BLINK_MIN_EDGE_GAP` | 0.20 s | Debounce: minimum gap between rising edges |
-| `_BLINK_GAP_OFF_SEC` | 0.5 s | Detection gap longer than this injects an off marker |
-| `_BLINK_COLOR_CONF_MIN` | 0.10 | Minimum `color_conf` for a non-blue reading to count as signal |
-| `_BLINK_MAX_IOI_SEC` | 5.0 s | Max inter-onset interval for blue beacons |
-| `_BLINK_MAX_IOI_SEC_COLOR` | 5.5 s | Max inter-onset interval for red/green (absorbs YOLO detection gaps) |
+| `_BLINK_WINDOW_SEC` | `8.0 s` | Rolling window length |
+| `_BLINK_MIN_DATA_SEC` | `4.0 s` | Minimum history before deciding |
+| `_BLINK_HZ_RANGE` | `0.2–2.0 Hz` | Valid blink frequency range |
+| `_BLINK_MIN_EDGE_GAP` | `0.20 s` | Debounce: minimum gap between rising edges |
+| `_BLINK_GAP_OFF_SEC` | `0.5 s` | Detection gap longer than this injects an off marker |
+| `_BLINK_COLOR_CONF_MIN` | `0.10` | Minimum `color_conf` for a non-blue reading to count as signal |
+| `_BLINK_MAX_IOI_SEC` | `5.0 s` | Max inter-onset interval for blue beacons |
+| `_BLINK_MAX_IOI_SEC_COLOR` | `5.5 s` | Max inter-onset interval for red/green |
 
 ### Helper
 
@@ -431,20 +303,15 @@ Guards applied before declaring `True`:
 _get_blink_detector(tracking_id: int) -> BlinkDetector
 ```
 
-Returns the `BlinkDetector` for a given YOLO tracking ID, creating one on first call. Used by the ROS live mode to maintain per-track state across frames.
+Returns the `BlinkDetector` for a given YOLO tracking ID, creating one on first call.
 
 ---
 
 ## beacon_camera.py
 
-ROS2 node that wraps ZED camera subscriptions, depth synchronization, drone pose, and GPS origin. Imported by `beacon_detector.py` inside `_import_ros()` so ROS packages are never loaded unless ROS mode is actually invoked.
 ROS2 node that wraps camera subscriptions, depth synchronization, drone pose, and GPS origin. Imported by `beacon_detector.py` inside `_import_ros()` so ROS packages are never loaded unless ROS mode is actually invoked.
 
 ### BeaconCamera(Node)
-
-```python
-cam = BeaconCamera(topic_prefix="/zed/zed_node")
-```
 
 **Lifecycle**
 
@@ -466,31 +333,7 @@ cam = BeaconCamera(topic_prefix="/zed/zed_node")
 | `get_gps_origin()` | `(lat, lon, alt)` tuple, or `None` |
 | `get_detections()` | List of `Detection` objects from `YoloDetector` |
 
-**Subscribed topics**
-
-| Topic | Type | Purpose |
-|---|---|---|
-| `{prefix}/rgb/color/rect/image` | `sensor_msgs/Image` | RGB frames (synced with depth) |
-| `{prefix}/depth/depth_registered` | `sensor_msgs/Image` | Float32 depth map |
-| `{prefix}/rgb/color/rect/camera_info` | `sensor_msgs/CameraInfo` | Triggers intrinsics initialization (one-shot) |
-| `/mavros/local_position/pose` | `geometry_msgs/PoseStamped` | Drone ENU position + quaternion |
-| `/mavros/global_position/gp_origin` | `geographic_msgs/GeoPointStamped` | GPS reference origin |
-
-RGB and depth frames are synchronized with `message_filters.ApproximateTimeSynchronizer` (50 ms slop).
-
-=======
-| `image` topic | `sensor_msgs/Image` | RGB frames (synced with depth) |
-| `depth` topic | `sensor_msgs/Image` | Depth map — any encoding (see below) |
-| `drone_pose` topic | `geometry_msgs/PoseStamped` | Drone ENU position + quaternion |
-| `gps_origin` topic | `geographic_msgs/GeoPointStamped` | GPS reference origin |
-
-Topic names come from the config file (see [How topic and intrinsic overrides work](#how-topic-and-intrinsic-overrides-work)). The `camera_info` subscription is not required — intrinsics are set from config values when `open()` is called.
-
-RGB and depth frames are synchronized with `message_filters.ApproximateTimeSynchronizer` (50 ms slop).
-
 **Depth decoding**
-
-The depth callback decodes the raw message based on `encoding`:
 
 | Encoding | dtype | Scale |
 |---|---|---|
@@ -498,14 +341,15 @@ The depth callback decodes the raw message based on `encoding`:
 | `16UC1` | `uint16` | × 0.001 → metres |
 | `8UC1` / other | `uint8` | raw value, no scaling |
 
-If the decoded depth map has a different resolution than the RGB frame (e.g. 240×180 ToF vs 640×480 RGB), it is resized to match using `cv2.INTER_NEAREST` to preserve depth values without interpolation.
+If the decoded depth map has a different resolution than the RGB frame, it is resized to match using `cv2.INTER_NEAREST`.
 
->>>>>>> f10da998325ddcef98ca03469b382d31e4867027
+RGB and depth frames are synchronized with `message_filters.ApproximateTimeSynchronizer` (50 ms slop).
+
 ---
 
 ## batch_detect.py
 
-Headless batch processor for running detection over multiple video files without opening any display window. Results are written to a timestamped CSV and a human-readable summary text file.
+Headless batch processor for running detection over multiple video files without opening any display window.
 
 ### Usage
 
@@ -526,21 +370,11 @@ python3 batch_detect.py --output-dir /path/to/logs video1.mp4
 
 ### Output files
 
-Both files are written to `--output-dir` with a `YYYYMMDD_HHMMSS` timestamp suffix.
-
 **`batch_detections_<ts>.csv`** — one row per detection per frame across all videos.
 
 Columns: `video, timestamp, frame, color, color_confidence, intensity, is_blinking, blink_hz, blink_phase, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2`
 
-The `timestamp` column is the video presentation timestamp in seconds (`CAP_PROP_POS_MSEC / 1000`), not wall-clock time, so blink frequency estimates match the video's actual frame rate regardless of decode speed.
-
-**`batch_summary_<ts>.txt`** — human-readable per-video breakdown printed to stdout and written to disk. Includes frame count, detection rate, color breakdown, and blink statistics.
-
-### Design notes
-
-- Both YOLO models are loaded once and reused across all videos.
-- Each video gets its own `BlinkDetector` instance so timing windows do not bleed between files.
-- A `VideoStats` accumulator tracks per-video color counts and blink state counts for the summary.
+**`batch_summary_<ts>.txt`** — human-readable per-video breakdown. Includes frame count, detection rate, color breakdown, and blink statistics.
 
 ---
 

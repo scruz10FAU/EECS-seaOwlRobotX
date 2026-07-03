@@ -1,0 +1,35 @@
+{
+  "_comment": "beacon_config_sim.json — Isaac Sim (320x240 front cam, no pose/GPS)",
+
+  "model":      "models/SIM_rgb.pt",
+  "crop_model": "models/SIM_beacontop.pt",
+  "conf":       0.40,
+  "display":    false,
+
+  "topics": {
+    "image":          "/iris_0/front_cam/rgb",
+    "camera_info":    "/iris_0/front_cam/camera_info",
+    "depth":          "/iris_0/front_cam/depth",
+    "drone_pose":     null,
+    "gps_origin":     null,
+    "detections_pub": "/seabird/beacon_detections",
+    "buoy_pub":       "/seabird/buoy_detections",
+    "debug_image":    "/seabird/debug_image"
+  },
+
+  "camera": {
+    "img_w": 320,
+    "img_h": 240,
+    "mount_offset_xyz": [0.30, 0.0, 0.05],
+    "pitch_deg": 10.0
+  },
+
+  "detection": {
+    "confirm_frames": 3,
+    "pub_cooldown_s": 1.0,
+    "depth_min_m":    1.0,
+    "depth_max_m":    60.0,
+    "min_area_frac":  0.001,
+    "stage2_conf":    0.30
+  }
+}
