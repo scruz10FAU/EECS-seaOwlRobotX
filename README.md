@@ -219,10 +219,21 @@ python3 beacon_detector.py -v footage.mp4           # video file, no ROS
 | `--display / -d` | off | Show OpenCV window (ROS and ROS-video modes) |
 | `--save / -s` | off | Write annotated output video (video modes) |
 | `--log / -l` | off | Write per-frame CSV log |
-| `--save-crops / -sc` | off | Save each beacon bounding-box crop as a PNG |
-| `--save-det-images / -sdi` | off | Save each detection as a padded image with color and blink status in the filename |
+| `--save-crops / -sc` | off | Save the isolated lit area (beacon top) for each detection as a PNG |
+| `--save-det-images / -sdi` | off | Save each detection bbox (+ 20 px padding) with color and blink status in the filename |
+| `--save-frames / -sf` | off | Save the full unannoted frame whenever a detection occurs |
 | `--target-color / -tc` | `None` | Expected beacon color (`blue`, `red`, etc.) |
 | `--target-blinking / -tb` | `None` | Expected blink state (`true` or `false`) |
+
+### Image output directories
+
+Three independent image-saving flags can be combined freely. All write to a directory derived from the input path (video modes) or `~/seabird_dataset/beacon_debug/` (ROS live mode). Images are only written on frames that contain at least one detection.
+
+| Flag | Directory suffix | Contents |
+|---|---|---|
+| `--save-crops / -sc` | `_beacon_crops/` | Tight crop of the isolated lit area used for color classification |
+| `--save-det-images / -sdi` | `_beacon_det_images/` | Detection bbox + 20 px padding; filename encodes color, confidence, blink |
+| `--save-frames / -sf` | `_beacon_frames/` | Full unannoted frame |
 
 ### ROS topics (live and ROS-video modes)
 

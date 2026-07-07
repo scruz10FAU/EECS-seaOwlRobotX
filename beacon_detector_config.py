@@ -87,6 +87,7 @@ def load_config(path: str) -> dict:
         "log":        bool(raw.get("log",         False)),
         "save_crops":      bool(raw.get("save_crops",      False)),
         "save_det_images": bool(raw.get("save_det_images", False)),
+        "save_frames":     bool(raw.get("save_frames",     False)),
         "target_color":    raw.get("target_color",    None),
         "target_blinking": raw.get("target_blinking", None),
         "video":      raw.get("video",      None),
@@ -892,6 +893,13 @@ def main(cfg: dict) -> None:
         os.makedirs(det_images_dir, exist_ok=True)
         print(f"[beacon] Saving detection images → {det_images_dir}/")
 
+    save_frames = cfg.get("save_frames", False)
+    frames_dir = None
+    if save_frames:
+        frames_dir = os.path.join(DEBUG_DIR, "beacon_frames")
+        os.makedirs(frames_dir, exist_ok=True)
+        print(f"[beacon] Saving full frames → {frames_dir}/")
+
     frame_count        = 0
     intrinsics_printed = False
 
@@ -918,11 +926,18 @@ def main(cfg: dict) -> None:
             dets = cam.get_detections()
             rgb_clean = rgb.copy()  # snapshot before drawing so crops are annotation-free
 
+            if frames_dir is not None and dets:
+                fname = f"frame_f{frame_count:06d}.png"
+                cv2.imwrite(os.path.join(frames_dir, fname), rgb_clean)
+
             for d in dets:
                 x1, y1, x2, y2 = d.bbox_2d
 
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
                 beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
+                if crops_dir is not None and lit_region.size > 0:
+                    fname = f"crop_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}.png"
+                    cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
                 blink_info = _get_blink_detector(d.tracking_id).update(
                     frame_ts, beacon_color, intensity, color_conf
                 )

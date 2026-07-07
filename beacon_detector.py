@@ -379,6 +379,7 @@ def run_video(video_path: str,
               log: bool = False,
               save_crops: bool = False,
               save_det_images: bool = False,
+              save_frames: bool = False,
               target_color=None, target_blinking=None) -> None:
     """
     Run beacon detection + color classification on a local video file.
@@ -441,6 +442,12 @@ def run_video(video_path: str,
         os.makedirs(det_images_dir, exist_ok=True)
         print(f"[beacon-video] Saving detection images → {det_images_dir}/")
 
+    frames_dir = None
+    if save_frames:
+        frames_dir = os.path.splitext(video_path)[0] + "_beacon_frames"
+        os.makedirs(frames_dir, exist_ok=True)
+        print(f"[beacon-video] Saving full frames → {frames_dir}/")
+
     blink_detector = BlinkDetector()
     frame_idx     = 0
     paused        = False
@@ -472,6 +479,9 @@ def run_video(video_path: str,
                                                 save_det_images_dir=det_images_dir,
                                                 target_color=target_color,
                                                 target_blinking=target_blinking)
+
+                if frames_dir is not None and len(boxes):
+                    cv2.imwrite(os.path.join(frames_dir, f"frame_f{frame_idx:06d}.png"), raw)
 
                 if writer:
                     writer.write(display_frame)
@@ -507,6 +517,7 @@ def run_video_ros(video_path: str,
                   display: bool = False,
                   save_crops: bool = False,
                   save_det_images: bool = False,
+                  save_frames: bool = False,
                   target_color=None, target_blinking=None) -> None:
     """
     Read frames from a local video file and publish detections to ROS.
@@ -576,6 +587,12 @@ def run_video_ros(video_path: str,
         os.makedirs(det_images_dir, exist_ok=True)
         print(f"[beacon-ros-video] Saving detection images → {det_images_dir}/")
 
+    frames_dir = None
+    if save_frames:
+        frames_dir = os.path.splitext(video_path)[0] + "_beacon_frames"
+        os.makedirs(frames_dir, exist_ok=True)
+        print(f"[beacon-ros-video] Saving full frames → {frames_dir}/")
+
     blink_detector = BlinkDetector()
     rclpy.init()
     cam        = BeaconCamera()
@@ -617,6 +634,9 @@ def run_video_ros(video_path: str,
                 boxes   = results[0].boxes
 
                 print(f"Frame {frame_idx}/{total} — {len(boxes)} detection(s)")
+
+                if frames_dir is not None and len(boxes):
+                    cv2.imwrite(os.path.join(frames_dir, f"frame_f{frame_idx:06d}.png"), raw)
 
                 for det_idx, box in enumerate(boxes):
                     x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
@@ -731,6 +751,7 @@ def main(model: str = "models/one_beacon.pt",
          log: bool = False,
          save_crops: bool = False,
          save_det_images: bool = False,
+         save_frames: bool = False,
          target_color=None, target_blinking=None) -> None:
 
     _import_ros()   # pull in ROS2 / camera_interface / seabird_config
@@ -793,6 +814,12 @@ def main(model: str = "models/one_beacon.pt",
         os.makedirs(det_images_dir, exist_ok=True)
         print(f"[beacon] Saving detection images → {det_images_dir}/")
 
+    frames_dir = None
+    if save_frames:
+        frames_dir = os.path.join(DEBUG_DIR, "beacon_frames")
+        os.makedirs(frames_dir, exist_ok=True)
+        print(f"[beacon] Saving full frames → {frames_dir}/")
+
     frame_count       = 0
     intrinsics_printed = False
 
@@ -818,6 +845,9 @@ def main(model: str = "models/one_beacon.pt",
 
             dets = cam.get_detections()
             rgb_clean = rgb.copy()  # snapshot before drawing so crops are annotation-free
+
+            if frames_dir is not None and dets:
+                cv2.imwrite(os.path.join(frames_dir, f"frame_f{frame_count:06d}.png"), rgb_clean)
 
             for d in dets:
                 x1, y1, x2, y2 = d.bbox_2d
@@ -1011,6 +1041,11 @@ if __name__ == "__main__":
         help="Save each detection as a padded image with color and blink status in the filename",
     )
     parser.add_argument(
+        "--save-frames", "-sf",
+        action="store_true",
+        help="Save the full unannoted frame whenever a detection occurs",
+    )
+    parser.add_argument(
         "--target-color", "-tc",
         default=None,
         type=str,
@@ -1034,16 +1069,16 @@ if __name__ == "__main__":
         run_video_ros(args.ros_video, model_path=args.model, crop_model_path=args.crop_model,
                       save_output=args.save, conf=args.conf, log=args.log,
                       display=args.display, save_crops=args.save_crops,
-                      save_det_images=args.save_det_images,
+                      save_det_images=args.save_det_images, save_frames=args.save_frames,
                       target_color=args.target_color, target_blinking=target_blinking)
     elif args.video is not None:
         run_video(args.video, model_path=args.model, crop_model_path=args.crop_model,
                   save_output=args.save, conf=args.conf, log=args.log,
                   save_crops=args.save_crops,
-                  save_det_images=args.save_det_images,
+                  save_det_images=args.save_det_images, save_frames=args.save_frames,
                   target_color=args.target_color, target_blinking=target_blinking)
     else:
         main(args.model, args.display, args.true_dist, crop_model_path=args.crop_model,
              log=args.log, save_crops=args.save_crops,
-             save_det_images=args.save_det_images,
+             save_det_images=args.save_det_images, save_frames=args.save_frames,
              target_color=args.target_color, target_blinking=target_blinking)

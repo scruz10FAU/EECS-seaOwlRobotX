@@ -1,28 +1,22 @@
 {
-  "model":      "models/one_beacon630.pt",
-  "crop_model": "models/best_crop630.pt",
+  "model":      "models/one_beacon625.pt",
+  "crop_model": "models/best_crop.pt",
   "conf":       0.5,
-  "display":    false,
+  "display":    true,
   "true_dist":  0.4826,
   "save":       false,
-  "log":        true,
+  "log":        false,
   "save_crops": false,
-  "save_det_images": true,
-  "target_color":    "green",
-  "target_blinking": true,
+  "save_det_images": false,
+  "save_frames":     false,
   "video":      null,
-  "ros_video":  null,
-
+  "ros_video":  "../beacon_videos/blink_red.mp4",
   "topics": {
-    "camera_prefix":  "/hires_front_small_color",
-    "image":          "/hires_front_small_color",
-    "camera_info":    "/hires_front_small_color/camera_info",
-    "depth":          "/tof_depth",
-    "drone_pose":     "/vvhub_body_wrt_local/pose",
-    "gps_origin":     "/fmu/out/vehicle_gps_position",
+    "camera_prefix":  "/zed/zed_node",
+    "drone_pose":     "/mavros/local_position/pose",
+    "gps_origin":     "/mavros/global_position/gp_origin",
     "detections_pub": "/seabird/beacon_detections"
   },
-
   "paths": {
     "scripts_dir": "~/seabird/scripts",
     "dataset_dir": "~/seabird_dataset",
@@ -34,7 +28,7 @@
   "isaac": {
     "drone_prim_path":  "/World/Iris",
     "drone_body_path":  "/World/Iris/body",
-    "camera_prim_path": "/hires_front_small_color"
+    "camera_prim_path": "/World/Iris/body/front_cam"
   },
 
   "camera": {
