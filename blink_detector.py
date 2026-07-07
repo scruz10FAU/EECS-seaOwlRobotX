@@ -10,33 +10,54 @@ from collections import deque, Counter
 _BLINK_WINDOW_SEC          = 8.0   # rolling window length for blink estimation (seconds)
 _BLINK_MIN_DATA_SEC        = 4.0   # return "unknown" until this many seconds of samples are in the window
 _BLINK_INTENSITY_MIN_SWING = 0.05  # blue beacon: min peak-to-peak intensity swing to qualify as blinking
-_BLINK_HZ_RANGE            = (0.2, 2.0)  # valid blink frequency range — widened to catch slow beacons
-_BLINK_MIN_EDGES           = 3     # rising edges needed (= 2 complete periods in the window)
+_BLINK_HZ_RANGE            = (0.2, 2.0)  # valid blink frequency range
+_BLINK_MIN_EDGES           = 3     # rising edges needed for blue beacon (2 complete periods)
 _BLINK_MIN_EDGE_GAP        = 0.20  # debounce: ignore edges closer than this (filters threshold chatter)
-_BLINK_MAX_OFF_SEC         = 3.0   # blue beacon: max consecutive off-state duration
-_BLINK_MAX_IOI_SEC         = 5.0   # blue beacon: max IOI (= max period for 0.2 Hz, the lowest valid freq)
+_BLINK_MAX_IOI_SEC         = 5.0   # blue beacon: max IOI (= max period for 0.2 Hz)
 _BLINK_MAX_IOI_SEC_COLOR   = 5.5   # color beacons: extra slack for YOLO detection gaps
-_BLINK_MIN_ON_OFF_GAP      = 0.40  # blue beacon: on/off mean separation must be ≥ 40% of total swing
 _BLINK_COLOR_CONF_MIN      = 0.10  # min color_confidence to count a non-blue reading as signal
-_BLINK_GAP_OFF_SEC         = 0.5   # gap between consecutive detections longer than this = beacon was off
+_BLINK_GAP_OFF_SEC         = 5.0   # red/green only: gap longer than this means beacon was off
+_BLINK_CC_ON_THRESHOLD     = 0.15  # blue beacon: color_confidence above this = LED on, below = LED off/dim
+
+# Number of recent samples used to decide whether the beacon is blue (housing always
+# visible) vs red/green (YOLO loses it entirely when off).
+_BLUE_DETECT_WINDOW        = 6
 
 
 class BlinkDetector:
     """
-    Estimates blink frequency from a rolling window of (timestamp, color, intensity) samples.
+    Estimates blink frequency from a rolling window of (timestamp, color, intensity,
+    color_conf) samples.
 
-    Red/green beacons: rising edge = transition from "blue" (off) to signal color (on).
-    Blue beacon:       rising edge = intensity crossing _BLUE_ON_INTENSITY upward.
+    Blue beacons: on/off signal comes from color_confidence oscillation and
+      actual "unknown" detections.  Gap injection is skipped — the beacon housing
+      is always visible so inter-frame gaps are not off-periods.
+
+    Red/green beacons: rising edge = transition from "blue" (off, housing visible)
+      to signal color (on).  Gap injection is used because YOLO loses the beacon
+      entirely when the LED is off.
+
     Returns a dict: {is_blinking, blink_color, blink_hz, phase}.
     """
 
     def __init__(self):
-        self._samples: deque = deque()  # (timestamp, color, intensity)
+        self._samples: deque = deque()  # (timestamp, color, intensity, color_conf)
+
+    def _is_blue_beacon(self) -> bool:
+        """True when recent samples are predominantly blue/unknown (housing always visible)."""
+        if not self._samples:
+            return False
+        recent = list(self._samples)[-_BLUE_DETECT_WINDOW:]
+        blue_like = sum(1 for s in recent if s[1] in ("blue", "unknown"))
+        return blue_like > len(recent) // 2
 
     def update(self, ts: float, color: str, intensity: float, color_conf: float = 1.0) -> dict:
-        # A gap longer than the threshold means the beacon was off (YOLO couldn't detect it).
+        # For red/green beacons, a gap means the beacon was off and YOLO missed it.
         # Inject a synthetic off-marker so rising-edge detection sees the transition.
-        if self._samples and (ts - self._samples[-1][0]) > _BLINK_GAP_OFF_SEC:
+        # Skip this for blue beacons — the housing is always detectable, so gaps are
+        # just inter-frame intervals, not genuine off-periods.
+        if not self._is_blue_beacon() and self._samples and \
+                (ts - self._samples[-1][0]) > _BLINK_GAP_OFF_SEC:
             off_ts = self._samples[-1][0] + _BLINK_GAP_OFF_SEC / 2
             self._samples.append((off_ts, "_off_", 0.0, 0.0))
         self._samples.append((ts, color, intensity, color_conf))
@@ -56,14 +77,11 @@ class BlinkDetector:
 
         data_span = timestamps[-1] - timestamps[0]
 
-        # Not enough history yet — is_blinking=None signals "still deciding",
-        # distinct from False which means "confirmed not blinking".
         if data_span < _BLINK_MIN_DATA_SEC:
             return {"is_blinking": None, "blink_color": "unknown", "blink_hz": None, "phase": "unknown"}
 
         # Determine signal type from dominant non-blue color in window.
-        # Require minimum color_confidence to avoid red/green noise (e.g. from a
-        # dimming blue beacon) forcing the wrong detection mode.
+        # Require minimum color_confidence to avoid red/green noise forcing the wrong mode.
         color_counts = Counter(
             c for c, cc in zip(colors, color_confs)
             if c not in ("blue", "unknown", "_off_") and cc >= _BLINK_COLOR_CONF_MIN
@@ -72,14 +90,17 @@ class BlinkDetector:
             blink_color = color_counts.most_common(1)[0][0]
             on_flags = [c == blink_color for c in colors]
         else:
-            # Blue beacon: use detection presence/absence as the on/off signal.
-            # "_off_" markers (injected for detection gaps) and "unknown" frames
-            # are the off state; everything else is on.
             blink_color = "blue"
-            on_flags = [c not in ("_off_", "unknown") for c in colors]
+            # On = LED lit (color_conf above threshold); Off = dim/unknown/injected.
+            # color_confidence cleanly separates the LED-on state (~0.4+) from the
+            # housing-only state (~0.02-0.05) without relying on gap injection.
+            on_flags = [
+                c not in ("_off_", "unknown") and cc >= _BLINK_CC_ON_THRESHOLD
+                for c, cc in zip(colors, color_confs)
+            ]
 
-            # Fallback intensity check: if all samples are "on" with no off markers,
-            # try oscillation-based detection (steady blue with no gaps).
+            # Fallback: if every sample passes the confidence threshold, no off-states
+            # exist via color_conf. Try intensity oscillation as a secondary signal.
             if all(on_flags):
                 live_intensities = [i for c, i in zip(colors, intensities)
                                     if c not in ("_off_", "unknown")]
@@ -94,12 +115,9 @@ class BlinkDetector:
                 on_flags = [i >= mean_intensity if c not in ("_off_", "unknown") else False
                             for c, i in zip(colors, intensities)]
 
-
         phase = "on" if on_flags[-1] else "off"
 
         # Rising edges (off→on), debounced to suppress threshold chatter.
-        # Frames near the mean crossing can flip rapidly, producing fake edges
-        # with sub-frame IOIs that would corrupt the frequency estimate.
         raw_edges = [
             timestamps[i]
             for i in range(1, len(on_flags))
@@ -112,11 +130,9 @@ class BlinkDetector:
                 rising_edges.append(t)
                 last_edge = t
 
-        # Blue beacons use intensity oscillations which are prone to noise — require
-        # 3 edges (2 complete periods) for confidence.  Color-transition beacons
-        # (red/green) produce rising edges only on genuine color changes, so 2 edges
-        # (1 complete period, 1 IOI) is sufficient and avoids false negatives caused
-        # by YOLO occasionally missing frames at a transition point.
+        # Blue beacons require 3 edges (2 complete periods) for confidence.
+        # Red/green only need 2 edges (1 complete period) since color transitions
+        # are unambiguous.
         min_edges = _BLINK_MIN_EDGES if blink_color == "blue" else 2
         if len(rising_edges) < min_edges:
             still_accumulating = data_span < (_BLINK_MIN_DATA_SEC + 1.0)
@@ -128,11 +144,6 @@ class BlinkDetector:
             }
 
         # Duty-cycle guard for the 2-edge case on non-blue beacons.
-        # A solid beacon with occasional color-classification noise can produce exactly
-        # 2 rising edges while its on-fraction stays high (≥ 65%) because it's nearly
-        # always the signal color.  A genuinely blinking beacon has an on-fraction near
-        # 50%.  Skip this check when ≥ 3 edges are present — the IOI consistency test
-        # below is a stronger filter at that point.
         if blink_color != "blue" and len(rising_edges) == 2:
             on_fraction = sum(1 for f in on_flags if f) / len(on_flags)
             if on_fraction > 0.65:
@@ -142,10 +153,7 @@ class BlinkDetector:
         mean_ioi = sum(iois) / len(iois)
         if mean_ioi <= 0:
             return {"is_blinking": False, "blink_color": blink_color, "blink_hz": None, "phase": phase}
-        # A single IOI longer than the maximum valid period means two edges span a
-        # skipped cycle — the mean would pass the Hz check but the pattern is not a
-        # stable blink.  Color beacons get extra slack because a YOLO detection gap
-        # can swallow one full green/red cycle, making one IOI appear as ~2 periods.
+
         max_ioi_limit = _BLINK_MAX_IOI_SEC if blink_color == "blue" else _BLINK_MAX_IOI_SEC_COLOR
         if max(iois) > max_ioi_limit:
             return {"is_blinking": False, "blink_color": blink_color, "blink_hz": None, "phase": phase}
