@@ -57,17 +57,17 @@ def log(msg):
 
 # ── Mission configuration ─────────────────────────────────────────────────────
 TAKEOFF_ALT_M     = 5.0
-WAYPOINT_TOL_M    = 2.5
+WAYPOINT_TOL_M    = 0.5
 WAYPOINT_TIMEOUT  = 60.0
 HOVER_STABILIZE_S = 8.0
 
 # Search box (metres from spawn origin, NED frame)
 # 5ft x 5ft area: 5ft = 1.524m, centred at the spawn origin (±0.762m each axis)
-LAWN_ROW_SPACING_M = 0.5     # gap between parallel E-W rows
-LAWN_NORTH_M       =  0.762  # northern edge of search area
-LAWN_SOUTH_M       = -0.762  # southern edge
-LAWN_EAST_M        =  0.762  # eastern edge
-LAWN_WEST_M        = -0.762  # western edge
+LAWN_ROW_SPACING_M = 0.75     # gap between parallel E-W rows
+LAWN_NORTH_M       =  2.0  # northern edge of search area
+LAWN_SOUTH_M       = -2.0  # southern edge
+LAWN_EAST_M        =  2.0  # eastern edge
+LAWN_WEST_M        = -2.0  # western edge
 
 TARGET_COLORS  = {"red", "green", "blue"}
 
