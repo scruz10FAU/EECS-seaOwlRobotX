@@ -7,15 +7,15 @@ Imported by beacon_detector.py.  No ROS or OpenCV dependency.
 
 from collections import deque, Counter
 
-_BLINK_WINDOW_SEC          = 8.0   # rolling window length for blink estimation (seconds)
+_BLINK_WINDOW_SEC          = 12.0  # rolling window length for blink estimation (seconds)
 _BLINK_MIN_DATA_SEC        = 4.0   # return "unknown" until this many seconds of samples are in the window
 _BLINK_INTENSITY_MIN_SWING = 0.05  # blue beacon: min peak-to-peak intensity swing to qualify as blinking
-_BLINK_HZ_RANGE            = (0.2, 2.0)  # valid blink frequency range
+_BLINK_HZ_RANGE            = (0.12, 2.0)  # valid blink frequency range
 _BLINK_MIN_EDGES           = 3     # rising edges needed for blue beacon (2 complete periods)
 _BLINK_MIN_EDGE_GAP        = 0.20  # debounce: ignore edges closer than this (filters threshold chatter)
 _BLINK_MAX_IOI_SEC         = 5.0   # blue beacon: max IOI (= max period for 0.2 Hz)
-_BLINK_MAX_IOI_SEC_COLOR   = 5.5   # color beacons: extra slack for YOLO detection gaps
-_BLINK_COLOR_CONF_MIN      = 0.10  # min color_confidence to count a non-blue reading as signal
+_BLINK_MAX_IOI_SEC_COLOR   = 8.0   # color beacons: slack for long on-periods between blinks
+_BLINK_COLOR_CONF_MIN      = 0.001 # min color_confidence to count a non-blue reading as signal
 _BLINK_GAP_OFF_SEC         = 5.0   # red/green only: gap longer than this means beacon was off
 _BLINK_CC_ON_THRESHOLD     = 0.15  # blue beacon: color_confidence above this = LED on, below = LED off/dim
 
@@ -146,7 +146,7 @@ class BlinkDetector:
         # Duty-cycle guard for the 2-edge case on non-blue beacons.
         if blink_color != "blue" and len(rising_edges) == 2:
             on_fraction = sum(1 for f in on_flags if f) / len(on_flags)
-            if on_fraction > 0.65:
+            if on_fraction > 0.80:
                 return {"is_blinking": False, "blink_color": blink_color, "blink_hz": None, "phase": phase}
 
         iois = [rising_edges[i + 1] - rising_edges[i] for i in range(len(rising_edges) - 1)]
