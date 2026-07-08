@@ -82,8 +82,10 @@ RRT_GOAL_BIAS        = 0.08   # probability of biasing sample toward least-explo
 RRT_MAX_NODES = max(20, int(2.0 * math.pi * MAX_SEARCH_RADIUS_M ** 2 / RRT_STEP_M ** 2))
 
 # ── Beacon verification ───────────────────────────────────────────────────────
-BLINK_VERIFY_TIMEOUT_S  = 15.0  # max hover time to confirm blink_is_blinking
+BLINK_VERIFY_TIMEOUT_S  = 20.0  # max hover time to confirm blink_is_blinking
 BLINK_VERIFY_POLL_S     = 0.25  # poll interval during verification hover
+BLINK_SETTLE_S          = 3.0   # stabilisation pause before polling — lets the drone
+                                 # stop moving and the YOLO tracker lock a stable ID
 
 # ── Mission targets ───────────────────────────────────────────────────────────
 TARGET_COLORS        = {"red", "green", "blue"}
@@ -499,11 +501,19 @@ async def verify_beacon(drone: System,
     Returns the latest detection dict (may have blink_is_blinking=None on
     timeout), or None if no detection was ever received for this color.
     """
-    log(f"[rrt] ◉ Verifying blink for '{color}' — hovering up to {BLINK_VERIFY_TIMEOUT_S:.0f}s")
+    log(f"[rrt] ◉ Verifying blink for '{color}' — hovering {BLINK_SETTLE_S:.0f}s to stabilise, "
+        f"then polling up to {BLINK_VERIFY_TIMEOUT_S:.0f}s")
 
     # Try to face toward the beacon using its reported camera-frame offset.
     yaw = _bearing_to_beacon(color)
     target = PositionNedYaw(hover_north, hover_east, hover_down, yaw)
+
+    # Hold position first so the drone stops moving and the YOLO tracker
+    # settles on a stable tracking_id before the blink window starts filling.
+    settle_end = asyncio.get_event_loop().time() + BLINK_SETTLE_S
+    while asyncio.get_event_loop().time() < settle_end:
+        await drone.offboard.set_position_ned(target)
+        await asyncio.sleep(BLINK_VERIFY_POLL_S)
 
     t0 = asyncio.get_event_loop().time()
     while asyncio.get_event_loop().time() - t0 < BLINK_VERIFY_TIMEOUT_S:
