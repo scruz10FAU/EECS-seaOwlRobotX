@@ -36,7 +36,7 @@
 #   beacon_detector_config.py [DETECTOR, green] YOLO+HSV beacon detection; publishes
 #                                               /seabird/beacon_detections and
 #                                               /seabird/buoy_detections
-#   sweep_lawnmower.py        [SWEEP,  magenta] takeoff + lawnmower sweep
+#   sweep_rrt.py              [SWEEP,  magenta] takeoff + RRT beacon search
 #   data_recorder.py          [RECORDER,  cyan] dataset: frames + labels to disk
 #
 # Output:
@@ -81,7 +81,7 @@ DETECTOR_ARGS="${DETECTOR_ARGS:---config beacon_config_sim.json}"
 # All scripts are expected to be in the current working directory.
 declare -a COMPONENTS=(
     "DETECTOR|beacon_detector_config.py|32"  # green   — YOLO+HSV beacon detection
-    "SWEEP   |sweep_lawnmower.py|35"         # magenta — takeoff + lawnmower sweep
+    "SWEEP   |sweep_rrt.py|35"              # magenta — takeoff + RRT beacon search
     "RECORDER|data_recorder.py|36"           # cyan    — dataset: frames + labels to disk
 )
 

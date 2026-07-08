@@ -14,7 +14,8 @@ Detection pipeline for colored, optionally blinking, beacon lights mounted on a 
 | `beacon_config_physical.json` | Config for physical drone (ModalAI VOXL2 / Starling 2). Uses modal camera and ToF depth topics. |
 | `beacon_config_sim.json` | Config for Isaac Sim. Uses `/iris_0/front_cam/*` topics; pose and GPS are disabled. |
 | `modal_config.json` | Reference config for Modal AI VOXL hardware topic names. |
-| `sweep_lawnmower.py` | Autonomous boustrophedon (lawnmower) flight mission. Searches a 5 ft × 5 ft area. |
+| `sweep_lawnmower.py` | Autonomous boustrophedon (lawnmower) flight mission. Searches a fixed rectangular area. |
+| `sweep_rrt.py` | Autonomous RRT beacon search. Explores a configurable radius from takeoff, hovering to verify blink status on each new detection. |
 | `data_recorder.py` | ROS2 node that saves camera frames and detection labels to disk during a mission. |
 | `start_seabird_beacon.sh` | Mission launcher. Starts the detector, sweep, and recorder as tagged, logged child processes. |
 | `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
@@ -42,7 +43,7 @@ MUTE=SWEEP ./start_seabird_beacon.sh                              # suppress SWE
 | Tag | Script | Color |
 |---|---|---|
 | `DETECTOR` | `beacon_detector_config.py` | green |
-| `SWEEP` | `sweep_lawnmower.py` | magenta |
+| `SWEEP` | `sweep_rrt.py` | magenta |
 | `RECORDER` | `data_recorder.py` | cyan |
 
 **Logs** are written to `logs/<timestamp>/` in the working directory — one `.log` and one `.stderr` per component, plus a `launch.log` recording start times and exit codes.
@@ -106,6 +107,49 @@ pxh> param set COM_ARM_MAG_STR 0
 pxh> param set EKF2_ABL_LIM 5.0
 pxh> param save
 ```
+
+---
+
+## sweep_rrt.py
+
+Explores the search area using a **Rapidly-exploring Random Tree (RRT)**. The drone grows a tree of visited positions outward from takeoff within a configurable radius. When a new beacon color appears on `/seabird/buoy_detections` the drone hovers in place and waits for `blink_is_blinking` to become `True` or `False` before continuing. The search always runs until the node limit is reached — it does not stop early when all target colors are found, because multiple beacons of the same color may exist.
+
+### Configuration (top of file)
+
+| Constant | Default | Description |
+|---|---|---|
+| `MAX_SEARCH_RADIUS_M` | `10.0` | Hard boundary — no node placed beyond this from takeoff |
+| `RRT_STEP_M` | `1.5` | Max edge length per tree extension |
+| `RRT_GOAL_BIAS` | `0.08` | Probability of biasing sample toward least-explored sector |
+| `RRT_MAX_NODES` | *(derived)* | Computed as `max(20, int(2π × R² / S²))` — enough to cover the disc ~twice |
+| `BLINK_VERIFY_TIMEOUT_S` | `15.0` | Max hover time per beacon before resuming search |
+| `TAKEOFF_ALT_M` | `5.0` | Flight altitude in metres |
+
+`RRT_MAX_NODES` is derived automatically from `MAX_SEARCH_RADIUS_M` and `RRT_STEP_M` — reduce the radius to reduce the search time proportionally.
+
+**Example values:**
+
+| `MAX_SEARCH_RADIUS_M` | `RRT_MAX_NODES` | Max flight distance |
+|---|---|---|
+| 3.0 m | 25 | 38 m |
+| 5.0 m | 69 | 104 m |
+| 10.0 m | 279 | 418 m |
+
+### Behaviour
+
+- **RRT sampling**: uniform random sample inside the search disc; 8% of samples are biased toward the least-explored sector (opposite of the current node centroid) so the tree spreads outward rather than clustering near the start.
+- **Beacon detection**: checks for new colors after arriving at each node. The same color can trigger verification multiple times at different locations.
+- **Blink verification**: hovers at the detection node and polls every 0.25 s until `blink_is_blinking` is non-`None` or `BLINK_VERIFY_TIMEOUT_S` elapses. Records the result either way and clears the pending entry so the color can re-trigger at a new location.
+- **No obstacle avoidance**: flies straight-line paths between nodes. Suitable for open outdoor areas with surface-level obstacles below flight altitude.
+
+### RViz2 topics
+
+| Topic | Type | Content |
+|---|---|---|
+| `/seabird/flight_path` | `nav_msgs/Path` | Visited positions |
+| `/seabird/path_marker` | `visualization_msgs/Marker` (LINE_STRIP) | Same path as a line |
+| `/seabird/rrt_tree` | `visualization_msgs/Marker` (LINE_LIST) | Every RRT edge |
+| `/seabird/rrt_nodes` | `visualization_msgs/Marker` (SPHERE_LIST) | Every RRT node |
 
 ---
 
@@ -291,22 +335,23 @@ result = detector.update(ts, color, intensity, color_conf)
 
 ### Algorithm
 
-**Red / Green beacons:** A rising edge is a transition from `blue` (beacon off, housing visible) to the signal color (beacon on). Only non-blue readings with `color_conf ≥ 0.10` are counted when selecting the dominant signal color.
+**Red / Green beacons:** YOLO loses the beacon entirely when the LED turns off. A rising edge is therefore a color transition from absent/`unknown` back to the signal color. If two consecutive detections are more than `_BLINK_GAP_OFF_SEC` apart, a synthetic `_off_` marker is injected between them to represent the missed off-period.
 
-**Blue beacons:** On/off state is determined from detection presence and absence rather than intensity oscillations. When the beacon turns off, YOLO stops detecting it entirely; the resulting gap in the sample stream is the primary blink signal. A synthetic `_off_` marker is injected whenever two consecutive samples are more than `_BLINK_GAP_OFF_SEC` (0.5 s) apart.
+**Blue beacons:** The beacon housing is always visible so inter-frame gaps are *not* off-periods — gap injection is skipped. Instead, `color_confidence` (fraction of lit pixels) separates the LED-on state (~0.4+) from the housing-only state (~0.02–0.05). Readings above `_BLINK_CC_ON_THRESHOLD` are treated as "on"; readings below (including `unknown` frames) are treated as "off".
 
 ### Key constants
 
 | Constant | Value | Meaning |
 |---|---|---|
-| `_BLINK_WINDOW_SEC` | `8.0 s` | Rolling window length |
+| `_BLINK_WINDOW_SEC` | `12.0 s` | Rolling window length |
 | `_BLINK_MIN_DATA_SEC` | `4.0 s` | Minimum history before deciding |
-| `_BLINK_HZ_RANGE` | `0.2–2.0 Hz` | Valid blink frequency range |
+| `_BLINK_HZ_RANGE` | `0.12–2.0 Hz` | Valid blink frequency range |
 | `_BLINK_MIN_EDGE_GAP` | `0.20 s` | Debounce: minimum gap between rising edges |
-| `_BLINK_GAP_OFF_SEC` | `0.5 s` | Detection gap longer than this injects an off marker |
-| `_BLINK_COLOR_CONF_MIN` | `0.10` | Minimum `color_conf` for a non-blue reading to count as signal |
+| `_BLINK_GAP_OFF_SEC` | `5.0 s` | Red/green: gap longer than this injects an off marker |
+| `_BLINK_CC_ON_THRESHOLD` | `0.15` | Blue beacons: `color_conf` above this = LED on |
+| `_BLINK_COLOR_CONF_MIN` | `0.001` | Minimum `color_conf` for a non-blue reading to count toward color mode |
 | `_BLINK_MAX_IOI_SEC` | `5.0 s` | Max inter-onset interval for blue beacons |
-| `_BLINK_MAX_IOI_SEC_COLOR` | `5.5 s` | Max inter-onset interval for red/green |
+| `_BLINK_MAX_IOI_SEC_COLOR` | `8.0 s` | Max inter-onset interval for red/green (allows long on-periods) |
 
 ### Helper
 
@@ -340,6 +385,7 @@ ROS2 node that wraps camera subscriptions, depth synchronization, drone pose, an
 |---|---|
 | `get_rgb()` | Latest BGR frame as `np.ndarray`, or `None` |
 | `get_depth()` | Latest float32 depth map, or `None` |
+| `get_frame_timestamp()` | ROS header timestamp of the latest frame as `float` seconds, or `None` |
 | `get_drone_pose()` | `(pos_xyz, quat_wxyz)` numpy arrays, or `(None, None)` |
 | `get_gps_origin()` | `(lat, lon, alt)` tuple, or `None` |
 | `get_detections()` | List of `Detection` objects from `YoloDetector` |
