@@ -6,11 +6,18 @@ Beacon search using Rapidly-exploring Random Trees (RRT).
 
 The drone grows an RRT from its takeoff position outward to MAX_SEARCH_RADIUS_M.
 At each tree extension the drone flies to the new node and checks whether any
-new beacon colors have appeared on /seabird/buoy_detections.  When a new color
+new beacon colors have appeared on /seabird/beacon_detections.  When a new color
 is seen the drone hovers in place until blink_is_blinking becomes True/False
-(or BLINK_VERIFY_TIMEOUT_S elapses), then resumes the search.  All three
-target colors are needed to end the search early; otherwise the tree grows to
-RRT_MAX_NODES before returning to launch.
+(or BLINK_VERIFY_TIMEOUT_S elapses), then resumes the search.  Multiple beacons
+of the same color may exist; the tree always grows to RRT_MAX_NODES before RTL.
+
+Safety features:
+  - Battery failsafe: triggers RTL when remaining < BATTERY_RTL_PERCENT.
+  - Detector pre-flight check: aborts if /seabird/beacon_detections is silent
+    for DETECTOR_TIMEOUT_S seconds before arming.
+
+Start beacon_detector_config.py before this script so detections arrive on
+/seabird/beacon_detections.
 
 Three RViz topics are published:
   /seabird/flight_path    — nav_msgs/Path of visited positions
@@ -20,8 +27,8 @@ Three RViz topics are published:
 
 Physical drone notes (same as sweep_lawnmower.py):
   - MAVSDK must receive PX4 MAVLink on MAVSDK_ADDRESS.
-  - Start beacon_detector_config.py (or beacon_detector.py) before this script
-    so detections arrive on /seabird/buoy_detections.
+  - Start beacon_detector_config.py before this script so detections arrive
+    on /seabird/beacon_detections.
 """
 
 import asyncio
@@ -87,6 +94,10 @@ BENCH_TEST                  = False
 MAVSDK_CONNECT_TIMEOUT_S    = 10.0
 PX4_HEARTBEAT_TIMEOUT_S     = 20.0
 
+# ── Safety ────────────────────────────────────────────────────────────────────
+BATTERY_RTL_PERCENT  = 0.30   # trigger RTL when battery.remaining_percent < this (0.0–1.0)
+DETECTOR_TIMEOUT_S   = 30.0   # abort pre-flight if no message from beacon detector within this time
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -102,6 +113,8 @@ _detected_buoys: set  = set()   # colors whose blink status has been recorded
 _pending_beacon: dict = {}      # color -> latest detection dict (from ROS cb)
 _beacon_locations: dict = {}    # color -> (north, east) where first detected
 _lock = threading.Lock()
+_battery_low: bool    = False   # set True by monitor_battery() when threshold crossed
+_detector_alive       = threading.Event()  # set when first /seabird/beacon_detections msg arrives
 
 
 # ── ROS2 publishers (set in listener thread) ──────────────────────────────────
@@ -172,6 +185,7 @@ def _rclpy_thread_fn() -> None:
 
         # ── Detection subscription ────────────────────────────────────────
         def _cb(msg: String) -> None:
+            _detector_alive.set()   # signal pre-flight check that detector is live
             try:
                 data = json.loads(msg.data)
             except json.JSONDecodeError:
@@ -183,9 +197,9 @@ def _rclpy_thread_fn() -> None:
                 if color not in _detected_buoys:
                     _pending_beacon[color] = data   # always update with latest frame
 
-        node.create_subscription(String, "/seabird/buoy_detections", _cb, 10)
+        node.create_subscription(String, "/seabird/beacon_detections", _cb, 10)
         node.get_logger().info(
-            "[rrt_listener] Subscribed /seabird/buoy_detections  |  "
+            "[rrt_listener] Subscribed /seabird/beacon_detections  |  "
             "Publishing /seabird/flight_path  /seabird/rrt_tree  /seabird/rrt_nodes"
         )
         rclpy.spin(node)
@@ -499,10 +513,11 @@ async def verify_beacon(drone: System,
         with _lock:
             det = _pending_beacon.get(color)
 
-        if det is not None and det.get("blink_is_blinking") is not None:
+        if det is not None and (det.get("blink") or {}).get("is_blinking") is not None:
+            blink_info = det.get("blink") or {}
             log(f"[rrt] ✓ '{color}' blink confirmed: "
-                f"is_blinking={det['blink_is_blinking']}  "
-                f"hz={det.get('blink_hz', '?')}")
+                f"is_blinking={blink_info.get('is_blinking')}  "
+                f"hz={blink_info.get('blink_hz', '?')}")
             return det
 
     elapsed = asyncio.get_event_loop().time() - t0
@@ -521,13 +536,50 @@ def _bearing_to_beacon(color: str) -> float:
     with _lock:
         det = _pending_beacon.get(color, {})
     try:
-        bx = float(det.get("pos3d_x") or 0.0)
-        bz = float(det.get("pos3d_z") or 0.0)   # z = forward in camera frame
+        pos3d = det.get("position_3d")
+        if not pos3d or len(pos3d) < 3:
+            return 0.0
+        bx = float(pos3d[0])   # x = lateral in camera frame
+        bz = float(pos3d[2])   # z = forward in camera frame
         if abs(bx) < 0.01 and abs(bz) < 0.01:
             return 0.0
         return math.degrees(math.atan2(bx, bz)) % 360.0
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, IndexError):
         return 0.0
+
+
+# ── Safety monitors ──────────────────────────────────────────────────────────
+
+async def monitor_battery(drone: System) -> None:
+    """Background coroutine — sets _battery_low and logs when battery drops below threshold."""
+    global _battery_low
+    try:
+        async for battery in drone.telemetry.battery():
+            if not _battery_low and battery.remaining_percent < BATTERY_RTL_PERCENT:
+                _battery_low = True
+                log(f"[rrt] ⚡ BATTERY LOW: {battery.remaining_percent * 100:.0f}% "
+                    f"(threshold {BATTERY_RTL_PERCENT * 100:.0f}%) — will RTL")
+    except Exception:
+        log("[rrt] ERROR: monitor_battery() failed")
+        traceback.print_exc()
+
+
+async def wait_for_detector() -> bool:
+    """
+    Wait up to DETECTOR_TIMEOUT_S for at least one message on /seabird/beacon_detections.
+    Returns True if the detector is confirmed live, False on timeout.
+    """
+    log(f"[rrt] Waiting for beacon detector on /seabird/beacon_detections "
+        f"({DETECTOR_TIMEOUT_S:.0f}s timeout)...")
+    t0 = asyncio.get_event_loop().time()
+    while asyncio.get_event_loop().time() - t0 < DETECTOR_TIMEOUT_S:
+        if _detector_alive.is_set():
+            log("[rrt] ✓ Beacon detector is publishing")
+            return True
+        await asyncio.sleep(0.5)
+    log("[rrt] ERROR: No message on /seabird/beacon_detections — "
+        "is beacon_detector_config.py running?")
+    return False
 
 
 # ── Mission ───────────────────────────────────────────────────────────────────
@@ -583,9 +635,15 @@ async def run_mission() -> None:
     await wait_for_ready_position(drone)
 
     asyncio.ensure_future(track_position(drone))
+    asyncio.ensure_future(monitor_battery(drone))
     await asyncio.sleep(0.5)
     log(f"[rrt] Start position: N={_state.north_m:.2f}  E={_state.east_m:.2f}  "
         f"D={_state.down_m:.2f}")
+
+    # ── Detector pre-flight check ─────────────────────────────────────────────
+    if not await wait_for_detector():
+        log("[rrt] ABORT: beacon detector not detected — not arming")
+        return
 
     # ── Arm ───────────────────────────────────────────────────────────────────
     log("[rrt] Arming...")
@@ -664,6 +722,11 @@ async def run_mission() -> None:
 
     while rrt.size < RRT_MAX_NODES:
 
+        # ── Battery failsafe ──────────────────────────────────────────────
+        if _battery_low:
+            log("[rrt] ⚡ Battery low — stopping search and returning to launch")
+            break
+
         # ── Extend the RRT ────────────────────────────────────────────────
         new_n, new_e, parent_node = rrt.extend()
 
@@ -711,8 +774,9 @@ async def run_mission() -> None:
                 _detected_buoys.add(color)
                 _pending_beacon.pop(color, None)
 
-            blink_status = det.get("blink_is_blinking") if det else None
-            blink_hz     = det.get("blink_hz")          if det else None
+            blink_info   = (det.get("blink") or {}) if det else {}
+            blink_status = blink_info.get("is_blinking")
+            blink_hz     = blink_info.get("blink_hz")
             log(f"[rrt]   Recorded '{color}': "
                 f"is_blinking={blink_status}  hz={blink_hz}  "
                 f"detections so far={found_count()}")
