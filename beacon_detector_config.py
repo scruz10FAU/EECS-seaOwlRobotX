@@ -462,7 +462,9 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                     log_writer=None, frame_idx: int = 0,
                     blink_detector: BlinkDetector = None,
                     video_ts: float = None,
-                    save_crops_dir: str = None) -> np.ndarray:
+                    save_crops_dir: str = None,
+                    target_color: str = None,
+                    target_blinking=None) -> np.ndarray:
     clean = frame.copy()  # unmodified source for crops — keeps drawn annotations out of saved images
     for det_idx, box in enumerate(boxes):
         x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
@@ -473,16 +475,24 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
         crop = clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
         beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
 
-        if save_crops_dir is not None and lit_region.size > 0:
-            fname = (f"crop_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
-                     f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}.png")
-            cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
         draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
         blink_info = None
         if blink_detector is not None:
             ts = video_ts if video_ts is not None else time.time()
             blink_info = blink_detector.update(ts, beacon_color, intensity, color_conf)
+
+        if save_crops_dir is not None and lit_region.size > 0:
+            _date = time.strftime("%Y%m%d")
+            _gt   = (f"gt-{target_color or 'unk'}-"
+                     f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
+            _b    = blink_info.get("is_blinking") if blink_info else None
+            _det  = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
+                     else "det-steady" if _b is False else "det-acc")
+            fname = (f"crop_{_date}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                     f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                     f"_{_gt}_{_det}.png")
+            cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), draw_color, 2)
 
@@ -602,7 +612,9 @@ def run_video(cfg: dict) -> None:
                                                 log_writer=log_writer, frame_idx=frame_idx,
                                                 blink_detector=blink_detector,
                                                 video_ts=video_ts,
-                                                save_crops_dir=crops_dir)
+                                                save_crops_dir=crops_dir,
+                                                target_color=cfg.get("target_color"),
+                                                target_blinking=cfg.get("target_blinking"))
 
                 if writer:
                     writer.write(display_frame)
@@ -640,6 +652,10 @@ def run_video_ros(cfg: dict) -> None:
     display         = cfg["display"]
     topics          = cfg["topics"]
     save_crops      = cfg.get("save_crops", False)
+    date_tag = time.strftime("%Y%m%d")
+    _tc = cfg.get("target_color") or "unk"
+    _tb = cfg.get("target_blinking")
+    gt_tag   = f"gt-{_tc}-{'blink' if _tb is True else 'steady' if _tb is False else 'unk'}"
 
     _import_ros()
 
@@ -791,8 +807,12 @@ def run_video_ros(cfg: dict) -> None:
                                        target_blinking=cfg.get("target_blinking"))
 
                     if crops_dir is not None and lit_region.size > 0:
-                        fname = (f"crop_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
-                                 f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}.png")
+                        _b   = blink_info.get("is_blinking") if blink_info else None
+                        _det = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
+                                else "det-steady" if _b is False else "det-acc")
+                        fname = (f"crop_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                                 f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                                 f"_{gt_tag}_{_det}.png")
                         cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
 
                 if writer:
@@ -900,6 +920,11 @@ def main(cfg: dict) -> None:
         os.makedirs(frames_dir, exist_ok=True)
         print(f"[beacon] Saving full frames → {frames_dir}/")
 
+    date_tag = time.strftime("%Y%m%d")
+    _tc = cfg.get("target_color") or "unk"
+    _tb = cfg.get("target_blinking")
+    gt_tag   = f"gt-{_tc}-{'blink' if _tb is True else 'steady' if _tb is False else 'unk'}"
+
     frame_count        = 0
     intrinsics_printed = False
 
@@ -927,7 +952,7 @@ def main(cfg: dict) -> None:
             rgb_clean = rgb.copy()  # snapshot before drawing so crops are annotation-free
 
             if frames_dir is not None and dets:
-                fname = f"frame_f{frame_count:06d}.png"
+                fname = f"frame_{date_tag}_f{frame_count:06d}_{gt_tag}.png"
                 cv2.imwrite(os.path.join(frames_dir, fname), rgb_clean)
 
             for d in dets:
@@ -936,7 +961,7 @@ def main(cfg: dict) -> None:
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
                 beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
                 if crops_dir is not None and lit_region.size > 0:
-                    fname = f"crop_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}.png"
+                    fname = f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}_{gt_tag}.png"
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
                 blink_info = _get_blink_detector(d.tracking_id).update(
                     frame_ts, beacon_color, intensity, color_conf
@@ -1033,8 +1058,12 @@ def main(cfg: dict) -> None:
                                    target_blinking=cfg.get("target_blinking"))
 
                 if crops_dir is not None and lit_region.size > 0:
-                    fname = (f"crop_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
-                             f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}.png")
+                    _b   = blink_info.get("is_blinking")
+                    _det = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
+                            else "det-steady" if _b is False else "det-acc")
+                    fname = (f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
+                             f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                             f"_{gt_tag}_{_det}.png")
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
 
                 if det_images_dir is not None:
@@ -1050,8 +1079,8 @@ def main(cfg: dict) -> None:
                         blink_tag = f"_blink{blink_info['blink_hz']:.2f}hz"
                     elif blink_info.get("is_blinking") is False:
                         blink_tag = "_steady"
-                    fname = (f"det_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
-                             f"_conf{int(d.confidence*100):02d}{blink_tag}.png")
+                    fname = (f"det_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
+                             f"_conf{int(d.confidence*100):02d}{blink_tag}_{gt_tag}.png")
                     cv2.imwrite(os.path.join(det_images_dir, fname), det_crop)
 
                 print(f"[beacon] {label_txt}"
