@@ -39,6 +39,7 @@ _DEFAULT_TOPICS = {
     "drone_pose":     "/mavros/local_position/pose",
     "gps_origin":     "/mavros/global_position/gp_origin",
     "detections_pub": "/seabird/beacon_detections",
+    "aruco_pub":      "/seabird/aruco_ground_truth",
 }
 
 def _merge_topics(raw: dict) -> dict:
@@ -185,6 +186,7 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
     drone_pose_topic  = topics["drone_pose"]
     gps_topic         = topics["gps_origin"]
     detections_topic  = topics["detections_pub"]
+    aruco_gt_topic    = topics.get("aruco_pub", "/seabird/aruco_ground_truth")
 
     fx, fy   = cfg_camera["fx"],    cfg_camera["fy"]
     cx, cy   = cfg_camera["cx"],    cfg_camera["cy"]
@@ -217,7 +219,8 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
                 [rgb_sub, depth_sub], queue_size=5, slop=0.05
             )
             self._sync.registerCallback(self._on_synced_frame)
-            self.detection_pub = self.create_publisher(String, detections_topic, 10)
+            self.detection_pub  = self.create_publisher(String, detections_topic, 10)
+            self.aruco_gt_pub   = self.create_publisher(String, aruco_gt_topic,   10)
             if drone_pose_topic:
                 self._pose_sub = self.create_subscription(
                     PoseStamped, drone_pose_topic, self._on_drone_pose, qos
@@ -243,7 +246,8 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
                 history=HistoryPolicy.KEEP_LAST,
                 depth=1,
             )
-            self.detection_pub = self.create_publisher(String, detections_topic, 10)
+            self.detection_pub  = self.create_publisher(String, detections_topic, 10)
+            self.aruco_gt_pub   = self.create_publisher(String, aruco_gt_topic,   10)
             if drone_pose_topic:
                 self._pose_sub = self.create_subscription(
                     PoseStamped, drone_pose_topic, self._on_drone_pose, qos
@@ -846,6 +850,15 @@ def run_video_ros(cfg: dict) -> None:
                     aruco_gt = detect_aruco_ground_truth(
                         raw, aruco_detector, aruco_camera_mat, aruco_dist_coeffs,
                         cfg["aruco"]["marker_size_m"])
+                if aruco_gt is not None:
+                    _ag = String()
+                    _ag.data = json.dumps({
+                        "marker_id": aruco_gt[0],
+                        "dist_m":    round(aruco_gt[1], 4),
+                        "tvec":      [round(v, 4) for v in aruco_gt[2]],
+                        "timestamp": round(time.time(), 3),
+                    })
+                    cam.aruco_gt_pub.publish(_ag)
 
                 results = model(raw, conf=conf, verbose=False)
                 boxes   = results[0].boxes
@@ -1065,6 +1078,15 @@ def main(cfg: dict) -> None:
                 aruco_gt = detect_aruco_ground_truth(
                     rgb, aruco_detector, aruco_camera_mat, aruco_dist_coeffs,
                     cfg["aruco"]["marker_size_m"])
+            if aruco_gt is not None:
+                _ag = String()
+                _ag.data = json.dumps({
+                    "marker_id": aruco_gt[0],
+                    "dist_m":    round(aruco_gt[1], 4),
+                    "tvec":      [round(v, 4) for v in aruco_gt[2]],
+                    "timestamp": round(time.time(), 3),
+                })
+                cam.aruco_gt_pub.publish(_ag)
 
             dets = cam.get_detections()
             rgb_clean = rgb.copy()  # snapshot before drawing so crops are annotation-free

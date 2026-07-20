@@ -16,7 +16,8 @@
     "camera_prefix":  "/zed/zed_node",
     "drone_pose":     "/mavros/local_position/pose",
     "gps_origin":     "/mavros/global_position/gp_origin",
-    "detections_pub": "/seabird/beacon_detections"
+    "detections_pub": "/seabird/beacon_detections",
+    "aruco_pub":      "/seabird/aruco_ground_truth"
   },
 
   "paths": {

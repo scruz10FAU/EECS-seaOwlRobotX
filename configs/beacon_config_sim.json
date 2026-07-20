@@ -13,6 +13,7 @@
     "drone_pose":     null,
     "gps_origin":     null,
     "detections_pub": "/seabird/beacon_detections",
+    "aruco_pub":      "/seabird/aruco_ground_truth",
     "debug_image":    "/seabird/debug_image"
   },
 

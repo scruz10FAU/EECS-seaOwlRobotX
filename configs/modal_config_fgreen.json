@@ -21,7 +21,8 @@
     "depth":          "/tof_depth",
     "drone_pose":     "/vvhub_body_wrt_local/pose",
     "gps_origin":     "/fmu/out/vehicle_gps_position",
-    "detections_pub": "/seabird/beacon_detections"
+    "detections_pub": "/seabird/beacon_detections",
+    "aruco_pub":      "/seabird/aruco_ground_truth"
   },
 
   "paths": {
@@ -68,7 +69,7 @@
   },
 
   "aruco": {
-    "enabled":          false,
+    "enabled":          true,
     "dictionary":       "DICT_4X4_50",
     "marker_size_m":    0.089,
     "calibration_file": "/workspace/ArucoMarkerDetection/camera_calibration.npz"
