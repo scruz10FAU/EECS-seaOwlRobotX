@@ -15,7 +15,8 @@ Tools for generating, detecting, and estimating the pose of ArUco markers. Three
 | `camera_calibration.npz` | Saved calibration output used by `poseEstimator.py` |
 | `aruco_marker_0–5.png` | Pre-generated DICT_4X4_50 markers, IDs 0–5 |
 | `calib_images/` | Checkerboard images captured during calibration |
-| `aruco_detector_ros.py` | ROS2 + ZED detector driven by `configs/aruco_config.json` |
+| `aruco_detector_ros.py` | ROS2 detector driven by `configs/aruco_config.json` |
+| `calibrateCamera_ros.py` | Calibration using the same ROS2 image topic as the detector |
 | `ROS2/webcam_publisher.py` | Publishes a webcam stream to `/camera/image_raw` |
 | `ROS2/detector_ros2.py` | Detects markers from any `/camera/image_raw` ROS2 topic |
 

@@ -70,11 +70,12 @@ _DEFAULT_CAMERA = {
 }
 
 _DEFAULT_ARUCO = {
-    "dictionary":    "DICT_4X4_50",
-    "marker_size_m": 0.15,
-    "display":       False,
-    "log":           False,
-    "video":         None,
+    "dictionary":      "DICT_4X4_50",
+    "marker_size_m":   0.15,
+    "calibration_file": None,
+    "display":         False,
+    "log":             False,
+    "video":           None,
 }
 
 # ---------------------------------------------------------------------------
@@ -279,6 +280,24 @@ def _camera_matrix(cam_cfg: dict) -> np.ndarray:
     )
 
 
+def _load_calibration(aruco_cfg: dict, cam_cfg: dict):
+    """
+    Return (camera_matrix, dist_coeffs).
+    If aruco.calibration_file is set and the file exists, load measured values
+    from the .npz. Otherwise fall back to the theoretical matrix from the config
+    with zero distortion.
+    """
+    cal_path = aruco_cfg.get("calibration_file")
+    if cal_path:
+        cal_path = os.path.expanduser(cal_path)
+        if os.path.isfile(cal_path):
+            data = np.load(cal_path)
+            print(f"Loaded calibration from {cal_path}")
+            return data["camera_matrix"], data["dist_coeffs"]
+        print(f"Warning: calibration_file '{cal_path}' not found — using theoretical matrix")
+    return _camera_matrix(cam_cfg), np.zeros((4, 1), dtype=np.float64)
+
+
 def detect_and_annotate(frame_bgr, detector, camera_mat, dist_coeffs, marker_size_m):
     """
     Detect ArUco markers in frame_bgr, estimate 6-DoF pose for each, and
@@ -342,8 +361,7 @@ def run_ros(cfg: dict):
     cam         = _make_aruco_camera(cfg["topics"], cfg["camera"])
     aruco_cfg   = cfg["aruco"]
     detector    = _build_aruco_detector(aruco_cfg)
-    camera_mat  = _camera_matrix(cfg["camera"])
-    dist_coeffs = np.zeros((4, 1), dtype=np.float64)
+    camera_mat, dist_coeffs = _load_calibration(cfg["aruco"], cfg["camera"])
     marker_size = float(aruco_cfg.get("marker_size_m", 0.15))
     display     = bool(aruco_cfg.get("display", False))
 
@@ -388,8 +406,7 @@ def run_video(cfg: dict, video_source):
     """Standalone mode: video file or webcam index (no ROS required)."""
     aruco_cfg   = cfg["aruco"]
     detector    = _build_aruco_detector(aruco_cfg)
-    camera_mat  = _camera_matrix(cfg["camera"])
-    dist_coeffs = np.zeros((4, 1), dtype=np.float64)
+    camera_mat, dist_coeffs = _load_calibration(cfg["aruco"], cfg["camera"])
     marker_size = float(aruco_cfg.get("marker_size_m", 0.15))
 
     src = 0 if video_source is None else video_source
