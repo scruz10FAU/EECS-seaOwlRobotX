@@ -18,7 +18,7 @@
 
   "aruco": {
     "dictionary":       "DICT_4X4_50",
-    "marker_size_m":    0.055,
+    "marker_size_m":    0.089,
     "calibration_file": "/workspace/ArucoMarkerDetection/camera_calibration.npz",
     "display":          false,
     "log":              false,

@@ -35,7 +35,7 @@
   "aruco": {
     "enabled":          false,
     "dictionary":       "DICT_4X4_50",
-    "marker_size_m":    0.15,
+    "marker_size_m":    0.089,
     "calibration_file": null
   }
 }
