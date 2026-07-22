@@ -30,7 +30,8 @@
     "depth_min_m":    1.0,
     "depth_max_m":    60.0,
     "min_area_frac":  0.001,
-    "stage2_conf":    0.30
+    "stage2_conf":    0.30,
+    "depth_source":   "bbox"
   },
 
   "aruco": {
