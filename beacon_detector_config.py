@@ -84,6 +84,7 @@ _DEFAULT_DETECTION = {
     "depth_source":    "topic",   # "topic" = use depth ROS topic; "bbox" = estimate from bounding box
     "beacon_height_m": 0.3048,    # physical beacon height in metres (12 in) — used for bbox estimation
     "beacon_z_m":      0.0,       # known beacon altitude in ENU frame (metres)
+    "max_detections":  None,      # stop after this many published detections (null = unlimited)
 }
 
 
@@ -447,7 +448,7 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
 # ── Detection logger ──────────────────────────────────────────────────────────
 
 _LOG_HEADER = [
-    "timestamp", "frame", "color", "color_confidence", "intensity",
+    "timestamp", "frame", "img_w", "img_h", "color", "color_confidence", "intensity",
     "vote_red", "vote_green", "vote_blue", "vote_other",
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
     "pos3d_x", "pos3d_y", "pos3d_z",
@@ -470,7 +471,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
                    det_conf: float, bbox, tracking_id: int = -1,
                    pos3d=None, blink_info: dict = None,
                    target_color=None, target_blinking=None,
-                   gt_info=None) -> None:
+                   gt_info=None, img_w=None, img_h=None) -> None:
     x1, y1, x2, y2 = bbox
     px = py = pz = ""
     if pos3d is not None:
@@ -496,6 +497,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         gt_tx, gt_ty, gt_tz = [f"{v:.4f}" for v in _gt_tvec]
     log_writer.writerow([
         f"{time.time():.3f}", frame_idx,
+        img_w if img_w is not None else "", img_h if img_h is not None else "",
         color, f"{color_conf:.4f}", f"{intensity:.4f}",
         f"{votes.get('red',0):.4f}", f"{votes.get('green',0):.4f}",
         f"{votes.get('blue',0):.4f}", f"{votes.get('other',0):.4f}",
@@ -638,7 +640,8 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                     save_crops_dir: str = None,
                     target_color: str = None,
                     target_blinking=None,
-                    aruco_gt=None) -> np.ndarray:
+                    aruco_gt=None,
+                    img_w=None, img_h=None) -> np.ndarray:
     clean = frame.copy()  # unmodified source for crops — keeps drawn annotations out of saved images
     for det_idx, box in enumerate(boxes):
         x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
@@ -664,8 +667,8 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
             _det  = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
                      else "det-steady" if _b is False else "det-acc")
             fname = (f"crop_{_date}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
-                     f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
-                     f"_{_gt}_{_det}.png")
+                     f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                     f"_{_gt}.png")
             cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), draw_color, 2)
@@ -696,7 +699,8 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                            blink_info=blink_info,
                            target_color=target_color,
                            target_blinking=target_blinking,
-                           gt_info=aruco_gt)
+                           gt_info=aruco_gt,
+                           img_w=img_w, img_h=img_h)
 
     return frame
 
@@ -804,7 +808,8 @@ def run_video(cfg: dict) -> None:
                                                 save_crops_dir=crops_dir,
                                                 target_color=cfg.get("target_color"),
                                                 target_blinking=cfg.get("target_blinking"),
-                                                aruco_gt=aruco_gt)
+                                                aruco_gt=aruco_gt,
+                                                img_w=width, img_h=height)
 
                 if writer:
                     writer.write(display_frame)
@@ -898,6 +903,8 @@ def run_video_ros(cfg: dict) -> None:
         print(f"[beacon-ros-video] Saving crops → {crops_dir}/")
 
     depth_source = cfg["detection"].get("depth_source", "topic")
+    max_dets     = cfg["detection"].get("max_detections")
+    det_count    = 0
     blink_detector = BlinkDetector()
     rclpy.init()
     cam        = _make_beacon_camera(topics, cfg["camera"], cfg["detection"])
@@ -1026,6 +1033,10 @@ def run_video_ros(cfg: dict) -> None:
                     })
                     cam.detection_pub.publish(msg)
                     print(f"  {label_txt}")
+                    det_count += 1
+                    if max_dets is not None and det_count >= max_dets:
+                        print(f"[beacon-ros-video] Reached max_detections={max_dets} — stopping")
+                        break
 
                     if log_writer is not None:
                         _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
@@ -1033,19 +1044,24 @@ def run_video_ros(cfg: dict) -> None:
                                        blink_info=blink_info,
                                        target_color=cfg.get("target_color"),
                                        target_blinking=cfg.get("target_blinking"),
-                                       gt_info=aruco_gt)
+                                       gt_info=aruco_gt,
+                                       img_w=cfg["camera"]["img_w"],
+                                       img_h=cfg["camera"]["img_h"])
 
                     if crops_dir is not None and lit_region.size > 0:
                         _b   = blink_info.get("is_blinking") if blink_info else None
                         _det = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
                                 else "det-steady" if _b is False else "det-acc")
                         fname = (f"crop_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
-                                 f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
-                                 f"_{gt_tag}_{_det}.png")
+                                 f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                                 f"_{gt_tag}.png")
                         cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
 
                 if writer:
                     writer.write(display_frame)
+
+            if max_dets is not None and det_count >= max_dets:
+                break
 
             if display:
                 if display_frame is not None:
@@ -1161,8 +1177,10 @@ def main(cfg: dict) -> None:
         print(f"[beacon] ArUco ground truth enabled  "
               f"dict={cfg['aruco']['dictionary']}  marker={cfg['aruco']['marker_size_m']}m")
 
-    depth_source = cfg["detection"].get("depth_source", "topic")
-    frame_count        = 0
+    depth_source  = cfg["detection"].get("depth_source", "topic")
+    max_dets      = cfg["detection"].get("max_detections")
+    frame_count   = 0
+    det_count     = 0
     intrinsics_printed = False
 
     try:
@@ -1296,6 +1314,10 @@ def main(cfg: dict) -> None:
                     "timestamp":      time.time(),
                 })
                 cam.detection_pub.publish(msg)
+                det_count += 1
+                if max_dets is not None and det_count >= max_dets:
+                    print(f"[beacon] Reached max_detections={max_dets} — stopping")
+                    break
 
                 if log_writer is not None:
                     _write_log_row(log_writer, frame_count, beacon_color, color_conf,
@@ -1305,15 +1327,17 @@ def main(cfg: dict) -> None:
                                    blink_info=blink_info,
                                    target_color=cfg.get("target_color"),
                                    target_blinking=cfg.get("target_blinking"),
-                                   gt_info=aruco_gt)
+                                   gt_info=aruco_gt,
+                                   img_w=cfg["camera"]["img_w"],
+                                   img_h=cfg["camera"]["img_h"])
 
                 if crops_dir is not None and lit_region.size > 0:
                     _b   = blink_info.get("is_blinking")
                     _det = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
                             else "det-steady" if _b is False else "det-acc")
                     fname = (f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
-                             f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
-                             f"_{gt_tag}_{_det}.png")
+                             f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                             f"_{gt_tag}.png")
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
 
                 if det_images_dir is not None:
@@ -1335,6 +1359,9 @@ def main(cfg: dict) -> None:
 
                 print(f"[beacon] {label_txt}"
                       + (f" dist={pos3d[2]:.2f}m" if pos3d is not None else ""))
+
+            if max_dets is not None and det_count >= max_dets:
+                break
 
             if display and rgb is not None:
                 cv2.imshow("Beacon Detector", rgb)

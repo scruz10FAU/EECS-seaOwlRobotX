@@ -76,6 +76,7 @@
   },
 
   "detection": {
-    "depth_source": "bbox"
+    "depth_source": "bbox",
+    "max_detections": 50
   }
 }
