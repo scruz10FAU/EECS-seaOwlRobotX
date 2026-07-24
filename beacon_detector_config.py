@@ -327,7 +327,7 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
 # ── Color classification ───────────────────────────────────────────────────────
 
 _SAT_MIN = 40    # lowered from 60 to catch overexposed LEDs
-_VAL_MIN = 160
+_VAL_MIN = 80
 
 # Previous bands (revert here if needed):
 # _HUE_BANDS = [
@@ -1045,8 +1045,8 @@ def run_video_ros(cfg: dict) -> None:
                                        target_color=cfg.get("target_color"),
                                        target_blinking=cfg.get("target_blinking"),
                                        gt_info=aruco_gt,
-                                       img_w=cfg["camera"]["img_w"],
-                                       img_h=cfg["camera"]["img_h"])
+                                       img_w=raw.shape[1],
+                                       img_h=raw.shape[0])
 
                     if crops_dir is not None and lit_region.size > 0:
                         _b   = blink_info.get("is_blinking") if blink_info else None
@@ -1328,8 +1328,8 @@ def main(cfg: dict) -> None:
                                    target_color=cfg.get("target_color"),
                                    target_blinking=cfg.get("target_blinking"),
                                    gt_info=aruco_gt,
-                                   img_w=cfg["camera"]["img_w"],
-                                   img_h=cfg["camera"]["img_h"])
+                                   img_w=rgb.shape[1],
+                                   img_h=rgb.shape[0])
 
                 if crops_dir is not None and lit_region.size > 0:
                     _b   = blink_info.get("is_blinking")
