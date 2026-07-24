@@ -230,14 +230,7 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
     class _ConfiguredBeaconCamera(_BeaconCameraBase):
         def _on_rgb_only(self, rgb_msg):
             """RGB-only callback used when depth_source == 'bbox'."""
-            if rgb_msg.encoding in ('bgr8', 'yuv422', 'yuv422_yuy2'):
-                bgr = _rgb_bridge.imgmsg_to_cv2(rgb_msg, desired_encoding='bgr8')
-            else:
-                channels = len(rgb_msg.data) // (rgb_msg.height * rgb_msg.width)
-                rgb_arr = np.frombuffer(rgb_msg.data, dtype=np.uint8).reshape(
-                    rgb_msg.height, rgb_msg.width, channels
-                )
-                bgr = rgb_arr[:, :, :3][:, :, ::-1].copy()
+            bgr = _rgb_bridge.imgmsg_to_cv2(rgb_msg, desired_encoding='bgr8')
             ts = rgb_msg.header.stamp.sec + rgb_msg.header.stamp.nanosec * 1e-9
             with self._frame_lock:
                 self._rgb      = bgr
