@@ -85,6 +85,7 @@ _DEFAULT_DETECTION = {
     "beacon_height_m": 0.3048,    # physical beacon height in metres (12 in) — used for bbox estimation
     "beacon_z_m":      0.0,       # known beacon altitude in ENU frame (metres)
     "max_detections":  None,      # stop after this many published detections (null = unlimited)
+    "imgsz":           640,       # YOLO inference size in pixels — match to model training size
 }
 
 
@@ -1119,7 +1120,7 @@ def main(cfg: dict) -> None:
     print(f"[beacon] Loading model: {model_path}")
     print(f"[beacon] Loading crop model: {crop_model_path}")
     crop_model = YOLO(crop_model_path)
-    if not cam.enable_detection(model_path):
+    if not cam.enable_detection(model_path, imgsz=cfg["detection"].get("imgsz", 640)):
         print("[beacon] Detection failed to start")
         cam.close()
         rclpy.shutdown()

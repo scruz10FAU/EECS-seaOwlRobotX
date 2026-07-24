@@ -156,11 +156,11 @@ class BeaconCamera(Node):
                 return True
         return False
 
-    def enable_detection(self, model_path):
+    def enable_detection(self, model_path, imgsz=640):
         self._detector = YoloDetector(
             weights=model_path,
             class_names=["beacon"],
-            imgsz=320,
+            imgsz=imgsz,
             conf_thresh=0.5,
         )
         ok = self._detector.start(enable_tracking=True)
