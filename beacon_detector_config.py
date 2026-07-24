@@ -86,6 +86,9 @@ _DEFAULT_DETECTION = {
     "beacon_z_m":      0.0,       # known beacon altitude in ENU frame (metres)
     "max_detections":  None,      # stop after this many published detections (null = unlimited)
     "imgsz":           640,       # YOLO inference size in pixels — match to model training size
+    "red_threshold":   0.40,      # red must have this fraction of lit pixels AND beat green/blue
+    "winner_threshold": 0.25,     # green or blue must reach this fraction to win
+    "red_hue_high":    10,        # half-width of the near-180° red wrap band (hues 170–180°)
 }
 
 
@@ -323,21 +326,30 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
 _SAT_MIN = 40    # lowered from 60 to catch overexposed LEDs
 _VAL_MIN = 80
 
-# Previous bands (revert here if needed):
-# _HUE_BANDS = [
-#     (  0, 20, "red"),
-#     ( 65, 30, "green"),
-#     (120, 15, "blue"),   # 105–135°
-#     (165, 15, "red"),    # 150–180°
-# ]
 _HUE_BANDS = [
     (  0, 20, "red"),    # 0–20°
     ( 65, 30, "green"),  # 35–95°
-    (157, 22, "red"),    # 135–179° — expanded to catch purple-tinted red LEDs; processed before blue so the 135° boundary goes to red
-    (120, 15, "blue"),   # 105–134° — only claims hues not already taken by red
+    (120, 15, "blue"),   # 105–134°
+    (175,  5, "red"),    # 170–180° — wrap-around red only; narrowed to avoid eating blue/purple
 ]
 
-_RED_THRESHOLD = 0.1
+# Thresholds — overwritten from config at startup by _apply_color_config()
+_RED_THRESHOLD    = 0.40   # red must reach this AND outscore green and blue
+_WINNER_THRESHOLD = 0.25   # green/blue minimum to win
+
+
+def _apply_color_config(det_cfg: dict) -> None:
+    """Apply per-device color classification thresholds and hue bands from config."""
+    global _RED_THRESHOLD, _WINNER_THRESHOLD, _HUE_BANDS
+    _RED_THRESHOLD    = det_cfg.get("red_threshold",    _RED_THRESHOLD)
+    _WINNER_THRESHOLD = det_cfg.get("winner_threshold", _WINNER_THRESHOLD)
+    half = det_cfg.get("red_hue_high", 5)
+    _HUE_BANDS = [
+        (  0, 20,   "red"),
+        ( 65, 30,   "green"),
+        (120, 15,   "blue"),
+        (180 - half, half, "red"),
+    ]
 
 
 def _hue_votes(hues: np.ndarray) -> dict:
@@ -386,11 +398,14 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
 
     votes = _hue_votes(hues)
 
-    if votes["red"] >= _RED_THRESHOLD:
+    red_wins = (votes["red"] >= _RED_THRESHOLD
+                and votes["red"] >= votes["green"]
+                and votes["red"] >= votes["blue"])
+    if red_wins:
         color = "red"
     else:
         winner = max(("green", "blue"), key=lambda c: votes[c])
-        color = winner if votes[winner] >= 0.30 else "unknown"
+        color = winner if votes[winner] >= _WINNER_THRESHOLD else "unknown"
 
     return color, color_conf, light_mask, intensity, votes
 
@@ -1171,6 +1186,7 @@ def main(cfg: dict) -> None:
         print(f"[beacon] ArUco ground truth enabled  "
               f"dict={cfg['aruco']['dictionary']}  marker={cfg['aruco']['marker_size_m']}m")
 
+    _apply_color_config(cfg["detection"])
     depth_source  = cfg["detection"].get("depth_source", "topic")
     max_dets      = cfg["detection"].get("max_detections")
     frame_count   = 0
