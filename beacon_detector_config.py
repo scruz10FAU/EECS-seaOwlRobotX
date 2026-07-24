@@ -716,6 +716,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
 
 def run_video(cfg: dict) -> None:
     """Run beacon detection on a local video file. No ROS required."""
+    _apply_color_config(cfg["detection"])
     video_path      = cfg["video"]
     model_path      = cfg["model"]
     crop_model_path = cfg["crop_model"]
@@ -911,6 +912,7 @@ def run_video_ros(cfg: dict) -> None:
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon-ros-video] Saving crops → {crops_dir}/")
 
+    _apply_color_config(cfg["detection"])
     depth_source = cfg["detection"].get("depth_source", "topic")
     max_dets     = cfg["detection"].get("max_detections")
     det_count    = 0
