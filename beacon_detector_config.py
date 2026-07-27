@@ -24,6 +24,7 @@ from typing import Tuple
 import json
 import time
 import cv2
+import math
 
 from blink_detector import BlinkDetector, _get_blink_detector
 
@@ -39,6 +40,7 @@ _DEFAULT_TOPICS = {
     "drone_pose":     "/mavros/local_position/pose",
     "gps_origin":     "/mavros/global_position/gp_origin",
     "detections_pub": "/seabird/beacon_detections",
+    "aruco_pub":      "/seabird/aruco_ground_truth",
 }
 
 def _merge_topics(raw: dict) -> dict:
@@ -63,6 +65,30 @@ _DEFAULT_CAMERA = {
     "img_h":           480,
     "mount_offset_xyz": [0.30, 0.0, 0.05],
     "pitch_deg":        15.0,
+}
+
+_DEFAULT_ARUCO = {
+    "enabled":          False,
+    "dictionary":       "DICT_4X4_50",
+    "marker_size_m":    0.15,
+    "calibration_file": None,
+}
+
+_DEFAULT_DETECTION = {
+    "confirm_frames":  3,
+    "pub_cooldown_s":  1.0,
+    "depth_min_m":     1.0,
+    "depth_max_m":     60.0,
+    "min_area_frac":   0.001,
+    "stage2_conf":     0.30,
+    "depth_source":    "topic",   # "topic" = use depth ROS topic; "bbox" = estimate from bounding box
+    "beacon_height_m": 0.3048,    # physical beacon height in metres (12 in) — used for bbox estimation
+    "beacon_z_m":      0.0,       # known beacon altitude in ENU frame (metres)
+    "max_detections":  None,      # stop after this many published detections (null = unlimited)
+    "imgsz":           640,       # YOLO inference size in pixels — match to model training size
+    "red_threshold":   0.40,      # red must have this fraction of lit pixels AND beat green/blue
+    "winner_threshold": 0.25,     # green or blue must reach this fraction to win
+    "red_hue_high":    10,        # half-width of the near-180° red wrap band (hues 170–180°)
 }
 
 
@@ -96,10 +122,11 @@ def load_config(path: str) -> dict:
         "camera":     {**_DEFAULT_CAMERA,  **raw.get("camera",  {})},
         "paths":      raw.get("paths",      {}),
         "isaac":      raw.get("isaac",      {}),
-        "buoys":      raw.get("buoys",      {}),
         "drone_spawn":raw.get("drone_spawn",{}),
         "px4":        raw.get("px4",        {}),
         "labeler":    raw.get("labeler",    {}),
+        "aruco":      {**_DEFAULT_ARUCO,     **raw.get("aruco",     {})},
+        "detection":  {**_DEFAULT_DETECTION, **raw.get("detection", {})},
     }
 
     # Compute derived camera intrinsics and mount geometry
@@ -110,6 +137,21 @@ def load_config(path: str) -> dict:
     cam["fy"] = fl * h / va
     cam["cx"] = w / 2.0
     cam["cy"] = h / 2.0
+
+    # If a calibration file is provided (same one used for ArUco), load the
+    # calibrated fx/fy/cx/cy from it — these are more accurate than the
+    # theoretical values derived from lens specs above.
+    cal_path = cfg["aruco"].get("calibration_file")
+    if cal_path:
+        cal_path = os.path.expanduser(cal_path)
+        if os.path.isfile(cal_path):
+            _cal = np.load(cal_path)
+            _K   = _cal["camera_matrix"]
+            cam["fx"] = float(_K[0, 0])
+            cam["fy"] = float(_K[1, 1])
+            cam["cx"] = float(_K[0, 2])
+            cam["cy"] = float(_K[1, 2])
+
     cam["_mount_offset"] = np.array(cam["mount_offset_xyz"], dtype=np.float64)
 
     # Body-to-camera rotation: Isaac FLU body frame → OpenCV camera frame,
@@ -158,7 +200,7 @@ def _camera_to_world(p_cam, drone_pos, drone_quat_wxyz, mount_offset, R_body_to_
     return R_body_to_world @ p_body + np.asarray(drone_pos)
 
 
-def _make_beacon_camera(topics: dict, cfg_camera: dict):
+def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
     """
     Return a BeaconCamera instance whose ROS topic names and camera intrinsics
     are taken from the JSON config. Creates a subclass at call-time (after
@@ -170,7 +212,10 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
     from geometry_msgs.msg import PoseStamped
     from geographic_msgs.msg import GeoPointStamped
     from camera_interface import Intrinsics
+    from cv_bridge import CvBridge as _CvBridge
     import message_filters
+
+    _rgb_bridge = _CvBridge()
 
     camera_prefix    = topics["camera_prefix"]
     image_topic      = topics["image"]
@@ -178,6 +223,8 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
     drone_pose_topic  = topics["drone_pose"]
     gps_topic         = topics["gps_origin"]
     detections_topic  = topics["detections_pub"]
+    aruco_gt_topic    = topics.get("aruco_pub", "/seabird/aruco_ground_truth")
+    depth_source      = cfg_detection.get("depth_source", "topic")
 
     fx, fy   = cfg_camera["fx"],    cfg_camera["fy"]
     cx, cy   = cfg_camera["cx"],    cfg_camera["cy"]
@@ -185,6 +232,16 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
     img_h    = cfg_camera["img_h"]
 
     class _ConfiguredBeaconCamera(_BeaconCameraBase):
+        def _on_rgb_only(self, rgb_msg):
+            """RGB-only callback used when depth_source == 'bbox'."""
+            bgr = _rgb_bridge.imgmsg_to_cv2(rgb_msg, desired_encoding='bgr8')
+            ts = rgb_msg.header.stamp.sec + rgb_msg.header.stamp.nanosec * 1e-9
+            with self._frame_lock:
+                self._rgb      = bgr
+                self._depth    = None
+                self._frame_ts = ts
+                self._new_frame = True
+
         def open(self):
             if self._is_open:
                 return True
@@ -200,19 +257,23 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
                 history=HistoryPolicy.KEEP_LAST,
                 depth=1,
             )
-            rgb_sub = message_filters.Subscriber(
-                self, Image, image_topic, qos_profile=qos
-            )
-            depth_sub = message_filters.Subscriber(
-                self, Image, depth_topic, qos_profile=qos
-            )
-            self._sync = message_filters.ApproximateTimeSynchronizer(
-                [rgb_sub, depth_sub], queue_size=5, slop=0.05
-            )
-            self._sync.registerCallback(self._on_synced_frame)
-            self.detection_pub = self.create_publisher(String, detections_topic, 10)
-            _buoy_topic = topics.get("buoy_pub", "/seabird/buoy_detections")
-            self.buoy_pub = self.create_publisher(String, _buoy_topic, 10) if _buoy_topic else None
+            if depth_source == "bbox":
+                # RGB-only — depth comes from bounding-box projection, no sync needed
+                self.create_subscription(Image, image_topic, self._on_rgb_only, qos)
+                self.get_logger().info("depth_source=bbox — subscribing to RGB only")
+            else:
+                rgb_sub = message_filters.Subscriber(
+                    self, Image, image_topic, qos_profile=qos
+                )
+                depth_sub = message_filters.Subscriber(
+                    self, Image, depth_topic, qos_profile=qos
+                )
+                self._sync = message_filters.ApproximateTimeSynchronizer(
+                    [rgb_sub, depth_sub], queue_size=5, slop=0.05
+                )
+                self._sync.registerCallback(self._on_synced_frame)
+            self.detection_pub  = self.create_publisher(String, detections_topic, 10)
+            self.aruco_gt_pub   = self.create_publisher(String, aruco_gt_topic,   10)
             if drone_pose_topic:
                 self._pose_sub = self.create_subscription(
                     PoseStamped, drone_pose_topic, self._on_drone_pose, qos
@@ -238,9 +299,8 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
                 history=HistoryPolicy.KEEP_LAST,
                 depth=1,
             )
-            self.detection_pub = self.create_publisher(String, detections_topic, 10)
-            _buoy_topic = topics.get("buoy_pub", "/seabird/buoy_detections")
-            self.buoy_pub = self.create_publisher(String, _buoy_topic, 10) if _buoy_topic else None
+            self.detection_pub  = self.create_publisher(String, detections_topic, 10)
+            self.aruco_gt_pub   = self.create_publisher(String, aruco_gt_topic,   10)
             if drone_pose_topic:
                 self._pose_sub = self.create_subscription(
                     PoseStamped, drone_pose_topic, self._on_drone_pose, qos
@@ -263,24 +323,33 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict):
 
 # ── Color classification ───────────────────────────────────────────────────────
 
-_SAT_MIN = 60
-_VAL_MIN = 160
+_SAT_MIN = 40    # lowered from 60 to catch overexposed LEDs
+_VAL_MIN = 80
 
-# Previous bands (revert here if needed):
-# _HUE_BANDS = [
-#     (  0, 20, "red"),
-#     ( 65, 30, "green"),
-#     (120, 15, "blue"),   # 105–135°
-#     (165, 15, "red"),    # 150–180°
-# ]
 _HUE_BANDS = [
     (  0, 20, "red"),    # 0–20°
     ( 65, 30, "green"),  # 35–95°
-    (157, 22, "red"),    # 135–179° — expanded to catch purple-tinted red LEDs; processed before blue so the 135° boundary goes to red
-    (120, 15, "blue"),   # 105–134° — only claims hues not already taken by red
+    (120, 15, "blue"),   # 105–134°
+    (175,  5, "red"),    # 170–180° — wrap-around red only; narrowed to avoid eating blue/purple
 ]
 
-_RED_THRESHOLD = 0.1
+# Thresholds — overwritten from config at startup by _apply_color_config()
+_RED_THRESHOLD    = 0.40   # red must reach this AND outscore green and blue
+_WINNER_THRESHOLD = 0.25   # green/blue minimum to win
+
+
+def _apply_color_config(det_cfg: dict) -> None:
+    """Apply per-device color classification thresholds and hue bands from config."""
+    global _RED_THRESHOLD, _WINNER_THRESHOLD, _HUE_BANDS
+    _RED_THRESHOLD    = det_cfg.get("red_threshold",    _RED_THRESHOLD)
+    _WINNER_THRESHOLD = det_cfg.get("winner_threshold", _WINNER_THRESHOLD)
+    half = det_cfg.get("red_hue_high", 5)
+    _HUE_BANDS = [
+        (  0, 20,   "red"),
+        ( 65, 30,   "green"),
+        (120, 15,   "blue"),
+        (180 - half, half, "red"),
+    ]
 
 
 def _hue_votes(hues: np.ndarray) -> dict:
@@ -316,7 +385,7 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
     total_pixels = bgr_crop.shape[0] * bgr_crop.shape[1]
     color_conf   = lit_pixels / max(total_pixels, 1)
 
-    if lit_pixels < 5:
+    if lit_pixels < max(3, total_pixels * 0.02):
         very_bright = (v >= 220)
         bright_count = int(np.count_nonzero(very_bright))
         if bright_count > total_pixels * 0.1:
@@ -329,11 +398,14 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
 
     votes = _hue_votes(hues)
 
-    if votes["red"] >= _RED_THRESHOLD:
+    red_wins = (votes["red"] >= _RED_THRESHOLD
+                and votes["red"] >= votes["green"]
+                and votes["red"] >= votes["blue"])
+    if red_wins:
         color = "red"
     else:
         winner = max(("green", "blue"), key=lambda c: votes[c])
-        color = winner if votes[winner] >= 0.30 else "unknown"
+        color = winner if votes[winner] >= _WINNER_THRESHOLD else "unknown"
 
     return color, color_conf, light_mask, intensity, votes
 
@@ -385,12 +457,13 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
 # ── Detection logger ──────────────────────────────────────────────────────────
 
 _LOG_HEADER = [
-    "timestamp", "frame", "color", "color_confidence", "intensity",
+    "timestamp", "frame", "img_w", "img_h", "color", "color_confidence", "intensity",
     "vote_red", "vote_green", "vote_blue", "vote_other",
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
     "pos3d_x", "pos3d_y", "pos3d_z",
     "blink_is_blinking", "blink_hz", "blink_phase",
     "target_color", "target_blinking", "target_match",
+    "gt_aruco_id", "gt_dist_m", "gt_tvec_x", "gt_tvec_y", "gt_tvec_z",
 ]
 
 
@@ -406,7 +479,8 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
                    color_conf: float, intensity: float, votes: dict,
                    det_conf: float, bbox, tracking_id: int = -1,
                    pos3d=None, blink_info: dict = None,
-                   target_color=None, target_blinking=None) -> None:
+                   target_color=None, target_blinking=None,
+                   gt_info=None, img_w=None, img_h=None) -> None:
     x1, y1, x2, y2 = bbox
     px = py = pz = ""
     if pos3d is not None:
@@ -423,8 +497,16 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         color_ok    = target_color    is None or color == target_color
         blinking_ok = target_blinking is None or bi.get("is_blinking") == target_blinking
         target_match = str(color_ok and blinking_ok)
+    if gt_info is None:
+        gt_id = gt_dist = gt_tx = gt_ty = gt_tz = ""
+    else:
+        _gt_id, _gt_dist, _gt_tvec = gt_info
+        gt_id  = str(_gt_id)
+        gt_dist = f"{_gt_dist:.4f}"
+        gt_tx, gt_ty, gt_tz = [f"{v:.4f}" for v in _gt_tvec]
     log_writer.writerow([
         f"{time.time():.3f}", frame_idx,
+        img_w if img_w is not None else "", img_h if img_h is not None else "",
         color, f"{color_conf:.4f}", f"{intensity:.4f}",
         f"{votes.get('red',0):.4f}", f"{votes.get('green',0):.4f}",
         f"{votes.get('blue',0):.4f}", f"{votes.get('other',0):.4f}",
@@ -432,6 +514,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         px, py, pz,
         blink_blinking, blink_hz, blink_phase,
         tc_col, tb_col, target_match,
+        gt_id, gt_dist, gt_tx, gt_ty, gt_tz,
     ])
 
 
@@ -445,6 +528,107 @@ def local_enu_to_gps(world_pos: np.ndarray,
     dlat = np.degrees(north / EARTH_RADIUS_M)
     dlon = np.degrees(east / (EARTH_RADIUS_M * np.cos(np.radians(origin_lat))))
     return (origin_lat + dlat, origin_lon + dlon, origin_alt + up)
+
+
+def estimate_distance_from_bbox(
+    x1: int, y1: int, x2: int, y2: int,
+    fx: float, fy: float, cx: float, cy: float,
+    drone_z_m: float = 0.0,
+    beacon_z_m: float = 0.0,
+    beacon_height_m: float = 0.3048,
+) -> "list | None":
+    """
+    Estimate a camera-frame 3D point for a beacon detection using the pinhole
+    model and known physical beacon height, corrected for drone altitude.
+
+    Returns [X, Y, Z] in OpenCV camera frame (X-right, Y-down, Z-forward) so
+    the result can be passed directly to _camera_to_world(), or None if the
+    geometry is degenerate (too few pixels, drone directly above beacon, etc.).
+
+    Slant distance:  slant = (beacon_height_m * fy) / bbox_height_px
+    Altitude offset: dz    = drone_z_m - beacon_z_m
+    Horizontal dist: horiz = sqrt(slant^2 - dz^2)
+    Camera-frame pt: project the slant distance along the ray through the bbox centre.
+    """
+    bbox_h = y2 - y1
+    if bbox_h < 4:
+        return None
+    slant = (beacon_height_m * fy) / bbox_h
+    dz = drone_z_m - beacon_z_m
+    horiz_sq = slant ** 2 - dz ** 2
+    if horiz_sq <= 0:
+        return None
+    horiz = math.sqrt(horiz_sq)
+    # Reconstruct slant from horizontal + vertical for the projection step
+    slant_corrected = math.sqrt(horiz ** 2 + dz ** 2)
+    # Normalised image coordinates of the bbox centre
+    nu = ((x1 + x2) / 2.0 - cx) / fx
+    nv = ((y1 + y2) / 2.0 - cy) / fy
+    # Scale the unit ray by slant_corrected to get the camera-frame 3D point
+    ray_len = math.sqrt(nu ** 2 + nv ** 2 + 1.0)
+    depth_cam = slant_corrected / ray_len
+    return [nu * depth_cam, nv * depth_cam, depth_cam]
+
+
+# ── ArUco ground truth helpers ────────────────────────────────────────────────
+
+_ARUCO_DICT_MAP = {
+    "DICT_4X4_50":         cv2.aruco.DICT_4X4_50,
+    "DICT_4X4_100":        cv2.aruco.DICT_4X4_100,
+    "DICT_4X4_250":        cv2.aruco.DICT_4X4_250,
+    "DICT_4X4_1000":       cv2.aruco.DICT_4X4_1000,
+    "DICT_5X5_50":         cv2.aruco.DICT_5X5_50,
+    "DICT_5X5_100":        cv2.aruco.DICT_5X5_100,
+    "DICT_5X5_250":        cv2.aruco.DICT_5X5_250,
+    "DICT_5X5_1000":       cv2.aruco.DICT_5X5_1000,
+    "DICT_6X6_250":        cv2.aruco.DICT_6X6_250,
+    "DICT_7X7_1000":       cv2.aruco.DICT_7X7_1000,
+    "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
+}
+
+
+def _build_aruco_detector(aruco_cfg: dict):
+    dict_name = aruco_cfg.get("dictionary", "DICT_4X4_50")
+    dict_id   = _ARUCO_DICT_MAP.get(dict_name, cv2.aruco.DICT_4X4_50)
+    return cv2.aruco.ArucoDetector(
+        cv2.aruco.getPredefinedDictionary(dict_id),
+        cv2.aruco.DetectorParameters(),
+    )
+
+
+def _load_aruco_calibration(aruco_cfg: dict, cam_cfg: dict):
+    cal_path = aruco_cfg.get("calibration_file")
+    if cal_path:
+        cal_path = os.path.expanduser(cal_path)
+        if os.path.isfile(cal_path):
+            data = np.load(cal_path)
+            return data["camera_matrix"], data["dist_coeffs"]
+    fl, ha, va = cam_cfg["focal_length_mm"], cam_cfg["h_aperture_mm"], cam_cfg["v_aperture_mm"]
+    w, h       = cam_cfg["img_w"], cam_cfg["img_h"]
+    fx, fy     = fl * w / ha, fl * h / va
+    camera_mat = np.array([[fx, 0, w / 2.0], [0, fy, h / 2.0], [0, 0, 1]], dtype=np.float64)
+    return camera_mat, np.zeros((4, 1), dtype=np.float64)
+
+
+def detect_aruco_ground_truth(frame, detector, camera_mat, dist_coeffs, marker_size_m: float):
+    """Run ArUco on frame; return (id, dist_m, [tx,ty,tz]) for closest marker, or None."""
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    corners, ids, _ = detector.detectMarkers(gray)
+    if ids is None or len(ids) == 0:
+        return None
+    half    = marker_size_m / 2.0
+    obj_pts = np.array([[-half, half, 0], [half, half, 0],
+                        [half, -half, 0], [-half, -half, 0]], dtype=np.float32)
+    best_dist, best = float("inf"), None
+    for i, corner in enumerate(corners):
+        ok, _, tvec = cv2.solvePnP(obj_pts, corner[0], camera_mat, dist_coeffs)
+        if not ok:
+            continue
+        dist = float(np.linalg.norm(tvec))
+        if dist < best_dist:
+            best_dist = dist
+            best = (int(ids[i][0]), dist, tvec.flatten().tolist())
+    return best
 
 
 # ── Video test mode (no ROS) ───────────────────────────────────────────────────
@@ -464,7 +648,9 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                     video_ts: float = None,
                     save_crops_dir: str = None,
                     target_color: str = None,
-                    target_blinking=None) -> np.ndarray:
+                    target_blinking=None,
+                    aruco_gt=None,
+                    img_w=None, img_h=None) -> np.ndarray:
     clean = frame.copy()  # unmodified source for crops — keeps drawn annotations out of saved images
     for det_idx, box in enumerate(boxes):
         x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
@@ -490,8 +676,8 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
             _det  = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
                      else "det-steady" if _b is False else "det-acc")
             fname = (f"crop_{_date}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
-                     f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
-                     f"_{_gt}_{_det}.png")
+                     f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                     f"_{_gt}.png")
             cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), draw_color, 2)
@@ -520,14 +706,17 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
             _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
                            intensity, votes, conf, (x1, y1, x2, y2),
                            blink_info=blink_info,
-                           target_color=cfg.get("target_color"),
-                           target_blinking=cfg.get("target_blinking"))
+                           target_color=target_color,
+                           target_blinking=target_blinking,
+                           gt_info=aruco_gt,
+                           img_w=img_w, img_h=img_h)
 
     return frame
 
 
 def run_video(cfg: dict) -> None:
     """Run beacon detection on a local video file. No ROS required."""
+    _apply_color_config(cfg["detection"])
     video_path      = cfg["video"]
     model_path      = cfg["model"]
     crop_model_path = cfg["crop_model"]
@@ -590,6 +779,13 @@ def run_video(cfg: dict) -> None:
     paused        = False
     display_frame = None
 
+    aruco_detector = aruco_camera_mat = aruco_dist_coeffs = None
+    if cfg["aruco"].get("enabled"):
+        aruco_detector = _build_aruco_detector(cfg["aruco"])
+        aruco_camera_mat, aruco_dist_coeffs = _load_aruco_calibration(cfg["aruco"], cfg["camera"])
+        print(f"[beacon-video] ArUco ground truth enabled  "
+              f"dict={cfg['aruco']['dictionary']}  marker={cfg['aruco']['marker_size_m']}m")
+
     cv2.namedWindow("Beacon Detector — Video Test", cv2.WINDOW_AUTOSIZE)
 
     try:
@@ -603,6 +799,13 @@ def run_video(cfg: dict) -> None:
 
                 display_frame = raw.copy()
                 video_ts = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+
+                aruco_gt = None
+                if aruco_detector is not None:
+                    aruco_gt = detect_aruco_ground_truth(
+                        raw, aruco_detector, aruco_camera_mat, aruco_dist_coeffs,
+                        cfg["aruco"]["marker_size_m"])
+
                 results = model(raw, conf=conf, verbose=False)
                 boxes   = results[0].boxes
                 names   = results[0].names
@@ -614,7 +817,9 @@ def run_video(cfg: dict) -> None:
                                                 video_ts=video_ts,
                                                 save_crops_dir=crops_dir,
                                                 target_color=cfg.get("target_color"),
-                                                target_blinking=cfg.get("target_blinking"))
+                                                target_blinking=cfg.get("target_blinking"),
+                                                aruco_gt=aruco_gt,
+                                                img_w=width, img_h=height)
 
                 if writer:
                     writer.write(display_frame)
@@ -707,13 +912,24 @@ def run_video_ros(cfg: dict) -> None:
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon-ros-video] Saving crops → {crops_dir}/")
 
+    _apply_color_config(cfg["detection"])
+    depth_source = cfg["detection"].get("depth_source", "topic")
+    max_dets     = cfg["detection"].get("max_detections")
+    det_count    = 0
     blink_detector = BlinkDetector()
     rclpy.init()
-    cam        = _make_beacon_camera(topics, cfg["camera"])
+    cam        = _make_beacon_camera(topics, cfg["camera"], cfg["detection"])
     model      = YOLO(model_path)
     crop_model = YOLO(crop_model_path)
     print(f"[beacon-ros-video] Beacon model : {model_path}  conf≥{conf}")
     print(f"[beacon-ros-video] Crop model   : {crop_model_path}")
+
+    aruco_detector = aruco_camera_mat = aruco_dist_coeffs = None
+    if cfg["aruco"].get("enabled"):
+        aruco_detector = _build_aruco_detector(cfg["aruco"])
+        aruco_camera_mat, aruco_dist_coeffs = _load_aruco_calibration(cfg["aruco"], cfg["camera"])
+        print(f"[beacon-ros-video] ArUco ground truth enabled  "
+              f"dict={cfg['aruco']['dictionary']}  marker={cfg['aruco']['marker_size_m']}m")
 
     if not cam.open_for_video():
         print("[beacon-ros-video] Failed to open ROS node")
@@ -743,6 +959,21 @@ def run_video_ros(cfg: dict) -> None:
                 display_frame = raw.copy()
                 video_ts = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
 
+                aruco_gt = None
+                if aruco_detector is not None:
+                    aruco_gt = detect_aruco_ground_truth(
+                        raw, aruco_detector, aruco_camera_mat, aruco_dist_coeffs,
+                        cfg["aruco"]["marker_size_m"])
+                if aruco_gt is not None:
+                    _ag = String()
+                    _ag.data = json.dumps({
+                        "marker_id": aruco_gt[0],
+                        "dist_m":    round(aruco_gt[1], 4),
+                        "tvec":      [round(v, 4) for v in aruco_gt[2]],
+                        "timestamp": round(time.time(), 3),
+                    })
+                    cam.aruco_gt_pub.publish(_ag)
+
                 results = model(raw, conf=conf, verbose=False)
                 boxes   = results[0].boxes
 
@@ -757,6 +988,19 @@ def run_video_ros(cfg: dict) -> None:
                     draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
                     blink_info = blink_detector.update(video_ts, beacon_color, intensity, color_conf)
+
+                    # Estimate 3D position from bounding box when depth_source == "bbox"
+                    pos3d = None
+                    if depth_source == "bbox":
+                        det_cfg = cfg["detection"]
+                        pos3d = estimate_distance_from_bbox(
+                            x1, y1, x2, y2,
+                            cfg["camera"]["fx"], cfg["camera"]["fy"],
+                            cfg["camera"]["cx"], cfg["camera"]["cy"],
+                            drone_pos[2] if drone_pos is not None else 0.0,
+                            det_cfg.get("beacon_z_m", 0.0),
+                            det_cfg.get("beacon_height_m", 0.3048),
+                        )
 
                     cv2.rectangle(display_frame, (x1, y1), (x2, y2), draw_color, 2)
 
@@ -776,6 +1020,8 @@ def run_video_ros(cfg: dict) -> None:
                         label_txt += f" blink={blink_info['blink_hz']:.2f}Hz"
                     elif blink_info["is_blinking"] is None:
                         label_txt += " blink=?"
+                    if pos3d is not None:
+                        label_txt += f" dist={pos3d[2]:.2f}m"
                     cv2.putText(display_frame, label_txt, (x1, max(y1 - 6, 10)),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, draw_color, 1)
 
@@ -789,7 +1035,7 @@ def run_video_ros(cfg: dict) -> None:
                         "hue_votes":        votes,
                         "confidence":       det_conf,
                         "bbox":             [x1, y1, x2, y2],
-                        "position_3d":      None,
+                        "position_3d":      pos3d,
                         "world_position":   None,
                         "gps_position":     None,
                         "drone_position":   drone_pos.tolist() if drone_pos is not None else None,
@@ -798,25 +1044,35 @@ def run_video_ros(cfg: dict) -> None:
                     })
                     cam.detection_pub.publish(msg)
                     print(f"  {label_txt}")
+                    det_count += 1
+                    if max_dets is not None and det_count >= max_dets:
+                        print(f"[beacon-ros-video] Reached max_detections={max_dets} — stopping")
+                        break
 
                     if log_writer is not None:
                         _write_log_row(log_writer, frame_idx, beacon_color, color_conf,
                                        intensity, votes, det_conf, (x1, y1, x2, y2),
                                        blink_info=blink_info,
                                        target_color=cfg.get("target_color"),
-                                       target_blinking=cfg.get("target_blinking"))
+                                       target_blinking=cfg.get("target_blinking"),
+                                       gt_info=aruco_gt,
+                                       img_w=raw.shape[1],
+                                       img_h=raw.shape[0])
 
                     if crops_dir is not None and lit_region.size > 0:
                         _b   = blink_info.get("is_blinking") if blink_info else None
                         _det = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
                                 else "det-steady" if _b is False else "det-acc")
                         fname = (f"crop_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
-                                 f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
-                                 f"_{gt_tag}_{_det}.png")
+                                 f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                                 f"_{gt_tag}.png")
                         cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
 
                 if writer:
                     writer.write(display_frame)
+
+            if max_dets is not None and det_count >= max_dets:
+                break
 
             if display:
                 if display_frame is not None:
@@ -858,7 +1114,7 @@ def main(cfg: dict) -> None:
     os.makedirs(DEBUG_DIR, exist_ok=True)
 
     rclpy.init()
-    cam = _make_beacon_camera(topics, cfg["camera"])
+    cam = _make_beacon_camera(topics, cfg["camera"], cfg["detection"])
 
     if not cam.open():
         print("[beacon] Failed to open camera")
@@ -881,7 +1137,7 @@ def main(cfg: dict) -> None:
     print(f"[beacon] Loading model: {model_path}")
     print(f"[beacon] Loading crop model: {crop_model_path}")
     crop_model = YOLO(crop_model_path)
-    if not cam.enable_detection(model_path):
+    if not cam.enable_detection(model_path, imgsz=cfg["detection"].get("imgsz", 640)):
         print("[beacon] Detection failed to start")
         cam.close()
         rclpy.shutdown()
@@ -925,7 +1181,18 @@ def main(cfg: dict) -> None:
     _tb = cfg.get("target_blinking")
     gt_tag   = f"gt-{_tc}-{'blink' if _tb is True else 'steady' if _tb is False else 'unk'}"
 
-    frame_count        = 0
+    aruco_detector = aruco_camera_mat = aruco_dist_coeffs = None
+    if cfg["aruco"].get("enabled"):
+        aruco_detector = _build_aruco_detector(cfg["aruco"])
+        aruco_camera_mat, aruco_dist_coeffs = _load_aruco_calibration(cfg["aruco"], cfg["camera"])
+        print(f"[beacon] ArUco ground truth enabled  "
+              f"dict={cfg['aruco']['dictionary']}  marker={cfg['aruco']['marker_size_m']}m")
+
+    _apply_color_config(cfg["detection"])
+    depth_source  = cfg["detection"].get("depth_source", "topic")
+    max_dets      = cfg["detection"].get("max_detections")
+    frame_count   = 0
+    det_count     = 0
     intrinsics_printed = False
 
     try:
@@ -948,6 +1215,21 @@ def main(cfg: dict) -> None:
             if rgb is None:
                 continue
 
+            aruco_gt = None
+            if aruco_detector is not None:
+                aruco_gt = detect_aruco_ground_truth(
+                    rgb, aruco_detector, aruco_camera_mat, aruco_dist_coeffs,
+                    cfg["aruco"]["marker_size_m"])
+            if aruco_gt is not None:
+                _ag = String()
+                _ag.data = json.dumps({
+                    "marker_id": aruco_gt[0],
+                    "dist_m":    round(aruco_gt[1], 4),
+                    "tvec":      [round(v, 4) for v in aruco_gt[2]],
+                    "timestamp": round(time.time(), 3),
+                })
+                cam.aruco_gt_pub.publish(_ag)
+
             dets = cam.get_detections()
             rgb_clean = rgb.copy()  # snapshot before drawing so crops are annotation-free
 
@@ -956,7 +1238,20 @@ def main(cfg: dict) -> None:
                 cv2.imwrite(os.path.join(frames_dir, fname), rgb_clean)
 
             for d in dets:
-                x1, y1, x2, y2 = d.bbox_2d
+                x1, y1, x2, y2 = [int(v) for v in d.bbox_2d]
+
+                # Resolve 3D position — use depth topic result, or fall back to bbox estimation
+                pos3d = d.position_3d
+                if pos3d is None and depth_source == "bbox":
+                    det_cfg = cfg["detection"]
+                    pos3d = estimate_distance_from_bbox(
+                        x1, y1, x2, y2,
+                        cfg["camera"]["fx"], cfg["camera"]["fy"],
+                        cfg["camera"]["cx"], cfg["camera"]["cy"],
+                        drone_pos[2] if drone_pos is not None else 0.0,
+                        det_cfg.get("beacon_z_m", 0.0),
+                        det_cfg.get("beacon_height_m", 0.3048),
+                    )
 
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
                 beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
@@ -995,9 +1290,9 @@ def main(cfg: dict) -> None:
 
                 world_pos  = None
                 gps_coords = None
-                if d.position_3d is not None and drone_pos is not None:
+                if pos3d is not None and drone_pos is not None:
                     world_pos = _camera_to_world(
-                        d.position_3d, drone_pos, drone_quat,
+                        pos3d, drone_pos, drone_quat,
                         cfg["camera"]["_mount_offset"],
                         cfg["camera"]["_R_body_to_cam"],
                     )
@@ -1023,7 +1318,7 @@ def main(cfg: dict) -> None:
                     "hue_votes":        votes,
                     "confidence":       float(d.confidence),
                     "bbox":           [int(v) for v in d.bbox_2d],
-                    "position_3d":    np.array(d.position_3d).tolist() if d.position_3d is not None else None,
+                    "position_3d":    list(pos3d) if pos3d is not None else None,
                     "world_position": world_pos.tolist()     if world_pos     is not None else None,
                     "gps_position":   gps_coords,
                     "drone_position": drone_pos.tolist()     if drone_pos     is not None else None,
@@ -1031,39 +1326,30 @@ def main(cfg: dict) -> None:
                     "timestamp":      time.time(),
                 })
                 cam.detection_pub.publish(msg)
-
-                if getattr(cam, "buoy_pub", None) is not None:
-                    _bx1, _by1, _bx2, _by2 = [int(v) for v in d.bbox_2d]
-                    _buoy = String()
-                    _buoy.data = json.dumps({
-                        "color":      beacon_color,
-                        "centroid":   [(_bx1 + _bx2) // 2, (_by1 + _by2) // 2],
-                        "bbox":       [_bx1, _by1, _bx2 - _bx1, _by2 - _by1],
-                        "area_px":    float((_bx2 - _bx1) * (_by2 - _by1)),
-                        "depth_m":    float(d.position_3d[2]) if d.position_3d is not None else None,
-                        "pos_cam":    np.array(d.position_3d).tolist() if d.position_3d is not None else None,
-                        "confidence": round(float(d.confidence), 4),
-                        "img_wh":     [cfg["camera"]["img_w"], cfg["camera"]["img_h"]],
-                        "stamp":      round(time.time(), 3),
-                    })
-                    cam.buoy_pub.publish(_buoy)
+                det_count += 1
+                if max_dets is not None and det_count >= max_dets:
+                    print(f"[beacon] Reached max_detections={max_dets} — stopping")
+                    break
 
                 if log_writer is not None:
                     _write_log_row(log_writer, frame_count, beacon_color, color_conf,
                                    intensity, votes, float(d.confidence), d.bbox_2d,
                                    tracking_id=d.tracking_id,
-                                   pos3d=d.position_3d,
+                                   pos3d=pos3d,
                                    blink_info=blink_info,
                                    target_color=cfg.get("target_color"),
-                                   target_blinking=cfg.get("target_blinking"))
+                                   target_blinking=cfg.get("target_blinking"),
+                                   gt_info=aruco_gt,
+                                   img_w=rgb.shape[1],
+                                   img_h=rgb.shape[0])
 
                 if crops_dir is not None and lit_region.size > 0:
                     _b   = blink_info.get("is_blinking")
                     _det = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
                             else "det-steady" if _b is False else "det-acc")
                     fname = (f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
-                             f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
-                             f"_{gt_tag}_{_det}.png")
+                             f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                             f"_{gt_tag}.png")
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
 
                 if det_images_dir is not None:
@@ -1084,7 +1370,10 @@ def main(cfg: dict) -> None:
                     cv2.imwrite(os.path.join(det_images_dir, fname), det_crop)
 
                 print(f"[beacon] {label_txt}"
-                      + (f" pos3d=({d.position_3d[2]:.2f}m)" if d.position_3d is not None else ""))
+                      + (f" dist={pos3d[2]:.2f}m" if pos3d is not None else ""))
+
+            if max_dets is not None and det_count >= max_dets:
+                break
 
             if display and rgb is not None:
                 cv2.imshow("Beacon Detector", rgb)

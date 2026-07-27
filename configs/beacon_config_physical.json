@@ -13,7 +13,7 @@
     "drone_pose":     "/vvhub_body_wrt_local/pose",
     "gps_origin":     "/fmu/out/vehicle_gps_position",
     "detections_pub": "/seabird/beacon_detections",
-    "buoy_pub":       "/seabird/buoy_detections",
+    "aruco_pub":      "/seabird/aruco_ground_truth",
     "debug_image":    "/seabird/debug_image"
   },
 
@@ -33,6 +33,14 @@
     "depth_min_m":    1.0,
     "depth_max_m":    80.0,
     "min_area_frac":  0.001,
-    "stage2_conf":    0.30
+    "stage2_conf":    0.30,
+    "depth_source":   "bbox"
+  },
+
+  "aruco": {
+    "enabled":          false,
+    "dictionary":       "DICT_4X4_50",
+    "marker_size_m":    0.089,
+    "calibration_file": "/workspace/ArucoMarkerDetection/camera_calibration.npz"
   }
 }

@@ -1,0 +1,27 @@
+{
+  "topics": {
+    "camera_prefix": "/hires_front_small_color",
+    "image":         "/hires_front_small_color",
+    "camera_info":   "/hires_front_small_color/camera_info",
+    "drone_pose":    "/vvhub_body_wrt_local/pose",
+    "gps_origin":    "/fmu/out/vehicle_gps_position",
+    "aruco_pub":     "/seabird/aruco_detections"
+  },
+
+  "camera": {
+    "focal_length_mm":  2.1,
+    "h_aperture_mm":    6.0,
+    "v_aperture_mm":    4.5,
+    "img_w":           640,
+    "img_h":           480
+  },
+
+  "aruco": {
+    "dictionary":       "DICT_4X4_50",
+    "marker_size_m":    0.089,
+    "calibration_file": "/workspace/ArucoMarkerDetection/camera_calibration.npz",
+    "display":          false,
+    "log":              false,
+    "video":            null
+  }
+}

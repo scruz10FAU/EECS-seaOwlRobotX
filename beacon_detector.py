@@ -40,6 +40,11 @@ import cv2
 
 from blink_detector import BlinkDetector, _get_blink_detector
 
+# ── ArUco setup (added) ─────────────────────────────────────────────────────
+_ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+_ARUCO_PARAMS = cv2.aruco.DetectorParameters()
+_ARUCO_DETECTOR = cv2.aruco.ArucoDetector(_ARUCO_DICT, _ARUCO_PARAMS)
+
 EARTH_RADIUS_M = 6378137.0
 
 # Lazily imported only when ROS mode is used
@@ -53,7 +58,7 @@ def _import_ros():
 # ── Color classification ───────────────────────────────────────────────────────
 
 # HSV saturation/value thresholds for "bright, lit" pixels
-_SAT_MIN = 60    # ignore nearly-grey pixels
+_SAT_MIN = 40    # ignore nearly-grey pixels (lowered from 60 to catch overexposed LEDs)
 _VAL_MIN = 160   # only consider bright pixels (the light itself)
 
 # Hue bands for the four supported beacon colors (degrees, 0-180 in OpenCV).
@@ -61,7 +66,7 @@ _VAL_MIN = 160   # only consider bright pixels (the light itself)
 # Bands use STRICT membership — a hue must fall within center±half_width to match.
 # Gaps between bands intentionally fall through to "other" rather than mis-snap.
 _HUE_BANDS = [
-    (  0, 20, "red"),    # 0–20  (widened to capture orange-red LEDs at hue 15–20)
+    (  0, 25, "red"),    # 0–25  (widened to capture orange-red LEDs up to hue ~25)
     ( 65, 30, "green"),  # 35–95 (wide to cover teal-ish LEDs)
     (120, 15, "blue"),   # 105–135
     (165, 15, "red"),    # 150–180 (wrap-around)
@@ -128,7 +133,7 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
     total_pixels = bgr_crop.shape[0] * bgr_crop.shape[1]
     color_conf   = lit_pixels / max(total_pixels, 1)
 
-    if lit_pixels < 5:
+    if lit_pixels < max(3, total_pixels * 0.02):
         # Not enough saturated pixels — check for white (high V, low S)
         very_bright = (v >= 220)
         bright_count = int(np.count_nonzero(very_bright))
@@ -823,10 +828,14 @@ def main(model: str = "models/one_beacon.pt",
     frame_count       = 0
     intrinsics_printed = False
 
+    print("ONE")
+
     try:
         while rclpy.ok():
             if not cam.grab():
                 continue
+
+            print("TWO")
 
             frame_count += 1
             rgb        = cam.get_rgb()
@@ -835,13 +844,26 @@ def main(model: str = "models/one_beacon.pt",
             drone_pos, drone_quat = cam.get_drone_pose()
             frame_ts   = cam.get_frame_timestamp() or time.time()
 
+            print("THREE")
+
             if intr and not intrinsics_printed:
                 print(f"[beacon] Intrinsics ready: {intr.width}x{intr.height} "
                       f"fx={intr.fx:.1f} fy={intr.fy:.1f}")
                 intrinsics_printed = True
 
+            print("FOUR")
+
             if rgb is None:
                 continue
+            print("FIVE")
+            # ── ArUco check (added) ─────────────────────────────────────────
+            print("[aruco] Checking for ArUco markers...")
+            gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
+            corners, aruco_ids, _ = _ARUCO_DETECTOR.detectMarkers(gray)
+            if aruco_ids is not None:
+                cv2.aruco.drawDetectedMarkers(rgb, corners, aruco_ids)
+                print(f"[aruco] Detected {len(aruco_ids)} marker(s): IDs = {aruco_ids.flatten()}")
+            # ─────────────────────────────────────────────────────────────────
 
             dets = cam.get_detections()
             rgb_clean = rgb.copy()  # snapshot before drawing so crops are annotation-free

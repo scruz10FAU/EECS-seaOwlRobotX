@@ -15,7 +15,8 @@
     "camera_prefix":  "/zed/zed_node",
     "drone_pose":     "/mavros/local_position/pose",
     "gps_origin":     "/mavros/global_position/gp_origin",
-    "detections_pub": "/seabird/beacon_detections"
+    "detections_pub": "/seabird/beacon_detections",
+    "aruco_pub":      "/seabird/aruco_ground_truth"
   },
   "paths": {
     "scripts_dir": "~/seabird/scripts",
@@ -43,20 +44,6 @@
     "pitch_deg":        15.0
   },
 
-  "buoys": {
-    "radius_m": 0.2286,
-    "classes": {
-      "red_buoy":   0,
-      "green_buoy": 1,
-      "blue_buoy":  2
-    },
-    "positions": {
-      "red_buoy":   [ 3.079, -13.458,  0.150],
-      "green_buoy": [-3.284, -14.000,  0.000],
-      "blue_buoy":  [ 0.000, -15.299,  0.000]
-    }
-  },
-
   "drone_spawn": {
     "position":  [0.0, -8.0, 2.5],
     "quat_wxyz": [0.707, 0.0, 0.0, -0.707]
@@ -72,5 +59,16 @@
     "max_frames":   2000,
     "debug_mode":   true,
     "min_bbox_px":  6
+  },
+
+  "aruco": {
+    "enabled":          false,
+    "dictionary":       "DICT_4X4_50",
+    "marker_size_m":    0.089,
+    "calibration_file": null
+  },
+
+  "detection": {
+    "depth_source": "bbox"
   }
 }

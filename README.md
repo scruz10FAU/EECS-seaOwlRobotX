@@ -91,7 +91,7 @@ To change the search area, edit these four constants. All values are in metres (
 
 ### Behaviour
 
-- Subscribes to `/seabird/buoy_detections` in a background thread. Stops the sweep as soon as all `TARGET_COLORS` are detected.
+- Subscribes to `/seabird/beacon_detections` in a background thread. Stops the sweep as soon as all `TARGET_COLORS` are detected.
 - Publishes the executed flight path on `/seabird/flight_path` (`nav_msgs/Path`) and `/seabird/path_marker` (`visualization_msgs/Marker`) for RViz2.
 - On completion (or early exit), returns to launch and lands.
 
@@ -112,7 +112,7 @@ pxh> param save
 
 ## sweep_rrt.py
 
-Explores the search area using a **Rapidly-exploring Random Tree (RRT)**. The drone grows a tree of visited positions outward from takeoff within a configurable radius. When a new beacon color appears on `/seabird/buoy_detections` the drone hovers in place and waits for `blink_is_blinking` to become `True` or `False` before continuing. The search always runs until the node limit is reached — it does not stop early when all target colors are found, because multiple beacons of the same color may exist.
+Explores the search area using a **Rapidly-exploring Random Tree (RRT)**. The drone grows a tree of visited positions outward from takeoff within a configurable radius. When a new beacon color appears on `/seabird/beacon_detections` the drone hovers in place and waits for `blink_is_blinking` to become `True` or `False` before continuing. The search always runs until the node limit is reached — it does not stop early when all target colors are found, because multiple beacons of the same color may exist.
 
 ### Configuration (top of file)
 
@@ -161,7 +161,7 @@ Three changes were made relative to the original `beacon_detector_config.py` to 
 
 1. **`sys.path`** points to `dirname(__file__)` so the script can be run from any directory.
 2. **Null-gated subscriptions** — `drone_pose` and `gps_origin` topics are skipped when set to `null` in the config (required for Isaac Sim, which has no pose/GPS topics).
-3. **Dual publish** — every detection is also published to `buoy_pub` (`/seabird/buoy_detections`) so `sweep_lawnmower.py` receives it without modification.
+3. **ArUco ground truth** — when `aruco.enabled` is `true`, runs ArUco detection once per frame and publishes distance + pose to `/seabird/aruco_ground_truth` and writes ground-truth columns to the CSV log.
 
 ### Usage
 
@@ -172,6 +172,74 @@ python3 beacon_detector_config.py --config beacon_config_sim.json
 ```
 
 The run mode (ROS live / video-only / video+ROS) is determined by the `video` and `ros_video` fields in the config.
+
+### Config file schema
+
+All keys are optional — omitted keys fall back to their defaults.
+
+**Top-level fields**
+
+| Field | Default | Description |
+|---|---|---|
+| `model` | `models/one_beacon.pt` | Stage-1 YOLO model path |
+| `crop_model` | `models/best_crop.pt` | Stage-2 lit-area model path |
+| `conf` | `0.5` | Detection confidence threshold |
+| `display` | `false` | Show OpenCV window |
+| `video` | `null` | Path to a local video file (video-only mode) |
+| `ros_video` | `null` | Path to a local video file (video + ROS publish mode) |
+| `save` | `false` | Write annotated output video |
+| `log` | `false` | Write per-frame CSV detection log |
+| `save_crops` | `false` | Save lit-area crop PNG per detection |
+| `save_det_images` | `false` | Save detection bbox PNG per detection |
+| `save_frames` | `false` | Save full unannotated frame per detection |
+| `target_color` | `null` | Expected beacon color for log annotation |
+| `target_blinking` | `null` | Expected blink state for log annotation |
+| `true_dist` | `0.4826` | Known ground-truth distance (metres) written to log |
+
+**`topics` section — ROS topic names**
+
+| Field | Default | Description |
+|---|---|---|
+| `topics.image` | `/zed2/zed_node/rgb/image_rect_color` | Camera image subscription |
+| `topics.camera_info` | `/zed2/zed_node/rgb/camera_info` | Camera info subscription |
+| `topics.depth` | `/zed2/zed_node/depth/depth_registered` | Depth map subscription |
+| `topics.drone_pose` | `/mavros/local_position/pose` | Drone pose subscription (`null` to disable) |
+| `topics.gps_origin` | `/mavros/global_position/gp_origin` | GPS origin subscription (`null` to disable) |
+| `topics.detections_pub` | `/seabird/beacon_detections` | Beacon detection publish topic |
+| `topics.aruco_pub` | `/seabird/aruco_ground_truth` | ArUco ground-truth publish topic |
+| `topics.debug_image` | `/seabird/debug_image` | Annotated frame publish topic |
+
+**`camera` section — intrinsics and mount**
+
+| Field | Description |
+|---|---|
+| `focal_length_mm` | Lens focal length in mm (used for theoretical intrinsics when `calibration_file` is `null`) |
+| `h_aperture_mm` / `v_aperture_mm` | Sensor aperture in mm |
+| `img_w` / `img_h` | Frame resolution in pixels |
+| `mount_offset_xyz` | Camera position relative to drone body frame in metres `[x, y, z]` |
+| `pitch_deg` | Camera downward pitch angle in degrees |
+
+**`detection` section**
+
+| Field | Default | Description |
+|---|---|---|
+| `confirm_frames` | `3` | Consecutive frames required before publishing a new detection |
+| `pub_cooldown_s` | `1.0` | Minimum seconds between publishes for the same beacon |
+| `depth_min_m` / `depth_max_m` | `1.0` / `60.0` | Valid depth range for 3D position estimation |
+| `min_area_frac` | `0.001` | Minimum detection area as a fraction of frame area |
+| `stage2_conf` | `0.30` | Stage-2 model confidence threshold |
+| `depth_source` | `"topic"` | Distance source: `"topic"` uses the depth ROS topic; `"bbox"` estimates distance from the bounding box height and drone altitude (no depth sensor required) |
+| `beacon_height_m` | `0.3048` | Physical beacon height in metres (12 in) — used only when `depth_source` is `"bbox"` |
+| `beacon_z_m` | `0.0` | Known beacon altitude in the ENU world frame (metres) — used to remove the vertical offset from the slant range when `depth_source` is `"bbox"` |
+
+**`aruco` section**
+
+| Field | Default | Description |
+|---|---|---|
+| `enabled` | `false` | Enable per-frame ArUco ground-truth detection |
+| `dictionary` | `"DICT_4X4_50"` | ArUco dictionary name |
+| `marker_size_m` | `0.089` | Physical marker side length in metres |
+| `calibration_file` | `null` | Path to a `.npz` camera calibration file (from `cv2.calibrateCamera`). If `null`, falls back to theoretical intrinsics derived from the `camera` section. |
 
 ---
 
@@ -253,21 +321,24 @@ python3 beacon_detector.py -rv footage.mp4          # video file → ROS publish
 python3 beacon_detector.py -v footage.mp4           # video file, no ROS
 ```
 
-**Common flags**
+**All flags**
 
-| Flag | Default | Description |
-|---|---|---|
-| `--model / -m` | `models/one_beacon.pt` | Stage-1 YOLO beacon model |
-| `--crop-model / -cm` | `models/best_crop.pt` | Stage-2 lit-area model |
-| `--conf / -c` | `0.5` | Detection confidence threshold |
-| `--display / -d` | off | Show OpenCV window (ROS and ROS-video modes) |
-| `--save / -s` | off | Write annotated output video (video modes) |
-| `--log / -l` | off | Write per-frame CSV log |
-| `--save-crops / -sc` | off | Save the isolated lit area (beacon top) for each detection as a PNG |
-| `--save-det-images / -sdi` | off | Save each detection bbox (+ 20 px padding) with color and blink status in the filename |
-| `--save-frames / -sf` | off | Save the full unannoted frame whenever a detection occurs |
-| `--target-color / -tc` | `None` | Expected beacon color (`blue`, `red`, etc.) |
-| `--target-blinking / -tb` | `None` | Expected blink state (`true` or `false`) |
+| Flag | Short | Default | Description |
+|---|---|---|---|
+| `--model` | `-m` | `models/one_beacon.pt` | Stage-1 YOLO beacon localization model |
+| `--crop-model` | `-cm` | `models/best_crop.pt` | Stage-2 lit-area isolation model |
+| `--conf` | `-c` | `0.5` | Detection confidence threshold |
+| `--display` | `-d` | off | Show OpenCV window (ROS and ROS-video modes) |
+| `--video` | `-v` | `None` | Run on a local video file — no ROS, CV only |
+| `--ros-video` | `-rv` | `None` | Run on a local video file and publish detections to ROS |
+| `--save` | `-s` | off | Write annotated output video alongside the input (video modes) |
+| `--log` | `-l` | off | Write per-frame CSV detection log |
+| `--save-crops` | `-sc` | off | Save isolated lit-area crop for each detection as a PNG |
+| `--save-det-images` | `-sdi` | off | Save each detection bbox (+ 20 px padding); filename encodes color, confidence, and blink status |
+| `--save-frames` | `-sf` | off | Save full unannotated frame on every frame that contains a detection |
+| `--target-color` | `-tc` | `None` | Expected beacon color (`blue`, `red`, `green`); adds `target_match` column to the CSV log |
+| `--target-blinking` | `-tb` | `None` | Expected blink state (`true` or `false`); adds `target_blinking` column to the CSV log |
+| `--true_dist` | `-td` | `0.4826` | Known ground-truth distance in metres (ROS live mode; written to log for calibration) |
 
 ### Image output directories
 
