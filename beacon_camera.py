@@ -216,14 +216,7 @@ class BeaconCamera(Node):
         self.destroy_subscription(self._info_sub)
 
     def _on_synced_frame(self, rgb_msg, depth_msg):
-        if rgb_msg.encoding in ('bgr8', 'yuv422', 'yuv422_yuy2'):
-            bgr = _bridge.imgmsg_to_cv2(rgb_msg, desired_encoding='bgr8')
-        else:
-            channels = len(rgb_msg.data) // (rgb_msg.height * rgb_msg.width)
-            rgb = np.frombuffer(rgb_msg.data, dtype=np.uint8).reshape(
-                rgb_msg.height, rgb_msg.width, channels
-            )
-            bgr = rgb[:, :, :3][:, :, ::-1].copy()
+        bgr = _bridge.imgmsg_to_cv2(rgb_msg, desired_encoding='bgr8')
         enc = depth_msg.encoding
         if enc == '32FC1':
             depth = np.frombuffer(depth_msg.data, dtype=np.float32).reshape(
