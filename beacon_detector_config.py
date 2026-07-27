@@ -1194,6 +1194,7 @@ def main(cfg: dict) -> None:
     frame_count   = 0
     det_count     = 0
     intrinsics_printed = False
+    _tracker_colors: dict = {}  # tracking_id -> last confirmed non-white/unknown color
 
     try:
         while rclpy.ok():
@@ -1255,6 +1256,11 @@ def main(cfg: dict) -> None:
 
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
                 beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
+                tid = d.tracking_id
+                if beacon_color not in ("white", "unknown"):
+                    _tracker_colors[tid] = beacon_color
+                elif beacon_color == "white" and tid in _tracker_colors:
+                    beacon_color = _tracker_colors[tid]
                 if crops_dir is not None and lit_region.size > 0:
                     fname = f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}_{gt_tag}.png"
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
