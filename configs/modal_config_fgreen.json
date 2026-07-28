@@ -77,6 +77,9 @@
 
   "detection": {
     "depth_source": "bbox",
-    "max_detections": 50
+    "max_detections": 50,
+    "red_threshold":    0.40,
+    "winner_threshold": 0.25,
+    "red_hue_high":     5
   }
 }

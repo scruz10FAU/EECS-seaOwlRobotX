@@ -460,7 +460,7 @@ _LOG_HEADER = [
     "timestamp", "frame", "img_w", "img_h", "color", "color_confidence", "intensity",
     "vote_red", "vote_green", "vote_blue", "vote_other",
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
-    "pos3d_x", "pos3d_y", "pos3d_z",
+    "pos3d_x", "pos3d_y", "pos3d_z", "distance_m",
     "blink_is_blinking", "blink_hz", "blink_phase",
     "target_color", "target_blinking", "target_match",
     "gt_aruco_id", "gt_dist_m", "gt_tvec_x", "gt_tvec_y", "gt_tvec_z",
@@ -482,9 +482,10 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
                    target_color=None, target_blinking=None,
                    gt_info=None, img_w=None, img_h=None) -> None:
     x1, y1, x2, y2 = bbox
-    px = py = pz = ""
+    px = py = pz = dist_m = ""
     if pos3d is not None:
         px, py, pz = f"{pos3d[0]:.4f}", f"{pos3d[1]:.4f}", f"{pos3d[2]:.4f}"
+        dist_m = f"{math.sqrt(pos3d[0]**2 + pos3d[1]**2 + pos3d[2]**2):.4f}"
     bi = blink_info or {}
     blink_blinking = "" if bi.get("is_blinking") is None else str(bi.get("is_blinking"))
     blink_hz    = f"{bi['blink_hz']:.3f}" if bi.get("blink_hz") is not None else ""
@@ -511,7 +512,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         f"{votes.get('red',0):.4f}", f"{votes.get('green',0):.4f}",
         f"{votes.get('blue',0):.4f}", f"{votes.get('other',0):.4f}",
         f"{det_conf:.4f}", x1, y1, x2, y2, tracking_id,
-        px, py, pz,
+        px, py, pz, dist_m,
         blink_blinking, blink_hz, blink_phase,
         tc_col, tb_col, target_match,
         gt_id, gt_dist, gt_tx, gt_ty, gt_tz,
