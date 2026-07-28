@@ -1,9 +1,9 @@
 {
   "model":      "models/one_beacon630.pt",
-  "crop_model": "models/best_crop630.pt",
+  "crop_model": "models/best_crop727.pt",
   "conf":       0.5,
   "display":    false,
-  "true_dist":  0.4826,
+  "true_dist":  4.572,
   "save":       false,
   "log":        true,
   "save_crops": true,
