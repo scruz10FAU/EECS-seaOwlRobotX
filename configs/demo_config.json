@@ -74,6 +74,6 @@
     "imgsz": 640,
     "red_threshold":    0.01,
     "winner_threshold": 0.25,
-    "red_hue_high":     5
+    "red_hue_high":     20
   }
 }
