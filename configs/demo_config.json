@@ -76,6 +76,9 @@
     "winner_threshold": 0.25,
     "red_hue_high":     30,
     "blink_min_edge_gap": 0.35,
-    "blink_min_data_sec": 3.0
+    "blink_min_data_sec": 3.0,
+    "blue_hue_center":  102,
+    "blue_hue_half":    7,
+    "red_hue_low":      110
   }
 }
