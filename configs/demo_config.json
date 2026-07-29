@@ -10,7 +10,7 @@
   "save_det_images": true,
   "save_frames":     false,
   "video":      null,
-  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/beacon_videos/reduced_DJI.mp4",
+  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/beacon_videos/blink_red.mp4",
 
   "topics": {
     "drone_pose":     null,
@@ -72,7 +72,7 @@
   "detection": {
     "depth_source": "topic",
     "imgsz": 640,
-    "red_threshold":    0.40,
+    "red_threshold":    0.01,
     "winner_threshold": 0.25,
     "red_hue_high":     5
   }
