@@ -398,6 +398,7 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
 
     print(f"  hue  median={np.median(hues):.0f}°  mean={np.mean(hues):.0f}°  "
         f"min={hues.min()}°  max={hues.max()}°  n={len(hues)}")
+    print(f"all hues: {hues}")
 
     votes = _hue_votes(hues)
 
