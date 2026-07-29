@@ -360,6 +360,7 @@ def _apply_color_config(det_cfg: dict) -> None:
     bands = [
         (  0, 20, "red"),
         ( 65, 30, "green"),
+        (blue_center, blue_half, "blue")
     ]
     if red_low is not None:
         red_center = (red_low + 180) // 2
@@ -367,7 +368,7 @@ def _apply_color_config(det_cfg: dict) -> None:
         bands.append((red_center, red_half, "red"))   # broad upper red — must come BEFORE blue
     else:
         bands.append((180 - high_half, high_half, "red"))  # near-180° red — also before blue
-    bands.append((blue_center, blue_half, "blue"))
+    
     _HUE_BANDS = bands
 
     _bd._BLINK_MIN_EDGE_GAP = det_cfg.get("blink_min_edge_gap", _bd._BLINK_MIN_EDGE_GAP)
@@ -393,10 +394,10 @@ def _hue_votes(hues: np.ndarray) -> dict:
     return {k: result[k] / n for k in result}
 
 
-def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray, float, dict]:
+def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray, float, dict, float]:
     _empty_votes = {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0}
     if bgr_crop is None or bgr_crop.size == 0:
-        return "unknown", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0, _empty_votes
+        return "unknown", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0, _empty_votes, 0.0
 
     hsv = cv2.cvtColor(bgr_crop, cv2.COLOR_BGR2HSV)
     h, s, v = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
@@ -412,37 +413,38 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
         bright_count = int(np.count_nonzero(very_bright))
         if bright_count > total_pixels * 0.1:
             intensity = float(np.mean(v[very_bright]) / 255.0)
-            return "white", float(bright_count / total_pixels), light_mask, intensity, _empty_votes
-        return "unknown", 0.0, light_mask, 0.0, _empty_votes
+            return "white", float(bright_count / total_pixels), light_mask, intensity, _empty_votes, 0.0
+        return "unknown", 0.0, light_mask, 0.0, _empty_votes, 0.0
 
     hues      = h[light_mask > 0]
     intensity = float(np.mean(v[light_mask > 0]) / 255.0)
+    hue_var   = float(np.var(hues))
     vals, counts = np.unique(hues, return_counts=True)
     mode = vals[counts.argmax()]
 
-    print(f"  hue  median={np.median(hues):.0f}°  mean={np.mean(hues):.0f}°  mode={mode}° "  
-        f"min={hues.min()}°  max={hues.max()}°  n={len(hues)} variance={np.var(hues):.0f}")
+    print(f"  hue  median={np.median(hues):.0f}°  mean={np.mean(hues):.0f}°  mode={mode}° "
+        f"min={hues.min()}°  max={hues.max()}°  n={len(hues)} variance={hue_var:.0f}")
 
     votes = _hue_votes(hues)
 
     red_wins = (votes["red"] >= _RED_THRESHOLD
                 and votes["red"] >= votes["green"]
                 and votes["red"] >= votes["blue"])
-    
+
     if red_wins:
         color = "red"
     else:
         winner = max(("green", "blue"), key=lambda c: votes[c])
         color = winner if votes[winner] >= _WINNER_THRESHOLD else "unknown"
 
-    return color, color_conf, light_mask, intensity, votes
+    return color, color_conf, light_mask, intensity, votes, hue_var
 
 
 def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
                          conf: float = 0.3) -> Tuple[str, float, np.ndarray, float, dict]:
     _empty = ("unknown", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0,
               {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0},
-              np.zeros((1, 1, 3), dtype=np.uint8))
+              np.zeros((1, 1, 3), dtype=np.uint8), 0.0)
     if beacon_crop is None or beacon_crop.size == 0:
         return _empty
 
@@ -477,15 +479,15 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
     cmin, cmax = np.where(cols)[0][[0, -1]]
     lit_region = beacon_crop[rmin:rmax + 1, cmin:cmax + 1]
 
-    color, color_conf, _, intensity, votes = classify_beacon_color(lit_region)
-    return color, color_conf, display_mask, intensity, votes, lit_region
+    color, color_conf, _, intensity, votes, hue_var = classify_beacon_color(lit_region)
+    return color, color_conf, display_mask, intensity, votes, lit_region, hue_var
 
 
 # ── Detection logger ──────────────────────────────────────────────────────────
 
 _LOG_HEADER = [
     "timestamp", "frame", "img_w", "img_h", "color", "color_confidence", "intensity",
-    "vote_red", "vote_green", "vote_blue", "vote_other",
+    "vote_red", "vote_green", "vote_blue", "vote_other", "hue_variance",
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
     "pos3d_x", "pos3d_y", "pos3d_z", "distance_m",
     "blink_is_blinking", "blink_hz", "blink_phase",
@@ -507,7 +509,8 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
                    det_conf: float, bbox, tracking_id: int = -1,
                    pos3d=None, blink_info: dict = None,
                    target_color=None, target_blinking=None,
-                   gt_info=None, img_w=None, img_h=None) -> None:
+                   gt_info=None, img_w=None, img_h=None,
+                   hue_variance: float = 0.0) -> None:
     x1, y1, x2, y2 = bbox
     px = py = pz = dist_m = ""
     if pos3d is not None:
@@ -537,7 +540,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         img_w if img_w is not None else "", img_h if img_h is not None else "",
         color, f"{color_conf:.4f}", f"{intensity:.4f}",
         f"{votes.get('red',0):.4f}", f"{votes.get('green',0):.4f}",
-        f"{votes.get('blue',0):.4f}", f"{votes.get('other',0):.4f}",
+        f"{votes.get('blue',0):.4f}", f"{votes.get('other',0):.4f}", f"{hue_variance:.2f}",
         f"{det_conf:.4f}", x1, y1, x2, y2, tracking_id,
         px, py, pz, dist_m,
         blink_blinking, blink_hz, blink_phase,
@@ -687,7 +690,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
         label = names.get(cls, str(cls))
 
         crop = clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-        beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
+        beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var = isolate_and_classify(crop, crop_model)
 
         draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
@@ -737,7 +740,8 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                            target_color=target_color,
                            target_blinking=target_blinking,
                            gt_info=aruco_gt,
-                           img_w=img_w, img_h=img_h)
+                           img_w=img_w, img_h=img_h,
+                           hue_variance=hue_var)
 
     return frame
 
@@ -1012,7 +1016,7 @@ def run_video_ros(cfg: dict) -> None:
                     det_conf = float(box.conf[0])
 
                     crop = raw[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-                    beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
+                    beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var = isolate_and_classify(crop, crop_model)
                     draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
                     blink_info = blink_detector.update(video_ts, beacon_color, intensity, color_conf)
@@ -1085,7 +1089,8 @@ def run_video_ros(cfg: dict) -> None:
                                        target_blinking=cfg.get("target_blinking"),
                                        gt_info=aruco_gt,
                                        img_w=raw.shape[1],
-                                       img_h=raw.shape[0])
+                                       img_h=raw.shape[0],
+                                       hue_variance=hue_var)
 
                     if crops_dir is not None and lit_region.size > 0:
                         _b   = blink_info.get("is_blinking") if blink_info else None
@@ -1283,7 +1288,7 @@ def main(cfg: dict) -> None:
                     )
 
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-                beacon_color, color_conf, light_mask, intensity, votes, lit_region = isolate_and_classify(crop, crop_model)
+                beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var = isolate_and_classify(crop, crop_model)
                 tid = d.tracking_id
                 if beacon_color not in ("white", "unknown"):
                     _tracker_colors[tid] = beacon_color
@@ -1375,7 +1380,8 @@ def main(cfg: dict) -> None:
                                    target_blinking=cfg.get("target_blinking"),
                                    gt_info=aruco_gt,
                                    img_w=rgb.shape[1],
-                                   img_h=rgb.shape[0])
+                                   img_h=rgb.shape[0],
+                                   hue_variance=hue_var)
 
                 if crops_dir is not None and lit_region.size > 0:
                     _b   = blink_info.get("is_blinking")
