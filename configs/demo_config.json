@@ -1,6 +1,6 @@
 {
   "model":      "models/one_beacon630.pt",
-  "crop_model": "models/best_crop727.pt",
+  "crop_model": "models/best_crop.pt",
   "conf":       0.5,
   "display":    true,
   "true_dist":  4.572,

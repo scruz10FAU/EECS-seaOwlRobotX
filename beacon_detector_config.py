@@ -356,6 +356,7 @@ def _apply_color_config(det_cfg: dict) -> None:
     blue_half   = det_cfg.get("blue_hue_half",   15)
     red_low     = det_cfg.get("red_hue_low",     None)
 
+    high_half = det_cfg.get("red_hue_high", 5)
     bands = [
         (  0, 20, "red"),
         ( 65, 30, "green"),
@@ -363,11 +364,10 @@ def _apply_color_config(det_cfg: dict) -> None:
     if red_low is not None:
         red_center = (red_low + 180) // 2
         red_half   = (180 - red_low) // 2
-        bands.append((red_center, red_half, "red"))   # broad upper red band, before blue
+        bands.append((red_center, red_half, "red"))   # broad upper red — must come BEFORE blue
+    else:
+        bands.append((180 - high_half, high_half, "red"))  # near-180° red — also before blue
     bands.append((blue_center, blue_half, "blue"))
-    if red_low is None:
-        high_half = det_cfg.get("red_hue_high", 5)
-        bands.append((180 - high_half, high_half, "red"))
     _HUE_BANDS = bands
 
     _bd._BLINK_MIN_EDGE_GAP = det_cfg.get("blink_min_edge_gap", _bd._BLINK_MIN_EDGE_GAP)
@@ -421,7 +421,7 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
     mode = vals[counts.argmax()]
 
     print(f"  hue  median={np.median(hues):.0f}°  mean={np.mean(hues):.0f}°  mode={mode}° "  
-        f"min={hues.min()}°  max={hues.max()}°  n={len(hues)}")
+        f"min={hues.min()}°  max={hues.max()}°  n={len(hues)} variance={np.var(hues):.0f}")
 
     votes = _hue_votes(hues)
 
@@ -452,8 +452,7 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
     boxes   = results[0].boxes
 
     if len(boxes) == 0:
-        color, color_conf, light_mask, intensity, votes = classify_beacon_color(beacon_crop)
-        return color, color_conf, light_mask, intensity, votes, beacon_crop
+        return _empty
 
     if results[0].masks is not None:
         best_idx = int(np.argmax([float(b.conf[0]) for b in boxes]))
@@ -469,8 +468,7 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
             display_mask[ly1:ly2, lx1:lx2] = 255
 
     if not display_mask.any():
-        color, color_conf, light_mask, intensity, votes = classify_beacon_color(beacon_crop)
-        return color, color_conf, light_mask, intensity, votes, beacon_crop
+        return _empty
 
     rows = np.any(display_mask > 0, axis=1)
     cols = np.any(display_mask > 0, axis=0)
