@@ -329,8 +329,8 @@ _VAL_MIN = 80
 _HUE_BANDS = [
     (  0, 20, "red"),    # 0–20°
     ( 65, 30, "green"),  # 35–95°
-    (120, 15, "blue"),   # 105–134°
-    (175,  5, "red"),    # 170–180° — wrap-around red only; narrowed to avoid eating blue/purple
+    (115, 15, "blue"),   # 100-130°
+    (155,  25, "red"),    # 130–180° — wrap-around red only; narrowed to avoid eating blue/purple
 ]
 
 # Thresholds — overwritten from config at startup by _apply_color_config()
@@ -404,6 +404,7 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
     red_wins = (votes["red"] >= _RED_THRESHOLD
                 and votes["red"] >= votes["green"]
                 and votes["red"] >= votes["blue"])
+    
     if red_wins:
         color = "red"
     else:
