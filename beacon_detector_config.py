@@ -441,7 +441,8 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
 def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
                          conf: float = 0.3) -> Tuple[str, float, np.ndarray, float, dict]:
     _empty = ("unknown", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0,
-              {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0})
+              {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0},
+              np.zeros((1, 1, 3), dtype=np.uint8))
     if beacon_crop is None or beacon_crop.size == 0:
         return _empty
 
