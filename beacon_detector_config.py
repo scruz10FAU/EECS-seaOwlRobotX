@@ -1057,10 +1057,11 @@ def run_video_ros(cfg: dict) -> None:
                         f"beacon [{beacon_color}] det={det_conf:.2f} int={intensity:.2f} "
                         f"r={votes['red']:.0%} g={votes['green']:.0%} b={votes['blue']:.0%}"
                     )
-                    if blink_info["is_blinking"]:
-                        label_txt += f" blink={blink_info['blink_hz']:.2f}Hz"
-                    elif blink_info["is_blinking"] is None:
-                        label_txt += " blink=?"
+                    if blink_info:
+                        if blink_info["is_blinking"]:
+                            label_txt += f" blink={blink_info['blink_hz']:.2f}Hz"
+                        elif blink_info["is_blinking"] is None:
+                            label_txt += " blink=?"
                     if pos3d is not None:
                         label_txt += f" dist={pos3d[2]:.2f}m"
                     cv2.putText(display_frame, label_txt, (x1, max(y1 - 6, 10)),
@@ -1327,10 +1328,11 @@ def main(cfg: dict) -> None:
                     f"beacon [{beacon_color}] conf={d.confidence:.2f} int={intensity:.2f} "
                     f"r={votes['red']:.0%} g={votes['green']:.0%} b={votes['blue']:.0%}"
                 )
-                if blink_info["is_blinking"]:
-                    label_txt += f" blink={blink_info['blink_hz']:.2f}Hz"
-                elif blink_info["is_blinking"] is None:
-                    label_txt += " blink=?"
+                if blink_info:
+                    if blink_info["is_blinking"]:
+                        label_txt += f" blink={blink_info['blink_hz']:.2f}Hz"
+                    elif blink_info["is_blinking"] is None:
+                        label_txt += " blink=?"
                 if d.tracking_id >= 0:
                     label_txt += f" #{d.tracking_id}"
 
