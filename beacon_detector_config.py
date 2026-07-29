@@ -787,7 +787,7 @@ def run_video(cfg: dict) -> None:
         print(f"[beacon-video] ArUco ground truth enabled  "
               f"dict={cfg['aruco']['dictionary']}  marker={cfg['aruco']['marker_size_m']}m")
 
-    cv2.namedWindow("Beacon Detector — Video Test", cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow("Beacon Detector — Video Test", cv2.WINDOW_NORMAL)
 
     try:
         while True:
@@ -943,7 +943,7 @@ def run_video_ros(cfg: dict) -> None:
     display_frame = None
 
     if display:
-        cv2.namedWindow("Beacon Detector — Video + ROS", cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow("Beacon Detector — Video + ROS", cv2.WINDOW_NORMAL)
 
     try:
         while rclpy.ok():
@@ -1148,7 +1148,7 @@ def main(cfg: dict) -> None:
     print(f"[beacon] Publishing → {topics['detections_pub']}")
 
     if display:
-        cv2.namedWindow("Beacon Detector", cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow("Beacon Detector", cv2.WINDOW_NORMAL)
 
     log_fh = log_writer = None
     if log:
