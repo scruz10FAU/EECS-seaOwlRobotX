@@ -353,11 +353,12 @@ def _apply_color_config(det_cfg: dict) -> None:
     _RED_THRESHOLD    = det_cfg.get("red_threshold",    _RED_THRESHOLD)
     _WINNER_THRESHOLD = det_cfg.get("winner_threshold", _WINNER_THRESHOLD)
 
-    #blue_center = det_cfg.get("blue_hue_center", 120)
-    #blue_half   = det_cfg.get("blue_hue_half",   15)
-    #red_low     = det_cfg.get("red_hue_low",     None)
+    blue_center = det_cfg.get("blue_hue_center", 120)
+    blue_half   = det_cfg.get("blue_hue_half",   15)
+    red_low     = det_cfg.get("red_hue_low",     None)
 
     half = det_cfg.get("red_hue_high", 5)
+    """
     bands = [
         (  0, 20, "red"),
         ( 65, 30, "green"),
@@ -365,13 +366,21 @@ def _apply_color_config(det_cfg: dict) -> None:
         (180-half, half, "red")
     ]
     """
+    
+    
+    bands = [
+        (  0, 20, "red"),
+        ( 65, 30, "green"),
+        (blue_center, blue_half, "blue")
+    ]
+
     if red_low is not None:
         red_center = (red_low + 180) // 2
         red_half   = (180 - red_low) // 2
         bands.append((red_center, red_half, "red"))   # broad upper red — must come BEFORE blue
     else:
-        bands.append((180 - high_half, high_half, "red"))  # near-180° red — also before blue
-    """
+        bands.append((180 - half, half, "red"))  # near-180° red — also before blue
+    
     _HUE_BANDS = bands
 
     _bd._BLINK_MIN_EDGE_GAP        = det_cfg.get("blink_min_edge_gap",        _bd._BLINK_MIN_EDGE_GAP)

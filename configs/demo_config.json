@@ -77,8 +77,8 @@
     "red_hue_high":     30,
     "blink_min_edge_gap": 0.35,
     "blink_min_data_sec": 3.0,
-    "blue_hue_center":  102,
-    "blue_hue_half":    7,
+    "blue_hue_center":  105,
+    "blue_hue_half":    10,
     "red_hue_low":      110,
     "blink_max_ioi_ratio": 2.0
   }

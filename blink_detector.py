@@ -152,7 +152,7 @@ class BlinkDetector:
 
         iois = [rising_edges[i + 1] - rising_edges[i] for i in range(len(rising_edges) - 1)]
         mean_ioi = sum(iois) / len(iois)
-        if _BLINK_MAX_IOI_RATIO is not None and len(iois) >= 2:
+        if blink_color == "blue" and _BLINK_MAX_IOI_RATIO is not None and len(iois) >= 2:
             if max(iois) / min(iois) > _BLINK_MAX_IOI_RATIO:
                 return {"is_blinking": False, "blink_color": blink_color, "blink_hz": None, "phase": phase}
         if mean_ioi <= 0:
