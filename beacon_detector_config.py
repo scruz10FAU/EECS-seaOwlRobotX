@@ -698,6 +698,8 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
 
         crop = clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
         beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
+        if beacon_color == "unknown":
+            continue
 
         draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
@@ -1025,6 +1027,8 @@ def run_video_ros(cfg: dict) -> None:
 
                     crop = raw[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
                     beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
+                    if beacon_color == "unknown":
+                        continue
                     draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
                     blink_info = (blink_detector.update(video_ts, beacon_color, intensity, color_conf)
@@ -1300,6 +1304,8 @@ def main(cfg: dict) -> None:
 
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
                 beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
+                if beacon_color == "unknown":
+                    continue
                 tid = d.tracking_id
                 if beacon_color not in ("white", "unknown"):
                     _tracker_colors[tid] = beacon_color
