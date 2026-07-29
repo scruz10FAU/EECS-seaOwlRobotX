@@ -326,11 +326,20 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
 _SAT_MIN = 40    # lowered from 60 to catch overexposed LEDs
 _VAL_MIN = 80
 
+"""
 _HUE_BANDS = [
     (  0, 20, "red"),    # 0–20°
     ( 65, 30, "green"),  # 35–95°
-    (115, 15, "blue"),   # 100-130°
-    (155,  25, "red"),    # 130–180° — wrap-around red only; narrowed to avoid eating blue/purple
+    (120, 15, "blue"),   # 105–134°
+    (175,  5, "red"),    # 170–180° — wrap-around red only; narrowed to avoid eating blue/purple
+]
+"""
+
+_HUE_BANDS = [
+    (  0, 20, "red"),    # 0–20°
+    ( 65, 30, "green"),  # 35–95°
+    (102, 8, "blue"),   # 100-130°
+    (145,  35, "red"),    # 110–180° — wrap-around red only; narrowed to avoid eating blue/purple
 ]
 
 # Thresholds — overwritten from config at startup by _apply_color_config()
@@ -398,7 +407,6 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
 
     print(f"  hue  median={np.median(hues):.0f}°  mean={np.mean(hues):.0f}°  "
         f"min={hues.min()}°  max={hues.max()}°  n={len(hues)}")
-    #print(f"all hues: {hues}, length = {len(hues)}")
 
     votes = _hue_votes(hues)
 
