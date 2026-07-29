@@ -122,7 +122,7 @@ Explores the search area using a **Rapidly-exploring Random Tree (RRT)**. The dr
 | `RRT_STEP_M` | `1.5` | Max edge length per tree extension |
 | `RRT_GOAL_BIAS` | `0.08` | Probability of biasing sample toward least-explored sector |
 | `RRT_MAX_NODES` | *(derived)* | Computed as `max(20, int(2π × R² / S²))` — enough to cover the disc ~twice |
-| `BLINK_VERIFY_TIMEOUT_S` | `15.0` | Max hover time per beacon before resuming search |
+| `BLINK_VERIFY_TIMEOUT_S` | `20.0` | Max hover time per beacon before resuming search |
 | `TAKEOFF_ALT_M` | `5.0` | Flight altitude in metres |
 
 `RRT_MAX_NODES` is derived automatically from `MAX_SEARCH_RADIUS_M` and `RRT_STEP_M` — reduce the radius to reduce the search time proportionally.
@@ -200,14 +200,14 @@ All keys are optional — omitted keys fall back to their defaults.
 
 | Field | Default | Description |
 |---|---|---|
-| `topics.image` | `/zed2/zed_node/rgb/image_rect_color` | Camera image subscription |
-| `topics.camera_info` | `/zed2/zed_node/rgb/camera_info` | Camera info subscription |
-| `topics.depth` | `/zed2/zed_node/depth/depth_registered` | Depth map subscription |
+| `topics.camera_prefix` | `/zed/zed_node` | Prefix used to derive image/depth/camera_info defaults. Override the three below explicitly to ignore this. |
+| `topics.image` | `<prefix>/rgb/color/rect/image` | Camera image subscription |
+| `topics.camera_info` | `<prefix>/rgb/color/rect/camera_info` | Camera info subscription |
+| `topics.depth` | `<prefix>/depth/depth_registered` | Depth map subscription |
 | `topics.drone_pose` | `/mavros/local_position/pose` | Drone pose subscription (`null` to disable) |
 | `topics.gps_origin` | `/mavros/global_position/gp_origin` | GPS origin subscription (`null` to disable) |
 | `topics.detections_pub` | `/seabird/beacon_detections` | Beacon detection publish topic |
 | `topics.aruco_pub` | `/seabird/aruco_ground_truth` | ArUco ground-truth publish topic |
-| `topics.debug_image` | `/seabird/debug_image` | Annotated frame publish topic |
 
 **`camera` section — intrinsics and mount**
 
@@ -231,6 +231,11 @@ All keys are optional — omitted keys fall back to their defaults.
 | `depth_source` | `"topic"` | Distance source: `"topic"` uses the depth ROS topic; `"bbox"` estimates distance from the bounding box height and drone altitude (no depth sensor required) |
 | `beacon_height_m` | `0.3048` | Physical beacon height in metres (12 in) — used only when `depth_source` is `"bbox"` |
 | `beacon_z_m` | `0.0` | Known beacon altitude in the ENU world frame (metres) — used to remove the vertical offset from the slant range when `depth_source` is `"bbox"` |
+| `max_detections` | `null` | Stop after this many published detections. `null` = unlimited |
+| `imgsz` | `640` | YOLO inference resolution in pixels. Should match model training size |
+| `red_threshold` | `0.40` | Minimum fraction of lit pixels that must vote red, AND red must outscore green and blue |
+| `winner_threshold` | `0.25` | Minimum fraction required for green or blue to be declared the winner |
+| `red_hue_high` | `10` | Half-width of the wrap-around red hue band near 180°. Band covers `(180 − value)–180°`. Reduce to avoid classifying purple/blue hues as red |
 
 **`aruco` section**
 
@@ -238,7 +243,7 @@ All keys are optional — omitted keys fall back to their defaults.
 |---|---|---|
 | `enabled` | `false` | Enable per-frame ArUco ground-truth detection |
 | `dictionary` | `"DICT_4X4_50"` | ArUco dictionary name |
-| `marker_size_m` | `0.089` | Physical marker side length in metres |
+| `marker_size_m` | `0.15` | Physical marker side length in metres |
 | `calibration_file` | `null` | Path to a `.npz` camera calibration file (from `cv2.calibrateCamera`). If `null`, falls back to theoretical intrinsics derived from the `camera` section. |
 
 ---
@@ -448,7 +453,7 @@ ROS2 node that wraps camera subscriptions, depth synchronization, drone pose, an
 | `open_for_video()` | Minimal setup for video-file mode: create publisher and subscribe to pose + GPS only. |
 | `close()` | Mark node as closed. |
 | `grab()` | Spin once and return `True` if a new synchronized frame arrived. |
-| `enable_detection(model_path)` | Start `YoloDetector` with object tracking on the live RGB stream. |
+| `enable_detection(model_path, imgsz=640)` | Start `YoloDetector` with object tracking on the live RGB stream. `imgsz` controls YOLO inference resolution. |
 
 **Data accessors**
 
