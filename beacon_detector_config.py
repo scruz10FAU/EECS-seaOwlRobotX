@@ -338,7 +338,7 @@ _HUE_BANDS = [
 _HUE_BANDS = [
     (  0, 20, "red"),    # 0–20°
     ( 65, 30, "green"),  # 35–95°
-    (102, 8, "blue"),   # 100-130°
+    (102, 7, "blue"),   # 95-110°
     (145,  35, "red"),    # 110–180° — wrap-around red only; narrowed to avoid eating blue/purple
 ]
 
