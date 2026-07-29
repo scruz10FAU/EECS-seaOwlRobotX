@@ -10,7 +10,7 @@
   "save_det_images": true,
   "save_frames":     false,
   "video":      null,
-  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/beacon_videos",
+  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/beacon_videos/reduced_DJI.mp4",
 
   "topics": {
     "drone_pose":     null,
