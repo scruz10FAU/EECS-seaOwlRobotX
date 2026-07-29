@@ -94,6 +94,7 @@ _DEFAULT_DETECTION = {
     "blue_hue_half":   15,        # half-width of the blue hue band (degrees)
     "blink_min_edge_gap": 0.20,   # blink debounce: ignore rising edges closer than this (seconds)
     "blink_min_data_sec": 4.0,    # seconds of data required before blink result is returned
+    "blink_intensity_min_swing": 0.05,  # min peak-to-peak intensity swing required to trigger intensity-fallback blink detection
 }
 
 
@@ -373,8 +374,9 @@ def _apply_color_config(det_cfg: dict) -> None:
     """
     _HUE_BANDS = bands
 
-    _bd._BLINK_MIN_EDGE_GAP = det_cfg.get("blink_min_edge_gap", _bd._BLINK_MIN_EDGE_GAP)
-    _bd._BLINK_MIN_DATA_SEC = det_cfg.get("blink_min_data_sec", _bd._BLINK_MIN_DATA_SEC)
+    _bd._BLINK_MIN_EDGE_GAP        = det_cfg.get("blink_min_edge_gap",        _bd._BLINK_MIN_EDGE_GAP)
+    _bd._BLINK_MIN_DATA_SEC        = det_cfg.get("blink_min_data_sec",        _bd._BLINK_MIN_DATA_SEC)
+    _bd._BLINK_INTENSITY_MIN_SWING = det_cfg.get("blink_intensity_min_swing", _bd._BLINK_INTENSITY_MIN_SWING)
 
 
 def _hue_votes(hues: np.ndarray) -> dict:
