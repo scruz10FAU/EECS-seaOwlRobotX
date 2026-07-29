@@ -10,7 +10,7 @@
   "save_det_images": true,
   "save_frames":     false,
   "video":      null,
-  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/beacon_videos/blink_green.mp4",
+  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/beacon_videos/blink_red.mp4",
 
   "topics": {
     "drone_pose":     null,
