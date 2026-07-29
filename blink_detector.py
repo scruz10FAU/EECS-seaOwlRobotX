@@ -18,6 +18,7 @@ _BLINK_MAX_IOI_SEC_COLOR   = 8.0   # color beacons: slack for long on-periods be
 _BLINK_COLOR_CONF_MIN      = 0.001 # min color_confidence to count a non-blue reading as signal
 _BLINK_GAP_OFF_SEC         = 5.0   # red/green only: gap longer than this means beacon was off
 _BLINK_CC_ON_THRESHOLD     = 0.15  # blue beacon: color_confidence above this = LED on, below = LED off/dim
+_BLINK_MAX_IOI_RATIO       = None  # if set, reject blink if max(IOIs)/min(IOIs) exceeds this ratio (None = disabled)
 
 # Number of recent samples used to decide whether the beacon is blue (housing always
 # visible) vs red/green (YOLO loses it entirely when off).
@@ -151,6 +152,9 @@ class BlinkDetector:
 
         iois = [rising_edges[i + 1] - rising_edges[i] for i in range(len(rising_edges) - 1)]
         mean_ioi = sum(iois) / len(iois)
+        if _BLINK_MAX_IOI_RATIO is not None and len(iois) >= 2:
+            if max(iois) / min(iois) > _BLINK_MAX_IOI_RATIO:
+                return {"is_blinking": False, "blink_color": blink_color, "blink_hz": None, "phase": phase}
         if mean_ioi <= 0:
             return {"is_blinking": False, "blink_color": blink_color, "blink_hz": None, "phase": phase}
 

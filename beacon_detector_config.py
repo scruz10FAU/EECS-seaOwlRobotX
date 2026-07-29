@@ -377,6 +377,7 @@ def _apply_color_config(det_cfg: dict) -> None:
     _bd._BLINK_MIN_EDGE_GAP        = det_cfg.get("blink_min_edge_gap",        _bd._BLINK_MIN_EDGE_GAP)
     _bd._BLINK_MIN_DATA_SEC        = det_cfg.get("blink_min_data_sec",        _bd._BLINK_MIN_DATA_SEC)
     _bd._BLINK_INTENSITY_MIN_SWING = det_cfg.get("blink_intensity_min_swing", _bd._BLINK_INTENSITY_MIN_SWING)
+    _bd._BLINK_MAX_IOI_RATIO       = det_cfg.get("blink_max_ioi_ratio",       _bd._BLINK_MAX_IOI_RATIO)
 
 
 def _hue_votes(hues: np.ndarray) -> dict:
