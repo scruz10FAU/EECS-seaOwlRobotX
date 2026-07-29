@@ -89,6 +89,11 @@ _DEFAULT_DETECTION = {
     "red_threshold":   0.40,      # red must have this fraction of lit pixels AND beat green/blue
     "winner_threshold": 0.25,     # green or blue must reach this fraction to win
     "red_hue_high":    10,        # half-width of the near-180° red wrap band (hues 170–180°)
+    "red_hue_low":     None,      # if set, adds a broad red band from red_hue_low to 180° (e.g. 110)
+    "blue_hue_center": 120,       # center of the blue hue band (degrees)
+    "blue_hue_half":   15,        # half-width of the blue hue band (degrees)
+    "blink_min_edge_gap": 0.20,   # blink debounce: ignore rising edges closer than this (seconds)
+    "blink_min_data_sec": 4.0,    # seconds of data required before blink result is returned
 }
 
 
@@ -326,21 +331,14 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
 _SAT_MIN = 40    # lowered from 60 to catch overexposed LEDs
 _VAL_MIN = 80
 
-"""
+
 _HUE_BANDS = [
     (  0, 20, "red"),    # 0–20°
     ( 65, 30, "green"),  # 35–95°
     (120, 15, "blue"),   # 105–134°
     (175,  5, "red"),    # 170–180° — wrap-around red only; narrowed to avoid eating blue/purple
 ]
-"""
 
-_HUE_BANDS = [
-    (  0, 20, "red"),    # 0–20°
-    ( 65, 30, "green"),  # 35–95°
-    (102, 7, "blue"),   # 95-110°
-    (145,  35, "red"),    # 110–180° — wrap-around red only; narrowed to avoid eating blue/purple
-]
 
 # Thresholds — overwritten from config at startup by _apply_color_config()
 _RED_THRESHOLD    = 0.40   # red must reach this AND outscore green and blue
@@ -348,17 +346,32 @@ _WINNER_THRESHOLD = 0.25   # green/blue minimum to win
 
 
 def _apply_color_config(det_cfg: dict) -> None:
-    """Apply per-device color classification thresholds and hue bands from config."""
+    """Apply per-device color classification thresholds, hue bands, and blink params from config."""
+    import blink_detector as _bd
     global _RED_THRESHOLD, _WINNER_THRESHOLD, _HUE_BANDS
     _RED_THRESHOLD    = det_cfg.get("red_threshold",    _RED_THRESHOLD)
     _WINNER_THRESHOLD = det_cfg.get("winner_threshold", _WINNER_THRESHOLD)
-    half = det_cfg.get("red_hue_high", 5)
-    _HUE_BANDS = [
-        (  0, 20,   "red"),
-        ( 65, 30,   "green"),
-        (120, 15,   "blue"),
-        (180 - half, half, "red"),
+
+    blue_center = det_cfg.get("blue_hue_center", 120)
+    blue_half   = det_cfg.get("blue_hue_half",   15)
+    red_low     = det_cfg.get("red_hue_low",     None)
+
+    bands = [
+        (  0, 20, "red"),
+        ( 65, 30, "green"),
     ]
+    if red_low is not None:
+        red_center = (red_low + 180) // 2
+        red_half   = (180 - red_low) // 2
+        bands.append((red_center, red_half, "red"))   # broad upper red band, before blue
+    bands.append((blue_center, blue_half, "blue"))
+    if red_low is None:
+        high_half = det_cfg.get("red_hue_high", 5)
+        bands.append((180 - high_half, high_half, "red"))
+    _HUE_BANDS = bands
+
+    _bd._BLINK_MIN_EDGE_GAP = det_cfg.get("blink_min_edge_gap", _bd._BLINK_MIN_EDGE_GAP)
+    _bd._BLINK_MIN_DATA_SEC = det_cfg.get("blink_min_data_sec", _bd._BLINK_MIN_DATA_SEC)
 
 
 def _hue_votes(hues: np.ndarray) -> dict:

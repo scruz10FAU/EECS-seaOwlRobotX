@@ -72,8 +72,10 @@
   "detection": {
     "depth_source": "topic",
     "imgsz": 640,
-    "red_threshold":    0.01,
+    "red_threshold":    0.40,
     "winner_threshold": 0.25,
-    "red_hue_high":     20
+    "red_hue_high":     30,
+    "blink_min_edge_gap": 0.35,
+    "blink_min_data_sec": 3.0
   }
 }
