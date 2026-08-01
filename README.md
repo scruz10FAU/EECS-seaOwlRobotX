@@ -236,6 +236,13 @@ All keys are optional — omitted keys fall back to their defaults.
 | `red_threshold` | `0.40` | Minimum fraction of lit pixels that must vote red, AND red must outscore green and blue |
 | `winner_threshold` | `0.25` | Minimum fraction required for green or blue to be declared the winner |
 | `red_hue_high` | `10` | Half-width of the wrap-around red hue band near 180°. Band covers `(180 − value)–180°`. Reduce to avoid classifying purple/blue hues as red |
+| `red_hue_low` | `null` | If set, replaces `red_hue_high` with a broad upper red band from this hue to 180°. E.g. `110` covers 110–180°. This band is placed before blue in the vote order so overlapping hues are classified red |
+| `blue_hue_center` | `120` | Center of the blue hue band in degrees |
+| `blue_hue_half` | `15` | Half-width of the blue hue band in degrees. Band covers `(center − half)–(center + half)°` |
+| `blink_min_edge_gap` | `0.20` | Debounce: minimum seconds between rising edges. Increase for noisy signals |
+| `blink_min_data_sec` | `4.0` | Seconds of data required in the rolling window before a blink result is returned |
+| `blink_intensity_min_swing` | `0.05` | Minimum peak-to-peak intensity swing required to activate the intensity-fallback blink path for blue beacons. Raise (e.g. `0.25`) in video mode to prevent video compression artifacts from triggering false blinks |
+| `blink_max_ioi_ratio` | `null` | If set, rejects a blink detection when `max(IOIs) / min(IOIs)` exceeds this ratio. Only applied to blue beacons. Use `2.0` in video mode to reject irregular noise edges while passing real blinks (which have consistent inter-onset intervals). Has no effect when `null` |
 
 **`aruco` section**
 
@@ -296,6 +303,8 @@ The main script. Handles color classification, frame annotation, video playback 
 2. **Stage 2 — Lit-area isolation** (`best_crop.pt`): A second YOLO model runs on the beacon crop to find the glowing portion. Supports both detection (bbox) and segmentation (mask) output. Falls back to HSV brightness thresholding if nothing is found.
 3. **Stage 3 — Color classification**: `classify_beacon_color()` masks pixels by saturation (≥ 60) and brightness (≥ 160), then runs a per-pixel hue vote over the lit region to assign one of: `red`, `green`, `blue`, `white`, `unknown`.
 
+**If Stage 2 finds no beacon top**, the detection is skipped entirely — no CSV row is written, no bounding box is drawn, and the blink detector is not updated. Color and blink state cannot be reliably determined from the full beacon housing alone (the housing reads blue even when the LED is off).
+
 ### Color classification details
 
 Hue votes are computed in OpenCV HSV space (0–180°) using strict band membership with intentional gaps between bands so ambiguous hues fall through to `other` rather than snapping to the wrong color.
@@ -311,11 +320,11 @@ Red gets priority: if `vote_red ≥ 0.10` the result is `red`, even if more pixe
 ### Public functions
 
 ```python
-classify_beacon_color(bgr_crop) -> (color, color_conf, light_mask, intensity, votes)
-isolate_and_classify(beacon_crop, crop_model, conf=0.3) -> (color, color_conf, display_mask, intensity, votes)
+classify_beacon_color(bgr_crop) -> (color, color_conf, light_mask, intensity, votes, hue_var, hue_mean, hue_median, hue_mode)
+isolate_and_classify(beacon_crop, crop_model, conf=0.3) -> (color, color_conf, display_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode)
 ```
 
-`isolate_and_classify` wraps `classify_beacon_color` with the second YOLO model pass. Use this in all calling code.
+`isolate_and_classify` wraps `classify_beacon_color` with the second YOLO model pass. Use this in all calling code. Returns `color="unknown"` and zeroed stats when no beacon top is found — callers should skip processing on `unknown`.
 
 ### Run modes
 
@@ -415,19 +424,27 @@ result = detector.update(ts, color, intensity, color_conf)
 
 **Blue beacons:** The beacon housing is always visible so inter-frame gaps are *not* off-periods — gap injection is skipped. Instead, `color_confidence` (fraction of lit pixels) separates the LED-on state (~0.4+) from the housing-only state (~0.02–0.05). Readings above `_BLINK_CC_ON_THRESHOLD` are treated as "on"; readings below (including `unknown` frames) are treated as "off".
 
+If all samples in the window are "on" (color_conf never drops below the threshold, as happens with some beacon types), the detector falls back to intensity oscillation: if the peak-to-peak swing of intensity across the window exceeds `_BLINK_INTENSITY_MIN_SWING`, the mean intensity is used to split samples into on/off and rising edges are counted as usual.
+
+**`blink_color` vs `color`:** `blink_color` in the result dict reflects the most common non-blue color seen across the entire rolling window — it is populated as soon as any non-blue frame enters the window, regardless of whether blinking is confirmed. When `is_blinking=False`, `blink_color` may differ from the current frame's `color` (e.g. LED is currently off → `color="blue"` but `blink_color="red"` from recent history). Trust `blink_color` only when `is_blinking=True`; use the frame-level `color` for instantaneous classification.
+
 ### Key constants
 
-| Constant | Value | Meaning |
+| Constant | Default | Meaning |
 |---|---|---|
 | `_BLINK_WINDOW_SEC` | `12.0 s` | Rolling window length |
-| `_BLINK_MIN_DATA_SEC` | `4.0 s` | Minimum history before deciding |
+| `_BLINK_MIN_DATA_SEC` | `4.0 s` | Minimum history before deciding. Configurable via `blink_min_data_sec` |
 | `_BLINK_HZ_RANGE` | `0.12–2.0 Hz` | Valid blink frequency range |
-| `_BLINK_MIN_EDGE_GAP` | `0.20 s` | Debounce: minimum gap between rising edges |
+| `_BLINK_MIN_EDGE_GAP` | `0.20 s` | Debounce: minimum gap between rising edges. Configurable via `blink_min_edge_gap` |
 | `_BLINK_GAP_OFF_SEC` | `5.0 s` | Red/green: gap longer than this injects an off marker |
 | `_BLINK_CC_ON_THRESHOLD` | `0.15` | Blue beacons: `color_conf` above this = LED on |
 | `_BLINK_COLOR_CONF_MIN` | `0.001` | Minimum `color_conf` for a non-blue reading to count toward color mode |
 | `_BLINK_MAX_IOI_SEC` | `5.0 s` | Max inter-onset interval for blue beacons |
 | `_BLINK_MAX_IOI_SEC_COLOR` | `8.0 s` | Max inter-onset interval for red/green (allows long on-periods) |
+| `_BLINK_INTENSITY_MIN_SWING` | `0.05` | Min peak-to-peak intensity swing to activate intensity-fallback path. Configurable via `blink_intensity_min_swing` |
+| `_BLINK_MAX_IOI_RATIO` | `None` | Max ratio of longest to shortest IOI (blue beacons only). `None` = disabled. Configurable via `blink_max_ioi_ratio` |
+
+Parameters marked "Configurable" can be set per-deployment via the `detection` section of the JSON config (applied at startup by `_apply_color_config`).
 
 ### Helper
 
@@ -511,6 +528,43 @@ Columns: `video, timestamp, frame, color, color_confidence, intensity, is_blinki
 
 ---
 
+## CSV log columns
+
+When `log: true` is set in the config, a CSV file is written to `~/seabird_dataset/beacon_debug/` with one row per detection per frame (frames where no beacon top is found are excluded entirely).
+
+| Column | Description |
+|---|---|
+| `timestamp` | Wall-clock time after all per-detection processing (`time.time()`) |
+| `frame_timestamp` | Frame capture time — video position in seconds (`CAP_PROP_POS_MSEC / 1000`) for video modes; ROS header timestamp for live mode |
+| `ts_after_inference` | Wall-clock time after YOLO inference (`run_video_ros` only; blank in other modes) |
+| `ts_after_classify` | Wall-clock time after `isolate_and_classify` |
+| `ts_after_blink` | Wall-clock time after `blink_detector.update()` |
+| `frame` | Frame index |
+| `img_w` / `img_h` | Frame resolution in pixels |
+| `color` | Classified beacon color (`red`, `green`, `blue`, `unknown`) |
+| `color_confidence` | Fraction of lit pixels that voted for the winning color |
+| `intensity` | Mean brightness of lit pixels (0–1) |
+| `vote_red` / `vote_green` / `vote_blue` / `vote_other` | Per-color hue vote fractions |
+| `hue_variance` | Variance of hue values across lit pixels |
+| `hue_mean` | Mean hue of lit pixels (degrees) |
+| `hue_median` | Median hue of lit pixels (degrees) |
+| `hue_mode` | Most common hue of lit pixels (degrees) |
+| `det_confidence` | Stage-1 YOLO detection confidence |
+| `x1` / `y1` / `x2` / `y2` | Bounding box in pixels |
+| `tracking_id` | YOLO tracking ID (`-1` in video modes) |
+| `pos3d_x` / `pos3d_y` / `pos3d_z` | 3D position in drone body frame (metres); blank if unavailable |
+| `distance_m` | Euclidean distance to beacon (metres); blank if unavailable |
+| `blink_is_blinking` | `True` / `False` / blank (still accumulating) |
+| `blink_hz` | Estimated blink frequency in Hz; blank if not blinking |
+| `blink_phase` | `on` / `off` — whether the LED was on at the time of this frame |
+| `target_color` / `target_blinking` | Ground-truth labels from config |
+| `target_match` | `True` if both color and blink state match the target |
+| `gt_aruco_id` / `gt_dist_m` / `gt_tvec_x/y/z` | ArUco ground-truth columns (blank if ArUco disabled) |
+
+Subtracting `frame_timestamp` from `ts_after_blink` gives total per-detection processing latency. Subtracting adjacent timestamp columns isolates the latency of each individual step.
+
+---
+
 ## Timestamp note (video modes)
 
-When processing video files, `cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0` is used as the blink detector timestamp rather than `time.time()`. This ensures the blink frequency estimate reflects the video's actual frame timing even when frames are decoded faster or slower than real time. In live ROS mode `time.time()` is used, which is correct for a real camera stream.
+When processing video files, `cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0` is used as both the `frame_timestamp` CSV column and the blink detector timestamp. This ensures the blink frequency estimate reflects the video's actual frame timing even when frames are decoded faster or slower than real time. In live ROS mode, `cam.get_frame_timestamp()` (ROS header time) is used for both. The `timestamp` column always reflects wall-clock time at the moment of CSV write, regardless of mode.

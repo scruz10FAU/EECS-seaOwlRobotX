@@ -27,6 +27,7 @@ import cv2
 import math
 
 from blink_detector import BlinkDetector, _get_blink_detector
+from ultralytics import YOLO
 
 EARTH_RADIUS_M = 6378137.0
 
@@ -458,11 +459,13 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
 
 def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
                          conf: float = 0.3) -> Tuple[str, float, np.ndarray, float, dict]:
-    _empty = ("unknown", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0,
+    _empty = ("no_top", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0,
               {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0},
               np.zeros((1, 1, 3), dtype=np.uint8), 0.0, 0.0, 0.0, 0.0)
     if beacon_crop is None or beacon_crop.size == 0:
-        return _empty
+        return ("no_top", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0,
+              {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0},
+              np.zeros((1, 1, 3), dtype=np.uint8), 0.0, 0.0, 0.0, 0.0)
 
     h, w = beacon_crop.shape[:2]
     display_mask = np.zeros((h, w), dtype=np.uint8)
@@ -502,7 +505,8 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
 # ── Detection logger ──────────────────────────────────────────────────────────
 
 _LOG_HEADER = [
-    "timestamp", "frame", "img_w", "img_h", "color", "color_confidence", "intensity",
+    "timestamp", "frame_timestamp", "ts_after_inference", "ts_after_classify", "ts_after_blink",
+    "frame", "img_w", "img_h", "color", "color_confidence", "intensity",
     "vote_red", "vote_green", "vote_blue", "vote_other",
     "hue_variance", "hue_mean", "hue_median", "hue_mode",
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
@@ -528,7 +532,11 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
                    target_color=None, target_blinking=None,
                    gt_info=None, img_w=None, img_h=None,
                    hue_variance: float = 0.0, hue_mean: float = 0.0,
-                   hue_median: float = 0.0, hue_mode: float = 0.0) -> None:
+                   hue_median: float = 0.0, hue_mode: float = 0.0,
+                   frame_ts: float = None,
+                   ts_after_inference: float = None,
+                   ts_after_classify: float = None,
+                   ts_after_blink: float = None) -> None:
     x1, y1, x2, y2 = bbox
     px = py = pz = dist_m = ""
     if pos3d is not None:
@@ -553,8 +561,10 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         gt_id  = str(_gt_id)
         gt_dist = f"{_gt_dist:.4f}"
         gt_tx, gt_ty, gt_tz = [f"{v:.4f}" for v in _gt_tvec]
+    def _ts(v): return f"{v:.3f}" if v is not None else ""
     log_writer.writerow([
-        f"{time.time():.3f}", frame_idx,
+        f"{time.time():.3f}", _ts(frame_ts), _ts(ts_after_inference), _ts(ts_after_classify), _ts(ts_after_blink),
+        frame_idx,
         img_w if img_w is not None else "", img_h if img_h is not None else "",
         color, f"{color_conf:.4f}", f"{intensity:.4f}",
         f"{votes.get('red',0):.4f}", f"{votes.get('green',0):.4f}",
@@ -710,15 +720,18 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
 
         crop = clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
         beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
-        if beacon_color == "unknown":
+        _ts_classify = time.time()
+        if beacon_color == "no_top":
+            print("No beacon top detected")
             continue
 
         draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
         blink_info = None
-        if blink_detector is not None and beacon_color != "unknown":
+        if blink_detector is not None:
             ts = video_ts if video_ts is not None else time.time()
             blink_info = blink_detector.update(ts, beacon_color, intensity, color_conf)
+        _ts_blink = time.time()
 
         if save_crops_dir is not None and lit_region.size > 0:
             _date = time.strftime("%Y%m%d")
@@ -763,7 +776,10 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                            gt_info=aruco_gt,
                            img_w=img_w, img_h=img_h,
                            hue_variance=hue_var, hue_mean=hue_mean,
-                           hue_median=hue_median, hue_mode=hue_mode)
+                           hue_median=hue_median, hue_mode=hue_mode,
+                           frame_ts=video_ts,
+                           ts_after_classify=_ts_classify,
+                           ts_after_blink=_ts_blink)
 
     return frame
 
@@ -987,7 +1003,8 @@ def run_video_ros(cfg: dict) -> None:
 
     if not cam.open_for_video():
         print("[beacon-ros-video] Failed to open ROS node")
-        rclpy.shutdown()
+        try: rclpy.shutdown()
+        except Exception: pass
         cap.release()
         return
 
@@ -1030,6 +1047,7 @@ def run_video_ros(cfg: dict) -> None:
 
                 results = model(raw, conf=conf, verbose=False)
                 boxes   = results[0].boxes
+                _ts_inference = time.time()
 
                 print(f"Frame {frame_idx}/{total} — {len(boxes)} detection(s)")
 
@@ -1039,12 +1057,14 @@ def run_video_ros(cfg: dict) -> None:
 
                     crop = raw[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
                     beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
-                    if beacon_color == "unknown":
+                    _ts_classify = time.time()
+                    if beacon_color == "no_top":
+                        print("No beacon top detected")
                         continue
                     draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
-                    blink_info = (blink_detector.update(video_ts, beacon_color, intensity, color_conf)
-                                  if beacon_color != "unknown" else None)
+                    blink_info = blink_detector.update(video_ts, beacon_color, intensity, color_conf)
+                    _ts_blink = time.time()
 
                     # Estimate 3D position from bounding box when depth_source == "bbox"
                     pos3d = None
@@ -1117,7 +1137,11 @@ def run_video_ros(cfg: dict) -> None:
                                        img_w=raw.shape[1],
                                        img_h=raw.shape[0],
                                        hue_variance=hue_var, hue_mean=hue_mean,
-                           hue_median=hue_median, hue_mode=hue_mode)
+                                       hue_median=hue_median, hue_mode=hue_mode,
+                                       frame_ts=video_ts,
+                                       ts_after_inference=_ts_inference,
+                                       ts_after_classify=_ts_classify,
+                                       ts_after_blink=_ts_blink)
 
                     if crops_dir is not None and lit_region.size > 0:
                         _b   = blink_info.get("is_blinking") if blink_info else None
@@ -1154,7 +1178,8 @@ def run_video_ros(cfg: dict) -> None:
         cam.close()
         if display:
             cv2.destroyAllWindows()
-        rclpy.shutdown()
+        try: rclpy.shutdown()
+        except Exception: pass
         print(f"[beacon-ros-video] Done — {frame_idx} frames processed")
 
 
@@ -1178,29 +1203,33 @@ def main(cfg: dict) -> None:
 
     if not cam.open():
         print("[beacon] Failed to open camera")
-        rclpy.shutdown()
+        try: rclpy.shutdown()
+        except Exception: pass
         return
 
     if not os.path.exists(model_path):
         print(f"[beacon] Model not found: {model_path}")
         cam.close()
-        rclpy.shutdown()
+        try: rclpy.shutdown()
+        except Exception: pass
         return
 
     if not os.path.exists(crop_model_path):
         print(f"[beacon] Crop model not found: {crop_model_path}")
         cam.close()
-        rclpy.shutdown()
+        try: rclpy.shutdown()
+        except Exception: pass
         return
 
-    from ultralytics import YOLO
+    
     print(f"[beacon] Loading model: {model_path}")
     print(f"[beacon] Loading crop model: {crop_model_path}")
     crop_model = YOLO(crop_model_path)
     if not cam.enable_detection(model_path, imgsz=cfg["detection"].get("imgsz", 640)):
         print("[beacon] Detection failed to start")
         cam.close()
-        rclpy.shutdown()
+        try: rclpy.shutdown()
+        except Exception: pass
         return
 
     print("[beacon] Detection ENABLED — class: beacon (color determined by CV)")
@@ -1316,19 +1345,22 @@ def main(cfg: dict) -> None:
 
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
                 beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
-                if beacon_color == "unknown":
+                _ts_classify = time.time()
+                if beacon_color == "no_top":
+                    print("No beacon top detected")
                     continue
                 tid = d.tracking_id
                 if beacon_color not in ("white", "unknown"):
                     _tracker_colors[tid] = beacon_color
-                elif beacon_color == "white" and tid in _tracker_colors:
+                #elif beacon_color == "white" and tid in _tracker_colors:
+                elif tid in _tracker_colors:
                     beacon_color = _tracker_colors[tid]
                 if crops_dir is not None and lit_region.size > 0:
                     fname = f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}_{gt_tag}.png"
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
-                blink_info = (_get_blink_detector(d.tracking_id).update(
+                blink_info = _get_blink_detector(d.tracking_id).update(
                     frame_ts, beacon_color, intensity, color_conf)
-                    if beacon_color != "unknown" else None)
+                _ts_blink = time.time()
 
                 draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
@@ -1412,7 +1444,10 @@ def main(cfg: dict) -> None:
                                    img_w=rgb.shape[1],
                                    img_h=rgb.shape[0],
                                    hue_variance=hue_var, hue_mean=hue_mean,
-                           hue_median=hue_median, hue_mode=hue_mode)
+                                   hue_median=hue_median, hue_mode=hue_mode,
+                                   frame_ts=frame_ts,
+                                   ts_after_classify=_ts_classify,
+                                   ts_after_blink=_ts_blink)
 
                 if crops_dir is not None and lit_region.size > 0:
                     _b   = blink_info.get("is_blinking")
@@ -1463,7 +1498,8 @@ def main(cfg: dict) -> None:
             log_fh.close()
         cam.close()
         cv2.destroyAllWindows()
-        rclpy.shutdown()
+        try: rclpy.shutdown()
+        except Exception: pass
         print(f"[beacon] Done — {frame_count} frames processed")
 
 
