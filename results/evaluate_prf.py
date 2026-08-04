@@ -84,18 +84,23 @@ for i, cls in enumerate(actual_classes):
     fn = conf_color[i, :].sum() - tp      # cls predicted as something else
     tn = N - tp - fp - fn
 
-    prec = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-    rec  = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    f1   = 2 * prec * rec / (prec + rec)  if (prec + rec) > 0 else 0.0
-    acc  = (tp + tn) / N
+    prec  = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    rec   = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    f1    = 2 * prec * rec / (prec + rec) if (prec + rec) > 0 else 0.0
+    acc   = (tp + tn) / N
+    spec  = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+    bal_acc = (rec + spec) / 2
 
     color_metrics[cls] = dict(tp=tp, fp=fp, fn=fn, tn=tn,
-                               precision=prec, recall=rec, f1=f1, accuracy=acc)
+                               precision=prec, recall=rec, f1=f1, accuracy=acc,
+                               specificity=spec, balanced_accuracy=bal_acc)
 
 # Macro averages (over the 3 named color classes)
-macro_prec = np.mean([color_metrics[c]["precision"] for c in actual_classes])
-macro_rec  = np.mean([color_metrics[c]["recall"]    for c in actual_classes])
-macro_f1   = np.mean([color_metrics[c]["f1"]        for c in actual_classes])
+macro_prec    = np.mean([color_metrics[c]["precision"]         for c in actual_classes])
+macro_rec     = np.mean([color_metrics[c]["recall"]            for c in actual_classes])
+macro_f1      = np.mean([color_metrics[c]["f1"]                for c in actual_classes])
+macro_spec    = np.mean([color_metrics[c]["specificity"]       for c in actual_classes])
+macro_bal_acc = np.mean([color_metrics[c]["balanced_accuracy"] for c in actual_classes])
 overall_color_acc = conf_color[:, :3].diagonal().sum() / N  # TP only for named colors
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -128,63 +133,32 @@ fp_b = int(((bdf["blink_detected"] == True)  & (bdf["target_blinking_b"] == Fals
 fn_b = int(((bdf["blink_detected"] == False) & (bdf["target_blinking_b"] == True)).sum())
 tn_b = int(((bdf["blink_detected"] == False) & (bdf["target_blinking_b"] == False)).sum())
 
-prec_b  = tp_b / (tp_b + fp_b) if (tp_b + fp_b) > 0 else 0.0
-rec_b   = tp_b / (tp_b + fn_b) if (tp_b + fn_b) > 0 else 0.0
-f1_b    = 2 * prec_b * rec_b / (prec_b + rec_b) if (prec_b + rec_b) > 0 else 0.0
-acc_b   = (tp_b + tn_b) / Nb
+prec_b    = tp_b / (tp_b + fp_b) if (tp_b + fp_b) > 0 else 0.0
+rec_b     = tp_b / (tp_b + fn_b) if (tp_b + fn_b) > 0 else 0.0
+f1_b      = 2 * prec_b * rec_b / (prec_b + rec_b) if (prec_b + rec_b) > 0 else 0.0
+acc_b     = (tp_b + tn_b) / Nb
+spec_b    = tn_b / (tn_b + fp_b) if (tn_b + fp_b) > 0 else 0.0
+bal_acc_b = (rec_b + spec_b) / 2
 
 conf_blink = np.array([[tp_b, fn_b],
                         [fp_b, tn_b]])
 
 # ══════════════════════════════════════════════════════════════════════════════
-# D. AVERAGE PRECISION  (area under PR curve, one-vs-rest per color class)
-# ══════════════════════════════════════════════════════════════════════════════
-def _compute_ap(y_true, y_score):
-    """Trapezoid area under the precision-recall curve."""
-    order  = np.argsort(y_score)[::-1]
-    yt     = np.asarray(y_true, dtype=int)[order]
-    n_pos  = yt.sum()
-    if n_pos == 0:
-        return 0.0
-    tp_cum = np.cumsum(yt)
-    prec   = tp_cum / np.arange(1, len(yt) + 1)
-    rec    = tp_cum / n_pos
-    prec   = np.concatenate([[1.0], prec])
-    rec    = np.concatenate([[0.0], rec])
-    return float(np.trapezoid(prec, rec))
-
-ap_color = {}
-for cls in actual_classes:
-    y_true = (data["target_color"] == cls).values
-    vcol   = f"vote_{cls}"
-    if vcol in data.columns:
-        y_score = data[vcol].fillna(0).values
-    else:
-        # proxy: model confidence when it picks this class, inverse otherwise
-        y_score = np.where(data["color"] == cls,
-                           data["det_confidence"].values,
-                           1.0 - data["det_confidence"].values)
-    ap_color[cls] = _compute_ap(y_true, y_score)
-
-map_color = float(np.mean(list(ap_color.values())))
-
-# Blink: no continuous confidence score, so AP equals precision at the single threshold
-ap_blink = prec_b
-
-# ══════════════════════════════════════════════════════════════════════════════
-# E. CONSOLE SUMMARY
+# D. CONSOLE SUMMARY
 # ══════════════════════════════════════════════════════════════════════════════
 print(f"Color correction applied: {n_beacon_off} 'unknown' detections on blinking beacons counted as TP (beacon OFF phase)\n")
 print("COLOR METRICS")
 print(f"{'Class':<10} {'TP':>5} {'FP':>5} {'FN':>5} {'TN':>5}  "
-      f"{'Precision':>10} {'Recall':>8} {'F1':>8} {'Accuracy':>10}")
-print("-" * 77)
+      f"{'Precision':>10} {'Recall':>8} {'F1':>8} {'Accuracy':>10} {'Specificity':>12} {'Bal.Acc':>8}")
+print("-" * 102)
 for cls in actual_classes:
     m = color_metrics[cls]
     print(f"{cls:<10} {m['tp']:>5} {m['fp']:>5} {m['fn']:>5} {m['tn']:>5}  "
-          f"{m['precision']:>10.1%} {m['recall']:>8.1%} {m['f1']:>8.1%} {m['accuracy']:>10.1%}")
+          f"{m['precision']:>10.1%} {m['recall']:>8.1%} {m['f1']:>8.1%} {m['accuracy']:>10.1%}"
+          f" {m['specificity']:>12.1%} {m['balanced_accuracy']:>8.1%}")
 print(f"{'Macro avg':<10} {'':>5} {'':>5} {'':>5} {'':>5}  "
-      f"{macro_prec:>10.1%} {macro_rec:>8.1%} {macro_f1:>8.1%} {overall_color_acc:>10.1%}")
+      f"{macro_prec:>10.1%} {macro_rec:>8.1%} {macro_f1:>8.1%} {overall_color_acc:>10.1%}"
+      f" {macro_spec:>12.1%} {macro_bal_acc:>8.1%}")
 
 print(f"\nLATENCY  (inter-detection interval across {len(csv_files)} file(s))")
 print(f"  Mean : {lat_mean*1000:.1f} ms   Std : {lat_std*1000:.1f} ms   "
@@ -194,23 +168,24 @@ for fname, lmean in latency_per_file.items():
 
 print("\nBLINK METRICS  (positive class = blinking, over rows with detected blink state)")
 print(f"{'TP':>6} {'FP':>6} {'FN':>6} {'TN':>6}  "
-      f"{'Precision':>10} {'Recall':>8} {'F1':>8} {'Accuracy':>10}")
-print("-" * 63)
+      f"{'Precision':>10} {'Recall':>8} {'F1':>8} {'Accuracy':>10} {'Specificity':>12} {'Bal.Acc':>8}")
+print("-" * 88)
 print(f"{tp_b:>6} {fp_b:>6} {fn_b:>6} {tn_b:>6}  "
-      f"{prec_b:>10.1%} {rec_b:>8.1%} {f1_b:>8.1%} {acc_b:>10.1%}")
+      f"{prec_b:>10.1%} {rec_b:>8.1%} {f1_b:>8.1%} {acc_b:>10.1%}"
+      f" {spec_b:>12.1%} {bal_acc_b:>8.1%}")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # E. VISUALISATION
 # ══════════════════════════════════════════════════════════════════════════════
 BEACON_CLR = {"red": "#E05C5C", "green": "#4CAF50", "blue": "#5B8FD4"}
 METRIC_CLR  = {"Precision": "#4C72B0", "Recall": "#DD8452", "F1": "#55A868",
-               "Accuracy": "#C44E52", "AP": "#9C27B0"}
+               "Accuracy": "#C44E52", "Specificity": "#8172B2", "Bal.Acc": "#64B5CD"}
 
 # Pre-computed values shared by drawing helpers
 conf_norm  = conf_color / conf_color.sum(axis=1, keepdims=True).clip(1)
 blink_norm = conf_blink / conf_blink.sum(axis=1, keepdims=True).clip(1)
 bar_groups  = actual_classes + ["Macro"]
-bar_metrics = ["Precision", "Recall", "F1", "Accuracy", "AP"]
+bar_metrics = ["Precision", "Recall", "F1", "Accuracy", "Specificity", "Bal.Acc"]
 _n_g = len(bar_groups)
 _x   = np.arange(_n_g)
 _bw  = 0.13
@@ -251,9 +226,11 @@ def _draw_color_metrics(ax):
         for g in bar_groups:
             if g == "Macro":
                 v = {"Precision": macro_prec, "Recall": macro_rec, "F1": macro_f1,
-                     "Accuracy": overall_color_acc, "AP": map_color}[metric]
+                     "Accuracy": overall_color_acc, "Specificity": macro_spec,
+                     "Bal.Acc": macro_bal_acc}[metric]
             else:
-                v = color_metrics[g][metric.lower()] if metric != "AP" else ap_color[g]
+                key = {"Bal.Acc": "balanced_accuracy"}.get(metric, metric.lower())
+                v = color_metrics[g][key]
             vals.append(v)
         bars = ax.bar(_x + _off[i], vals, width=_bw,
                       color=METRIC_CLR[metric], label=metric,
@@ -272,7 +249,7 @@ def _draw_color_metrics(ax):
     ax.set_ylim(0, 1.2)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0%}"))
     ax.set_ylabel("Score", fontsize=10)
-    ax.set_title("Color Classification — Precision / Recall / F1 / Accuracy / AP",
+    ax.set_title("Color Classification — Precision / Recall / F1 / Accuracy / Specificity / Bal.Acc",
                  fontsize=11, fontweight="bold", color="#333", pad=8)
     ax.legend(loc="lower left", framealpha=0.9, fontsize=10)
     ax.yaxis.grid(True, color="#EEEEEE", zorder=0)
@@ -297,8 +274,8 @@ def _draw_blink_confusion(ax):
                 color=txt_color, fontweight="bold")
 
 def _draw_blink_metrics(ax):
-    names  = ["Precision", "Recall", "F1", "Accuracy", "AP"]
-    vals   = [prec_b, rec_b, f1_b, acc_b, ap_blink]
+    names  = ["Precision", "Recall", "F1", "Accuracy", "Specificity", "Bal.Acc"]
+    vals   = [prec_b, rec_b, f1_b, acc_b, spec_b, bal_acc_b]
     colors = [METRIC_CLR[m] for m in names]
     bars = ax.bar(names, vals, color=colors, edgecolor="white",
                   linewidth=0.8, alpha=0.92, zorder=3, width=0.55)
@@ -317,16 +294,19 @@ def _draw_blink_metrics(ax):
 
 def _draw_summary(ax, fig):
     ax.axis("off")
-    col_labels = ["", "Precision", "Recall", "F1", "Accuracy"]
+    col_labels = ["", "Precision", "Recall", "F1", "Accuracy", "Specificity", "Bal.Acc"]
     row_data = []
     for cls in actual_classes:
         m = color_metrics[cls]
-        row_data.append([cls.capitalize(), f"{m['precision']:.1%}",
-                         f"{m['recall']:.1%}", f"{m['f1']:.1%}", f"{m['accuracy']:.1%}"])
+        row_data.append([cls.capitalize(), f"{m['precision']:.1%}", f"{m['recall']:.1%}",
+                         f"{m['f1']:.1%}", f"{m['accuracy']:.1%}",
+                         f"{m['specificity']:.1%}", f"{m['balanced_accuracy']:.1%}"])
     row_data.append(["Macro avg", f"{macro_prec:.1%}", f"{macro_rec:.1%}",
-                     f"{macro_f1:.1%}", f"{overall_color_acc:.1%}"])
-    row_data.append(["──────────", "──────", "──────", "──────", "──────"])
-    row_data.append(["Blink", f"{prec_b:.1%}", f"{rec_b:.1%}", f"{f1_b:.1%}", f"{acc_b:.1%}"])
+                     f"{macro_f1:.1%}", f"{overall_color_acc:.1%}",
+                     f"{macro_spec:.1%}", f"{macro_bal_acc:.1%}"])
+    row_data.append(["──────────", "──────", "──────", "──────", "──────", "──────", "──────"])
+    row_data.append(["Blink", f"{prec_b:.1%}", f"{rec_b:.1%}", f"{f1_b:.1%}", f"{acc_b:.1%}",
+                     f"{spec_b:.1%}", f"{bal_acc_b:.1%}"])
 
     tbl = ax.table(cellText=row_data, colLabels=col_labels,
                    cellLoc="center", loc="center", bbox=[0, 0.18, 1, 0.78])
