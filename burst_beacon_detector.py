@@ -91,12 +91,14 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
             (beacon_color, color_conf, _, intensity, votes,
              lit_region, hue_var, hue_mean, hue_median, hue_mode) = \
                 isolate_and_classify(crop, crop_model)
+            ts_after_classify = time.time()
 
             if beacon_color == "no_top":
                 print(f"[burst]   ts={b_ts:.2f}: no top — skipped")
                 continue
 
             blink_info = blink_detector.update(b_ts, beacon_color, intensity, color_conf)
+            ts_after_blink = time.time()
             print(f"[burst]   ts={b_ts:.2f}  color={beacon_color:7s} "
                   f"conf={color_conf:.2f}  "
                   f"blink_color={blink_info['blink_color']}  "
@@ -132,6 +134,8 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                     hue_median=hue_median,
                     hue_mode=hue_mode,
                     frame_ts=b_ts,
+                    ts_after_classify=ts_after_classify,
+                    ts_after_blink=ts_after_blink,
                 )
 
             _gt  = (f"gt-{target_color or 'unk'}-"
