@@ -93,6 +93,20 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 isolate_and_classify(crop, crop_model)
             ts_after_classify = time.time()
 
+            if det_images_dir is not None and beacon_color == "no_top":
+                pad = 20
+                h_img, w_img = b_rgb.shape[:2]
+                ix1 = max(x1 - pad, 0)
+                iy1 = max(y1 - pad, 0)
+                ix2 = min(x2 + pad, w_img)
+                iy2 = min(y2 + pad, h_img)
+                det_crop = b_rgb[iy1:iy2, ix1:ix2].copy()
+                _gt = (f"gt-{target_color or 'unk'}-"
+                       f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
+                fname = (f"det_{date_tag}_f{frame_idx:06d}_t{int(d.tracking_id):02d}_notop"
+                         f"_conf{int(d.confidence*100):02d}_det-notop_{_gt}.png")
+                cv2.imwrite(os.path.join(det_images_dir, fname), det_crop)
+
             if beacon_color == "no_top":
                 print(f"[burst]   ts={b_ts:.2f}: no top — skipped")
                 continue
