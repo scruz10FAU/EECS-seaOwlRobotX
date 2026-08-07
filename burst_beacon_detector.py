@@ -56,7 +56,8 @@ _VideoDet = namedtuple("_VideoDet", ["bbox_2d", "position_3d", "confidence", "tr
 # ── Shared analysis ───────────────────────────────────────────────────────────
 
 def _analyse_burst(burst, crop_model, cfg, depth_source,
-                   save_crops_dir=None, target_color=None, target_blinking=None):
+                   save_crops_dir=None, det_images_dir=None,
+                   target_color=None, target_blinking=None):
     """
     Run color classification and blink detection over a collected burst.
 
@@ -113,16 +114,29 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 img_w=b_rgb.shape[1], img_h=b_rgb.shape[0],
             )
 
+            _gt  = (f"gt-{target_color or 'unk'}-"
+                    f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
+            _b   = blink_info.get("is_blinking")
+            _det = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
+                    else "det-steady" if _b is False else "det-acc")
+
             if save_crops_dir is not None and lit_region.size > 0:
-                _gt  = (f"gt-{target_color or 'unk'}-"
-                        f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
-                _b   = blink_info.get("is_blinking")
-                _det = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
-                        else "det-steady" if _b is False else "det-acc")
                 fname = (f"crop_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
                          f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                          f"_{_gt}.png")
                 cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
+
+            if det_images_dir is not None:
+                pad = 20
+                h_img, w_img = b_rgb.shape[:2]
+                ix1 = max(x1 - pad, 0)
+                iy1 = max(y1 - pad, 0)
+                ix2 = min(x2 + pad, w_img)
+                iy2 = min(y2 + pad, h_img)
+                det_crop = b_rgb[iy1:iy2, ix1:ix2].copy()
+                fname = (f"det_{date_tag}_f{frame_idx:06d}_t{int(d.tracking_id):02d}_{beacon_color}"
+                         f"_conf{int(d.confidence*100):02d}_{_det}_{_gt}.png")
+                cv2.imwrite(os.path.join(det_images_dir, fname), det_crop)
 
     # All burst frames fed — finalise so timing guards don't force None.
     if last_valid:
@@ -216,6 +230,7 @@ def run_burst_ros(cfg: dict) -> None:
     log             = cfg["log"]
     topics          = cfg["topics"]
     save_crops      = cfg.get("save_crops", False)
+    save_det_images = cfg.get("save_det_images", False)
     target_color    = cfg.get("target_color")
     target_blinking = cfg.get("target_blinking")
 
@@ -266,7 +281,13 @@ def run_burst_ros(cfg: dict) -> None:
     if save_crops:
         crops_dir = os.path.join(DEBUG_DIR, "beacon_crops")
         os.makedirs(crops_dir, exist_ok=True)
-        print(f"[beacon-ros-video] Saving crops → {crops_dir}/")
+        print(f"[burst] Saving crops → {crops_dir}/")
+
+    det_images_dir = None
+    if save_det_images:
+        det_images_dir = os.path.join(DEBUG_DIR, "beacon_det_images")
+        os.makedirs(det_images_dir, exist_ok=True)
+        print(f"[burst] Saving detection images → {det_images_dir}/")
 
     if display:
         cv2.namedWindow("Burst Detector", cv2.WINDOW_NORMAL)
@@ -319,6 +340,7 @@ def run_burst_ros(cfg: dict) -> None:
                     burst_count += 1
                     lv = _analyse_burst(burst, crop_model, cfg, depth_source,
                                         save_crops_dir=crops_dir,
+                                        det_images_dir=det_images_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking)
                     if not lv:
@@ -379,6 +401,7 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     display         = cfg["display"]
     log             = cfg["log"]
     save_crops      = cfg.get("save_crops", False)
+    save_det_images = cfg.get("save_det_images", False)
     target_color    = cfg.get("target_color")
     target_blinking = cfg.get("target_blinking")
 
@@ -446,6 +469,12 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[burst] Saving crops → {crops_dir}/")
 
+    det_images_dir = None
+    if save_det_images:
+        det_images_dir = os.path.join(DEBUG_DIR, "beacon_det_images")
+        os.makedirs(det_images_dir, exist_ok=True)
+        print(f"[burst] Saving detection images → {det_images_dir}/")
+
     log_fh = log_writer = None
     if log:
         ts_tag   = time.strftime("%Y%m%d_%H%M%S")
@@ -470,8 +499,8 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
             if not ret:
                 break
 
-            frame_ts = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
-            rgb_clean = cv2.cvtColor(raw, cv2.COLOR_BGR2RGB)
+            frame_ts  = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+            rgb_clean = raw.copy()  # keep BGR — cv2.imwrite and classify_beacon_color both expect BGR
 
             # Run YOLO directly on the raw frame
             results = model(raw, conf=conf, verbose=False)
@@ -512,6 +541,7 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                     burst_count += 1
                     lv = _analyse_burst(burst, crop_model, cfg, depth_source,
                                         save_crops_dir=crops_dir,
+                                        det_images_dir=det_images_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking)
                     if not lv:
