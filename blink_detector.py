@@ -85,7 +85,7 @@ class BlinkDetector:
 
         data_span = timestamps[-1] - timestamps[0]
 
-        if not self._finalised and data_span < _BLINK_MIN_DATA_SEC:
+        if data_span < _BLINK_MIN_DATA_SEC:
             return {"is_blinking": None, "blink_color": "unknown", "blink_hz": None, "phase": "unknown"}
 
         # Determine signal type from dominant non-blue color in window.
