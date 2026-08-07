@@ -43,6 +43,13 @@ class BlinkDetector:
 
     def __init__(self):
         self._samples: deque = deque()  # (timestamp, color, intensity, color_conf)
+        self._finalised = False  # set by finalise() to skip warm-up guards (burst mode)
+
+    def finalise(self) -> None:
+        """Signal that all data has been collected (burst mode).
+        Subsequent _estimate() calls will skip the minimum-data-span guards
+        and treat partial windows as definitive rather than 'still accumulating'."""
+        self._finalised = True
 
     def _is_blue_beacon(self) -> bool:
         """True when recent samples are predominantly blue/unknown (housing always visible)."""
@@ -78,7 +85,7 @@ class BlinkDetector:
 
         data_span = timestamps[-1] - timestamps[0]
 
-        if data_span < _BLINK_MIN_DATA_SEC:
+        if not self._finalised and data_span < _BLINK_MIN_DATA_SEC:
             return {"is_blinking": None, "blink_color": "unknown", "blink_hz": None, "phase": "unknown"}
 
         # Determine signal type from dominant non-blue color in window.
@@ -136,7 +143,7 @@ class BlinkDetector:
         # are unambiguous.
         min_edges = _BLINK_MIN_EDGES if blink_color == "blue" else 2
         if len(rising_edges) < min_edges:
-            still_accumulating = data_span < (_BLINK_MIN_DATA_SEC + 1.0)
+            still_accumulating = not self._finalised and data_span < (_BLINK_MIN_DATA_SEC + 1.0)
             return {
                 "is_blinking": None if still_accumulating else False,
                 "blink_color": blink_color if not still_accumulating else "unknown",

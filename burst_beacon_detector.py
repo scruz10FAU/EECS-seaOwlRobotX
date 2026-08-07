@@ -111,6 +111,11 @@ def _analyse_burst(burst, crop_model, cfg, depth_source):
                 img_w=b_rgb.shape[1], img_h=b_rgb.shape[0],
             )
 
+    # All burst frames fed — finalise so timing guards don't force None.
+    if last_valid:
+        blink_detector.finalise()
+        last_valid["blink_info"] = blink_detector._estimate()
+
     return last_valid
 
 
