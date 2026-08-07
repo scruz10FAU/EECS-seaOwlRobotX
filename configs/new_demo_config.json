@@ -1,6 +1,6 @@
 {
-  "model":      "models/new_beacon_full.pt",
-  "crop_model": "models/new_beacon_top.pt",
+  "model":      "models/new_beacon_top.pt",
+  "crop_model": "models/new_beacon_full.pt",
   "conf":       0.5,
   "display":    true,
   "true_dist":  4.572,
