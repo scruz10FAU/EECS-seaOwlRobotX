@@ -439,7 +439,7 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
     vals, counts = np.unique(hues, return_counts=True)
     hue_mode   = float(vals[counts.argmax()])
 
-    print(f"  hue  median={hue_median:.0f}°  mean={hue_mean:.0f}°  mode={hue_mode:.0f}° "
+    print(f"  intensity={intensity:.0f}  hue  median={hue_median:.0f}°  mean={hue_mean:.0f}°  mode={hue_mode:.0f}° "
         f"min={hues.min()}°  max={hues.max()}°  n={len(hues)} variance={hue_var:.0f}")
 
     votes = _hue_votes(hues)
