@@ -58,7 +58,7 @@ _VideoDet = namedtuple("_VideoDet", ["bbox_2d", "position_3d", "confidence", "tr
 def _analyse_burst(burst, crop_model, cfg, depth_source,
                    save_crops_dir=None, det_images_dir=None,
                    target_color=None, target_blinking=None,
-                   log_writer=None):
+                   log_writer=None, burst_number=None):
     """
     Run color classification and blink detection over a collected burst.
 
@@ -136,6 +136,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                     frame_ts=b_ts,
                     ts_after_classify=ts_after_classify,
                     ts_after_blink=ts_after_blink,
+                    burst_number=burst_number,
                 )
 
             _gt  = (f"gt-{target_color or 'unk'}-"
@@ -347,7 +348,8 @@ def run_burst_ros(cfg: dict) -> None:
                                         det_images_dir=det_images_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking,
-                                        log_writer=log_writer)
+                                        log_writer=log_writer,
+                                        burst_number=burst_count)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:
@@ -550,7 +552,8 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                                         det_images_dir=det_images_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking,
-                                        log_writer=log_writer)
+                                        log_writer=log_writer,
+                                        burst_number=burst_count)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:

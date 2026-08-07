@@ -506,7 +506,7 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
 
 _LOG_HEADER = [
     "timestamp", "frame_timestamp", "ts_after_inference", "ts_after_classify", "ts_after_blink",
-    "frame", "img_w", "img_h", "color", "color_confidence", "intensity",
+    "frame", "burst_number", "img_w", "img_h", "color", "color_confidence", "intensity",
     "vote_red", "vote_green", "vote_blue", "vote_other",
     "hue_variance", "hue_mean", "hue_median", "hue_mode",
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
@@ -536,7 +536,8 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
                    frame_ts: float = None,
                    ts_after_inference: float = None,
                    ts_after_classify: float = None,
-                   ts_after_blink: float = None) -> None:
+                   ts_after_blink: float = None,
+                   burst_number: int = None) -> None:
     x1, y1, x2, y2 = bbox
     px = py = pz = dist_m = ""
     if pos3d is not None:
@@ -564,7 +565,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
     def _ts(v): return f"{v:.3f}" if v is not None else ""
     log_writer.writerow([
         f"{time.time():.3f}", _ts(frame_ts), _ts(ts_after_inference), _ts(ts_after_classify), _ts(ts_after_blink),
-        frame_idx,
+        frame_idx, burst_number if burst_number is not None else "",
         img_w if img_w is not None else "", img_h if img_h is not None else "",
         color, f"{color_conf:.4f}", f"{intensity:.4f}",
         f"{votes.get('red',0):.4f}", f"{votes.get('green',0):.4f}",
