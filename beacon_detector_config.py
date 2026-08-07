@@ -409,7 +409,7 @@ def _hue_votes(hues: np.ndarray) -> dict:
     return {k: result[k] / n for k in result}
 
 
-def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray, float, dict, float, float, float, float]:
+def classify_beacon_color(bgr_crop: np.ndarray, seg_mask: np.ndarray = None) -> Tuple[str, float, np.ndarray, float, dict, float, float, float, float]:
     _empty_votes = {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0}
     if bgr_crop is None or bgr_crop.size == 0:
         return "unknown", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0, _empty_votes, 0.0, 0.0, 0.0, 0.0
@@ -418,6 +418,8 @@ def classify_beacon_color(bgr_crop: np.ndarray) -> Tuple[str, float, np.ndarray,
     h, s, v = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
 
     light_mask = ((s >= _SAT_MIN) & (v >= _VAL_MIN)).astype(np.uint8) * 255
+    if seg_mask is not None and seg_mask.shape == light_mask.shape:
+        light_mask = cv2.bitwise_and(light_mask, seg_mask)
 
     lit_pixels   = np.count_nonzero(light_mask)
     total_pixels = bgr_crop.shape[0] * bgr_crop.shape[1]
@@ -497,8 +499,9 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
     rmin, rmax = np.where(rows)[0][[0, -1]]
     cmin, cmax = np.where(cols)[0][[0, -1]]
     lit_region = beacon_crop[rmin:rmax + 1, cmin:cmax + 1]
+    mask_region = display_mask[rmin:rmax + 1, cmin:cmax + 1]
 
-    color, color_conf, _, intensity, votes, hue_var, hue_mean, hue_median, hue_mode = classify_beacon_color(lit_region)
+    color, color_conf, _, intensity, votes, hue_var, hue_mean, hue_median, hue_mode = classify_beacon_color(lit_region, seg_mask=mask_region)
     return color, color_conf, display_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode
 
 
