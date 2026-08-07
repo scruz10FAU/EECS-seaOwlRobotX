@@ -55,7 +55,8 @@ _VideoDet = namedtuple("_VideoDet", ["bbox_2d", "position_3d", "confidence", "tr
 
 # ── Shared analysis ───────────────────────────────────────────────────────────
 
-def _analyse_burst(burst, crop_model, cfg, depth_source):
+def _analyse_burst(burst, crop_model, cfg, depth_source,
+                   save_crops_dir=None, target_color=None, target_blinking=None):
     """
     Run color classification and blink detection over a collected burst.
 
@@ -64,11 +65,12 @@ def _analyse_burst(burst, crop_model, cfg, depth_source):
     """
     blink_detector = BlinkDetector()
     last_valid: dict = {}
+    date_tag = time.strftime("%Y%m%d")
 
-    for b_ts, b_rgb, b_dets, _, b_dpos, b_dquat in burst:
+    for frame_idx, (b_ts, b_rgb, b_dets, _, b_dpos, b_dquat) in enumerate(burst):
         if not b_dets:
             continue
-        for d in b_dets:
+        for det_idx, d in enumerate(b_dets):
             x1, y1, x2, y2 = [int(v) for v in d.bbox_2d]
 
             pos3d = d.position_3d
@@ -110,6 +112,17 @@ def _analyse_burst(burst, crop_model, cfg, depth_source):
                 tracking_id=int(d.tracking_id),
                 img_w=b_rgb.shape[1], img_h=b_rgb.shape[0],
             )
+
+            if save_crops_dir is not None and lit_region.size > 0:
+                _gt  = (f"gt-{target_color or 'unk'}-"
+                        f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
+                _b   = blink_info.get("is_blinking")
+                _det = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
+                        else "det-steady" if _b is False else "det-acc")
+                fname = (f"crop_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                         f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                         f"_{_gt}.png")
+                cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
 
     # All burst frames fed — finalise so timing guards don't force None.
     if last_valid:
@@ -202,6 +215,9 @@ def run_burst_ros(cfg: dict) -> None:
     display         = cfg["display"]
     log             = cfg["log"]
     topics          = cfg["topics"]
+    save_crops      = cfg.get("save_crops", False)
+    target_color    = cfg.get("target_color")
+    target_blinking = cfg.get("target_blinking")
 
     _import_ros()
     import rclpy
@@ -245,6 +261,12 @@ def run_burst_ros(cfg: dict) -> None:
         ts_tag   = time.strftime("%Y%m%d_%H%M%S")
         log_path = os.path.join(DEBUG_DIR, f"burst_log_{ts_tag}.csv")
         log_fh, log_writer = _open_log(log_path)
+
+    crops_dir = None
+    if save_crops:
+        crops_dir = os.path.join(DEBUG_DIR, "beacon_crops")
+        os.makedirs(crops_dir, exist_ok=True)
+        print(f"[beacon-ros-video] Saving crops → {crops_dir}/")
 
     if display:
         cv2.namedWindow("Burst Detector", cv2.WINDOW_NORMAL)
@@ -295,7 +317,10 @@ def run_burst_ros(cfg: dict) -> None:
                 if len(burst) >= count:
                     print("[burst] Collection complete — analysing")
                     burst_count += 1
-                    lv = _analyse_burst(burst, crop_model, cfg, depth_source)
+                    lv = _analyse_burst(burst, crop_model, cfg, depth_source,
+                                        save_crops_dir=crops_dir,
+                                        target_color=target_color,
+                                        target_blinking=target_blinking)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:
@@ -353,6 +378,9 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     crop_model_path = cfg["crop_model"]
     display         = cfg["display"]
     log             = cfg["log"]
+    save_crops      = cfg.get("save_crops", False)
+    target_color    = cfg.get("target_color")
+    target_blinking = cfg.get("target_blinking")
 
     from ultralytics import YOLO
 
@@ -411,6 +439,12 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
 
     DEBUG_DIR = os.path.expanduser("seabird_dataset/beacon_debug")
     os.makedirs(DEBUG_DIR, exist_ok=True)
+
+    crops_dir = None
+    if save_crops:
+        crops_dir = os.path.join(DEBUG_DIR, "beacon_crops")
+        os.makedirs(crops_dir, exist_ok=True)
+        print(f"[burst] Saving crops → {crops_dir}/")
 
     log_fh = log_writer = None
     if log:
@@ -476,7 +510,10 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                 if len(burst) >= count:
                     print("[burst] Collection complete — analysing")
                     burst_count += 1
-                    lv = _analyse_burst(burst, crop_model, cfg, depth_source)
+                    lv = _analyse_burst(burst, crop_model, cfg, depth_source,
+                                        save_crops_dir=crops_dir,
+                                        target_color=target_color,
+                                        target_blinking=target_blinking)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:
