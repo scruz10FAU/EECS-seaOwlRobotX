@@ -110,7 +110,8 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 det_crop = b_rgb[iy1:iy2, ix1:ix2].copy()
                 _gt = (f"gt-{target_color or 'unk'}-"
                        f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
-                fname = (f"det_{date_tag}_f{frame_idx:06d}_t{int(d.tracking_id):02d}_notop"
+                _bn = f"b{burst_number:03d}_" if burst_number is not None else ""
+                fname = (f"det_{date_tag}_{_bn}f{frame_idx:06d}_t{int(d.tracking_id):02d}_notop"
                          f"_conf{int(d.confidence*100):02d}_det-notop_{_gt}.png")
                 cv2.imwrite(os.path.join(det_images_dir, fname), det_crop)
 
@@ -165,9 +166,10 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
             _b   = blink_info.get("is_blinking")
             _det = (f"det-blink{blink_info.get('blink_hz', 0):.2f}hz" if _b is True
                     else "det-steady" if _b is False else "det-acc")
+            _bn  = f"b{burst_number:03d}_" if burst_number is not None else ""
 
             if save_crops_dir is not None and lit_region.size > 0:
-                fname = (f"crop_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                fname = (f"crop_{date_tag}_{_bn}f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
                          f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                          f"_{_gt}.png")
                 cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
@@ -180,7 +182,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 ix2 = min(x2 + pad, w_img)
                 iy2 = min(y2 + pad, h_img)
                 det_crop = b_rgb[iy1:iy2, ix1:ix2].copy()
-                fname = (f"det_{date_tag}_f{frame_idx:06d}_t{int(d.tracking_id):02d}_{beacon_color}"
+                fname = (f"det_{date_tag}_{_bn}f{frame_idx:06d}_t{int(d.tracking_id):02d}_{beacon_color}"
                          f"_conf{int(d.confidence*100):02d}_{_det}_{_gt}.png")
                 cv2.imwrite(os.path.join(det_images_dir, fname), det_crop)
 
