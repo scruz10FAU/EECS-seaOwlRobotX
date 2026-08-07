@@ -93,6 +93,13 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 isolate_and_classify(crop, crop_model)
             ts_after_classify = time.time()
 
+            if beacon_color == "no_top":
+                (beacon_color, color_conf, _, intensity, votes,
+                    lit_region, hue_var, hue_mean, hue_median, hue_mode) = \
+                    isolate_and_classify(b_rgb, crop_model)
+                ts_after_classify = time.time()
+
+
             if det_images_dir is not None and beacon_color == "no_top":
                 pad = 20
                 h_img, w_img = b_rgb.shape[:2]
