@@ -57,7 +57,8 @@ _VideoDet = namedtuple("_VideoDet", ["bbox_2d", "position_3d", "confidence", "tr
 
 def _analyse_burst(burst, crop_model, cfg, depth_source,
                    save_crops_dir=None, det_images_dir=None,
-                   target_color=None, target_blinking=None):
+                   target_color=None, target_blinking=None,
+                   log_writer=None):
     """
     Run color classification and blink detection over a collected burst.
 
@@ -114,6 +115,25 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 img_w=b_rgb.shape[1], img_h=b_rgb.shape[0],
             )
 
+            if log_writer is not None:
+                _write_log_row(
+                    log_writer, frame_idx,
+                    beacon_color, color_conf,
+                    intensity, votes,
+                    float(d.confidence), d.bbox_2d,
+                    tracking_id=int(d.tracking_id),
+                    pos3d=pos3d,
+                    blink_info=blink_info,
+                    target_color=target_color,
+                    target_blinking=target_blinking,
+                    img_w=b_rgb.shape[1], img_h=b_rgb.shape[0],
+                    hue_variance=hue_var,
+                    hue_mean=hue_mean,
+                    hue_median=hue_median,
+                    hue_mode=hue_mode,
+                    frame_ts=b_ts,
+                )
+
             _gt  = (f"gt-{target_color or 'unk'}-"
                     f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
             _b   = blink_info.get("is_blinking")
@@ -146,8 +166,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
     return last_valid
 
 
-def _publish_result(lv, burst, burst_count, cfg, get_gps_origin_fn,
-                    log_writer, publish_fn):
+def _publish_result(lv, burst, burst_count, cfg, get_gps_origin_fn, publish_fn):
     """
     Compute world/GPS coords, print and optionally publish the burst result.
 
@@ -196,25 +215,6 @@ def _publish_result(lv, burst, burst_count, cfg, get_gps_origin_fn,
     }
     if publish_fn is not None:
         publish_fn(json.dumps(payload))
-
-    if log_writer is not None:
-        _write_log_row(
-            log_writer, burst_count,
-            lv["beacon_color"], lv["color_conf"],
-            lv["intensity"], lv["votes"],
-            lv["det_conf"], lv["bbox"],
-            tracking_id=lv["tracking_id"],
-            pos3d=lv["pos3d"],
-            blink_info=bi,
-            target_color=cfg.get("target_color"),
-            target_blinking=cfg.get("target_blinking"),
-            img_w=lv["img_w"], img_h=lv["img_h"],
-            hue_variance=lv["hue_var"],
-            hue_mean=lv["hue_mean"],
-            hue_median=lv["hue_median"],
-            hue_mode=lv["hue_mode"],
-            frame_ts=lv["frame_ts"],
-        )
 
 
 # ── Live ROS camera mode ──────────────────────────────────────────────────────
@@ -342,12 +342,13 @@ def run_burst_ros(cfg: dict) -> None:
                                         save_crops_dir=crops_dir,
                                         det_images_dir=det_images_dir,
                                         target_color=target_color,
-                                        target_blinking=target_blinking)
+                                        target_blinking=target_blinking,
+                                        log_writer=log_writer)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:
                         _publish_result(lv, burst, burst_count, cfg,
-                                        cam.get_gps_origin, log_writer, _publish)
+                                        cam.get_gps_origin, _publish)
                     burst = []
                     state = "searching"
                     print("[burst] Resuming search")
@@ -477,8 +478,9 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
 
     log_fh = log_writer = None
     if log:
-        ts_tag   = time.strftime("%Y%m%d_%H%M%S")
-        log_path = os.path.join(DEBUG_DIR, f"burst_video_log_{ts_tag}.csv")
+        ts_tag    = time.strftime("%Y%m%d_%H%M%S")
+        vid_stem  = os.path.splitext(os.path.basename(video_path))[0]
+        log_path  = os.path.join(DEBUG_DIR, f"burst_video_log_{vid_stem}_{ts_tag}.csv")
         log_fh, log_writer = _open_log(log_path)
 
     if display:
@@ -543,12 +545,13 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                                         save_crops_dir=crops_dir,
                                         det_images_dir=det_images_dir,
                                         target_color=target_color,
-                                        target_blinking=target_blinking)
+                                        target_blinking=target_blinking,
+                                        log_writer=log_writer)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:
                         _publish_result(lv, burst, burst_count, cfg,
-                                        get_gps_fn, log_writer, publish_fn)
+                                        get_gps_fn, publish_fn)
                     burst = []
                     state = "searching"
                     print("[burst] Resuming search")
