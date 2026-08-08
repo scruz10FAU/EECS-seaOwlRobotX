@@ -26,7 +26,7 @@ import time
 import cv2
 import math
 
-from blink_detector import BlinkDetector, _get_blink_detector
+from blink_detector import BlinkDetector, _get_blink_detector, configure_variance_mode
 from ultralytics import YOLO
 
 EARTH_RADIUS_M = 6378137.0
@@ -388,6 +388,8 @@ def _apply_color_config(det_cfg: dict) -> None:
     _bd._BLINK_MIN_DATA_SEC        = det_cfg.get("blink_min_data_sec",        _bd._BLINK_MIN_DATA_SEC)
     _bd._BLINK_INTENSITY_MIN_SWING = det_cfg.get("blink_intensity_min_swing", _bd._BLINK_INTENSITY_MIN_SWING)
     _bd._BLINK_MAX_IOI_RATIO       = det_cfg.get("blink_max_ioi_ratio",       _bd._BLINK_MAX_IOI_RATIO)
+    _bd._BLINK_VAR_THRESHOLD       = det_cfg.get("blink_var_threshold",       _bd._BLINK_VAR_THRESHOLD)
+    configure_variance_mode(det_cfg.get("use_variance_mode", False))
 
 
 def _hue_votes(hues: np.ndarray) -> dict:
@@ -734,7 +736,8 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
         blink_info = None
         if blink_detector is not None:
             ts = video_ts if video_ts is not None else time.time()
-            blink_info = blink_detector.update(ts, beacon_color, intensity, color_conf)
+            blink_info = blink_detector.update(ts, beacon_color, intensity, color_conf,
+                                               hue_variance=hue_var)
         _ts_blink = time.time()
 
         if save_crops_dir is not None and lit_region.size > 0:
@@ -848,7 +851,7 @@ def run_video(cfg: dict) -> None:
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon-video] Saving crops → {crops_dir}/")
 
-    blink_detector = BlinkDetector()
+    blink_detector = BlinkDetector(use_variance=cfg["detection"].get("use_variance_mode", False))
     frame_idx     = 0
     paused        = False
     display_frame = None
@@ -990,7 +993,7 @@ def run_video_ros(cfg: dict) -> None:
     depth_source = cfg["detection"].get("depth_source", "topic")
     max_dets     = cfg["detection"].get("max_detections")
     det_count    = 0
-    blink_detector = BlinkDetector()
+    blink_detector = BlinkDetector(use_variance=cfg["detection"].get("use_variance_mode", False))
     rclpy.init()
     cam        = _make_beacon_camera(topics, cfg["camera"], cfg["detection"])
     model      = YOLO(model_path)
@@ -1067,7 +1070,8 @@ def run_video_ros(cfg: dict) -> None:
                         continue
                     draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))
 
-                    blink_info = blink_detector.update(video_ts, beacon_color, intensity, color_conf)
+                    blink_info = blink_detector.update(video_ts, beacon_color, intensity, color_conf,
+                                                       hue_variance=hue_var)
                     _ts_blink = time.time()
 
                     # Estimate 3D position from bounding box when depth_source == "bbox"
@@ -1363,7 +1367,8 @@ def main(cfg: dict) -> None:
                     fname = f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}_{gt_tag}.png"
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
                 blink_info = _get_blink_detector(d.tracking_id).update(
-                    frame_ts, beacon_color, intensity, color_conf)
+                    frame_ts, beacon_color, intensity, color_conf,
+                    hue_variance=hue_var)
                 _ts_blink = time.time()
 
                 draw_color = _COLOR_BGR.get(beacon_color, (180, 180, 180))

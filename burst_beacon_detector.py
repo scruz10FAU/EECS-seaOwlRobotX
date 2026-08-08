@@ -65,7 +65,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
     burst: list of (frame_ts, rgb_clean, dets, depth, drone_pos, drone_quat)
     Returns last_valid dict (empty dict if no valid detection found).
     """
-    blink_detector = BlinkDetector()
+    blink_detector = BlinkDetector(use_variance=cfg.get("detection", {}).get("use_variance_mode", False))
     last_valid: dict = {}
     date_tag = time.strftime("%Y%m%d")
 
@@ -119,7 +119,8 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 print(f"[burst]   ts={b_ts:.2f}: no top — skipped")
                 continue
 
-            blink_info = blink_detector.update(b_ts, beacon_color, intensity, color_conf)
+            blink_info = blink_detector.update(b_ts, beacon_color, intensity, color_conf,
+                                               hue_variance=hue_var)
             ts_after_blink = time.time()
             print(f"[burst]   ts={b_ts:.2f}  color={beacon_color:7s} "
                   f"conf={color_conf:.2f}  "

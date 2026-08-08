@@ -80,6 +80,7 @@
     "blue_hue_center":  105,
     "blue_hue_half":    10,
     "red_hue_low":      110,
-    "blink_max_ioi_ratio": 2.0
+    "blink_max_ioi_ratio": 2.0,
+    "use_variance_mode": true
   }
 }

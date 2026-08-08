@@ -5,6 +5,7 @@ blink_detector.py — Rolling-window blink frequency estimator for beacon lights
 Imported by beacon_detector.py.  No ROS or OpenCV dependency.
 """
 
+import math
 from collections import deque, Counter
 
 _BLINK_WINDOW_SEC          = 12.0  # rolling window length for blink estimation (seconds)
@@ -19,6 +20,11 @@ _BLINK_COLOR_CONF_MIN      = 0.001 # min color_confidence to count a non-blue re
 _BLINK_GAP_OFF_SEC         = 5.0   # red/green only: gap longer than this means beacon was off
 _BLINK_CC_ON_THRESHOLD     = 0.15  # blue beacon: color_confidence above this = LED on, below = LED off/dim
 _BLINK_MAX_IOI_RATIO       = None  # if set, reject blink if max(IOIs)/min(IOIs) exceeds this ratio (None = disabled)
+
+# Variance mode: use DFT of per-frame hue_variance as the blink signal instead of
+# color/intensity edge detection.  Works well when color-transition signals are weak
+# (e.g. blue beacons where color_confidence is the only on/off indicator).
+_BLINK_VAR_THRESHOLD = 5.0  # min DFT peak magnitude to declare blinking; tune per deployment
 
 # Number of recent samples used to decide whether the beacon is blue (housing always
 # visible) vs red/green (YOLO loses it entirely when off).
@@ -41,9 +47,10 @@ class BlinkDetector:
     Returns a dict: {is_blinking, blink_color, blink_hz, phase}.
     """
 
-    def __init__(self):
-        self._samples: deque = deque()  # (timestamp, color, intensity, color_conf)
-        self._finalised = False  # set by finalise() to skip warm-up guards (burst mode)
+    def __init__(self, use_variance: bool = False):
+        self._samples: deque = deque()  # (timestamp, color, intensity, color_conf, hue_variance)
+        self._finalised = False       # set by finalise() to skip warm-up guards (burst mode)
+        self._use_variance = use_variance
 
     def finalise(self) -> None:
         """Signal that all data has been collected (burst mode).
@@ -59,7 +66,8 @@ class BlinkDetector:
         blue_like = sum(1 for s in recent if s[1] in ("blue", "unknown"))
         return blue_like > len(recent) // 2
 
-    def update(self, ts: float, color: str, intensity: float, color_conf: float = 1.0) -> dict:
+    def update(self, ts: float, color: str, intensity: float,
+               color_conf: float = 1.0, hue_variance: float = 0.0) -> dict:
         # For red/green beacons, a gap means the beacon was off and YOLO missed it.
         # Inject a synthetic off-marker so rising-edge detection sees the transition.
         # Skip this for blue beacons — the housing is always detectable, so gaps are
@@ -67,12 +75,65 @@ class BlinkDetector:
         if not self._is_blue_beacon() and self._samples and \
                 (ts - self._samples[-1][0]) > _BLINK_GAP_OFF_SEC:
             off_ts = self._samples[-1][0] + _BLINK_GAP_OFF_SEC / 2
-            self._samples.append((off_ts, "_off_", 0.0, 0.0))
-        self._samples.append((ts, color, intensity, color_conf))
+            self._samples.append((off_ts, "_off_", 0.0, 0.0, 0.0))
+        self._samples.append((ts, color, intensity, color_conf, hue_variance))
         cutoff = ts - _BLINK_WINDOW_SEC
         while self._samples and self._samples[0][0] < cutoff:
             self._samples.popleft()
         return self._estimate()
+
+    def _estimate_variance(self, timestamps: list, data_span: float) -> dict:
+        """DFT-based blink detection using the hue_variance signal.
+
+        Works by finding the dominant frequency in the per-frame hue_variance time
+        series.  Bypasses the rising-edge logic entirely — useful when
+        color/color_conf transitions are weak (e.g. blue beacons, dim LEDs).
+        """
+        _none = {"is_blinking": None, "blink_color": "unknown", "blink_hz": None, "phase": "unknown"}
+        N = len(self._samples)
+        if N < 4:
+            return _none
+        if not self._finalised and data_span < _BLINK_MIN_DATA_SEC:
+            return _none
+
+        hue_vars = [s[4] if len(s) > 4 else 0.0 for s in self._samples]
+
+        # Estimate sample rate from the actual timestamp span.
+        dt = (timestamps[-1] - timestamps[0]) / max(N - 1, 1)
+        sr = 1.0 / max(dt, 1e-6)
+
+        # Zero-mean DFT — DC component carries no blink information.
+        mu = sum(hue_vars) / N
+        sig = [v - mu for v in hue_vars]
+        best_mag, best_k = 0.0, 0
+        for k in range(1, N // 2 + 1):
+            re = sum(sig[n] * math.cos(2 * math.pi * k * n / N) for n in range(N))
+            im = sum(sig[n] * math.sin(2 * math.pi * k * n / N) for n in range(N))
+            mag = math.sqrt(re * re + im * im) / N
+            if mag > best_mag:
+                best_mag = mag
+                best_k = k
+
+        best_hz = best_k * sr / N
+
+        # Determine dominant non-blue color for labelling.
+        colors      = [s[1] for s in self._samples]
+        color_confs = [s[3] if len(s) > 3 else 1.0 for s in self._samples]
+        color_counts = Counter(
+            c for c, cc in zip(colors, color_confs)
+            if c not in ("blue", "unknown", "_off_") and cc >= _BLINK_COLOR_CONF_MIN
+        )
+        blink_color = color_counts.most_common(1)[0][0] if color_counts else "blue"
+
+        lo, hi = _BLINK_HZ_RANGE
+        is_blinking = lo <= best_hz <= hi and best_mag >= _BLINK_VAR_THRESHOLD
+
+        return {
+            "is_blinking": is_blinking,
+            "blink_color": blink_color,
+            "blink_hz":    round(best_hz, 2) if is_blinking else None,
+            "phase":       "unknown",
+        }
 
     def _estimate(self) -> dict:
         if len(self._samples) < 4:
@@ -84,6 +145,9 @@ class BlinkDetector:
         color_confs = [s[3] if len(s) > 3 else 1.0 for s in self._samples]
 
         data_span = timestamps[-1] - timestamps[0]
+
+        if self._use_variance:
+            return self._estimate_variance(timestamps, data_span)
 
         if data_span < _BLINK_MIN_DATA_SEC:
             return {"is_blinking": None, "blink_color": "unknown", "blink_hz": None, "phase": "unknown"}
@@ -181,9 +245,16 @@ class BlinkDetector:
 
 
 _blink_detectors: dict = {}
+_variance_mode: bool = False
+
+
+def configure_variance_mode(enabled: bool) -> None:
+    """Call once at startup to enable variance-based blink detection globally."""
+    global _variance_mode
+    _variance_mode = enabled
 
 
 def _get_blink_detector(tracking_id: int) -> BlinkDetector:
     if tracking_id not in _blink_detectors:
-        _blink_detectors[tracking_id] = BlinkDetector()
+        _blink_detectors[tracking_id] = BlinkDetector(use_variance=_variance_mode)
     return _blink_detectors[tracking_id]
