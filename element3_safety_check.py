@@ -75,7 +75,7 @@ WAYPOINT_TOL_M    = 2.5
 WAYPOINT_TIMEOUT  = 90.0
 HOVER_STABILIZE_S = 6.0
 
-MAVSDK_ADDRESS = "udp://:14540"
+MAVSDK_ADDRESS = "udpin://0.0.0.0:14551"
 
 # Derived waypoints (North, East, Down)  — Down is negative up
 P1_START = (   0.0,          0.0,        -HOVER_ALT_M)   # take-off / hover
