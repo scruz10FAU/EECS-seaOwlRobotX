@@ -73,6 +73,11 @@ LAUNCH_LOG="${LOG_DIR}/launch.log"
 # ── Components: name | script | color (ANSI) ─────────────────────────────────
 # Only the Element #3 flight runs. The script takes no required arguments;
 # forward extras at run time with ELEMENT3_ARGS="...".
+
+
+#declare -a COMPONENTS=(
+#    "ELEMENT3|hover_test.py|35"  # magenta — Element #3 pilot safety-check flight
+#)
 declare -a COMPONENTS=(
     "ELEMENT3|element3_safety_check.py|35"  # magenta — Element #3 pilot safety-check flight
 )
@@ -95,6 +100,10 @@ fi
 # ── Banner ───────────────────────────────────────────────────────────
 echo "══════════════════════════════════════════════════════════════"
 echo "  Seabird Mission Launcher — Element #3 only"
+for entry in "${COMPONENTS[@]}"; do
+    IFS='|' read -r _tag _script _color <<< "${entry}"
+    printf "  Script:     %s\n" "${_script}"
+done
 echo "  Log dir:    ${LOG_DIR}"
 echo "  Launch log: ${LAUNCH_LOG}"
 if [ -n "${MUTE}" ]; then

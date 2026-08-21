@@ -37,9 +37,6 @@ Suggested PX4 params for a smooth 30-40 m manoeuvre (set once in pxh, then save)
   param set MPC_Z_VEL_MAX_UP 3.0
   param set MPC_Z_VEL_MAX_DN 2.0
   param set MPC_YAWRAUTO_MAX 90.0
-  param set SYS_HAS_MAG 0
-  param set COM_ARM_MAG_STR 0
-  param set EKF2_ABL_LIM 5.0
   param save
 """
 
@@ -184,6 +181,7 @@ async def fly_to(drone, north, east, down, yaw, label="",
 
     while True:
         await asyncio.sleep(0.1)
+        await drone.offboard.set_position_ned(PositionNedYaw(north, east, down, yaw))
 
         dist = math.sqrt(
             (_state.north_m - north) ** 2
