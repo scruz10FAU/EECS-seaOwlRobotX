@@ -530,7 +530,7 @@ _LOG_HEADER = [
     "target_color", "target_blinking", "target_match",
     "gt_aruco_id", "gt_dist_m", "gt_tvec_x", "gt_tvec_y", "gt_tvec_z",
     "gt_gps_dist_m", "gt_gps_horiz_m", "gt_gps_vert_m",
-    "gt_gps_drone_lat", "gt_gps_drone_lon", "gt_gps_drone_height_agl",
+    "gt_gps_obj_lat", "gt_gps_obj_lon", "gt_gps_drone_height_agl",
 ]
 
 
@@ -581,14 +581,14 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         gt_tx, gt_ty, gt_tz = [f"{v:.4f}" for v in _gt_tvec]
     if gps_gt_info is None:
         gt_gps_dist = gt_gps_horiz = gt_gps_vert = ""
-        gt_gps_lat = gt_gps_lon = gt_gps_height_agl = ""
+        gt_gps_obj_lat = gt_gps_obj_lon = gt_gps_height_agl = ""
     else:
-        _gg_dist, _gg_horiz, _gg_vert, _gg_lat, _gg_lon, _gg_height_agl = gps_gt_info
+        _gg_dist, _gg_horiz, _gg_vert, _gg_obj_lat, _gg_obj_lon, _gg_height_agl = gps_gt_info
         gt_gps_dist  = f"{_gg_dist:.4f}"
         gt_gps_horiz = f"{_gg_horiz:.4f}"
         gt_gps_vert  = f"{_gg_vert:.4f}"
-        gt_gps_lat   = f"{_gg_lat:.7f}"
-        gt_gps_lon   = f"{_gg_lon:.7f}"
+        gt_gps_obj_lat = f"{_gg_obj_lat:.7f}"
+        gt_gps_obj_lon = f"{_gg_obj_lon:.7f}"
         gt_gps_height_agl = f"{_gg_height_agl:.4f}"
     def _ts(v): return f"{v:.3f}" if v is not None else ""
     log_writer.writerow([
@@ -605,7 +605,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         tc_col, tb_col, target_match,
         gt_id, gt_dist, gt_tx, gt_ty, gt_tz,
         gt_gps_dist, gt_gps_horiz, gt_gps_vert,
-        gt_gps_lat, gt_gps_lon, gt_gps_height_agl,
+        gt_gps_obj_lat, gt_gps_obj_lon, gt_gps_height_agl,
     ])
 
 
@@ -1098,7 +1098,7 @@ def run_video_ros(cfg: dict) -> None:
                             _d_lat, _d_lon, _d_height_agl,
                             gps_gt_cfg["latitude"], gps_gt_cfg["longitude"],
                             cfg["detection"].get("beacon_z_m", 0.0))
-                        gps_gt_info = (*_gg, _d_lat, _d_lon, _d_height_agl)
+                        gps_gt_info = (*_gg, gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], _d_height_agl)
 
                 aruco_gt = None
                 if aruco_detector is not None:
@@ -1385,7 +1385,7 @@ def main(cfg: dict) -> None:
                         _d_lat, _d_lon, _d_height_agl,
                         gps_gt_cfg["latitude"], gps_gt_cfg["longitude"],
                         cfg["detection"].get("beacon_z_m", 0.0))
-                    gps_gt_info = (*_gg, _d_lat, _d_lon, _d_height_agl)
+                    gps_gt_info = (*_gg, gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], _d_height_agl)
 
             if intr and not intrinsics_printed:
                 print(f"[beacon] Intrinsics ready: {intr.width}x{intr.height} "

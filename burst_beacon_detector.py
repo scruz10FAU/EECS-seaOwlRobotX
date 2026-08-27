@@ -142,7 +142,8 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                         drone_lat, drone_lon, drone_height_agl,
                         gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], obj_height_agl,
                     )
-                    gps_gt_info = (dist, horiz, vert, drone_lat, drone_lon, drone_height_agl)
+                    gps_gt_info = (dist, horiz, vert,
+                                   gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], drone_height_agl)
 
             last_valid = dict(
                 beacon_color=beacon_color, color_conf=color_conf,

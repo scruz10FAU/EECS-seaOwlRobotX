@@ -263,7 +263,7 @@ Computes a ground-truth distance from the drone's live GPS fix to a known GPS lo
 | `latitude` | `null` | Known latitude of the detected object |
 | `longitude` | `null` | Known longitude of the detected object |
 
-Horizontal separation is computed from GPS lat/lon using the same flat-earth approximation `local_enu_to_gps` uses (accurate at the short ranges typical of this mission). Vertical separation deliberately does **not** use GPS altitude (too noisy over short ranges) — it's the drone's measured AGL height (`drone_pos[2]` from its local pose) minus `detection.beacon_z_m` (the beacon's own known AGL height, default `0.0` — reuses the same field `estimate_distance_from_bbox()` already uses for bbox-based depth, so a beacon's height above ground is configured in one place). Adds `gt_gps_dist_m`, `gt_gps_horiz_m`, `gt_gps_vert_m`, `gt_gps_drone_lat`, `gt_gps_drone_lon`, `gt_gps_drone_height_agl` to the CSV log (see below), and a `gps_ground_truth: {distance_m, horizontal_m, vertical_m}` field on burst results published by `burst_beacon_detector.py`. Wired into `beacon_detector_config.py`'s live ROS mode (`main()`), `run_video_ros()`, and `burst_beacon_detector.py`'s live and ROS-video modes.
+Horizontal separation is computed from GPS lat/lon using the same flat-earth approximation `local_enu_to_gps` uses (accurate at the short ranges typical of this mission). Vertical separation deliberately does **not** use GPS altitude (too noisy over short ranges) — it's the drone's measured AGL height (`drone_pos[2]` from its local pose) minus `detection.beacon_z_m` (the beacon's own known AGL height, default `0.0` — reuses the same field `estimate_distance_from_bbox()` already uses for bbox-based depth, so a beacon's height above ground is configured in one place). Adds `gt_gps_dist_m`, `gt_gps_horiz_m`, `gt_gps_vert_m`, `gt_gps_obj_lat`, `gt_gps_obj_lon`, `gt_gps_drone_height_agl` to the CSV log (see below) — `gt_gps_obj_lat`/`gt_gps_obj_lon` echo the configured object location (not the drone's), so a session's CSV always records which ground-truth target it was measured against. Also adds a `gps_ground_truth: {distance_m, horizontal_m, vertical_m}` field on burst results published by `burst_beacon_detector.py`. Wired into `beacon_detector_config.py`'s live ROS mode (`main()`), `run_video_ros()`, and `burst_beacon_detector.py`'s live and ROS-video modes.
 
 ---
 
@@ -573,7 +573,8 @@ When `log: true` is set in the config, a CSV file is written to `~/seabird_datas
 | `target_match` | `True` if both color and blink state match the target |
 | `gt_aruco_id` / `gt_dist_m` / `gt_tvec_x/y/z` | ArUco ground-truth columns (blank if ArUco disabled) |
 | `gt_gps_dist_m` / `gt_gps_horiz_m` / `gt_gps_vert_m` | 3D / horizontal / vertical ground-truth distance from the drone's GPS fix to the known object location (blank if GPS ground truth disabled) |
-| `gt_gps_drone_lat` / `gt_gps_drone_lon` / `gt_gps_drone_height_agl` | Drone's GPS lat/lon and measured AGL height at the time of this row, as used in the ground-truth calc (blank if GPS ground truth disabled) |
+| `gt_gps_obj_lat` / `gt_gps_obj_lon` | Configured GPS latitude/longitude of the detected object, as used in the ground-truth calc (blank if GPS ground truth disabled) |
+| `gt_gps_drone_height_agl` | Drone's measured AGL height at the time of this row, as used in the ground-truth calc (blank if GPS ground truth disabled) |
 
 Subtracting `frame_timestamp` from `ts_after_blink` gives total per-detection processing latency. Subtracting adjacent timestamp columns isolates the latency of each individual step.
 
