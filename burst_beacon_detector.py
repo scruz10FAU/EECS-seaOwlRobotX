@@ -37,6 +37,7 @@ from beacon_detector_config import (
     estimate_distance_from_bbox,
     _camera_to_world,
     local_enu_to_gps,
+    gps_ground_truth_distance,
     _open_log,
     _write_log_row,
     _DEFAULT_CONFIG,
@@ -58,7 +59,8 @@ _VideoDet = namedtuple("_VideoDet", ["bbox_2d", "position_3d", "confidence", "tr
 def _analyse_burst(burst, crop_model, cfg, depth_source,
                    save_crops_dir=None, det_images_dir=None,
                    target_color=None, target_blinking=None,
-                   log_writer=None, burst_number=None):
+                   log_writer=None, burst_number=None,
+                   get_gps_origin_fn=None):
     """
     Run color classification and blink detection over a collected burst.
 
@@ -68,6 +70,9 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
     blink_detector = BlinkDetector(use_variance=cfg.get("detection", {}).get("use_variance_mode", False))
     last_valid: dict = {}
     date_tag = time.strftime("%Y%m%d")
+
+    gps_gt_cfg = cfg.get("gps_ground_truth", {})
+    obj_height_agl = cfg.get("detection", {}).get("beacon_z_m", 0.0)
 
     for frame_idx, (b_ts, b_rgb, b_dets, _, b_dpos, b_dquat) in enumerate(burst):
         if not b_dets:
@@ -127,6 +132,18 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                   f"blink_color={blink_info['blink_color']}  "
                   f"is_blinking={blink_info['is_blinking']}")
 
+            gps_gt_info = None
+            if gps_gt_cfg.get("enabled") and get_gps_origin_fn is not None and b_dpos is not None:
+                origin = get_gps_origin_fn()
+                if origin is not None:
+                    drone_lat, drone_lon, _ = origin
+                    drone_height_agl = b_dpos[2]
+                    dist, horiz, vert = gps_ground_truth_distance(
+                        drone_lat, drone_lon, drone_height_agl,
+                        gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], obj_height_agl,
+                    )
+                    gps_gt_info = (dist, horiz, vert, drone_lat, drone_lon, drone_height_agl)
+
             last_valid = dict(
                 beacon_color=beacon_color, color_conf=color_conf,
                 intensity=intensity, votes=votes,
@@ -138,6 +155,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 frame_ts=b_ts, lit_region=lit_region,
                 tracking_id=int(d.tracking_id),
                 img_w=b_rgb.shape[1], img_h=b_rgb.shape[0],
+                gps_gt=gps_gt_info,
             )
 
             if log_writer is not None:
@@ -151,6 +169,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                     blink_info=blink_info,
                     target_color=target_color,
                     target_blinking=target_blinking,
+                    gps_gt_info=gps_gt_info,
                     img_w=b_rgb.shape[1], img_h=b_rgb.shape[0],
                     hue_variance=hue_var,
                     hue_mean=hue_mean,
@@ -216,11 +235,15 @@ def _publish_result(lv, burst, burst_count, cfg, get_gps_origin_fn, publish_fn):
             gps_coords = {"latitude": lat, "longitude": lon, "altitude": alt}
 
     bi = lv["blink_info"]
+    gps_gt = lv.get("gps_gt")
     print(f"[burst] ── Burst #{burst_count} result ─────────────")
     print(f"[burst]   color={lv['beacon_color']}  "
           f"is_blinking={bi['is_blinking']}  "
           f"blink_color={bi['blink_color']}  "
           f"blink_hz={bi['blink_hz']}")
+    if gps_gt is not None:
+        print(f"[burst]   gps_ground_truth: dist={gps_gt[0]:.2f}m "
+              f"(horiz={gps_gt[1]:.2f}m vert={gps_gt[2]:.2f}m)")
 
     payload = {
         "color":            lv["beacon_color"],
@@ -238,6 +261,11 @@ def _publish_result(lv, burst, burst_count, cfg, get_gps_origin_fn, publish_fn):
         "gps_position":     gps_coords,
         "drone_position":   lv["drone_pos"].tolist()
                             if lv["drone_pos"] is not None else None,
+        "gps_ground_truth": {
+            "distance_m":   round(gps_gt[0], 4),
+            "horizontal_m": round(gps_gt[1], 4),
+            "vertical_m":   round(gps_gt[2], 4),
+        } if gps_gt is not None else None,
         "tracking_id":      lv["tracking_id"],
         "burst_frames":     len(burst),
         "timestamp":        round(lv["frame_ts"], 3),
@@ -299,6 +327,12 @@ def run_burst_ros(cfg: dict) -> None:
     print(f"[burst] Live ROS mode — waiting for beacon to trigger {count}-frame burst")
     print(f"[burst]   interval={interval}s  total={interval*count:.1f}s")
     print(f"[burst] Publishing → {topics['detections_pub']}")
+
+    gps_gt_cfg = cfg.get("gps_ground_truth", {})
+    if gps_gt_cfg.get("enabled"):
+        print(f"[burst] GPS ground truth enabled  "
+              f"target=({gps_gt_cfg['latitude']:.7f}, {gps_gt_cfg['longitude']:.7f})  "
+              f"object_height_agl={cfg['detection'].get('beacon_z_m', 0.0):.2f}m")
 
     log_fh = log_writer = None
     if log:
@@ -373,7 +407,8 @@ def run_burst_ros(cfg: dict) -> None:
                                         target_color=target_color,
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
-                                        burst_number=burst_count)
+                                        burst_number=burst_count,
+                                        get_gps_origin_fn=cam.get_gps_origin)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:
@@ -491,6 +526,16 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
         get_gps_fn = cam.get_gps_origin
         print(f"[burst] Publishing → {topics['detections_pub']}")
 
+    gps_gt_cfg = cfg.get("gps_ground_truth", {})
+    if gps_gt_cfg.get("enabled"):
+        if not use_ros:
+            print("[burst] GPS ground truth configured but use_ros=False — "
+                  "no drone GPS available in this mode, ground truth disabled")
+        else:
+            print(f"[burst] GPS ground truth enabled  "
+                  f"target=({gps_gt_cfg['latitude']:.7f}, {gps_gt_cfg['longitude']:.7f})  "
+                  f"object_height_agl={cfg['detection'].get('beacon_z_m', 0.0):.2f}m")
+
     DEBUG_DIR = os.path.expanduser("seabird_dataset/beacon_debug")
     os.makedirs(DEBUG_DIR, exist_ok=True)
 
@@ -577,7 +622,8 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                                         target_color=target_color,
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
-                                        burst_number=burst_count)
+                                        burst_number=burst_count,
+                                        get_gps_origin_fn=get_gps_fn)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:

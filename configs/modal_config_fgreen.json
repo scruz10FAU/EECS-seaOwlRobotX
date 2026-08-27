@@ -82,5 +82,11 @@
     "red_threshold":    0.40,
     "winner_threshold": 0.25,
     "red_hue_high":     5
+  },
+
+  "gps_ground_truth": {
+  "enabled": true,
+  "latitude": 26.7116516,
+  "longitude": -80.2873633
   }
 }

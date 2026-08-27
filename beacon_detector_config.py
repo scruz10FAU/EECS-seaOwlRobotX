@@ -75,6 +75,15 @@ _DEFAULT_ARUCO = {
     "calibration_file": None,
 }
 
+_DEFAULT_GPS_GT = {
+    "enabled":   False,
+    "latitude":  None,   # known GPS latitude of the detected object
+    "longitude": None,   # known GPS longitude of the detected object
+    # Vertical separation uses drone_pos[2] (measured AGL height) vs.
+    # detection.beacon_z_m (object's known AGL height, default 0.0) —
+    # not GPS altitude, which is too noisy for a short-range ground truth.
+}
+
 _DEFAULT_DETECTION = {
     "confirm_frames":  3,
     "pub_cooldown_s":  1.0,
@@ -133,6 +142,7 @@ def load_config(path: str) -> dict:
         "px4":        raw.get("px4",        {}),
         "labeler":    raw.get("labeler",    {}),
         "aruco":      {**_DEFAULT_ARUCO,     **raw.get("aruco",     {})},
+        "gps_ground_truth": {**_DEFAULT_GPS_GT, **raw.get("gps_ground_truth", {})},
         "detection":  {**_DEFAULT_DETECTION, **raw.get("detection", {})},
     }
 
@@ -519,6 +529,8 @@ _LOG_HEADER = [
     "blink_is_blinking", "blink_hz", "blink_phase",
     "target_color", "target_blinking", "target_match",
     "gt_aruco_id", "gt_dist_m", "gt_tvec_x", "gt_tvec_y", "gt_tvec_z",
+    "gt_gps_dist_m", "gt_gps_horiz_m", "gt_gps_vert_m",
+    "gt_gps_drone_lat", "gt_gps_drone_lon", "gt_gps_drone_height_agl",
 ]
 
 
@@ -535,7 +547,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
                    det_conf: float, bbox, tracking_id: int = -1,
                    pos3d=None, blink_info: dict = None,
                    target_color=None, target_blinking=None,
-                   gt_info=None, img_w=None, img_h=None,
+                   gt_info=None, gps_gt_info=None, img_w=None, img_h=None,
                    hue_variance: float = 0.0, hue_mean: float = 0.0,
                    hue_median: float = 0.0, hue_mode: float = 0.0,
                    frame_ts: float = None,
@@ -567,6 +579,17 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         gt_id  = str(_gt_id)
         gt_dist = f"{_gt_dist:.4f}"
         gt_tx, gt_ty, gt_tz = [f"{v:.4f}" for v in _gt_tvec]
+    if gps_gt_info is None:
+        gt_gps_dist = gt_gps_horiz = gt_gps_vert = ""
+        gt_gps_lat = gt_gps_lon = gt_gps_height_agl = ""
+    else:
+        _gg_dist, _gg_horiz, _gg_vert, _gg_lat, _gg_lon, _gg_height_agl = gps_gt_info
+        gt_gps_dist  = f"{_gg_dist:.4f}"
+        gt_gps_horiz = f"{_gg_horiz:.4f}"
+        gt_gps_vert  = f"{_gg_vert:.4f}"
+        gt_gps_lat   = f"{_gg_lat:.7f}"
+        gt_gps_lon   = f"{_gg_lon:.7f}"
+        gt_gps_height_agl = f"{_gg_height_agl:.4f}"
     def _ts(v): return f"{v:.3f}" if v is not None else ""
     log_writer.writerow([
         f"{time.time():.3f}", _ts(frame_ts), _ts(ts_after_inference), _ts(ts_after_classify), _ts(ts_after_blink),
@@ -581,6 +604,8 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         blink_blinking, blink_hz, blink_phase,
         tc_col, tb_col, target_match,
         gt_id, gt_dist, gt_tx, gt_ty, gt_tz,
+        gt_gps_dist, gt_gps_horiz, gt_gps_vert,
+        gt_gps_lat, gt_gps_lon, gt_gps_height_agl,
     ])
 
 
@@ -594,6 +619,26 @@ def local_enu_to_gps(world_pos: np.ndarray,
     dlat = np.degrees(north / EARTH_RADIUS_M)
     dlon = np.degrees(east / (EARTH_RADIUS_M * np.cos(np.radians(origin_lat))))
     return (origin_lat + dlat, origin_lon + dlon, origin_alt + up)
+
+
+def gps_ground_truth_distance(drone_lat: float, drone_lon: float, drone_height_agl: float,
+                              obj_lat: float, obj_lon: float, obj_height_agl: float = 0.0) -> Tuple[float, float, float]:
+    """
+    3D ground-truth distance between the drone's current GPS fix and a known
+    object GPS location. Horizontal separation comes from GPS lat/lon using
+    the same flat-earth approximation as local_enu_to_gps (its inverse) —
+    accurate at the short ranges typical of this mission. Vertical separation
+    uses measured AGL height (e.g. drone_pos[2] vs. detection.beacon_z_m),
+    NOT GPS altitude, which is far noisier than lat/lon over short ranges.
+    Returns (dist_3d_m, horizontal_m, vertical_m).
+    """
+    dlat_rad = math.radians(obj_lat - drone_lat)
+    dlon_rad = math.radians(obj_lon - drone_lon)
+    north = dlat_rad * EARTH_RADIUS_M
+    east  = dlon_rad * EARTH_RADIUS_M * math.cos(math.radians(drone_lat))
+    horiz = math.hypot(north, east)
+    vert  = drone_height_agl - obj_height_agl
+    return math.hypot(horiz, vert), horiz, vert
 
 
 def estimate_distance_from_bbox(
@@ -1008,6 +1053,12 @@ def run_video_ros(cfg: dict) -> None:
         print(f"[beacon-ros-video] ArUco ground truth enabled  "
               f"dict={cfg['aruco']['dictionary']}  marker={cfg['aruco']['marker_size_m']}m")
 
+    gps_gt_cfg = cfg.get("gps_ground_truth", {})
+    if gps_gt_cfg.get("enabled"):
+        print(f"[beacon-ros-video] GPS ground truth enabled  "
+              f"target=({gps_gt_cfg['latitude']:.7f}, {gps_gt_cfg['longitude']:.7f})  "
+              f"object_height_agl={cfg['detection'].get('beacon_z_m', 0.0):.2f}m")
+
     if not cam.open_for_video():
         print("[beacon-ros-video] Failed to open ROS node")
         try: rclpy.shutdown()
@@ -1036,6 +1087,18 @@ def run_video_ros(cfg: dict) -> None:
                 drone_pos, _ = cam.get_drone_pose()
                 display_frame = raw.copy()
                 video_ts = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+
+                gps_gt_info = None
+                if gps_gt_cfg.get("enabled") and drone_pos is not None:
+                    origin = cam.get_gps_origin()
+                    if origin is not None:
+                        _d_lat, _d_lon, _ = origin
+                        _d_height_agl = drone_pos[2]
+                        _gg = gps_ground_truth_distance(
+                            _d_lat, _d_lon, _d_height_agl,
+                            gps_gt_cfg["latitude"], gps_gt_cfg["longitude"],
+                            cfg["detection"].get("beacon_z_m", 0.0))
+                        gps_gt_info = (*_gg, _d_lat, _d_lon, _d_height_agl)
 
                 aruco_gt = None
                 if aruco_detector is not None:
@@ -1142,6 +1205,7 @@ def run_video_ros(cfg: dict) -> None:
                                        target_color=cfg.get("target_color"),
                                        target_blinking=cfg.get("target_blinking"),
                                        gt_info=aruco_gt,
+                                       gps_gt_info=gps_gt_info,
                                        img_w=raw.shape[1],
                                        img_h=raw.shape[0],
                                        hue_variance=hue_var, hue_mean=hue_mean,
@@ -1285,6 +1349,12 @@ def main(cfg: dict) -> None:
         print(f"[beacon] ArUco ground truth enabled  "
               f"dict={cfg['aruco']['dictionary']}  marker={cfg['aruco']['marker_size_m']}m")
 
+    gps_gt_cfg = cfg.get("gps_ground_truth", {})
+    if gps_gt_cfg.get("enabled"):
+        print(f"[beacon] GPS ground truth enabled  "
+              f"target=({gps_gt_cfg['latitude']:.7f}, {gps_gt_cfg['longitude']:.7f})  "
+              f"object_height_agl={cfg['detection'].get('beacon_z_m', 0.0):.2f}m")
+
     _apply_color_config(cfg["detection"])
     depth_source  = cfg["detection"].get("depth_source", "topic")
     max_dets      = cfg["detection"].get("max_detections")
@@ -1304,6 +1374,18 @@ def main(cfg: dict) -> None:
             intr       = cam._intrinsics
             drone_pos, drone_quat = cam.get_drone_pose()
             frame_ts   = cam.get_frame_timestamp() or time.time()
+
+            gps_gt_info = None
+            if gps_gt_cfg.get("enabled") and drone_pos is not None:
+                origin = cam.get_gps_origin()
+                if origin is not None:
+                    _d_lat, _d_lon, _ = origin
+                    _d_height_agl = drone_pos[2]
+                    _gg = gps_ground_truth_distance(
+                        _d_lat, _d_lon, _d_height_agl,
+                        gps_gt_cfg["latitude"], gps_gt_cfg["longitude"],
+                        cfg["detection"].get("beacon_z_m", 0.0))
+                    gps_gt_info = (*_gg, _d_lat, _d_lon, _d_height_agl)
 
             if intr and not intrinsics_printed:
                 print(f"[beacon] Intrinsics ready: {intr.width}x{intr.height} "
@@ -1450,6 +1532,7 @@ def main(cfg: dict) -> None:
                                    target_color=cfg.get("target_color"),
                                    target_blinking=cfg.get("target_blinking"),
                                    gt_info=aruco_gt,
+                                   gps_gt_info=gps_gt_info,
                                    img_w=rgb.shape[1],
                                    img_h=rgb.shape[0],
                                    hue_variance=hue_var, hue_mean=hue_mean,
