@@ -1,5 +1,5 @@
 {
-  "model":      "models/beacon_full86.pt",
+  "model":      "models/square_beacon.pt",
   "crop_model": "models/beacon_top87iv.pt",
   "conf":       0.5,
   "display":    false,

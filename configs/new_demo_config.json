@@ -1,6 +1,6 @@
 {
-  "model":      "models/beacon_full86.pt",
-  "crop_model": "models/beacon_top87iv.pt",
+  "model":      "models/square_beacon.pt",
+  "crop_model": "models/beacon_square_top.pt",
   "conf":       0.5,
   "display":    true,
   "true_dist":  4.572,
@@ -10,7 +10,9 @@
   "save_det_images": true,
   "save_frames":     false,
   "video":      null,
-  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/new_beacon_videos/beacon_blue_blink.mp4",
+  "target_color":    "red",
+  "target_blinking": true,
+  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/new_beacon_videos/blink_red_square.MP4",
 
   "topics": {
     "drone_pose":     null,
@@ -81,6 +83,6 @@
     "blue_hue_half":    10,
     "red_hue_low":      110,
     "blink_max_ioi_ratio": 2.0,
-    "use_variance_mode": true
+    "use_variance_mode": false
   }
 }
