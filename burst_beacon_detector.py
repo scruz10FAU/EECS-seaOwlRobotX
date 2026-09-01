@@ -226,8 +226,8 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
         last_valid["blink_info"] = blink_detector._estimate()
 
     if log_writer is not None:
-        burst_color      = last_valid.get("beacon_color")
         burst_blink_info = last_valid.get("blink_info")
+        burst_color      = burst_blink_info.get("blink_color") if burst_blink_info else None
         for row_kwargs in _pending_log_rows:
             _write_log_row(log_writer, burst_color=burst_color,
                            burst_blink_info=burst_blink_info, **row_kwargs)
