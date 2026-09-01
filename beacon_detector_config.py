@@ -572,7 +572,7 @@ _LOG_HEADER = [
     "hue_variance", "hue_mean", "hue_median", "hue_mode",
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
     "pos3d_x", "pos3d_y", "pos3d_z", "distance_m",
-    "blink_is_blinking", "blink_hz", "blink_phase",
+    "blink_is_blinking", "blink_color", "blink_hz", "blink_phase",
     "target_color", "target_blinking", "target_match",
     "gt_aruco_id", "gt_dist_m", "gt_tvec_x", "gt_tvec_y", "gt_tvec_z",
     "gt_gps_dist_m", "gt_gps_horiz_m", "gt_gps_vert_m",
@@ -610,6 +610,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         dist_m = f"{math.sqrt(pos3d[0]**2 + pos3d[1]**2 + pos3d[2]**2):.4f}"
     bi = blink_info or {}
     blink_blinking = "" if bi.get("is_blinking") is None else str(bi.get("is_blinking"))
+    blink_color = bi.get("blink_color", "")
     blink_hz    = f"{bi['blink_hz']:.3f}" if bi.get("blink_hz") is not None else ""
     blink_phase = bi.get("phase", "")
     if target_color is None and target_blinking is None:
@@ -654,7 +655,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         f"{hue_variance:.2f}", f"{hue_mean:.2f}", f"{hue_median:.2f}", f"{hue_mode:.0f}",
         f"{det_conf:.4f}", x1, y1, x2, y2, tracking_id,
         px, py, pz, dist_m,
-        blink_blinking, blink_hz, blink_phase,
+        blink_blinking, blink_color, blink_hz, blink_phase,
         tc_col, tb_col, target_match,
         gt_id, gt_dist, gt_tx, gt_ty, gt_tz,
         gt_gps_dist, gt_gps_horiz, gt_gps_vert,
