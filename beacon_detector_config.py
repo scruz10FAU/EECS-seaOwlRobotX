@@ -561,6 +561,7 @@ _LOG_HEADER = [
     "gt_aruco_id", "gt_dist_m", "gt_tvec_x", "gt_tvec_y", "gt_tvec_z",
     "gt_gps_dist_m", "gt_gps_horiz_m", "gt_gps_vert_m",
     "gt_gps_obj_lat", "gt_gps_obj_lon", "gt_gps_drone_height_agl",
+    "burst_color", "burst_is_blinking", "burst_blink_hz", "burst_blink_phase",
 ]
 
 
@@ -584,7 +585,8 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
                    ts_after_inference: float = None,
                    ts_after_classify: float = None,
                    ts_after_blink: float = None,
-                   burst_number: int = None) -> None:
+                   burst_number: int = None,
+                   burst_color: str = None, burst_blink_info: dict = None) -> None:
     x1, y1, x2, y2 = bbox
     px = py = pz = dist_m = ""
     if pos3d is not None:
@@ -620,6 +622,11 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         gt_gps_obj_lat = f"{_gg_obj_lat:.7f}"
         gt_gps_obj_lon = f"{_gg_obj_lon:.7f}"
         gt_gps_height_agl = f"{_gg_height_agl:.4f}"
+    bbi = burst_blink_info or {}
+    burst_color_col = burst_color if burst_color is not None else ""
+    burst_blinking  = "" if bbi.get("is_blinking") is None else str(bbi.get("is_blinking"))
+    burst_blink_hz  = f"{bbi['blink_hz']:.3f}" if bbi.get("blink_hz") is not None else ""
+    burst_blink_phase = bbi.get("phase", "")
     def _ts(v): return f"{v:.3f}" if v is not None else ""
     log_writer.writerow([
         f"{time.time():.3f}", _ts(frame_ts), _ts(ts_after_inference), _ts(ts_after_classify), _ts(ts_after_blink),
@@ -636,6 +643,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         gt_id, gt_dist, gt_tx, gt_ty, gt_tz,
         gt_gps_dist, gt_gps_horiz, gt_gps_vert,
         gt_gps_obj_lat, gt_gps_obj_lon, gt_gps_height_agl,
+        burst_color_col, burst_blinking, burst_blink_hz, burst_blink_phase,
     ])
 
 

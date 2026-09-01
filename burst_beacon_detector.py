@@ -75,6 +75,11 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
     gps_gt_cfg = cfg.get("gps_ground_truth", {})
     obj_height_agl = cfg.get("detection", {}).get("beacon_z_m", 0.0)
 
+    # Per-frame log rows are buffered and only written after the burst-wide
+    # color/blink decision is finalised below, so every row can be stamped
+    # with the same overall burst_color/burst_is_blinking/etc. columns.
+    _pending_log_rows: list = []
+
     for frame_idx, (b_ts, b_rgb, b_dets, _, b_dpos, b_dquat) in enumerate(burst):
         if not b_dets:
             continue
@@ -161,11 +166,11 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
             )
 
             if log_writer is not None:
-                _write_log_row(
-                    log_writer, frame_idx,
-                    beacon_color, color_conf,
-                    intensity, votes,
-                    float(d.confidence), d.bbox_2d,
+                _pending_log_rows.append(dict(
+                    frame_idx=frame_idx,
+                    color=beacon_color, color_conf=color_conf,
+                    intensity=intensity, votes=votes,
+                    det_conf=float(d.confidence), bbox=d.bbox_2d,
                     tracking_id=int(d.tracking_id),
                     pos3d=pos3d,
                     blink_info=blink_info,
@@ -181,7 +186,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                     ts_after_classify=ts_after_classify,
                     ts_after_blink=ts_after_blink,
                     burst_number=burst_number,
-                )
+                ))
 
             _gt  = (f"gt-{target_color or 'unk'}-"
                     f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
@@ -219,6 +224,13 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
     if last_valid:
         blink_detector.finalise()
         last_valid["blink_info"] = blink_detector._estimate()
+
+    if log_writer is not None:
+        burst_color      = last_valid.get("beacon_color")
+        burst_blink_info = last_valid.get("blink_info")
+        for row_kwargs in _pending_log_rows:
+            _write_log_row(log_writer, burst_color=burst_color,
+                           burst_blink_info=burst_blink_info, **row_kwargs)
 
     return last_valid
 
