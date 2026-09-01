@@ -533,6 +533,20 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
     return color, color_conf, display_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask
 
 
+def trace_vote_mask(image: np.ndarray, vote_mask: np.ndarray,
+                    color=(0, 255, 0), thickness: int = 1) -> np.ndarray:
+    """
+    Return a copy of image with the outline of vote_mask (the pixels that fed
+    the hue vote) drawn on top — lets a saved crop show both the original
+    colors and exactly which pixels were classified, in one image.
+    """
+    traced = image.copy()
+    if vote_mask is not None and vote_mask.any() and vote_mask.shape == image.shape[:2]:
+        contours, _ = cv2.findContours(vote_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cv2.drawContours(traced, contours, -1, color, thickness)
+    return traced
+
+
 # ── Detection logger ──────────────────────────────────────────────────────────
 
 _LOG_HEADER = [
@@ -812,7 +826,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
             fname = (f"crop_{_date}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
                      f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                      f"_{_gt}.png")
-            cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
+            cv2.imwrite(os.path.join(save_crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
 
         if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
             _date = time.strftime("%Y%m%d")
@@ -1262,7 +1276,7 @@ def run_video_ros(cfg: dict) -> None:
                         fname = (f"crop_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
                                  f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                                  f"_{gt_tag}.png")
-                        cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
+                        cv2.imwrite(os.path.join(crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
 
                     if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
                         fname = (f"pixels_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
@@ -1501,7 +1515,7 @@ def main(cfg: dict) -> None:
                     beacon_color = _tracker_colors[tid]
                 if crops_dir is not None and lit_region.size > 0:
                     fname = f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}_{gt_tag}.png"
-                    cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
+                    cv2.imwrite(os.path.join(crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
                 blink_info = _get_blink_detector(d.tracking_id).update(
                     frame_ts, beacon_color, intensity, color_conf,
                     hue_variance=hue_var)
@@ -1602,7 +1616,7 @@ def main(cfg: dict) -> None:
                     fname = (f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
                              f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                              f"_{gt_tag}.png")
-                    cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
+                    cv2.imwrite(os.path.join(crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
 
                 if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
                     fname = (f"pixels_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"

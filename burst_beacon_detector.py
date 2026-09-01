@@ -34,6 +34,7 @@ from beacon_detector_config import (
     _make_beacon_camera,
     _apply_color_config,
     isolate_and_classify,
+    trace_vote_mask,
     estimate_distance_from_bbox,
     _camera_to_world,
     local_enu_to_gps,
@@ -193,7 +194,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 fname = (f"crop_{date_tag}_{_bn}f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
                          f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                          f"_{_gt}.png")
-                cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
+                cv2.imwrite(os.path.join(save_crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
 
             if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
                 fname = (f"pixels_{date_tag}_{_bn}f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
