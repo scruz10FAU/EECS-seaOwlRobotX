@@ -130,6 +130,7 @@ def load_config(path: str) -> dict:
         "save_crops":      bool(raw.get("save_crops",      False)),
         "save_det_images": bool(raw.get("save_det_images", False)),
         "save_frames":     bool(raw.get("save_frames",     False)),
+        "save_color_pixels": bool(raw.get("save_color_pixels", False)),
         "target_color":    raw.get("target_color",    None),
         "target_blinking": raw.get("target_blinking", None),
         "video":      raw.get("video",      None),
@@ -433,6 +434,19 @@ def classify_beacon_color(bgr_crop: np.ndarray, seg_mask: np.ndarray = None) -> 
     if seg_mask is not None and seg_mask.shape == light_mask.shape:
         light_mask = cv2.bitwise_and(light_mask, seg_mask)
 
+    # Keep only the largest connected blob of lit pixels. When the crop_model
+    # box doesn't tightly follow a slanted/rotated beacon top, the box corners
+    # can include a separate patch of bright background (e.g. sunlit water)
+    # that would otherwise vote alongside the real LED and skew the hue
+    # classification. A light morphological open first breaks any thin sliver
+    # connecting the two before picking the largest component.
+    if np.count_nonzero(light_mask) > 0:
+        opened = cv2.morphologyEx(light_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(opened, connectivity=8)
+        if num_labels > 2:
+            largest = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+            light_mask = np.where(labels == largest, 255, 0).astype(np.uint8)
+
     lit_pixels   = np.count_nonzero(light_mask)
     total_pixels = bgr_crop.shape[0] * bgr_crop.shape[1]
     color_conf   = lit_pixels / max(total_pixels, 1)
@@ -475,11 +489,13 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
                          conf: float = 0.3) -> Tuple[str, float, np.ndarray, float, dict]:
     _empty = ("no_top", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0,
               {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0},
-              np.zeros((1, 1, 3), dtype=np.uint8), 0.0, 0.0, 0.0, 0.0)
+              np.zeros((1, 1, 3), dtype=np.uint8), 0.0, 0.0, 0.0, 0.0,
+              np.zeros((1, 1), dtype=np.uint8))
     if beacon_crop is None or beacon_crop.size == 0:
         return ("no_top", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0,
               {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0},
-              np.zeros((1, 1, 3), dtype=np.uint8), 0.0, 0.0, 0.0, 0.0)
+              np.zeros((1, 1, 3), dtype=np.uint8), 0.0, 0.0, 0.0, 0.0,
+              np.zeros((1, 1), dtype=np.uint8))
 
     h, w = beacon_crop.shape[:2]
     display_mask = np.zeros((h, w), dtype=np.uint8)
@@ -513,8 +529,8 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
     lit_region = beacon_crop[rmin:rmax + 1, cmin:cmax + 1]
     mask_region = display_mask[rmin:rmax + 1, cmin:cmax + 1]
 
-    color, color_conf, _, intensity, votes, hue_var, hue_mean, hue_median, hue_mode = classify_beacon_color(lit_region, seg_mask=mask_region)
-    return color, color_conf, display_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode
+    color, color_conf, vote_mask, intensity, votes, hue_var, hue_mean, hue_median, hue_mode = classify_beacon_color(lit_region, seg_mask=mask_region)
+    return color, color_conf, display_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask
 
 
 # ── Detection logger ──────────────────────────────────────────────────────────
@@ -758,6 +774,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                     blink_detector: BlinkDetector = None,
                     video_ts: float = None,
                     save_crops_dir: str = None,
+                    color_pixels_dir: str = None,
                     target_color: str = None,
                     target_blinking=None,
                     aruco_gt=None,
@@ -770,7 +787,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
         label = names.get(cls, str(cls))
 
         crop = clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-        beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
+        beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask = isolate_and_classify(crop, crop_model)
         _ts_classify = time.time()
         if beacon_color == "no_top":
             print("No beacon top detected")
@@ -796,6 +813,16 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                      f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                      f"_{_gt}.png")
             cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
+
+        if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
+            _date = time.strftime("%Y%m%d")
+            _gt   = (f"gt-{target_color or 'unk'}-"
+                     f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
+            fname = (f"pixels_{_date}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                     f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                     f"_{_gt}.png")
+            color_pixels = cv2.bitwise_and(lit_region, lit_region, mask=vote_mask)
+            cv2.imwrite(os.path.join(color_pixels_dir, fname), color_pixels)
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), draw_color, 2)
 
@@ -896,6 +923,12 @@ def run_video(cfg: dict) -> None:
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon-video] Saving crops → {crops_dir}/")
 
+    color_pixels_dir = None
+    if cfg.get("save_color_pixels", False):
+        color_pixels_dir = os.path.splitext(video_path)[0] + "_beacon_color_pixels"
+        os.makedirs(color_pixels_dir, exist_ok=True)
+        print(f"[beacon-video] Saving color-vote pixels → {color_pixels_dir}/")
+
     blink_detector = BlinkDetector(use_variance=cfg["detection"].get("use_variance_mode", False))
     frame_idx     = 0
     paused        = False
@@ -938,6 +971,7 @@ def run_video(cfg: dict) -> None:
                                                 blink_detector=blink_detector,
                                                 video_ts=video_ts,
                                                 save_crops_dir=crops_dir,
+                                                color_pixels_dir=color_pixels_dir,
                                                 target_color=cfg.get("target_color"),
                                                 target_blinking=cfg.get("target_blinking"),
                                                 aruco_gt=aruco_gt,
@@ -1034,6 +1068,12 @@ def run_video_ros(cfg: dict) -> None:
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon-ros-video] Saving crops → {crops_dir}/")
 
+    color_pixels_dir = None
+    if cfg.get("save_color_pixels", False):
+        color_pixels_dir = os.path.splitext(video_path)[0] + "_beacon_color_pixels"
+        os.makedirs(color_pixels_dir, exist_ok=True)
+        print(f"[beacon-ros-video] Saving color-vote pixels → {color_pixels_dir}/")
+
     _apply_color_config(cfg["detection"])
     depth_source = cfg["detection"].get("depth_source", "topic")
     max_dets     = cfg["detection"].get("max_detections")
@@ -1126,7 +1166,7 @@ def run_video_ros(cfg: dict) -> None:
                     det_conf = float(box.conf[0])
 
                     crop = raw[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-                    beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
+                    beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask = isolate_and_classify(crop, crop_model)
                     _ts_classify = time.time()
                     if beacon_color == "no_top":
                         print("No beacon top detected")
@@ -1223,6 +1263,13 @@ def run_video_ros(cfg: dict) -> None:
                                  f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                                  f"_{gt_tag}.png")
                         cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
+
+                    if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
+                        fname = (f"pixels_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                                 f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                                 f"_{gt_tag}.png")
+                        color_pixels = cv2.bitwise_and(lit_region, lit_region, mask=vote_mask)
+                        cv2.imwrite(os.path.join(color_pixels_dir, fname), color_pixels)
 
                 if writer:
                     writer.write(display_frame)
@@ -1322,6 +1369,13 @@ def main(cfg: dict) -> None:
         crops_dir = os.path.join(DEBUG_DIR, "beacon_crops")
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon] Saving crops → {crops_dir}/")
+
+    save_color_pixels = cfg.get("save_color_pixels", False)
+    color_pixels_dir = None
+    if save_color_pixels:
+        color_pixels_dir = os.path.join(DEBUG_DIR, "beacon_color_pixels")
+        os.makedirs(color_pixels_dir, exist_ok=True)
+        print(f"[beacon] Saving color-vote pixels → {color_pixels_dir}/")
 
     save_det_images = cfg.get("save_det_images", False)
     det_images_dir = None
@@ -1434,7 +1488,7 @@ def main(cfg: dict) -> None:
                     )
 
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-                beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
+                beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask = isolate_and_classify(crop, crop_model)
                 _ts_classify = time.time()
                 if beacon_color == "no_top":
                     print("No beacon top detected")
@@ -1549,6 +1603,13 @@ def main(cfg: dict) -> None:
                              f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                              f"_{gt_tag}.png")
                     cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
+
+                if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
+                    fname = (f"pixels_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
+                             f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                             f"_{gt_tag}.png")
+                    color_pixels = cv2.bitwise_and(lit_region, lit_region, mask=vote_mask)
+                    cv2.imwrite(os.path.join(color_pixels_dir, fname), color_pixels)
 
                 if det_images_dir is not None:
                     pad = 20

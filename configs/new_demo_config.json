@@ -9,6 +9,7 @@
   "save_crops": true,
   "save_det_images": true,
   "save_frames":     false,
+  "save_color_pixels":  true,
   "video":      null,
   "target_color":    "red",
   "target_blinking": true,

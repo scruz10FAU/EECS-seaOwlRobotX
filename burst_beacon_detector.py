@@ -57,7 +57,7 @@ _VideoDet = namedtuple("_VideoDet", ["bbox_2d", "position_3d", "confidence", "tr
 # ── Shared analysis ───────────────────────────────────────────────────────────
 
 def _analyse_burst(burst, crop_model, cfg, depth_source,
-                   save_crops_dir=None, det_images_dir=None,
+                   save_crops_dir=None, det_images_dir=None, color_pixels_dir=None,
                    target_color=None, target_blinking=None,
                    log_writer=None, burst_number=None,
                    get_gps_origin_fn=None):
@@ -94,13 +94,13 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
 
             crop = b_rgb[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
             (beacon_color, color_conf, _, intensity, votes,
-             lit_region, hue_var, hue_mean, hue_median, hue_mode) = \
+             lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask) = \
                 isolate_and_classify(crop, crop_model)
             ts_after_classify = time.time()
 
             if beacon_color == "no_top":
                 (beacon_color, color_conf, _, intensity, votes,
-                    lit_region, hue_var, hue_mean, hue_median, hue_mode) = \
+                    lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask) = \
                     isolate_and_classify(b_rgb, crop_model)
                 ts_after_classify = time.time()
 
@@ -194,6 +194,13 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                          f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                          f"_{_gt}.png")
                 cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
+
+            if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
+                fname = (f"pixels_{date_tag}_{_bn}f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                         f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                         f"_{_gt}.png")
+                color_pixels = cv2.bitwise_and(lit_region, lit_region, mask=vote_mask)
+                cv2.imwrite(os.path.join(color_pixels_dir, fname), color_pixels)
 
             if det_images_dir is not None:
                 pad = 20
@@ -289,6 +296,7 @@ def run_burst_ros(cfg: dict) -> None:
     topics          = cfg["topics"]
     save_crops      = cfg.get("save_crops", False)
     save_det_images = cfg.get("save_det_images", False)
+    save_color_pixels = cfg.get("save_color_pixels", False)
     target_color    = cfg.get("target_color")
     target_blinking = cfg.get("target_blinking")
 
@@ -353,6 +361,12 @@ def run_burst_ros(cfg: dict) -> None:
         os.makedirs(det_images_dir, exist_ok=True)
         print(f"[burst] Saving detection images → {det_images_dir}/")
 
+    color_pixels_dir = None
+    if save_color_pixels:
+        color_pixels_dir = os.path.join(DEBUG_DIR, "beacon_color_pixels")
+        os.makedirs(color_pixels_dir, exist_ok=True)
+        print(f"[burst] Saving color-vote pixels → {color_pixels_dir}/")
+
     if display:
         cv2.namedWindow("Burst Detector", cv2.WINDOW_NORMAL)
 
@@ -405,6 +419,7 @@ def run_burst_ros(cfg: dict) -> None:
                     lv = _analyse_burst(burst, crop_model, cfg, depth_source,
                                         save_crops_dir=crops_dir,
                                         det_images_dir=det_images_dir,
+                                        color_pixels_dir=color_pixels_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
@@ -469,6 +484,7 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     log             = cfg["log"]
     save_crops      = cfg.get("save_crops", False)
     save_det_images = cfg.get("save_det_images", False)
+    save_color_pixels = cfg.get("save_color_pixels", False)
     target_color    = cfg.get("target_color")
     target_blinking = cfg.get("target_blinking")
 
@@ -552,6 +568,12 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
         os.makedirs(det_images_dir, exist_ok=True)
         print(f"[burst] Saving detection images → {det_images_dir}/")
 
+    color_pixels_dir = None
+    if save_color_pixels:
+        color_pixels_dir = os.path.join(DEBUG_DIR, "beacon_color_pixels")
+        os.makedirs(color_pixels_dir, exist_ok=True)
+        print(f"[burst] Saving color-vote pixels → {color_pixels_dir}/")
+
     log_fh = log_writer = None
     if log:
         ts_tag    = time.strftime("%Y%m%d_%H%M%S")
@@ -620,6 +642,7 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                     lv = _analyse_burst(burst, crop_model, cfg, depth_source,
                                         save_crops_dir=crops_dir,
                                         det_images_dir=det_images_dir,
+                                        color_pixels_dir=color_pixels_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
