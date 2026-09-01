@@ -434,17 +434,33 @@ def classify_beacon_color(bgr_crop: np.ndarray, seg_mask: np.ndarray = None) -> 
     if seg_mask is not None and seg_mask.shape == light_mask.shape:
         light_mask = cv2.bitwise_and(light_mask, seg_mask)
 
-    # Keep only the largest connected blob of lit pixels. When the crop_model
-    # box doesn't tightly follow a slanted/rotated beacon top, the box corners
-    # can include a separate patch of bright background (e.g. sunlit water)
-    # that would otherwise vote alongside the real LED and skew the hue
-    # classification. A light morphological open first breaks any thin sliver
-    # connecting the two before picking the largest component.
+    # Keep only one connected blob of lit pixels — the one most likely to be
+    # the beacon itself rather than background. When the crop_model box
+    # doesn't tightly follow a slanted/rotated beacon top, it can include a
+    # patch of bright background (e.g. sunlit water) that would otherwise
+    # vote alongside the real LED and skew the hue classification. That
+    # spillover patch is bounded by the crop on at least one side (it's
+    # background cut off by the box edge, not a self-contained object), so
+    # among blobs that don't touch the crop border we pick the largest;
+    # only if every blob touches the border do we fall back to the largest
+    # blob overall. A light morphological open first breaks any thin sliver
+    # connecting a background patch to the real blob.
     if np.count_nonzero(light_mask) > 0:
         opened = cv2.morphologyEx(light_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(opened, connectivity=8)
         if num_labels > 2:
-            largest = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+            mask_h, mask_w = opened.shape
+            interior_labels = [
+                lbl for lbl in range(1, num_labels)
+                if stats[lbl, cv2.CC_STAT_LEFT] > 0
+                and stats[lbl, cv2.CC_STAT_TOP] > 0
+                and stats[lbl, cv2.CC_STAT_LEFT] + stats[lbl, cv2.CC_STAT_WIDTH] < mask_w
+                and stats[lbl, cv2.CC_STAT_TOP] + stats[lbl, cv2.CC_STAT_HEIGHT] < mask_h
+            ]
+            if interior_labels:
+                largest = max(interior_labels, key=lambda lbl: stats[lbl, cv2.CC_STAT_AREA])
+            else:
+                largest = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
             light_mask = np.where(labels == largest, 255, 0).astype(np.uint8)
 
     lit_pixels   = np.count_nonzero(light_mask)
