@@ -9,11 +9,11 @@
   "save_crops": true,
   "save_det_images": true,
   "save_frames":     false,
-  "save_color_pixels":  true,
+  "save_color_pixels":  false,
   "video":      null,
-  "target_color":    "red",
-  "target_blinking": false,
-  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/new_beacon_videos/solid_red_square.MP4",
+  "target_color":    "green",
+  "target_blinking": true,
+  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/new_beacon_videos/green_blink_square_out.MP4",
 
   "topics": {
     "drone_pose":     null,
