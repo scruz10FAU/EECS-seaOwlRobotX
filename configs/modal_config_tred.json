@@ -1,6 +1,6 @@
 {
   "model":      "models/square_beacon.pt",
-  "crop_model": "models/beacon_square_top.pt",
+  "crop_model": "models/beacon_square_top93.pt",
   "conf":       0.5,
   "display":    false,
   "true_dist":  4.572,
@@ -8,7 +8,7 @@
   "log":        true,
   "save_crops": true,
   "save_det_images": true,
-  "save_frames":     false,
+  "save_frames":     true,
   "target_color":    "red",
   "target_blinking": true,
   "video":      null,
