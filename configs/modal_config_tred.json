@@ -3,7 +3,7 @@
   "crop_model": "models/beacon_square_top93.pt",
   "conf":       0.5,
   "display":    false,
-  "true_dist":  4.572,
+  "true_dist":  4.24,
   "save":       false,
   "log":        true,
   "save_crops": true,
