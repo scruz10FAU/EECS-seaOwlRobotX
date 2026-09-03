@@ -1,6 +1,6 @@
 {
   "model":      "models/square_beacon.pt",
-  "crop_model": "models/beacon_square_top93.pt",
+  "crop_model": "models/beacon_square_top93b.pt",
   "conf":       0.5,
   "display":    false,
   "true_dist":  4.24,
