@@ -1,0 +1,129 @@
+Commands test: 
+
+# ------------------------------------------------------------ 
+
+# STARLING 2 MAX - BEACON CAMERA FIELD TEST 
+
+# Camera stream: /hires_front_small_color 
+
+# ------------------------------------------------------------ 
+
+  
+
+# 1. Check current camera exposure/gain 
+
+voxl-inspect-cam hires_front_small_color 
+
+  
+
+  
+
+# ------------------------------------------------------------ 
+
+# MANUAL EXPOSURE TESTS 
+
+# Start brighter and progressively reduce exposure. 
+
+# Watch /hires_front_small_color after each change. 
+
+# ------------------------------------------------------------ 
+
+  
+
+# Test 1 - 5 ms exposure, low gain 
+
+voxl-send-command hires_front_small_color set_exp_gain 5.0 100 
+
+  
+
+# Test 2 - 3 ms exposure 
+
+voxl-send-command hires_front_small_color set_exp_gain 3.0 100 
+
+  
+
+# Test 3 - 2 ms exposure 
+
+voxl-send-command hires_front_small_color set_exp_gain 2.0 100 
+
+  
+
+# Test 4 - 1 ms exposure 
+
+voxl-send-command hires_front_small_color set_exp_gain 1.0 100 
+
+  
+
+  
+
+# ------------------------------------------------------------ 
+
+# IF IMAGE IS TOO DARK 
+
+# Keep exposure around 2 ms and progressively increase gain. 
+
+# ------------------------------------------------------------ 
+
+  
+
+voxl-send-command hires_front_small_color set_exp_gain 2.0 150 
+
+  
+
+voxl-send-command hires_front_small_color set_exp_gain 2.0 200 
+
+  
+
+voxl-send-command hires_front_small_color set_exp_gain 2.0 300 
+
+  
+
+  
+
+# ------------------------------------------------------------ 
+
+# ADDITIONAL EXPOSURE OPTIONS 
+
+# Useful if the best value is somewhere between tests above. 
+
+# ------------------------------------------------------------ 
+
+  
+
+voxl-send-command hires_front_small_color set_exp_gain 4.0 100 
+
+  
+
+voxl-send-command hires_front_small_color set_exp_gain 2.5 100 
+
+  
+
+voxl-send-command hires_front_small_color set_exp_gain 1.5 100 
+
+  
+
+  
+
+# ------------------------------------------------------------ 
+
+# CHECK CURRENT SETTINGS AFTER FINDING A GOOD RESULT 
+
+# ------------------------------------------------------------ 
+
+  
+
+voxl-inspect-cam hires_front_small_color 
+
+  
+
+  
+
+# ------------------------------------------------------------ 
+
+# RETURN CAMERA TO AUTO EXPOSURE 
+
+# ------------------------------------------------------------ 
+
+  
+
+voxl-send-command hires_front_small_color start_ae 
