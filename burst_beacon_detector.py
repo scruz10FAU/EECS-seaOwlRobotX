@@ -301,6 +301,7 @@ def run_burst_ros(cfg: dict) -> None:
     burst_cfg = cfg.get("burst", {})
     interval  = burst_cfg.get("interval_sec", _BURST_INTERVAL)
     count     = burst_cfg.get("frame_count",  _BURST_COUNT)
+    nodet_save_interval = burst_cfg.get("nodet_save_interval_sec", 2.0)
 
     model_path      = cfg["model"]
     crop_model_path = cfg["crop_model"]
@@ -310,6 +311,7 @@ def run_burst_ros(cfg: dict) -> None:
     save_crops      = cfg.get("save_crops", False)
     save_det_images = cfg.get("save_det_images", False)
     save_color_pixels = cfg.get("save_color_pixels", False)
+    save_frames     = cfg.get("save_frames", False)
     target_color    = cfg.get("target_color")
     target_blinking = cfg.get("target_blinking")
 
@@ -380,6 +382,13 @@ def run_burst_ros(cfg: dict) -> None:
         os.makedirs(color_pixels_dir, exist_ok=True)
         print(f"[burst] Saving color-vote pixels → {color_pixels_dir}/")
 
+    frames_dir = None
+    if save_frames:
+        frames_dir = os.path.join(DEBUG_DIR, "full_frames")
+        os.makedirs(frames_dir, exist_ok=True)
+        print(f"[burst] Saving frames → {frames_dir}/ "
+              f"(one every {nodet_save_interval:.1f}s while searching with no detections)")
+
     if display:
         cv2.namedWindow("Burst Detector", cv2.WINDOW_NORMAL)
 
@@ -387,9 +396,10 @@ def run_burst_ros(cfg: dict) -> None:
     depth_source = cfg["detection"].get("depth_source", "topic")
     burst_count  = 0
 
-    state         = "searching"
-    burst: list   = []
-    last_burst_ts = -999.0
+    state             = "searching"
+    burst: list       = []
+    last_burst_ts     = -999.0
+    last_nodet_save   = -999.0
 
     def _publish(json_str):
         msg      = String()
@@ -419,6 +429,10 @@ def run_burst_ros(cfg: dict) -> None:
                     burst         = [(frame_ts, rgb_clean, dets, depth, drone_pos, drone_quat)]
                     last_burst_ts = frame_ts
                     print(f"[burst]   1/{count}")
+                elif frames_dir is not None and frame_ts - last_nodet_save >= nodet_save_interval:
+                    fname = f"nodet_{time.strftime('%Y%m%d')}_t{frame_ts:.2f}.png"
+                    cv2.imwrite(os.path.join(frames_dir, fname), rgb_clean)
+                    last_nodet_save = frame_ts
 
             elif state == "collecting":
                 if frame_ts - last_burst_ts >= interval:
@@ -490,6 +504,7 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     burst_cfg = cfg.get("burst", {})
     interval  = burst_cfg.get("interval_sec", _BURST_INTERVAL)
     count     = burst_cfg.get("frame_count",  _BURST_COUNT)
+    nodet_save_interval = burst_cfg.get("nodet_save_interval_sec", 2.0)
 
     model_path      = cfg["model"]
     crop_model_path = cfg["crop_model"]
@@ -498,6 +513,7 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     save_crops      = cfg.get("save_crops", False)
     save_det_images = cfg.get("save_det_images", False)
     save_color_pixels = cfg.get("save_color_pixels", False)
+    save_frames     = cfg.get("save_frames", False)
     target_color    = cfg.get("target_color")
     target_blinking = cfg.get("target_blinking")
 
@@ -587,6 +603,13 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
         os.makedirs(color_pixels_dir, exist_ok=True)
         print(f"[burst] Saving color-vote pixels → {color_pixels_dir}/")
 
+    frames_dir = None
+    if save_frames:
+        frames_dir = os.path.join(DEBUG_DIR, "full_frames")
+        os.makedirs(frames_dir, exist_ok=True)
+        print(f"[burst] Saving full frames → {frames_dir}/ "
+              f"(one every {nodet_save_interval:.1f}s while searching with no detections)")
+
     log_fh = log_writer = None
     if log:
         ts_tag    = time.strftime("%Y%m%d_%H%M%S")
@@ -602,9 +625,10 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     depth_source = cfg["detection"].get("depth_source", "topic")
     burst_count  = 0
 
-    state         = "searching"
-    burst: list   = []
-    last_burst_ts = -999.0
+    state             = "searching"
+    burst: list       = []
+    last_burst_ts     = -999.0
+    last_nodet_save   = -999.0
 
     try:
         while True:
@@ -642,6 +666,10 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                     burst         = [(frame_ts, rgb_clean, dets, None, drone_pos, drone_quat)]
                     last_burst_ts = frame_ts
                     print(f"[burst]   1/{count}  (t={frame_ts:.2f}s)")
+                elif frames_dir is not None and frame_ts - last_nodet_save >= nodet_save_interval:
+                    fname = f"nodet_{time.strftime('%Y%m%d')}_t{frame_ts:.2f}.png"
+                    cv2.imwrite(os.path.join(frames_dir, fname), rgb_clean)
+                    last_nodet_save = frame_ts
 
             elif state == "collecting":
                 if frame_ts - last_burst_ts >= interval:

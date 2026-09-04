@@ -21,6 +21,7 @@
     "depth":          "/tof_depth",
     "drone_pose":     "/vvhub_body_wrt_local/pose",
     "gps_origin":     "/fmu/out/vehicle_gps_position",
+    "gps_msg_type":   "px4_sensor_gps",
     "detections_pub": "/seabird/beacon_detections",
     "aruco_pub":      "/seabird/aruco_ground_truth"
   },
