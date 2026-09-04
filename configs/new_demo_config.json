@@ -11,9 +11,9 @@
   "save_frames":     false,
   "save_color_pixels":  false,
   "video":      null,
-  "target_color":    "green",
+  "target_color":    "red",
   "target_blinking": true,
-  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/new_beacon_videos/green_blink_square_out.MP4",
+  "ros_video":  "/workspaces/isaac_ros-dev/isaac_ros_assets/new_beacon_videos/red_blink_square_out.MP4",
 
   "topics": {
     "drone_pose":     null,
