@@ -37,7 +37,7 @@ voxl-send-command hires_front_small_color set_exp_gain 5.0 100
   
 
 # Test 2 - 3 ms exposure 
-
+****BEST SO FAR****
 voxl-send-command hires_front_small_color set_exp_gain 3.0 100 
 
   
@@ -69,7 +69,7 @@ voxl-send-command hires_front_small_color set_exp_gain 1.0 100
 voxl-send-command hires_front_small_color set_exp_gain 2.0 150 
 
   
-
+***current***
 voxl-send-command hires_front_small_color set_exp_gain 2.0 200 
 
   

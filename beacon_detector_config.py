@@ -853,7 +853,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
         _ts_blink = time.time()
 
         if save_crops_dir is not None and lit_region.size > 0:
-            _date = time.strftime("%Y%m%d")
+            _date = time.strftime("%Y%m%d_%H%M%S")
             _gt   = (f"gt-{target_color or 'unk'}-"
                      f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
             _b    = blink_info.get("is_blinking") if blink_info else None
@@ -865,7 +865,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
             cv2.imwrite(os.path.join(save_crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
 
         if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
-            _date = time.strftime("%Y%m%d")
+            _date = time.strftime("%Y%m%d_%H%M%S")
             _gt   = (f"gt-{target_color or 'unk'}-"
                      f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
             fname = (f"pixels_{_date}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
@@ -1063,7 +1063,7 @@ def run_video_ros(cfg: dict) -> None:
     display         = cfg["display"]
     topics          = cfg["topics"]
     save_crops      = cfg.get("save_crops", False)
-    date_tag = time.strftime("%Y%m%d")
+    date_tag = time.strftime("%Y%m%d_%H%M%S")
     _tc = cfg.get("target_color") or "unk"
     _tb = cfg.get("target_blinking")
     gt_tag   = f"gt-{_tc}-{'blink' if _tb is True else 'steady' if _tb is False else 'unk'}"
@@ -1441,7 +1441,7 @@ def main(cfg: dict) -> None:
         os.makedirs(frames_dir, exist_ok=True)
         print(f"[beacon] Saving full frames → {frames_dir}/")
 
-    date_tag = time.strftime("%Y%m%d")
+    date_tag = time.strftime("%Y%m%d_%H%M%S")
     _tc = cfg.get("target_color") or "unk"
     _tb = cfg.get("target_blinking")
     gt_tag   = f"gt-{_tc}-{'blink' if _tb is True else 'steady' if _tb is False else 'unk'}"

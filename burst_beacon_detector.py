@@ -70,7 +70,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
     """
     blink_detector = BlinkDetector(use_variance=cfg.get("detection", {}).get("use_variance_mode", False))
     last_valid: dict = {}
-    date_tag = time.strftime("%Y%m%d")
+    date_tag = time.strftime("%Y%m%d_%H%M%S")
 
     gps_gt_cfg = cfg.get("gps_ground_truth", {})
     obj_height_agl = cfg.get("detection", {}).get("beacon_z_m", 0.0)
