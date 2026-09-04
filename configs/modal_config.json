@@ -1,9 +1,9 @@
 {
   "model":      "models/square_beacon.pt",
-  "crop_model": "models/beacon_square_top.pt",
+  "crop_model": "models/beacon_square_top93b.pt",
   "conf":       0.5,
   "display":    false,
-  "true_dist":  0.4826,
+  "true_dist":  4.24,
   "save":       false,
   "log":        true,
   "save_crops": false,

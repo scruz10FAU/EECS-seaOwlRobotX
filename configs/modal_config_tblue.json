@@ -1,14 +1,14 @@
 {
   "model":      "models/square_beacon.pt",
-  "crop_model": "models/beacon_square_top.pt",
+  "crop_model": "models/beacon_square_top93b.pt",
   "conf":       0.5,
   "display":    false,
-  "true_dist":  4.572,
+  "true_dist":  4.24,
   "save":       false,
   "log":        true,
   "save_crops": true,
   "save_det_images": true,
-  "save_frames":     false,
+  "save_frames":     true,
   "target_color":    "blue",
   "target_blinking": true,
   "video":      null,
@@ -86,7 +86,7 @@
   
   "gps_ground_truth": {
   "enabled": true,
-  "latitude": 26.7116516,
-  "longitude": -80.2873633
+  "latitude": 26.7117290,
+  "longitude": -80.2865831
   }
 }
