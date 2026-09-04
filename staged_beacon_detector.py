@@ -362,12 +362,18 @@ def run_staged_ros(cfg: dict) -> None:
                     last_nodet_save = frame_ts
 
             elif state == "collecting":
-                if frame_ts - last_burst_ts >= interval:
+                if immediate:
+                    print(f"[staged] {immediate[0][0]} detected during stage-2 collection — "
+                          f"abandoning burst (already reported above), resuming search")
+                    burst = []
+                    state = "searching"
+
+                elif frame_ts - last_burst_ts >= interval:
                     burst.append((frame_ts, rgb_clean, stage2_dets, depth, drone_pos, drone_quat))
                     last_burst_ts = frame_ts
                     print(f"[staged]   {len(burst)}/{count}")
 
-                if len(burst) >= count:
+                if state == "collecting" and len(burst) >= count:
                     print("[staged] Stage-2 collection complete — analysing")
                     burst_count += 1
                     lv = _analyse_burst(burst, crop_model, cfg, depth_source,
@@ -588,12 +594,18 @@ def run_staged_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                     print(f"[staged]   1/{count}  (t={frame_ts:.2f}s)")
 
             elif state == "collecting":
-                if frame_ts - last_burst_ts >= interval:
+                if immediate:
+                    print(f"[staged] {immediate[0][0]} detected during stage-2 collection — "
+                          f"abandoning burst (already reported above), resuming search")
+                    burst = []
+                    state = "searching"
+
+                elif frame_ts - last_burst_ts >= interval:
                     burst.append((frame_ts, rgb_clean, stage2_dets, None, drone_pos, drone_quat))
                     last_burst_ts = frame_ts
                     print(f"[staged]   {len(burst)}/{count}  (t={frame_ts:.2f}s)")
 
-                if len(burst) >= count:
+                if state == "collecting" and len(burst) >= count:
                     print("[staged] Stage-2 collection complete — analysing")
                     burst_count += 1
                     lv = _analyse_burst(burst, crop_model, cfg, depth_source,

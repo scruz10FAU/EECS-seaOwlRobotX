@@ -244,6 +244,18 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
     aruco_gt_topic    = topics.get("aruco_pub", "/seabird/aruco_ground_truth")
     depth_source      = cfg_detection.get("depth_source", "topic")
 
+    # "geopoint_stamped" (default) -- geographic_msgs/GeoPointStamped, published
+    #   by MAVROS in sim (topics.gps_origin = /mavros/global_position/gp_origin).
+    # "px4_sensor_gps" -- px4_msgs/msg/SensorGps, published directly by PX4's
+    #   uXRCE-DDS bridge on the physical rig (topics.gps_origin =
+    #   /fmu/out/vehicle_gps_position). lat/lon are int32 in 1e-7 deg, alt is
+    #   int32 in mm; fix_type < 3 means no usable 3D fix -- don't trust it.
+    gps_msg_type = topics.get("gps_msg_type", "geopoint_stamped")
+    GpsMsgType = GeoPointStamped
+    if gps_msg_type == "px4_sensor_gps":
+        from px4_msgs.msg import SensorGps
+        GpsMsgType = SensorGps
+
     fx, fy   = cfg_camera["fx"],    cfg_camera["fy"]
     cx, cy   = cfg_camera["cx"],    cfg_camera["cy"]
     img_w    = cfg_camera["img_w"]
@@ -259,6 +271,33 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                 self._depth    = None
                 self._frame_ts = ts
                 self._new_frame = True
+
+        def _on_gps_origin_px4(self, msg):
+            """
+            px4_msgs/msg/SensorGps callback (physical rig, topics.gps_msg_type
+            == "px4_sensor_gps"). lat/lon are int32 in 1e-7 degrees, alt is
+            int32 in mm. fix_type < 3 means no usable 3D fix -- PX4 still
+            publishes at that point, but lat/lon/alt are meaningless (often
+            0 or stale) and eph/s_variance/c_variance carry sentinel "invalid"
+            values, so those readings are dropped rather than overwriting a
+            previous good fix with garbage.
+            """
+            if msg.fix_type < 3:
+                self.get_logger().warn(
+                    f"GPS origin (px4/SensorGps): no 3D fix yet "
+                    f"(fix_type={msg.fix_type}) — ignoring reading",
+                    throttle_duration_sec=5.0,
+                )
+                return
+            lat = msg.lat * 1e-7
+            lon = msg.lon * 1e-7
+            alt = msg.alt * 1e-3
+            with self._gps_origin_lock:
+                self._gps_origin = (lat, lon, alt)
+            self.get_logger().info(
+                f"GPS origin (px4/SensorGps): lat={lat:.7f} lon={lon:.7f} "
+                f"fix_type={msg.fix_type}"
+            )
 
         def open(self):
             if self._is_open:
@@ -302,8 +341,10 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                     durability=DurabilityPolicy.TRANSIENT_LOCAL,
                     depth=1,
                 )
+                gps_callback = (self._on_gps_origin_px4 if gps_msg_type == "px4_sensor_gps"
+                               else self._on_gps_origin)
                 self._origin_sub = self.create_subscription(
-                    GeoPointStamped, gps_topic, self._on_gps_origin, origin_qos
+                    GpsMsgType, gps_topic, gps_callback, origin_qos
                 )
             self._is_open = True
             self.get_logger().info("BeaconCamera open — waiting for frames…")
@@ -329,8 +370,10 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                     durability=DurabilityPolicy.TRANSIENT_LOCAL,
                     depth=1,
                 )
+                gps_callback = (self._on_gps_origin_px4 if gps_msg_type == "px4_sensor_gps"
+                               else self._on_gps_origin)
                 self._origin_sub = self.create_subscription(
-                    GeoPointStamped, gps_topic, self._on_gps_origin, origin_qos
+                    GpsMsgType, gps_topic, gps_callback, origin_qos
                 )
             self._is_open = True
             self.get_logger().info("BeaconCamera open (video-file mode) — pose + GPS only")

@@ -5,6 +5,7 @@
     "camera_info":   "/hires_front_small_color/camera_info",
     "drone_pose":    "/vvhub_body_wrt_local/pose",
     "gps_origin":    "/fmu/out/vehicle_gps_position",
+    "gps_msg_type":  "px4_sensor_gps",
     "aruco_pub":     "/seabird/aruco_detections"
   },
 
