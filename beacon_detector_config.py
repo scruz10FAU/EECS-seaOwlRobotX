@@ -252,9 +252,18 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
     #   int32 in mm; fix_type < 3 means no usable 3D fix -- don't trust it.
     gps_msg_type = topics.get("gps_msg_type", "geopoint_stamped")
     GpsMsgType = GeoPointStamped
+    gps_enabled = True
     if gps_msg_type == "px4_sensor_gps":
-        from px4_msgs.msg import SensorGps
-        GpsMsgType = SensorGps
+        try:
+            from px4_msgs.msg import SensorGps
+            GpsMsgType = SensorGps
+        except ImportError:
+            print("[beacon] WARNING: gps_msg_type=\"px4_sensor_gps\" but the "
+                  "'px4_msgs' ROS2 package isn't installed in this environment "
+                  "(build it in this workspace, e.g. from "
+                  "github.com/PX4/px4_msgs) -- GPS origin subscription disabled "
+                  "for this run; gps_position/gps_ground_truth will stay blank.")
+            gps_enabled = False
 
     fx, fy   = cfg_camera["fx"],    cfg_camera["fy"]
     cx, cy   = cfg_camera["cx"],    cfg_camera["cy"]
@@ -335,7 +344,7 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                 self._pose_sub = self.create_subscription(
                     PoseStamped, drone_pose_topic, self._on_drone_pose, qos
                 )
-            if gps_topic:
+            if gps_topic and gps_enabled:
                 origin_qos = QoSProfile(
                     reliability=ReliabilityPolicy.RELIABLE,
                     durability=DurabilityPolicy.TRANSIENT_LOCAL,
@@ -364,7 +373,7 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                 self._pose_sub = self.create_subscription(
                     PoseStamped, drone_pose_topic, self._on_drone_pose, qos
                 )
-            if gps_topic:
+            if gps_topic and gps_enabled:
                 origin_qos = QoSProfile(
                     reliability=ReliabilityPolicy.RELIABLE,
                     durability=DurabilityPolicy.TRANSIENT_LOCAL,
