@@ -21,6 +21,7 @@ Detection pipeline for colored, optionally blinking, beacon lights mounted on a 
 | `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
 | `beacon_camera.py` | `BeaconCamera` ROS2 node — camera image subscriptions, depth decoding, and pose/GPS callbacks. |
 | `batch_detect.py` | Headless batch processor — runs detection over multiple video files and writes a CSV + summary. |
+| `check_drone_pose.py` | Standalone diagnostic — checks whether the configured AGL height source (`px4_local_position` or `vvhub_pose`) actually publishes data reachable from wherever it's run, independent of the full detector pipeline. |
 
 ---
 
@@ -206,6 +207,8 @@ All keys are optional — omitted keys fall back to their defaults.
 | `topics.depth` | `<prefix>/depth/depth_registered` | Depth map subscription |
 | `topics.drone_pose` | `/mavros/local_position/pose` | Drone pose subscription (`null` to disable) |
 | `topics.gps_origin` | `/mavros/global_position/gp_origin` | GPS origin subscription (`null` to disable) |
+| `topics.drone_height_source` | `"vvhub_pose"` | AGL height source for GPS ground truth: `"vvhub_pose"` (default — `drone_pos[2]` from `topics.drone_pose`, i.e. VIO) or `"px4_local_position"` (from `topics.local_position` instead — for when VIO is disabled, e.g. flying outdoors on GPS and `drone_pose` never publishes) |
+| `topics.local_position` | `/fmu/out/vehicle_local_position` | PX4 local position subscription (`px4_msgs/msg/VehicleLocalPosition`). Only used when `drone_height_source` is `"px4_local_position"`; falls back to `"vvhub_pose"` with a warning if `px4_msgs` isn't installed |
 | `topics.detections_pub` | `/seabird/beacon_detections` | Beacon detection publish topic |
 | `topics.aruco_pub` | `/seabird/aruco_ground_truth` | ArUco ground-truth publish topic |
 
@@ -263,7 +266,7 @@ Computes a ground-truth distance from the drone's live GPS fix to a known GPS lo
 | `latitude` | `null` | Known latitude of the detected object |
 | `longitude` | `null` | Known longitude of the detected object |
 
-Horizontal separation is computed from GPS lat/lon using the same flat-earth approximation `local_enu_to_gps` uses (accurate at the short ranges typical of this mission). Vertical separation deliberately does **not** use GPS altitude (too noisy over short ranges) — it's the drone's measured AGL height (`drone_pos[2]` from its local pose) minus `detection.beacon_z_m` (the beacon's own known AGL height, default `0.0` — reuses the same field `estimate_distance_from_bbox()` already uses for bbox-based depth, so a beacon's height above ground is configured in one place). Adds `gt_gps_dist_m`, `gt_gps_horiz_m`, `gt_gps_vert_m`, `gt_gps_obj_lat`, `gt_gps_obj_lon`, `gt_gps_drone_height_agl` to the CSV log (see below) — `gt_gps_obj_lat`/`gt_gps_obj_lon` echo the configured object location (not the drone's), so a session's CSV always records which ground-truth target it was measured against. Also adds a `gps_ground_truth: {distance_m, horizontal_m, vertical_m}` field on burst results published by `burst_beacon_detector.py`. Wired into `beacon_detector_config.py`'s live ROS mode (`main()`), `run_video_ros()`, and `burst_beacon_detector.py`'s live and ROS-video modes.
+Horizontal separation is computed from GPS lat/lon using the same flat-earth approximation `local_enu_to_gps` uses (accurate at the short ranges typical of this mission). Vertical separation deliberately does **not** use GPS altitude (too noisy over short ranges) — it's the drone's measured AGL height minus `detection.beacon_z_m` (the beacon's own known AGL height, default `0.0` — reuses the same field `estimate_distance_from_bbox()` already uses for bbox-based depth, so a beacon's height above ground is configured in one place). That AGL height itself comes from `get_drone_height_agl()`, which transparently uses whichever source `topics.drone_height_source` selects — `drone_pos[2]` from the VIO pose topic by default, or PX4's own `VehicleLocalPosition.z` (negated, since PX4's NED convention is down-positive) when VIO is disabled — so callers don't need to know which one is active. Adds `gt_gps_dist_m`, `gt_gps_horiz_m`, `gt_gps_vert_m`, `gt_gps_obj_lat`, `gt_gps_obj_lon`, `gt_gps_drone_height_agl` to the CSV log (see below) — `gt_gps_obj_lat`/`gt_gps_obj_lon` echo the configured object location (not the drone's), so a session's CSV always records which ground-truth target it was measured against. Also adds a `gps_ground_truth: {distance_m, horizontal_m, vertical_m}` field on burst results published by `burst_beacon_detector.py`. Wired into `beacon_detector_config.py`'s live ROS mode (`main()`), `run_video_ros()`, and `burst_beacon_detector.py`'s and `staged_beacon_detector.py`'s live and ROS-video modes.
 
 ---
 
@@ -280,11 +283,13 @@ Uses the modal camera driver and ToF depth sensor topics.
 | `topics.depth` | `/tof_depth` |
 | `topics.drone_pose` | `/vvhub_body_wrt_local/pose` |
 | `topics.gps_origin` | `/fmu/out/vehicle_gps_position` |
+| `topics.drone_height_source` | `"px4_local_position"` — set this when VIO/VVHub is disabled (e.g. flying outdoors on GPS), since `drone_pose` never publishes in that case |
+| `topics.local_position` | `/fmu/out/vehicle_local_position` (only used when `drone_height_source` is `"px4_local_position"`) |
 
 **Prerequisites before launching:**
 - Modal camera driver running (publishes `/hires_front_small_color` and `/tof_depth`)
-- VVHub running (publishes `/vvhub_body_wrt_local/pose`)
-- micro-ROS agent running (bridges PX4 → `/fmu/out/vehicle_gps_position`)
+- VVHub running (publishes `/vvhub_body_wrt_local/pose`) — **or**, if VIO is intentionally disabled outdoors, set `topics.drone_height_source` to `"px4_local_position"` instead so AGL height comes from PX4 directly. Use `check_drone_pose.py` to confirm whichever source is configured is actually reachable before flying.
+- micro-ROS agent running (bridges PX4 → `/fmu/out/vehicle_gps_position`, and `/fmu/out/vehicle_local_position` if using the `px4_local_position` height source)
 
 ### beacon_config_sim.json — Isaac Sim
 
