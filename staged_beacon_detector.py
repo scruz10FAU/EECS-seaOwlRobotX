@@ -83,7 +83,7 @@ def _normalize_color_class(name: str) -> str:
 
 def _publish_immediate(color, det_conf, bbox, frame_ts, drone_pos, drone_quat, cfg,
                        get_gps_origin_fn, publish_fn, log_writer, frame_idx, det_idx,
-                       img_w, img_h):
+                       img_w, img_h, get_drone_height_agl_fn=None):
     """
     Report a red/green detection right away: no burst collection, no
     crop_model, no HSV vote. Blink status is asserted True (not measured) --
@@ -119,11 +119,12 @@ def _publish_immediate(color, det_conf, bbox, frame_ts, drone_pos, drone_quat, c
     gps_gt_cfg     = cfg.get("gps_ground_truth", {})
     obj_height_agl = det_cfg.get("beacon_z_m", 0.0)
     gps_gt_info    = None
-    if gps_gt_cfg.get("enabled") and get_gps_origin_fn is not None and drone_pos is not None:
-        origin = get_gps_origin_fn()
+    if gps_gt_cfg.get("enabled") and get_gps_origin_fn is not None:
+        d_height_agl = (get_drone_height_agl_fn() if get_drone_height_agl_fn is not None
+                        else (drone_pos[2] if drone_pos is not None else None))
+        origin = get_gps_origin_fn() if d_height_agl is not None else None
         if origin is not None:
             d_lat, d_lon, _ = origin
-            d_height_agl = drone_pos[2]
             dist, horiz, vert = gps_ground_truth_distance(
                 d_lat, d_lon, d_height_agl,
                 gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], obj_height_agl,
@@ -336,7 +337,8 @@ def run_staged_ros(cfg: dict) -> None:
                 _publish_immediate(color, det_conf, bbox, frame_ts, drone_pos, drone_quat, cfg,
                                    cam.get_gps_origin, _publish, log_writer,
                                    frame_idx=immediate_count, det_idx=0,
-                                   img_w=rgb.shape[1], img_h=rgb.shape[0])
+                                   img_w=rgb.shape[1], img_h=rgb.shape[0],
+                                   get_drone_height_agl_fn=cam.get_drone_height_agl)
                 if det_images_dir is not None:
                     x1, y1, x2, y2 = bbox
                     pad = 20
@@ -384,7 +386,8 @@ def run_staged_ros(cfg: dict) -> None:
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
                                         burst_number=burst_count,
-                                        get_gps_origin_fn=cam.get_gps_origin)
+                                        get_gps_origin_fn=cam.get_gps_origin,
+                                        get_drone_height_agl_fn=cam.get_drone_height_agl)
                     if not lv:
                         print("[staged] No valid detections in stage-2 burst")
                     else:
@@ -466,10 +469,11 @@ def run_staged_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     print(f"[staged]   immediate colors: {_IMMEDIATE_COLORS}  stage-2 colors: {_STAGE2_COLORS}")
     print(f"[staged]   stage-2 burst: interval={interval}s  frames/burst={count}")
 
-    cam        = None
-    rclpy      = None
-    publish_fn = None
-    get_gps_fn = lambda: None
+    cam           = None
+    rclpy         = None
+    publish_fn    = None
+    get_gps_fn    = lambda: None
+    get_height_fn = lambda: None
 
     if use_ros:
         _import_ros()
@@ -492,8 +496,9 @@ def run_staged_video(cfg: dict, video_path: str, use_ros: bool) -> None:
             msg.data = json_str
             cam.detection_pub.publish(msg)
 
-        publish_fn = _publish
-        get_gps_fn = cam.get_gps_origin
+        publish_fn    = _publish
+        get_gps_fn    = cam.get_gps_origin
+        get_height_fn = cam.get_drone_height_agl
         print(f"[staged] Publishing → {topics['detections_pub']}")
 
     gps_gt_cfg = cfg.get("gps_ground_truth", {})
@@ -573,7 +578,8 @@ def run_staged_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                 _publish_immediate(color, det_conf, bbox, frame_ts, drone_pos, drone_quat, cfg,
                                    get_gps_fn, publish_fn, log_writer,
                                    frame_idx=immediate_count, det_idx=0,
-                                   img_w=raw.shape[1], img_h=raw.shape[0])
+                                   img_w=raw.shape[1], img_h=raw.shape[0],
+                                   get_drone_height_agl_fn=get_height_fn)
                 if det_images_dir is not None:
                     x1, y1, x2, y2 = bbox
                     pad = 20
@@ -616,7 +622,8 @@ def run_staged_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
                                         burst_number=burst_count,
-                                        get_gps_origin_fn=get_gps_fn)
+                                        get_gps_origin_fn=get_gps_fn,
+                                        get_drone_height_agl_fn=get_height_fn)
                     if not lv:
                         print("[staged] No valid detections in stage-2 burst")
                     else:

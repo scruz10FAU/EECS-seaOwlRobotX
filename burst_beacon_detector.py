@@ -61,7 +61,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                    save_crops_dir=None, det_images_dir=None, color_pixels_dir=None,
                    target_color=None, target_blinking=None,
                    log_writer=None, burst_number=None,
-                   get_gps_origin_fn=None):
+                   get_gps_origin_fn=None, get_drone_height_agl_fn=None):
     """
     Run color classification and blink detection over a collected burst.
 
@@ -139,11 +139,12 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                   f"is_blinking={blink_info['is_blinking']}")
 
             gps_gt_info = None
-            if gps_gt_cfg.get("enabled") and get_gps_origin_fn is not None and b_dpos is not None:
-                origin = get_gps_origin_fn()
+            if gps_gt_cfg.get("enabled") and get_gps_origin_fn is not None:
+                drone_height_agl = (get_drone_height_agl_fn() if get_drone_height_agl_fn is not None
+                                    else (b_dpos[2] if b_dpos is not None else None))
+                origin = get_gps_origin_fn() if drone_height_agl is not None else None
                 if origin is not None:
                     drone_lat, drone_lon, _ = origin
-                    drone_height_agl = b_dpos[2]
                     dist, horiz, vert = gps_ground_truth_distance(
                         drone_lat, drone_lon, drone_height_agl,
                         gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], obj_height_agl,
@@ -451,7 +452,8 @@ def run_burst_ros(cfg: dict) -> None:
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
                                         burst_number=burst_count,
-                                        get_gps_origin_fn=cam.get_gps_origin)
+                                        get_gps_origin_fn=cam.get_gps_origin,
+                                        get_drone_height_agl_fn=cam.get_drone_height_agl)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:
@@ -542,10 +544,11 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
           f"frames/burst={count}")
 
     # ── ROS setup (optional) ─────────────────────────────────────────────
-    cam        = None
-    rclpy      = None
-    publish_fn = None
-    get_gps_fn = lambda: None
+    cam           = None
+    rclpy         = None
+    publish_fn    = None
+    get_gps_fn    = lambda: None
+    get_height_fn = lambda: None
 
     if use_ros:
         _import_ros()
@@ -568,8 +571,9 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
             msg.data = json_str
             cam.detection_pub.publish(msg)
 
-        publish_fn = _publish
-        get_gps_fn = cam.get_gps_origin
+        publish_fn    = _publish
+        get_gps_fn    = cam.get_gps_origin
+        get_height_fn = cam.get_drone_height_agl
         print(f"[burst] Publishing → {topics['detections_pub']}")
 
     gps_gt_cfg = cfg.get("gps_ground_truth", {})
@@ -688,7 +692,8 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
                                         burst_number=burst_count,
-                                        get_gps_origin_fn=get_gps_fn)
+                                        get_gps_origin_fn=get_gps_fn,
+                                        get_drone_height_agl_fn=get_height_fn)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:

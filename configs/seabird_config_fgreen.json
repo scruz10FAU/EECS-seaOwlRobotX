@@ -22,6 +22,7 @@
     "drone_pose":     "/zed/zed_node/pose",
     "gps_origin":     "/fmu/out/vehicle_gps_position",
     "gps_msg_type":   "px4_sensor_gps",
+    "drone_height_source": "px4_local_position",
     "detections_pub": "/seabird/beacon_detections",
     "aruco_pub":      "/seabird/aruco_ground_truth"
   },

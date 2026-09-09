@@ -265,6 +265,29 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                   "for this run; gps_position/gps_ground_truth will stay blank.")
             gps_enabled = False
 
+    # "vvhub_pose" (default) -- AGL height comes from drone_pos[2] via the
+    #   drone_pose topic (VVHub VIO, e.g. /vvhub_body_wrt_local/pose).
+    # "px4_local_position" -- height comes from px4_msgs/msg/VehicleLocalPosition
+    #   (topics.local_position, e.g. /fmu/out/vehicle_local_position) instead --
+    #   for when VIO is disabled (e.g. flying outdoors on GPS), so drone_pose
+    #   never publishes and drone_pos[2] would otherwise stay unavailable
+    #   forever. PX4's z is NED (down-positive), so height = -z; z_valid
+    #   gates against using a not-yet-converged estimate.
+    drone_height_source = topics.get("drone_height_source", "vvhub_pose")
+    local_position_topic = topics.get("local_position", "/fmu/out/vehicle_local_position")
+    px4_local_position_enabled = True
+    if drone_height_source == "px4_local_position":
+        try:
+            from px4_msgs.msg import VehicleLocalPosition
+        except ImportError:
+            print("[beacon] WARNING: drone_height_source=\"px4_local_position\" "
+                  "but the 'px4_msgs' ROS2 package isn't installed in this "
+                  "environment -- falling back to vvhub_pose height source "
+                  "(drone_pos[2]), which will stay unavailable if VIO is "
+                  "disabled.")
+            drone_height_source = "vvhub_pose"
+            px4_local_position_enabled = False
+
     fx, fy   = cfg_camera["fx"],    cfg_camera["fy"]
     cx, cy   = cfg_camera["cx"],    cfg_camera["cy"]
     img_w    = cfg_camera["img_w"]
@@ -308,6 +331,31 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                 f"fix_type={msg.fix_type}"
             )
 
+        def _on_local_position_px4(self, msg):
+            """
+            px4_msgs/msg/VehicleLocalPosition callback (topics.drone_height_source
+            == "px4_local_position"). z is NED (down-positive), so height AGL is
+            -z; z_valid gates against using an estimate that hasn't converged.
+            """
+            if not getattr(msg, "z_valid", True):
+                return
+            with self._pose_lock:
+                self._drone_height_agl_px4 = -msg.z
+
+        def get_drone_height_agl(self):
+            """
+            Unified drone AGL height accessor, regardless of
+            topics.drone_height_source -- vvhub_pose (drone_pos[2] from the
+            drone_pose/VIO topic) or px4_local_position (-z from
+            VehicleLocalPosition). Returns None if the configured source
+            hasn't produced a reading yet.
+            """
+            if drone_height_source == "px4_local_position":
+                with self._pose_lock:
+                    return getattr(self, "_drone_height_agl_px4", None)
+            with self._pose_lock:
+                return self._drone_pos[2] if self._drone_pos is not None else None
+
         def open(self):
             if self._is_open:
                 return True
@@ -344,6 +392,11 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                 self._pose_sub = self.create_subscription(
                     PoseStamped, drone_pose_topic, self._on_drone_pose, qos
                 )
+            if drone_height_source == "px4_local_position" and px4_local_position_enabled:
+                self._local_pos_sub = self.create_subscription(
+                    VehicleLocalPosition, local_position_topic,
+                    self._on_local_position_px4, qos
+                )
             if gps_topic and gps_enabled:
                 origin_qos = QoSProfile(
                     reliability=ReliabilityPolicy.RELIABLE,
@@ -372,6 +425,11 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
             if drone_pose_topic:
                 self._pose_sub = self.create_subscription(
                     PoseStamped, drone_pose_topic, self._on_drone_pose, qos
+                )
+            if drone_height_source == "px4_local_position" and px4_local_position_enabled:
+                self._local_pos_sub = self.create_subscription(
+                    VehicleLocalPosition, local_position_topic,
+                    self._on_local_position_px4, qos
                 )
             if gps_topic and gps_enabled:
                 origin_qos = QoSProfile(
@@ -1231,11 +1289,11 @@ def run_video_ros(cfg: dict) -> None:
                 video_ts = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
 
                 gps_gt_info = None
-                if gps_gt_cfg.get("enabled") and drone_pos is not None:
+                _d_height_agl = cam.get_drone_height_agl()
+                if gps_gt_cfg.get("enabled") and _d_height_agl is not None:
                     origin = cam.get_gps_origin()
                     if origin is not None:
                         _d_lat, _d_lon, _ = origin
-                        _d_height_agl = drone_pos[2]
                         _gg = gps_ground_truth_distance(
                             _d_lat, _d_lon, _d_height_agl,
                             gps_gt_cfg["latitude"], gps_gt_cfg["longitude"],
@@ -1532,11 +1590,11 @@ def main(cfg: dict) -> None:
             frame_ts   = cam.get_frame_timestamp() or time.time()
 
             gps_gt_info = None
-            if gps_gt_cfg.get("enabled") and drone_pos is not None:
+            _d_height_agl = cam.get_drone_height_agl()
+            if gps_gt_cfg.get("enabled") and _d_height_agl is not None:
                 origin = cam.get_gps_origin()
                 if origin is not None:
                     _d_lat, _d_lon, _ = origin
-                    _d_height_agl = drone_pos[2]
                     _gg = gps_ground_truth_distance(
                         _d_lat, _d_lon, _d_height_agl,
                         gps_gt_cfg["latitude"], gps_gt_cfg["longitude"],
