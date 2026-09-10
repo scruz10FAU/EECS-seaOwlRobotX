@@ -314,6 +314,9 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
             values, so those readings are dropped rather than overwriting a
             previous good fix with garbage.
             """
+            with self._gps_origin_lock:
+                self._gps_last_msg_ts   = time.time()
+                self._gps_last_fix_type = msg.fix_type
             if msg.fix_type < 3:
                 self.get_logger().warn(
                     f"GPS origin (px4/SensorGps): no 3D fix yet "
@@ -337,7 +340,11 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
             == "px4_local_position"). z is NED (down-positive), so height AGL is
             -z; z_valid gates against using an estimate that hasn't converged.
             """
-            if not getattr(msg, "z_valid", True):
+            z_valid = getattr(msg, "z_valid", True)
+            with self._pose_lock:
+                self._height_last_msg_ts   = time.time()
+                self._height_last_z_valid  = z_valid
+            if not z_valid:
                 return
             with self._pose_lock:
                 self._drone_height_agl_px4 = -msg.z
@@ -355,6 +362,67 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                     return getattr(self, "_drone_height_agl_px4", None)
             with self._pose_lock:
                 return self._drone_pos[2] if self._drone_pos is not None else None
+
+        def get_gps_status(self):
+            """
+            Diagnostic snapshot of GPS origin health, for a periodic
+            "is this actually working" log line. Returns a dict rather than
+            a formatted string so callers can decide how/whether to print it.
+            """
+            if not gps_topic:
+                return {"state": "disabled", "topic": None}
+            if not gps_enabled:
+                return {"state": "px4_msgs_missing", "topic": gps_topic}
+            with self._gps_origin_lock:
+                has_fix       = self._gps_origin is not None
+                last_msg_ts   = self._gps_last_msg_ts
+                last_fix_type = self._gps_last_fix_type
+            if has_fix:
+                state = "ok"
+            elif last_msg_ts is not None:
+                state = "no_valid_fix"
+            else:
+                pubs = self.get_publishers_info_by_topic(gps_topic)
+                state = "waiting_no_publisher" if not pubs else "waiting_no_message"
+            return {
+                "state": state, "topic": gps_topic, "msg_type": gps_msg_type,
+                "last_msg_ts": last_msg_ts, "last_fix_type": last_fix_type,
+                "origin": self._gps_origin,
+            }
+
+        def get_height_status(self):
+            """Diagnostic snapshot of AGL height source health, same idea as get_gps_status()."""
+            if drone_height_source == "px4_local_position":
+                topic = local_position_topic
+                if not px4_local_position_enabled:
+                    return {"state": "px4_msgs_missing", "source": drone_height_source, "topic": topic}
+                with self._pose_lock:
+                    height        = getattr(self, "_drone_height_agl_px4", None)
+                    last_msg_ts   = getattr(self, "_height_last_msg_ts", None)
+                    last_z_valid  = getattr(self, "_height_last_z_valid", None)
+                if height is not None:
+                    state = "ok"
+                elif last_msg_ts is not None:
+                    state = "no_valid_fix"
+                else:
+                    pubs = self.get_publishers_info_by_topic(topic)
+                    state = "waiting_no_publisher" if not pubs else "waiting_no_message"
+                return {"state": state, "source": drone_height_source, "topic": topic,
+                       "last_msg_ts": last_msg_ts, "last_z_valid": last_z_valid, "height": height}
+
+            topic = drone_pose_topic
+            if not topic:
+                return {"state": "disabled", "source": drone_height_source, "topic": None}
+            with self._pose_lock:
+                height      = self._drone_pos[2] if self._drone_pos is not None else None
+                last_msg_ts = getattr(self, "_pose_last_msg_ts", None)
+            if height is not None:
+                state = "ok"
+            else:
+                pubs = self.get_publishers_info_by_topic(topic)
+                state = "waiting_no_publisher" if not pubs else "waiting_no_message"
+            return {"state": state, "source": drone_height_source, "topic": topic,
+                   "last_msg_ts": last_msg_ts, "height": height}
 
         def open(self):
             if self._is_open:
@@ -815,6 +883,68 @@ def gps_ground_truth_distance(drone_lat: float, drone_lon: float, drone_height_a
     horiz = math.hypot(north, east)
     vert  = drone_height_agl - obj_height_agl
     return math.hypot(horiz, vert), horiz, vert
+
+
+def _format_gps_status(status: dict) -> str:
+    """Human-readable line for cam.get_gps_status() -- explains what's blocking
+    GPS origin if it isn't working, not just that it isn't."""
+    state = status["state"]
+    topic = status.get("topic")
+    if state == "disabled":
+        return "[beacon] GPS status: disabled (topics.gps_origin not set)"
+    if state == "px4_msgs_missing":
+        return (f"[beacon] GPS status: UNAVAILABLE — px4_msgs not installed, "
+                f"subscription to {topic} was never created (see startup warning)")
+    if state == "waiting_no_publisher":
+        return (f"[beacon] GPS status: NO DATA — no publisher visible for {topic}; "
+                f"topic doesn't exist or isn't reachable from this process "
+                f"(check DDS domain/bridge/build)")
+    if state == "waiting_no_message":
+        return (f"[beacon] GPS status: NO DATA — publisher(s) visible for {topic} "
+                f"but no message received yet (QoS mismatch?)")
+    if state == "no_valid_fix":
+        age = time.time() - status["last_msg_ts"]
+        fix_type = status.get("last_fix_type")
+        fix_note = f" (fix_type={fix_type})" if fix_type is not None else ""
+        return (f"[beacon] GPS status: NOT READY — receiving messages on {topic} "
+                f"(last {age:.1f}s ago) but no valid 3D fix yet{fix_note}")
+    if state == "ok":
+        lat, lon, alt = status["origin"]
+        age = time.time() - status["last_msg_ts"] if status.get("last_msg_ts") else float("nan")
+        return (f"[beacon] GPS status: OK — lat={lat:.7f} lon={lon:.7f} alt={alt:.2f}m "
+                f"(updated {age:.1f}s ago)")
+    return f"[beacon] GPS status: unrecognized state {state!r}"
+
+
+def _format_height_status(status: dict) -> str:
+    """Human-readable line for cam.get_height_status() -- same idea as
+    _format_gps_status() for the AGL height source."""
+    state = status["state"]
+    source = status.get("source")
+    topic = status.get("topic")
+    if state == "disabled":
+        return "[beacon] Height status: disabled (topics.drone_pose not set)"
+    if state == "px4_msgs_missing":
+        return (f"[beacon] Height status: UNAVAILABLE — px4_msgs not installed, "
+                f"subscription to {topic} was never created (see startup warning)")
+    if state == "waiting_no_publisher":
+        return (f"[beacon] Height status: NO DATA — no publisher visible for "
+                f"{topic} (source={source}); topic doesn't exist or isn't "
+                f"reachable from this process")
+    if state == "waiting_no_message":
+        return (f"[beacon] Height status: NO DATA — publisher(s) visible for "
+                f"{topic} (source={source}) but no message received yet "
+                f"(QoS mismatch?)")
+    if state == "no_valid_fix":
+        age = time.time() - status["last_msg_ts"]
+        return (f"[beacon] Height status: NOT READY — receiving messages on "
+                f"{topic} (source={source}, last {age:.1f}s ago) but "
+                f"z_valid=False (estimate hasn't converged)")
+    if state == "ok":
+        age = time.time() - status["last_msg_ts"] if status.get("last_msg_ts") else float("nan")
+        return (f"[beacon] Height status: OK — {status['height']:.2f}m AGL "
+                f"(source={source}, updated {age:.1f}s ago)")
+    return f"[beacon] Height status: unrecognized state {state!r}"
 
 
 def estimate_distance_from_bbox(
@@ -1393,6 +1523,8 @@ def run_video_ros(cfg: dict) -> None:
                     })
                     cam.detection_pub.publish(msg)
                     print(f"  {label_txt}")
+                    print(_format_gps_status(cam.get_gps_status()))
+                    print(_format_height_status(cam.get_height_status()))
                     det_count += 1
                     if max_dets is not None and det_count >= max_dets:
                         print(f"[beacon-ros-video] Reached max_detections={max_dets} — stopping")
@@ -1790,6 +1922,8 @@ def main(cfg: dict) -> None:
 
                 print(f"[beacon] {label_txt}"
                       + (f" dist={pos3d[2]:.2f}m" if pos3d is not None else ""))
+                print(_format_gps_status(cam.get_gps_status()))
+                print(_format_height_status(cam.get_height_status()))
 
             if max_dets is not None and det_count >= max_dets:
                 break

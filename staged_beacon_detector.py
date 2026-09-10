@@ -49,6 +49,8 @@ from beacon_detector_config import (
     gps_ground_truth_distance,
     _open_log,
     _write_log_row,
+    _format_gps_status,
+    _format_height_status,
     _DEFAULT_CONFIG,
 )
 from burst_beacon_detector import (
@@ -306,6 +308,8 @@ def run_staged_ros(cfg: dict) -> None:
     burst: list       = []
     last_burst_ts     = -999.0
     last_nodet_save   = -999.0
+    burst_gps_origin       = None
+    burst_drone_height_agl = None
 
     def _publish(json_str):
         msg      = String()
@@ -357,6 +361,13 @@ def run_staged_ros(cfg: dict) -> None:
                     state         = "collecting"
                     burst         = [(frame_ts, rgb_clean, stage2_dets, depth, drone_pos, drone_quat)]
                     last_burst_ts = frame_ts
+                    # Freeze GPS/height at the first detection, not at analysis
+                    # time (which runs after the whole burst finishes and the
+                    # drone may have moved).
+                    burst_gps_origin       = cam.get_gps_origin()
+                    burst_drone_height_agl = cam.get_drone_height_agl()
+                    print(_format_gps_status(cam.get_gps_status()))
+                    print(_format_height_status(cam.get_height_status()))
                     print(f"[staged]   1/{count}")
                 elif frames_dir is not None and frame_ts - last_nodet_save >= nodet_save_interval:
                     fname = f"nodet_{time.strftime('%Y%m%d')}_t{frame_ts:.2f}.png"
@@ -386,13 +397,13 @@ def run_staged_ros(cfg: dict) -> None:
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
                                         burst_number=burst_count,
-                                        get_gps_origin_fn=cam.get_gps_origin,
-                                        get_drone_height_agl_fn=cam.get_drone_height_agl)
+                                        gps_origin=burst_gps_origin,
+                                        drone_height_agl=burst_drone_height_agl)
                     if not lv:
                         print("[staged] No valid detections in stage-2 burst")
                     else:
                         _publish_result(lv, burst, burst_count, cfg,
-                                        cam.get_gps_origin, _publish)
+                                        burst_gps_origin, _publish)
                     burst = []
                     state = "searching"
                     print("[staged] Resuming search")
@@ -552,6 +563,8 @@ def run_staged_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     state         = "searching"
     burst: list   = []
     last_burst_ts = -999.0
+    burst_gps_origin       = None
+    burst_drone_height_agl = None
 
     try:
         while True:
@@ -597,6 +610,14 @@ def run_staged_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                     state         = "collecting"
                     burst         = [(frame_ts, rgb_clean, stage2_dets, None, drone_pos, drone_quat)]
                     last_burst_ts = frame_ts
+                    # Freeze GPS/height at the first detection, not at analysis
+                    # time (which runs after the whole burst finishes and the
+                    # drone may have moved).
+                    burst_gps_origin       = get_gps_fn()
+                    burst_drone_height_agl = get_height_fn()
+                    if cam is not None:
+                        print(_format_gps_status(cam.get_gps_status()))
+                        print(_format_height_status(cam.get_height_status()))
                     print(f"[staged]   1/{count}  (t={frame_ts:.2f}s)")
 
             elif state == "collecting":

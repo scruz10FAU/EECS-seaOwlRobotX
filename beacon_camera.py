@@ -7,6 +7,7 @@ only loaded when ROS mode is actually invoked.
 """
 
 import threading
+import time
 import numpy as np
 
 from cv_bridge import CvBridge
@@ -55,6 +56,15 @@ class BeaconCamera(Node):
 
         self._gps_origin      = None
         self._gps_origin_lock = threading.Lock()
+
+        # Diagnostics only -- set on every message received (valid or not),
+        # separate from _gps_origin/_drone_pos (only set once a usable
+        # reading arrives), so a status check can distinguish "never
+        # received anything" from "receiving messages but nothing valid
+        # yet" or "not receiving at all".
+        self._gps_last_msg_ts   = None
+        self._gps_last_fix_type = None
+        self._pose_last_msg_ts  = None
 
         self._is_open   = False
         self._detector  = None
@@ -246,6 +256,7 @@ class BeaconCamera(Node):
         with self._pose_lock:
             self._drone_pos       = np.array([p.x, p.y, p.z])
             self._drone_quat_wxyz = np.array([q.w, q.x, q.y, q.z])
+            self._pose_last_msg_ts = time.time()
 
     def _on_gps_origin(self, msg):
         with self._gps_origin_lock:
@@ -254,6 +265,7 @@ class BeaconCamera(Node):
                 msg.position.longitude,
                 msg.position.altitude,
             )
+            self._gps_last_msg_ts = time.time()
         self.get_logger().info(
             f"GPS origin: lat={msg.position.latitude:.7f} "
             f"lon={msg.position.longitude:.7f}"
