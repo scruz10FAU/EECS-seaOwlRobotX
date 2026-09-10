@@ -643,13 +643,13 @@ def run_staged_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
                                         burst_number=burst_count,
-                                        get_gps_origin_fn=get_gps_fn,
-                                        get_drone_height_agl_fn=get_height_fn)
+                                        gps_origin=burst_gps_origin,
+                                        drone_height_agl=burst_drone_height_agl)
                     if not lv:
                         print("[staged] No valid detections in stage-2 burst")
                     else:
                         _publish_result(lv, burst, burst_count, cfg,
-                                        get_gps_fn, publish_fn)
+                                        burst_gps_origin, publish_fn)
                     burst = []
                     state = "searching"
                     print("[staged] Resuming search")
