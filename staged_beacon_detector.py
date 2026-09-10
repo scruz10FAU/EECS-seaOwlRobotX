@@ -393,6 +393,7 @@ def run_staged_ros(cfg: dict) -> None:
                                         save_crops_dir=crops_dir,
                                         det_images_dir=det_images_dir,
                                         color_pixels_dir=color_pixels_dir,
+                                        frames_dir=frames_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,

@@ -61,6 +61,7 @@ _VideoDet = namedtuple("_VideoDet", ["bbox_2d", "position_3d", "confidence", "tr
 
 def _analyse_burst(burst, crop_model, cfg, depth_source,
                    save_crops_dir=None, det_images_dir=None, color_pixels_dir=None,
+                   frames_dir=None,
                    target_color=None, target_blinking=None,
                    log_writer=None, burst_number=None,
                    gps_origin=None, drone_height_agl=None):
@@ -90,6 +91,10 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
 
     for frame_idx, (b_ts, b_rgb, b_dets, _, b_dpos, b_dquat) in enumerate(burst):
         if not b_dets:
+            if frames_dir is not None:
+                _bn = f"b{burst_number:03d}_" if burst_number is not None else ""
+                fname = f"burst_{date_tag}_{_bn}f{frame_idx:06d}_nodet.png"
+                cv2.imwrite(os.path.join(frames_dir, fname), b_rgb)
             continue
         for det_idx, d in enumerate(b_dets):
             x1, y1, x2, y2 = [int(v) for v in d.bbox_2d]
@@ -460,6 +465,7 @@ def run_burst_ros(cfg: dict) -> None:
                                         save_crops_dir=crops_dir,
                                         det_images_dir=det_images_dir,
                                         color_pixels_dir=color_pixels_dir,
+                                        frames_dir=frames_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
@@ -710,6 +716,7 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                                         save_crops_dir=crops_dir,
                                         det_images_dir=det_images_dir,
                                         color_pixels_dir=color_pixels_dir,
+                                        frames_dir=frames_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
