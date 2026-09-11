@@ -466,11 +466,23 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                     self._on_local_position_px4, qos
                 )
             if gps_topic and gps_enabled:
-                origin_qos = QoSProfile(
-                    reliability=ReliabilityPolicy.RELIABLE,
-                    durability=DurabilityPolicy.TRANSIENT_LOCAL,
-                    depth=1,
-                )
+                if gps_msg_type == "px4_sensor_gps":
+                    # PX4's uXRCE-DDS bridge publishes all /fmu/out/* topics
+                    # BEST_EFFORT/VOLATILE (sensor-data QoS) -- a RELIABLE
+                    # subscriber is incompatible with it and silently
+                    # receives nothing (DDS QoS mismatch, not a topic-name
+                    # or connectivity problem).
+                    origin_qos = QoSProfile(
+                        reliability=ReliabilityPolicy.BEST_EFFORT,
+                        history=HistoryPolicy.KEEP_LAST,
+                        depth=1,
+                    )
+                else:
+                    origin_qos = QoSProfile(
+                        reliability=ReliabilityPolicy.RELIABLE,
+                        durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                        depth=1,
+                    )
                 gps_callback = (self._on_gps_origin_px4 if gps_msg_type == "px4_sensor_gps"
                                else self._on_gps_origin)
                 self._origin_sub = self.create_subscription(
@@ -500,11 +512,23 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                     self._on_local_position_px4, qos
                 )
             if gps_topic and gps_enabled:
-                origin_qos = QoSProfile(
-                    reliability=ReliabilityPolicy.RELIABLE,
-                    durability=DurabilityPolicy.TRANSIENT_LOCAL,
-                    depth=1,
-                )
+                if gps_msg_type == "px4_sensor_gps":
+                    # PX4's uXRCE-DDS bridge publishes all /fmu/out/* topics
+                    # BEST_EFFORT/VOLATILE (sensor-data QoS) -- a RELIABLE
+                    # subscriber is incompatible with it and silently
+                    # receives nothing (DDS QoS mismatch, not a topic-name
+                    # or connectivity problem).
+                    origin_qos = QoSProfile(
+                        reliability=ReliabilityPolicy.BEST_EFFORT,
+                        history=HistoryPolicy.KEEP_LAST,
+                        depth=1,
+                    )
+                else:
+                    origin_qos = QoSProfile(
+                        reliability=ReliabilityPolicy.RELIABLE,
+                        durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                        depth=1,
+                    )
                 gps_callback = (self._on_gps_origin_px4 if gps_msg_type == "px4_sensor_gps"
                                else self._on_gps_origin)
                 self._origin_sub = self.create_subscription(

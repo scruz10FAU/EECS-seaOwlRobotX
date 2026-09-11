@@ -523,7 +523,8 @@ def run_video_ros(video_path: str,
                   save_crops: bool = False,
                   save_det_images: bool = False,
                   save_frames: bool = False,
-                  target_color=None, target_blinking=None) -> None:
+                  target_color=None, target_blinking=None,
+                  gps_msg_type: str = "geopoint_stamped") -> None:
     """
     Read frames from a local video file and publish detections to ROS.
 
@@ -600,7 +601,7 @@ def run_video_ros(video_path: str,
 
     blink_detector = BlinkDetector()
     rclpy.init()
-    cam        = BeaconCamera()
+    cam        = BeaconCamera(gps_msg_type=gps_msg_type)
     model      = YOLO(model_path)
     crop_model = YOLO(crop_model_path)
     print(f"[beacon-ros-video] Beacon model : {model_path}  conf≥{conf}")
@@ -757,7 +758,8 @@ def main(model: str = "models/one_beacon.pt",
          save_crops: bool = False,
          save_det_images: bool = False,
          save_frames: bool = False,
-         target_color=None, target_blinking=None) -> None:
+         target_color=None, target_blinking=None,
+         gps_msg_type: str = "geopoint_stamped") -> None:
 
     _import_ros()   # pull in ROS2 / camera_interface / seabird_config
 
@@ -766,7 +768,7 @@ def main(model: str = "models/one_beacon.pt",
     os.makedirs(DEBUG_DIR, exist_ok=True)
 
     rclpy.init()
-    cam = BeaconCamera()
+    cam = BeaconCamera(gps_msg_type=gps_msg_type)
 
     if not cam.open():
         print("[beacon] Failed to open camera")
@@ -1081,6 +1083,15 @@ if __name__ == "__main__":
         metavar="true|false",
         help="Expected blink state ('true' = blinking, 'false' = steady). Adds target_blinking/target_match columns to CSV log.",
     )
+    parser.add_argument(
+        "--gps-msg-type",
+        default="geopoint_stamped",
+        choices=["geopoint_stamped", "px4_sensor_gps"],
+        help="GPS origin message type on GPS_TOPIC: 'geopoint_stamped' "
+             "(default, MAVROS geographic_msgs/GeoPointStamped, sim) or "
+             "'px4_sensor_gps' (px4_msgs/msg/SensorGps, physical rig via "
+             "PX4's uXRCE-DDS bridge).",
+    )
     args = parser.parse_args()
 
     target_blinking = None
@@ -1092,7 +1103,8 @@ if __name__ == "__main__":
                       save_output=args.save, conf=args.conf, log=args.log,
                       display=args.display, save_crops=args.save_crops,
                       save_det_images=args.save_det_images, save_frames=args.save_frames,
-                      target_color=args.target_color, target_blinking=target_blinking)
+                      target_color=args.target_color, target_blinking=target_blinking,
+                      gps_msg_type=args.gps_msg_type)
     elif args.video is not None:
         run_video(args.video, model_path=args.model, crop_model_path=args.crop_model,
                   save_output=args.save, conf=args.conf, log=args.log,
@@ -1103,4 +1115,5 @@ if __name__ == "__main__":
         main(args.model, args.display, args.true_dist, crop_model_path=args.crop_model,
              log=args.log, save_crops=args.save_crops,
              save_det_images=args.save_det_images, save_frames=args.save_frames,
-             target_color=args.target_color, target_blinking=target_blinking)
+             target_color=args.target_color, target_blinking=target_blinking,
+             gps_msg_type=args.gps_msg_type)

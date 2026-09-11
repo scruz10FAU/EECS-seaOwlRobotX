@@ -39,9 +39,28 @@ class BeaconCamera(Node):
         /seabird/beacon_detections  — JSON with label "beacon", detected color, position
     """
 
-    def __init__(self, topic_prefix=DEFAULT_TOPIC_PREFIX):
+    def __init__(self, topic_prefix=DEFAULT_TOPIC_PREFIX, gps_msg_type="geopoint_stamped"):
         super().__init__("beacon_camera")
         self._topic_prefix = topic_prefix
+
+        # "geopoint_stamped" (default) -- geographic_msgs/GeoPointStamped, published
+        #   RELIABLE/TRANSIENT_LOCAL by MAVROS (GPS_TOPIC).
+        # "px4_sensor_gps" -- px4_msgs/msg/SensorGps, published BEST_EFFORT/VOLATILE
+        #   directly by PX4's uXRCE-DDS bridge on the physical rig on GPS_TOPIC.
+        #   A RELIABLE subscriber is QoS-incompatible with it and silently
+        #   receives nothing.
+        self._gps_msg_type = gps_msg_type
+        self._gps_enabled  = True
+        self._GpsMsgType   = GeoPointStamped
+        if gps_msg_type == "px4_sensor_gps":
+            try:
+                from px4_msgs.msg import SensorGps
+                self._GpsMsgType = SensorGps
+            except ImportError:
+                print("[beacon_camera] WARNING: gps_msg_type=\"px4_sensor_gps\" but "
+                      "the 'px4_msgs' ROS2 package isn't installed in this "
+                      "environment -- GPS origin subscription disabled.")
+                self._gps_enabled = False
 
         self._rgb        = None
         self._depth      = None
@@ -106,14 +125,10 @@ class BeaconCamera(Node):
             PoseStamped, DRONE_POSE_TOPIC, self._on_drone_pose, qos
         )
 
-        origin_qos = QoSProfile(
-            reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
-            depth=1,
-        )
-        self._origin_sub = self.create_subscription(
-            GeoPointStamped, GPS_TOPIC, self._on_gps_origin, origin_qos
-        )
+        if self._gps_enabled:
+            self._origin_sub = self.create_subscription(
+                self._GpsMsgType, GPS_TOPIC, self._gps_callback(), self._gps_qos()
+            )
 
         self._is_open = True
         self.get_logger().info("BeaconCamera open — waiting for frames…")
@@ -140,18 +155,31 @@ class BeaconCamera(Node):
             PoseStamped, DRONE_POSE_TOPIC, self._on_drone_pose, qos
         )
 
-        origin_qos = QoSProfile(
-            reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
-            depth=1,
-        )
-        self._origin_sub = self.create_subscription(
-            GeoPointStamped, GPS_TOPIC, self._on_gps_origin, origin_qos
-        )
+        if self._gps_enabled:
+            self._origin_sub = self.create_subscription(
+                self._GpsMsgType, GPS_TOPIC, self._gps_callback(), self._gps_qos()
+            )
 
         self._is_open = True
         self.get_logger().info("BeaconCamera open (video-file mode) — pose + GPS only")
         return True
+
+    def _gps_qos(self):
+        if self._gps_msg_type == "px4_sensor_gps":
+            return QoSProfile(
+                reliability=ReliabilityPolicy.BEST_EFFORT,
+                history=HistoryPolicy.KEEP_LAST,
+                depth=1,
+            )
+        return QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            depth=1,
+        )
+
+    def _gps_callback(self):
+        return (self._on_gps_origin_px4 if self._gps_msg_type == "px4_sensor_gps"
+                else self._on_gps_origin)
 
     def close(self):
         self._is_open = False
@@ -269,4 +297,31 @@ class BeaconCamera(Node):
         self.get_logger().info(
             f"GPS origin: lat={msg.position.latitude:.7f} "
             f"lon={msg.position.longitude:.7f}"
+        )
+
+    def _on_gps_origin_px4(self, msg):
+        """
+        px4_msgs/msg/SensorGps callback (gps_msg_type == "px4_sensor_gps").
+        lat/lon are int32 in 1e-7 degrees, alt is int32 in mm. fix_type < 3
+        means no usable 3D fix -- PX4 still publishes in that case, so don't
+        trust the reading until fix_type >= 3.
+        """
+        with self._gps_origin_lock:
+            self._gps_last_msg_ts   = time.time()
+            self._gps_last_fix_type = msg.fix_type
+        if msg.fix_type < 3:
+            self.get_logger().warn(
+                f"GPS origin (px4/SensorGps): no 3D fix yet "
+                f"(fix_type={msg.fix_type}) — ignoring reading",
+                throttle_duration_sec=5.0,
+            )
+            return
+        lat = msg.lat * 1e-7
+        lon = msg.lon * 1e-7
+        alt = msg.alt * 1e-3
+        with self._gps_origin_lock:
+            self._gps_origin = (lat, lon, alt)
+        self.get_logger().info(
+            f"GPS origin (px4/SensorGps): lat={lat:.7f} lon={lon:.7f} "
+            f"fix_type={msg.fix_type}"
         )
