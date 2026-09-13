@@ -350,7 +350,13 @@ def run_burst_ros(cfg: dict) -> None:
             return
 
     crop_model = YOLO(crop_model_path)
-    if not cam.enable_detection(model_path, imgsz=cfg["detection"].get("imgsz", 640)):
+    if not cam.enable_detection(
+        model_path,
+        imgsz=cfg["detection"].get("imgsz", 640),
+        backend=cfg["detection"].get("backend", "ultralytics"),
+        conf_thresh=cfg["conf"],
+        delegate_path=cfg["detection"].get("tflite_delegate_path"),
+    ):
         print("[burst] Detection failed to start")
         cam.close()
         try: rclpy.shutdown()

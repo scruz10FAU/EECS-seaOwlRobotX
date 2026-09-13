@@ -23,6 +23,7 @@ import message_filters
 from camera_interface import CameraInterface, CameraConfig, Detection, Intrinsics
 from seabird_config import IMG_W, IMG_H, FX, FY, CX, CY
 from yolo_detector import YoloDetector
+from tflite_hexagon_detector import TFLiteHexagonDetector
 
 _bridge = CvBridge()
 
@@ -194,17 +195,32 @@ class BeaconCamera(Node):
                 return True
         return False
 
-    def enable_detection(self, model_path, imgsz=640):
-        self._detector = YoloDetector(
-            weights=model_path,
-            class_names=["beacon"],
-            imgsz=imgsz,
-            conf_thresh=0.5,
-        )
-        ok = self._detector.start(enable_tracking=True)
+    def enable_detection(self, model_path, imgsz=640, backend="ultralytics",
+                         conf_thresh=0.5, delegate_path=None):
+        """
+        backend: "ultralytics" (default, YOLO .pt via CPU/GPU) or
+                 "tflite_hexagon" (int8 .tflite via ModalAI's Hexagon NPU
+                 delegate — see tflite_hexagon_detector.py).
+        """
+        if backend == "tflite_hexagon":
+            self._detector = TFLiteHexagonDetector(
+                weights=model_path,
+                class_names=["beacon"],
+                imgsz=imgsz,
+                conf_thresh=conf_thresh,
+                delegate_path=delegate_path,
+            )
+        else:
+            self._detector = YoloDetector(
+                weights=model_path,
+                class_names=["beacon"],
+                imgsz=imgsz,
+                conf_thresh=conf_thresh,
+            )
+        ok = self._detector.start(enable_tracking=(backend == "ultralytics"))
         if not ok:
             self._detector = None
-            self.get_logger().error("YoloDetector failed to start")
+            self.get_logger().error(f"{backend} detector failed to start")
         return ok
 
     def get_rgb(self):

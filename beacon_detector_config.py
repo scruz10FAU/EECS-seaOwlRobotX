@@ -85,6 +85,8 @@ _DEFAULT_GPS_GT = {
 }
 
 _DEFAULT_DETECTION = {
+    "backend":         "ultralytics",  # "ultralytics" (.pt, CPU/GPU) or "tflite_hexagon" (int8 .tflite via ModalAI's Hexagon NPU delegate)
+    "tflite_delegate_path": None,      # path to the VOXL2-SDK Hexagon delegate .so; None/missing/failed load falls back to CPU
     "confirm_frames":  3,
     "pub_cooldown_s":  1.0,
     "depth_min_m":     1.0,
@@ -1657,10 +1659,16 @@ def main(cfg: dict) -> None:
         return
 
     
-    print(f"[beacon] Loading model: {model_path}")
+    print(f"[beacon] Loading model: {model_path}  (backend={cfg['detection'].get('backend', 'ultralytics')})")
     print(f"[beacon] Loading crop model: {crop_model_path}")
     crop_model = YOLO(crop_model_path)
-    if not cam.enable_detection(model_path, imgsz=cfg["detection"].get("imgsz", 640)):
+    if not cam.enable_detection(
+        model_path,
+        imgsz=cfg["detection"].get("imgsz", 640),
+        backend=cfg["detection"].get("backend", "ultralytics"),
+        conf_thresh=cfg["conf"],
+        delegate_path=cfg["detection"].get("tflite_delegate_path"),
+    ):
         print("[beacon] Detection failed to start")
         cam.close()
         try: rclpy.shutdown()
