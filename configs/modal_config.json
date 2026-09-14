@@ -1,5 +1,5 @@
 {
-  "model":      "models/best_beacon_square3_int8.tflite",
+  "model":      "models/best_beacon_square3.pt",
   "crop_model": "models/beacon_square_top93b.pt",
   "conf":       0.5,
   "display":    false,
@@ -80,8 +80,6 @@
   "detection": {
     "depth_source": "bbox",
     "max_detections": 50,
-    "imgsz": 640,
-    "backend": "tflite_hexagon",
-    "tflite_delegate_path": null
+    "imgsz": 640
   }
 }
