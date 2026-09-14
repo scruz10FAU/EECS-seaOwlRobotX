@@ -1,5 +1,5 @@
 {
-  "model":      "models/best_beacon_square3.pt",
+  "model":      "models/best_beacon_square3_int8.tflite",
   "crop_model": "models/beacon_square_top93b.pt",
   "conf":       0.5,
   "display":    false,
@@ -83,7 +83,9 @@
     "imgsz": 640,
     "red_threshold":    0.40,
     "winner_threshold": 0.25,
-    "red_hue_high":     5
+    "red_hue_high":     5,
+    "backend": "tflite_hexagon",
+    "tflite_delegate_path": null
   },
   
   "gps_ground_truth": {
