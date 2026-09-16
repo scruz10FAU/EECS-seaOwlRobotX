@@ -1,0 +1,51 @@
+#########################################################################
+# This file replaces the default ubuntu.sources configuration included 
+# in the Ubuntu 24.04 (Noble) image. It defines sources for both amd64 
+# and arm64 architectures.
+#########################################################################
+
+
+#########################################################################
+# Default Noble sources for the amd64 architecture.
+# 
+# By explicitly specifying `Architectures: amd64`, we prevent apt from 
+# attempting to fetch arm64 packages from archive.ubuntu.com or 
+# security.ubuntu.com, which do not host them. This avoids 404 errors 
+# when arm64 is enabled as a foreign architecture.
+#########################################################################
+
+Types: deb
+URIs: http://archive.ubuntu.com/ubuntu
+Suites: noble noble-updates noble-backports
+Components: main restricted universe multiverse
+Architectures: amd64
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+Types: deb
+URIs: http://security.ubuntu.com/ubuntu
+Suites: noble-security
+Components: main restricted universe multiverse
+Architectures: amd64
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+#########################################################################
+# GCC 7 is required for qrb5165-1 support, but it is only available in
+# Ubuntu 18.04 (Bionic). These sources allow us to install it on newer systems
+#########################################################################
+Types: deb
+URIs: http://mirrors.kernel.org/ubuntu/
+Suites: bionic
+Components: main universe
+Architectures: amd64
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+#########################################################################
+# Sources for the arm64 architecture.
+#########################################################################
+
+Types: deb
+URIs: http://ports.ubuntu.com/ubuntu-ports
+Suites: noble noble-updates noble-backports noble-security
+Components: main restricted universe multiverse
+Architectures: arm64
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg

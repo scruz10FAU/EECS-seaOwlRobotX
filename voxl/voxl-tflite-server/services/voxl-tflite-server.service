@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2025 ModalAI, Inc.
+#
+
+[Unit]
+Description=voxl-tflite-server
+SourcePath=/usr/bin/voxl-tflite-server
+After=voxl-wait-for-fs.service
+Requires=voxl-wait-for-fs.service
+
+[Service]
+User=root
+Type=simple
+PIDFile=/run/voxl-tflite-server.pid
+Restart=on-failure
+RestartSec=3s
+# kill if we have a memory leak to protect the rest of the system
+MemoryMax=4G
+ExecStart=/bin/bash -c "/usr/bin/voxl-tflite-server"
+
+[Install]
+WantedBy=multi-user.target
+

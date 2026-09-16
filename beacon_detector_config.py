@@ -87,6 +87,9 @@ _DEFAULT_GPS_GT = {
 _DEFAULT_DETECTION = {
     "backend":         "ultralytics",  # "ultralytics" (.pt, CPU/GPU) or "tflite_hexagon" (int8 .tflite via ModalAI's Hexagon NPU delegate)
     "tflite_delegate_path": None,      # path to the VOXL2-SDK Hexagon delegate .so; None/missing/failed load falls back to CPU
+    "class_names":     None,           # ordered class list; null = read from the model (.pt) or size it from the output tensor (.tflite). Must never be shorter than the model's class count — extra classes get dropped.
+    "track_iou_thresh": 0.3,           # tflite_hexagon backend only: min IoU to match a detection to the previous frame's track
+    "track_max_age":   30,             # tflite_hexagon backend only: frames a track survives undetected. MUST exceed a blinking beacon's off-phase (1Hz 50%% duty @27fps ≈ 14 frames) or blink history restarts on every blink.
     "confirm_frames":  3,
     "pub_cooldown_s":  1.0,
     "depth_min_m":     1.0,
@@ -1668,6 +1671,9 @@ def main(cfg: dict) -> None:
         backend=cfg["detection"].get("backend", "ultralytics"),
         conf_thresh=cfg["conf"],
         delegate_path=cfg["detection"].get("tflite_delegate_path"),
+        class_names=cfg["detection"].get("class_names"),
+        track_iou_thresh=cfg["detection"].get("track_iou_thresh", 0.3),
+        track_max_age=cfg["detection"].get("track_max_age", 30),
     ):
         print("[beacon] Detection failed to start")
         cam.close()

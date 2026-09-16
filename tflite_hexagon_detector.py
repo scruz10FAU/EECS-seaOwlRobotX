@@ -5,7 +5,9 @@ Drop-in alternative to YoloDetector (see yolo_detector.py) for use on
 ModalAI VOXL2 boards (e.g. Starling2 Max, Qualcomm QRB5165), which expose a
 Hexagon DSP/NPU that Ultralytics' native .pt inference never touches. Same
 public interface as YoloDetector — start() / detect() -> List[Detection] —
-so BeaconCamera.enable_detection() can pick either one via config.
+so BeaconCamera.enable_detection() can pick either one via config. Persistent
+tracking_ids come from a greedy-IoU tracker here (see _track()) rather than from
+ultralytics' .track(persist=True).
 
 Requires an int8-quantized .tflite export of the model (see
 export_tflite.py) and, to actually use the NPU, a VOXL2-SDK-provided
@@ -66,12 +68,15 @@ class TFLiteHexagonDetector:
     def __init__(
         self,
         weights: str,
-        class_names: List[str],
+        class_names: Optional[List[str]] = None,
         imgsz: int = 640,
         conf_thresh: float = 0.5,
         iou_thresh: float = 0.45,
         delegate_path: Optional[str] = None,
         num_threads: int = 4,
+        track_iou_thresh: float = 0.3,
+        track_max_age: int = 30,
+        input_is_bgr: bool = True,
     ):
         self.weights = weights
         self.class_names = class_names
@@ -80,7 +85,13 @@ class TFLiteHexagonDetector:
         self.iou_thresh = iou_thresh
         self.delegate_path = delegate_path
         self.num_threads = num_threads
+        self.track_iou_thresh = track_iou_thresh
+        self.track_max_age = track_max_age
+        self.input_is_bgr = input_is_bgr
 
+        self._tracking = False
+        self._tracks: List[dict] = []   # {"id", "bbox", "misses"}
+        self._next_track_id = 0
         self._interpreter = None
         self._input_detail = None
         self._output_detail = None
@@ -91,10 +102,10 @@ class TFLiteHexagonDetector:
     def start(self, enable_tracking: bool = True) -> bool:
         """
         Load the .tflite model, attempting the Hexagon delegate first if a
-        path was given. `enable_tracking` is accepted for interface parity
-        with YoloDetector but has no effect — this backend always reports
-        tracking_id=-1 (see detect()); there is no ByteTrack-equivalent for
-        raw TFLite output here.
+        path was given. `enable_tracking` turns on the greedy-IoU tracker in
+        _track() — this backend has no ultralytics tracker behind it, so that
+        is what supplies persistent tracking_ids. With it off, every Detection
+        reports tracking_id=-1.
         """
         try:
             tflite = _lazy_import_tflite()
@@ -119,9 +130,33 @@ class TFLiteHexagonDetector:
             self._input_detail = self._interpreter.get_input_details()[0]
             self._output_detail = self._interpreter.get_output_details()[0]
 
+            # imgsz comes from JSON config, but the model's input size is fixed
+            # at export. If they disagree, set_tensor() throws -- and worse,
+            # _decode() scales normalised boxes by imgsz, so a silent mismatch
+            # would misplace every box. Trust the model.
+            in_shape = self._input_detail["shape"]
+            if len(in_shape) == 4 and int(in_shape[1]) > 0:
+                model_sz = int(in_shape[1])
+                if int(in_shape[1]) != int(in_shape[2]):
+                    print(f"[tflite-hexagon] WARNING: non-square model input "
+                          f"{in_shape[1]}x{in_shape[2]}; _letterbox assumes square.")
+                if model_sz != self.imgsz:
+                    print(f"[tflite-hexagon] imgsz {self.imgsz} != model input "
+                          f"{model_sz}; using {model_sz}.")
+                    self.imgsz = model_sz
+
+            # A .tflite carries no class names, but a YOLOv8-style output tensor
+            # is [1, 4+num_classes, num_anchors], so the COUNT is recoverable.
+            # Reconcile it with what the caller supplied: a short list would make
+            # detect() discard every detection of the missing classes.
+            self._reconcile_class_names()
+
+            self._tracking = enable_tracking
+
             # Warm up — first inference pays for delegate/graph setup
             dummy = np.zeros((self.imgsz, self.imgsz, 3), dtype=np.uint8)
             self.detect(dummy)
+            self._reset_tracks()  # discard anything the dummy frame invented
 
             print(f"[tflite-hexagon] Model loaded: {self.weights}")
             print(f"[tflite-hexagon] Classes: {self.class_names}")
@@ -131,6 +166,28 @@ class TFLiteHexagonDetector:
             print(f"[tflite-hexagon] ERROR loading model: {e}")
             self._interpreter = None
             return False
+
+    def _reconcile_class_names(self) -> None:
+        """Derive num_classes from the output tensor and make self.class_names
+        match it. Names can't be recovered from the model, so any missing ones
+        become positional placeholders — wrong labels are still far better than
+        silently dropped detections."""
+        shape = self._output_detail["shape"]
+        if len(shape) != 3 or shape[1] >= shape[2]:
+            return  # not the [1, 4+nc, anchors] layout _decode() expects
+        num_classes = int(shape[1]) - 4
+        if num_classes < 1:
+            return
+
+        if not self.class_names:
+            self.class_names = [f"class_{i}" for i in range(num_classes)]
+        elif len(self.class_names) < num_classes:
+            print(f"[tflite-hexagon] WARNING: config lists {len(self.class_names)} "
+                  f"class(es) but {self.weights} outputs {num_classes}. Detections "
+                  f"of the extra classes would be discarded -- padding the list.")
+            self.class_names = list(self.class_names) + [
+                f"class_{i}" for i in range(len(self.class_names), num_classes)
+            ]
 
     # ── Core ──
 
@@ -143,14 +200,23 @@ class TFLiteHexagonDetector:
         """
         Run inference on a single RGB frame.
 
-        tracking_id is always -1 (no persistent tracker in this backend).
-        position_3d is filled only if both depth and intrinsics are
+        tracking_id is assigned by _track() when tracking is enabled, else
+        -1. position_3d is filled only if both depth and intrinsics are
         provided, same convention as YoloDetector.detect().
         """
         if self._interpreter is None:
             return []
 
-        letterboxed, scale, pad_x, pad_y = self._letterbox(rgb, self.imgsz)
+        # The pipeline hands us BGR (beacon_camera.py:294 uses cv_bridge
+        # desired_encoding='bgr8'; camera_interface.get_rgb() documents BGR).
+        # YoloDetector gets away with it because ultralytics converts BGR->RGB
+        # internally; this backend must do it explicitly or the model sees R and
+        # B swapped. voxl-tflite-server feeds RGB too (CV_YUV2RGB_*,
+        # model_helper.cpp:237). Measured on one real frame: the same beacon
+        # scores 0.494 as BGR vs 0.637 as RGB -- either side of conf 0.5.
+        frame = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB) if self.input_is_bgr else rgb
+
+        letterboxed, scale, pad_x, pad_y = self._letterbox(frame, self.imgsz)
         input_tensor = self._prepare_input(letterboxed)
 
         self._interpreter.set_tensor(self._input_detail["index"], input_tensor)
@@ -160,12 +226,17 @@ class TFLiteHexagonDetector:
         h, w = rgb.shape[:2]
         boxes, scores, cls_ids = self._decode(raw, scale, pad_x, pad_y, w, h)
         if len(boxes) == 0:
-            return []
+            return self._track([])
 
+        # NOTE: class-AGNOSTIC NMS, unlike ultralytics' per-class default. That
+        # is deliberate here: one physical beacon can score on several of the
+        # four colour classes at once, and per-class NMS would emit a duplicate
+        # detection per class -- each then paying a full stage-2 pass. Colour is
+        # decided downstream by classify_beacon_color() anyway.
         nms_rects = [[int(b[0]), int(b[1]), int(b[2] - b[0]), int(b[3] - b[1])] for b in boxes]
         keep = cv2.dnn.NMSBoxes(nms_rects, scores.tolist(), self.conf_thresh, self.iou_thresh)
         if len(keep) == 0:
-            return []
+            return self._track([])
         keep = np.array(keep).reshape(-1)
 
         detections: List[Detection] = []
@@ -181,13 +252,97 @@ class TFLiteHexagonDetector:
                 pos_3d = self._back_project_bbox_center(x1, y1, x2, y2, depth, intrinsics)
 
             detections.append(Detection(
-                tracking_id=-1,
+                tracking_id=-1,   # replaced by _track() below when tracking
                 label=label,
                 confidence=float(scores[i]),
                 bbox_2d=(x1, y1, x2, y2),
                 position_3d=pos_3d,
                 velocity_3d=None,
             ))
+
+        return self._track(detections)
+
+    # ── Tracking ──
+
+    def _reset_tracks(self) -> None:
+        """Drop all track state (used after the warm-up frame)."""
+        self._tracks = []
+        self._next_track_id = 0
+
+    @staticmethod
+    def _iou(a: Tuple[int, int, int, int], b: Tuple[int, int, int, int]) -> float:
+        """IoU of two (x1, y1, x2, y2) boxes."""
+        ix1, iy1 = max(a[0], b[0]), max(a[1], b[1])
+        ix2, iy2 = min(a[2], b[2]), min(a[3], b[3])
+        iw, ih = ix2 - ix1, iy2 - iy1
+        if iw <= 0 or ih <= 0:
+            return 0.0
+        inter = float(iw * ih)
+        area_a = float(max(a[2] - a[0], 0) * max(a[3] - a[1], 0))
+        area_b = float(max(b[2] - b[0], 0) * max(b[3] - b[1], 0))
+        union = area_a + area_b - inter
+        return inter / union if union > 0 else 0.0
+
+    def _track(self, detections: List[Detection]) -> List[Detection]:
+        """
+        Assign persistent tracking_ids by greedy IoU matching against the
+        previous frame's boxes. Stands in for the ByteTrack/BoT-SORT that
+        YoloDetector gets free from ultralytics' .track(persist=True);
+        without it every Detection carries the same id and the per-target
+        state keyed on it downstream (blink_detector._get_blink_detector,
+        _tracker_colors) collapses all beacons into one.
+
+        Matching deliberately IGNORES the class label: stage 1 flips a given
+        beacon between unknown/red/green/blue between frames, and colour is
+        decided downstream by classify_beacon_color() anyway, so gating on it
+        would fragment one beacon into several tracks.
+
+        Returns `detections` with tracking_id populated (mutated in place).
+        """
+        if not self._tracking:
+            return detections
+
+        n_existing = len(self._tracks)
+
+        # Score every (detection, existing track) pair, then take them
+        # best-first — each detection and each track used at most once.
+        pairs = []
+        for di, det in enumerate(detections):
+            for ti in range(n_existing):
+                iou = self._iou(det.bbox_2d, self._tracks[ti]["bbox"])
+                if iou >= self.track_iou_thresh:
+                    pairs.append((iou, di, ti))
+        pairs.sort(key=lambda p: p[0], reverse=True)
+
+        det_to_track = {}
+        claimed_tracks = set()
+        for _iou, di, ti in pairs:
+            if di in det_to_track or ti in claimed_tracks:
+                continue
+            det_to_track[di] = ti
+            claimed_tracks.add(ti)
+
+        for di, det in enumerate(detections):
+            if di in det_to_track:
+                track = self._tracks[det_to_track[di]]
+                track["bbox"] = det.bbox_2d
+                track["misses"] = 0
+                det.tracking_id = track["id"]
+            else:
+                det.tracking_id = self._next_track_id
+                self._tracks.append({"id": self._next_track_id,
+                                     "bbox": det.bbox_2d, "misses": 0})
+                self._next_track_id += 1
+
+        # Age only tracks that existed coming into this frame. A blinking
+        # beacon is undetectable for its whole off-phase, so track_max_age
+        # must exceed that gap or the beacon returns as a NEW id and its
+        # blink history restarts -- defeating the measurement it feeds.
+        for ti in range(n_existing):
+            if ti not in claimed_tracks:
+                self._tracks[ti]["misses"] += 1
+        self._tracks = [t for i, t in enumerate(self._tracks)
+                        if i >= n_existing or t["misses"] <= self.track_max_age]
 
         return detections
 
@@ -249,7 +404,16 @@ class TFLiteHexagonDetector:
         confs = confs[keep]
         cls_ids = cls_ids[keep]
 
-        cx, cy, bw, bh = box_xywh[:, 0], box_xywh[:, 1], box_xywh[:, 2], box_xywh[:, 3]
+        # Ultralytics TFLite exports emit NORMALIZED xywh in [0,1] relative to
+        # the model's square input, NOT pixels in the letterboxed frame. Lift
+        # them into letterbox pixel space before undoing the letterbox, or every
+        # box collapses to (0,0,0,0). voxl-tflite-server does the equivalent at
+        # yolov8_model_helper.cpp:106-110 (it multiplies by the camera frame
+        # dims because it stretch-resizes instead of letterboxing).
+        cx = box_xywh[:, 0] * self.imgsz
+        cy = box_xywh[:, 1] * self.imgsz
+        bw = box_xywh[:, 2] * self.imgsz
+        bh = box_xywh[:, 3] * self.imgsz
         x1 = (cx - bw / 2.0 - pad_x) / scale
         y1 = (cy - bh / 2.0 - pad_y) / scale
         x2 = (cx + bw / 2.0 - pad_x) / scale

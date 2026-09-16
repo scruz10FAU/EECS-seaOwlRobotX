@@ -1,0 +1,419 @@
+#!/bin/bash
+################################################################################
+# Copyright 2025 ModalAI Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# 4. The Software is used solely in conjunction with devices provided by
+#    ModalAI Inc.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+################################################################################
+
+NAME="voxl-tflite-server"
+SERVICE_FILE="${NAME}.service"
+CONFIG_FILE="/etc/modalai/${NAME}.conf"
+USER=$(whoami)
+
+print_usage () {
+	echo ""
+	echo "Start wizard with prompts:"
+	echo "voxl-configure-tflite-wizard"
+	echo ""
+	echo "Shortcut configuration arguments for scripted setup:"
+	echo "factory_enable will reset the config file to factory defaults"
+	echo "before enabling the service."
+	echo ""
+	echo "voxl-configure-tflite-wizard factory_disable"
+	echo "voxl-configure-tflite-wizard disable"
+	echo "voxl-configure-tflite-wizard factory_enable"
+	echo "voxl-configure-tflite-wizard enable"
+	echo ""
+	echo "show this help message:"
+	echo "voxl-configure-tflite-wizard help"
+	echo ""
+	exit 0
+}
+
+disable_service_and_exit () {
+	echo "disabling ${NAME} systemd service"
+	systemctl disable ${SERVICE_FILE}
+	echo "stopping ${NAME} systemd service"
+	systemctl stop ${SERVICE_FILE}
+	echo "Done configuring ${NAME}"
+	exit 0
+}
+
+enable_service_and_exit () {
+	echo "enabling  ${NAME} systemd service"
+	systemctl enable  ${SERVICE_FILE}
+	echo "starting  ${NAME} systemd service"
+	systemctl restart  ${SERVICE_FILE}
+	echo "Done configuring ${NAME}"
+	exit 0
+}
+
+reset_config_file_to_default () {
+	echo "wiping old config file"
+	rm -rf ${CONFIG_FILE}
+	${NAME} -c
+}
+
+################################################################################
+# Configure a single instance interactively
+################################################################################
+configure_instance() {
+	local config_path=$1
+	local instance_name=$2
+
+	echo ""
+	echo "==================================================================="
+	echo "Configuring instance: $instance_name"
+	echo "==================================================================="
+
+	# Model selection with presets
+	echo ""
+	echo "Select a model preset or choose Custom:"
+	options=(
+		"Mobilenet - object detection"
+		"FastDepth - monocular depth estimation"
+		"Deeplab - cityscapes segmentation"
+		"EfficientNet - image classification"
+		"Posenet - pose estimation"
+		"Yolov5 - object detection"
+		"Yolov8 - object detection (coco dataset)"
+		"Yolov11 - object detection (coco dataset)"
+		"Custom - specify all parameters manually"
+	)
+
+	PS3="Enter the number corresponding to the model: "
+	select opt in "${options[@]}" "Quit"; do
+		case $REPLY in
+			1)
+				model_path="/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite"
+				model_arch="MOBILE_NET"
+				norm_type="PIXEL_MEAN"
+				requires_labels="true"
+				label_path="/usr/bin/dnn/coco_labels.txt"
+				break;;
+			2)
+				model_path="/usr/bin/dnn/fastdepth_float16_quant.tflite"
+				model_arch="FAST_DEPTH"
+				norm_type="PIXEL_MEAN"
+				requires_labels="false"
+				label_path=""
+				break;;
+			3)
+				model_path="/usr/bin/dnn/edgetpu_deeplab_321_os32_float16_quant.tflite"
+				model_arch="DEEPLAB"
+				norm_type="PIXEL_MEAN"
+				requires_labels="true"
+				label_path="/usr/bin/dnn/cityscapes_labels.txt"
+				break;;
+			4)
+				model_path="/usr/bin/dnn/lite-model_efficientnet_lite4_uint8_2.tflite"
+				model_arch="EFFICIENT_NET"
+				norm_type="PIXEL_MEAN"
+				requires_labels="true"
+				label_path="/usr/bin/dnn/imagenet_labels.txt"
+				break;;
+			5)
+				model_path="/usr/bin/dnn/lite-model_movenet_singlepose_lightning_tflite_float16_4.tflite"
+				model_arch="POSENET"
+				norm_type="HARD_DIVISION"
+				requires_labels="false"
+				label_path=""
+				break;;
+			6)
+				model_path="/usr/bin/dnn/yolov5_float16_quant.tflite"
+				model_arch="YOLOV5"
+				norm_type="HARD_DIVISION"
+				requires_labels="true"
+				label_path="/usr/bin/dnn/yolov5_labels.txt"
+				break;;
+			7)
+				model_path="/usr/bin/dnn/yolov8n_float16.tflite"
+				model_arch="YOLOV8"
+				norm_type="HARD_DIVISION"
+				requires_labels="true"
+				label_path="/usr/bin/dnn/yolov5_labels.txt"
+				break;;
+			8)
+				model_path="/usr/bin/dnn/yolov11n_float16.tflite"
+				model_arch="YOLOV11"
+				norm_type="HARD_DIVISION"
+				requires_labels="true"
+				label_path="/usr/bin/dnn/yolov5_labels.txt"
+				break;;
+			9)
+				# Custom configuration
+				read -p "Enter the full path to the .tflite model file: " model_path
+
+				echo ""
+				echo "Select model architecture:"
+				PS3="Enter the number for the architecture: "
+				select arch_opt in "MOBILE_NET" "MOBILE_NET_CLASSIFIER" "YOLOV5" "YOLOV8" "YOLOV11" "EFFICIENT_NET" "POSENET" "FAST_DEPTH" "DEEPLAB"; do
+					if [[ -n "$arch_opt" ]]; then
+						model_arch=$arch_opt
+						break
+					else
+						echo "Invalid option. Please try again."
+					fi
+				done
+
+				echo ""
+				echo "Select preprocessing normalization for your model:"
+				PS3="Enter the number for preprocessing normalization: "
+				select norm_opt in "PIXEL_MEAN [-1, 1]" "HARD_DIVISION [0, 1]" "NONE [0, 255]"; do
+					if [[ -n "$norm_opt" ]]; then
+						norm_type="${norm_opt%% *}"
+						break
+					else
+						echo "Invalid option. Please try again."
+					fi
+				done
+
+				echo ""
+				echo "Does this model require labels?"
+				PS3="Enter your choice: "
+				select label_req in "yes" "no"; do
+					case $label_req in
+						yes)
+							requires_labels="true"
+							read -p "Enter the full path to the labels file: " label_path
+							break;;
+						no)
+							requires_labels="false"
+							label_path=""
+							break;;
+						*)
+							echo "Invalid option. Please try again.";;
+					esac
+				done
+				break;;
+			[Qq]*)
+				echo "Quitting..."
+				exit 0;;
+			*)
+				echo "Invalid option. Please try again.";;
+		esac
+	done
+
+	echo "Model selected: $model_path"
+	echo "Architecture: $model_arch"
+	echo "Normalization: $norm_type"
+
+	# Detect available camera pipes
+	echo ""
+	echo "Detecting available image pipes..."
+	pipes=($(voxl-list-pipes -t camera_image_metadata_t | grep -Ev 'lepton|feat_overlay|ov_overlay|tflite'))
+
+	if [ ${#pipes[@]} -eq 0 ]; then
+		echo "No valid camera pipes found."
+		exit 1
+	fi
+
+	echo "Select an image sensor pipe:"
+	PS3="Enter the number for the image sensor: "
+	select pipe in "${pipes[@]}" "Quit"; do
+		if [[ "$pipe" == "Quit" ]]; then
+			echo "Exiting."
+			exit 0
+		elif [[ -n "$pipe" ]]; then
+			input_pipe="/run/mpa/$pipe/"
+			break
+		else
+			echo "Invalid option. Please try again."
+		fi
+	done
+
+	echo "Selected input pipe: $input_pipe"
+
+	# Output pipe prefix
+	read -p "Enter the output pipe prefix: " output_prefix
+
+	# Frame skipping
+	echo ""
+	read -p "How many frames to skip between inferences (0 for no skipping): " skip_frames
+	# Validate input is a number
+	if ! [[ "$skip_frames" =~ ^[0-9]+$ ]]; then
+		echo "Invalid input, defaulting to 0"
+		skip_frames=0
+	fi
+
+	# Delegate selection
+	echo ""
+	echo "Select hardware delegate:"
+	PS3="Enter the number for the delegate: "
+	select delegate_opt in "gpu" "cpu" "nnapi"; do
+		case $delegate_opt in
+			gpu|cpu|nnapi)
+				delegate=$delegate_opt
+				break;;
+			*)
+				echo "Invalid option. Please try again.";;
+		esac
+	done
+
+	# Build the command to configure via C program
+	cmd="voxl-configure-tflite --config-path \"$config_path\" --model-path \"$model_path\" --model-arch \"$model_arch\" --norm-type \"$norm_type\" --input-pipe \"$input_pipe\" --delegate \"$delegate\" --output-prefix \"$output_prefix\" --skip-frames \"$skip_frames\" --allow-multiple true --require-labels \"$requires_labels\""
+
+	if [ -n "$label_path" ]; then
+		cmd="$cmd --label-path \"$label_path\""
+	fi
+
+	echo ""
+	echo "Configuring with: $cmd"
+	eval $cmd
+
+	if [ $? -ne 0 ]; then
+		echo "Error: Failed to configure instance $instance_name"
+		exit 1
+	fi
+
+	echo "Successfully configured $instance_name"
+}
+
+
+################################################################################
+## actual start of execution, handle optional arguments first
+################################################################################
+
+## sanity checks
+if [ "${USER}" != "root" ]; then
+	echo "Please run this script as root"
+	exit 1
+fi
+
+
+## convert argument to lower case for robustness
+arg=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+
+## parse arguments
+case ${arg} in
+	"")
+		echo "Starting Wizard"
+		;;
+	"h"|"-h"|"help"|"--help")
+		print_usage
+		exit 0
+		;;
+	"factory_disable")
+		reset_config_file_to_default
+		disable_service_and_exit
+		;;
+	"disable")
+		disable_service_and_exit
+		;;
+	"factory_enable")
+		reset_config_file_to_default
+		enable_service_and_exit
+		;;
+	"enable")
+		enable_service_and_exit
+		;;
+	*)
+		echo "invalid option"
+		print_usage
+		exit 1
+esac
+
+
+################################################################################
+## no optional arguments, start config wizard prompts
+################################################################################
+
+echo " "
+echo "Do you want to reset the config file to factory defaults?"
+PS3="Enter your choice: "
+select opt in "yes" "no"; do
+case $opt in
+yes )
+	reset_config_file_to_default
+	break;;
+no )
+	echo "loading and updating config file with ${NAME} -c"
+	${NAME} -c
+	break;;
+*)
+	echo "invalid option"
+	esac
+done
+
+read -p "How many instances do you want to configure?: " num_instances
+
+if [ "$num_instances" -lt 1 ]; then
+	echo "Error: Must configure at least 1 instance"
+	exit 1
+fi
+
+exec_start_string="/usr/bin/voxl-tflite-server"
+
+# Configure each instance
+for i in $(seq 1 $num_instances); do
+	if [ "$i" -eq 1 ]; then
+		configure_instance "/etc/modalai/${NAME}.conf" "Instance 1"
+	else
+		# Copy first config as template
+		cp "/etc/modalai/${NAME}.conf" "/etc/modalai/${NAME}_${i}.conf"
+		configure_instance "/etc/modalai/${NAME}_${i}.conf" "Instance $i"
+		exec_start_string+=" \& /usr/bin/voxl-tflite-server -p /etc/modalai/${NAME}_${i}.conf"
+	fi
+done
+
+# Ask if user wants to add to systemd
+echo ""
+echo "Do you want to add this configuration to systemd? (overwrites current systemd configuration)"
+PS3="Enter your choice: "
+select opt in "yes" "no"; do
+case $opt in
+yes )
+	# Update systemd service ExecStart
+	sed -i "s|^ExecStart=.*|ExecStart=/bin/bash -c \"${exec_start_string}\"|" /etc/systemd/system/voxl-tflite-server.service
+	systemctl daemon-reload
+	echo "Configuration added to systemd."
+	echo "To enable and start the service, run:"
+	echo "  systemctl enable --now ${NAME}"
+	echo "Done configuring ${NAME}"
+	exit 0
+	break;;
+no )
+	echo "Configuration saved but not added to systemd."
+	echo "You can manually run instances with:"
+	if [ "$num_instances" -eq 1 ]; then
+		echo "  voxl-tflite-server"
+	else
+		echo "  voxl-tflite-server"
+		for i in $(seq 2 $num_instances); do
+			echo "  voxl-tflite-server -p /etc/modalai/${NAME}_${i}.conf"
+		done
+	fi
+	echo "Done configuring ${NAME}"
+	exit 0
+	break;;
+*)
+	echo "invalid option"
+	esac
+done

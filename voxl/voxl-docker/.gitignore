@@ -1,0 +1,11 @@
+.bash_history
+*.tar
+.sudo_as_admin_successful
+.bashrc
+adsp-proc-examples
+*.tgz
+*.tar.gz
+*.ipk
+voxl-cross/*.ipk
+voxl-cross/*.deb
+.gitconfig

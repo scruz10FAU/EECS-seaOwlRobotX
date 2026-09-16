@@ -60,7 +60,7 @@ class YoloDetector:
     def __init__(
         self,
         weights: str,
-        class_names: List[str],
+        class_names: Optional[List[str]] = None,
         imgsz: int = 320,
         conf_thresh: float = 0.5,
         device: Optional[str] = None,
@@ -89,6 +89,22 @@ class YoloDetector:
         try:
             YOLO = _lazy_import_yolo()
             self._model = YOLO(self.weights)
+
+            # Class list defaults to whatever the checkpoint was trained on.
+            # Passing a SHORTER list than the model has classes silently drops
+            # every detection whose class index falls off the end (see detect()),
+            # so prefer the model's own names unless the caller overrode them.
+            model_names = getattr(self._model, "names", None) or {}
+            model_names = [model_names[i] for i in sorted(model_names)]
+            if not self.class_names:
+                self.class_names = model_names or ["object"]
+            elif model_names and len(self.class_names) < len(model_names):
+                print(f"[yolo] WARNING: config lists {len(self.class_names)} class(es) "
+                      f"but {self.weights} has {len(model_names)}: {model_names}. "
+                      f"Detections of the extra classes would be discarded -- "
+                      f"using the model's list instead.")
+                self.class_names = model_names
+
             self._tracking = enable_tracking
             # Warm up — first inference is slow due to TensorRT/CUDA setup
             dummy = np.zeros((self.imgsz, self.imgsz, 3), dtype=np.uint8)

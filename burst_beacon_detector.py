@@ -356,6 +356,7 @@ def run_burst_ros(cfg: dict) -> None:
         backend=cfg["detection"].get("backend", "ultralytics"),
         conf_thresh=cfg["conf"],
         delegate_path=cfg["detection"].get("tflite_delegate_path"),
+        class_names=cfg["detection"].get("class_names"),
     ):
         print("[burst] Detection failed to start")
         cam.close()
