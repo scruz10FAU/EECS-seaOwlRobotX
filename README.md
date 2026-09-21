@@ -18,10 +18,7 @@ Detection pipeline for colored, optionally blinking, beacon lights mounted on a 
 | `sweep_rrt.py` | Autonomous RRT beacon search. Explores a configurable radius from takeoff, hovering to verify blink status on each new detection. |
 | `data_recorder.py` | ROS2 node that saves camera frames and detection labels to disk during a mission. |
 | `start_seabird_beacon.sh` | Mission launcher. Starts the detector, sweep, and recorder as tagged, logged child processes. |
-| `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
-| `beacon_camera.py` | `BeaconCamera` ROS2 node — camera image subscriptions, depth decoding, and pose/GPS callbacks. |
-| `batch_detect.py` | Headless batch processor — runs detection over multiple video files and writes a CSV + summary. |
-| `check_drone_pose.py` | Standalone diagnostic — checks whether the configured AGL height source (`px4_local_position` or `vvhub_pose`) actually publishes data reachable from wherever it's run, independent of the full detector pipeline. |
+| `utils/` | Shared helper modules (`BlinkDetector`, `BeaconCamera`, detector backends, camera interfaces) imported by the scripts above — see [utils/README.md](utils/README.md). |
 
 ---
 
@@ -288,7 +285,7 @@ Uses the modal camera driver and ToF depth sensor topics.
 
 **Prerequisites before launching:**
 - Modal camera driver running (publishes `/hires_front_small_color` and `/tof_depth`)
-- VVHub running (publishes `/vvhub_body_wrt_local/pose`) — **or**, if VIO is intentionally disabled outdoors, set `topics.drone_height_source` to `"px4_local_position"` instead so AGL height comes from PX4 directly. Use `check_drone_pose.py` to confirm whichever source is configured is actually reachable before flying.
+- VVHub running (publishes `/vvhub_body_wrt_local/pose`) — **or**, if VIO is intentionally disabled outdoors, set `topics.drone_height_source` to `"px4_local_position"` instead so AGL height comes from PX4 directly.
 - micro-ROS agent running (bridges PX4 → `/fmu/out/vehicle_gps_position`, and `/fmu/out/vehicle_local_position` if using the `px4_local_position` height source)
 
 ### beacon_config_sim.json — Isaac Sim
@@ -312,7 +309,7 @@ Uses the Pegasus Simulator front camera. Pose and GPS are disabled (`null`) sinc
 
 ## beacon_detector.py
 
-The main script. Handles color classification, frame annotation, video playback modes, and the ROS live camera loop. Imports `BlinkDetector` from `blink_detector.py` and lazily imports `BeaconCamera` from `beacon_camera.py` only when ROS mode is invoked.
+The main script. Handles color classification, frame annotation, video playback modes, and the ROS live camera loop. Imports `BlinkDetector` from `utils/blink_detector.py` and lazily imports `BeaconCamera` from `utils/beacon_camera.py` only when ROS mode is invoked — see [utils/README.md](utils/README.md).
 
 ### Two-stage detection pipeline
 
@@ -414,134 +411,9 @@ Three independent image-saving flags can be combined freely. All write to a dire
 
 ---
 
-## blink_detector.py
+## Utility modules
 
-Standalone module — no ROS or OpenCV dependency. Imported directly by `beacon_detector.py` and `batch_detect.py`.
-
-### BlinkDetector
-
-Maintains an 8-second rolling window of `(timestamp, color, intensity, color_conf)` samples and estimates whether the beacon is blinking and at what frequency.
-
-```python
-detector = BlinkDetector()
-result = detector.update(ts, color, intensity, color_conf)
-# result: {"is_blinking": True|False|None, "blink_color": str, "blink_hz": float|None, "phase": "on"|"off"|"unknown"}
-```
-
-`color_conf` is the `color_confidence` value from `classify_beacon_color`. It is used to filter out low-confidence non-blue readings that would otherwise force the detector into the wrong color mode.
-
-`is_blinking` has three states:
-- `None` — not enough data yet (window < 4 s)
-- `False` — confirmed not blinking
-- `True` — confirmed blinking at `blink_hz` Hz
-
-### Algorithm
-
-**Red / Green beacons:** YOLO loses the beacon entirely when the LED turns off. A rising edge is therefore a color transition from absent/`unknown` back to the signal color. If two consecutive detections are more than `_BLINK_GAP_OFF_SEC` apart, a synthetic `_off_` marker is injected between them to represent the missed off-period.
-
-**Blue beacons:** The beacon housing is always visible so inter-frame gaps are *not* off-periods — gap injection is skipped. Instead, `color_confidence` (fraction of lit pixels) separates the LED-on state (~0.4+) from the housing-only state (~0.02–0.05). Readings above `_BLINK_CC_ON_THRESHOLD` are treated as "on"; readings below (including `unknown` frames) are treated as "off".
-
-If all samples in the window are "on" (color_conf never drops below the threshold, as happens with some beacon types), the detector falls back to intensity oscillation: if the peak-to-peak swing of intensity across the window exceeds `_BLINK_INTENSITY_MIN_SWING`, the mean intensity is used to split samples into on/off and rising edges are counted as usual.
-
-**`blink_color` vs `color`:** `blink_color` in the result dict reflects the most common non-blue color seen across the entire rolling window — it is populated as soon as any non-blue frame enters the window, regardless of whether blinking is confirmed. When `is_blinking=False`, `blink_color` may differ from the current frame's `color` (e.g. LED is currently off → `color="blue"` but `blink_color="red"` from recent history). Trust `blink_color` only when `is_blinking=True`; use the frame-level `color` for instantaneous classification.
-
-### Key constants
-
-| Constant | Default | Meaning |
-|---|---|---|
-| `_BLINK_WINDOW_SEC` | `12.0 s` | Rolling window length |
-| `_BLINK_MIN_DATA_SEC` | `4.0 s` | Minimum history before deciding. Configurable via `blink_min_data_sec` |
-| `_BLINK_HZ_RANGE` | `0.12–2.0 Hz` | Valid blink frequency range |
-| `_BLINK_MIN_EDGE_GAP` | `0.20 s` | Debounce: minimum gap between rising edges. Configurable via `blink_min_edge_gap` |
-| `_BLINK_GAP_OFF_SEC` | `5.0 s` | Red/green: gap longer than this injects an off marker |
-| `_BLINK_CC_ON_THRESHOLD` | `0.15` | Blue beacons: `color_conf` above this = LED on |
-| `_BLINK_COLOR_CONF_MIN` | `0.001` | Minimum `color_conf` for a non-blue reading to count toward color mode |
-| `_BLINK_MAX_IOI_SEC` | `5.0 s` | Max inter-onset interval for blue beacons |
-| `_BLINK_MAX_IOI_SEC_COLOR` | `8.0 s` | Max inter-onset interval for red/green (allows long on-periods) |
-| `_BLINK_INTENSITY_MIN_SWING` | `0.05` | Min peak-to-peak intensity swing to activate intensity-fallback path. Configurable via `blink_intensity_min_swing` |
-| `_BLINK_MAX_IOI_RATIO` | `None` | Max ratio of longest to shortest IOI (blue beacons only). `None` = disabled. Configurable via `blink_max_ioi_ratio` |
-
-Parameters marked "Configurable" can be set per-deployment via the `detection` section of the JSON config (applied at startup by `_apply_color_config`).
-
-### Helper
-
-```python
-_get_blink_detector(tracking_id: int) -> BlinkDetector
-```
-
-Returns the `BlinkDetector` for a given YOLO tracking ID, creating one on first call.
-
----
-
-## beacon_camera.py
-
-ROS2 node that wraps camera subscriptions, depth synchronization, drone pose, and GPS origin. Imported by `beacon_detector.py` inside `_import_ros()` so ROS packages are never loaded unless ROS mode is actually invoked.
-
-### BeaconCamera(Node)
-
-**Lifecycle**
-
-| Method | Description |
-|---|---|
-| `open()` | Subscribe to RGB+depth image topics, camera info, pose, GPS. Used for live camera mode. |
-| `open_for_video()` | Minimal setup for video-file mode: create publisher and subscribe to pose + GPS only. |
-| `close()` | Mark node as closed. |
-| `grab()` | Spin once and return `True` if a new synchronized frame arrived. |
-| `enable_detection(model_path, imgsz=640)` | Start `YoloDetector` with object tracking on the live RGB stream. `imgsz` controls YOLO inference resolution. |
-
-**Data accessors**
-
-| Method | Returns |
-|---|---|
-| `get_rgb()` | Latest BGR frame as `np.ndarray`, or `None` |
-| `get_depth()` | Latest float32 depth map, or `None` |
-| `get_frame_timestamp()` | ROS header timestamp of the latest frame as `float` seconds, or `None` |
-| `get_drone_pose()` | `(pos_xyz, quat_wxyz)` numpy arrays, or `(None, None)` |
-| `get_gps_origin()` | `(lat, lon, alt)` tuple, or `None` |
-| `get_detections()` | List of `Detection` objects from `YoloDetector` |
-
-**Depth decoding**
-
-| Encoding | dtype | Scale |
-|---|---|---|
-| `32FC1` | `float32` | metres, no scaling |
-| `16UC1` | `uint16` | × 0.001 → metres |
-| `8UC1` / other | `uint8` | raw value, no scaling |
-
-If the decoded depth map has a different resolution than the RGB frame, it is resized to match using `cv2.INTER_NEAREST`.
-
-RGB and depth frames are synchronized with `message_filters.ApproximateTimeSynchronizer` (50 ms slop).
-
----
-
-## batch_detect.py
-
-Headless batch processor for running detection over multiple video files without opening any display window.
-
-### Usage
-
-```
-python3 batch_detect.py video1.mp4 video2.mp4 ...
-python3 batch_detect.py -m models/one_beacon.pt -cm models/best_crop.pt videos/*.mp4
-python3 batch_detect.py --output-dir /path/to/logs video1.mp4
-```
-
-**Flags**
-
-| Flag | Default | Description |
-|---|---|---|
-| `--model / -m` | `models/one_beacon.pt` | Stage-1 YOLO beacon model |
-| `--crop-model / -cm` | `models/best_crop.pt` | Stage-2 lit-area model |
-| `--conf / -c` | `0.5` | Detection confidence threshold |
-| `--output-dir / -o` | directory of first video | Where to write output files |
-
-### Output files
-
-**`batch_detections_<ts>.csv`** — one row per detection per frame across all videos.
-
-Columns: `video, timestamp, frame, color, color_confidence, intensity, is_blinking, blink_hz, blink_phase, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2`
-
-**`batch_summary_<ts>.txt`** — human-readable per-video breakdown. Includes frame count, detection rate, color breakdown, and blink statistics.
+`blink_detector.py`, `beacon_camera.py`, `camera_interface.py`, `yolo_detector.py`, and `tflite_hexagon_detector.py` live in `utils/` — see [utils/README.md](utils/README.md) for `BlinkDetector`, `BeaconCamera`, and the detector backend classes they document.
 
 ---
 
