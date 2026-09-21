@@ -45,7 +45,7 @@ from beacon_detector_config import (
     _format_height_status,
     _DEFAULT_CONFIG,
 )
-from blink_detector import BlinkDetector
+from utils.blink_detector import BlinkDetector
 
 # ── Burst parameters (can be overridden via config key "burst") ───────────────
 _BURST_INTERVAL = 0.5   # seconds between captured frames

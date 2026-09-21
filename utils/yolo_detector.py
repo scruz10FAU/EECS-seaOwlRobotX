@@ -12,7 +12,7 @@ This module knows NOTHING about:
 It's pure: image in → detections out.
 
 Usage:
-    from yolo_detector import YoloDetector
+    from utils.yolo_detector import YoloDetector
     det = YoloDetector(weights="path/to/best.pt", class_names=["red_buoy", ...])
     det.start(enable_tracking=True)
     detections = det.detect(rgb_frame, depth_map, intrinsics)
@@ -28,7 +28,7 @@ if sys.version_info[:2] == (3, 11):
 from typing import List, Optional, Tuple
 import numpy as np
 
-from camera_interface import Detection, Intrinsics
+from utils.camera_interface import Detection, Intrinsics
 
 # ultralytics import deferred to start() so the module can be imported
 # without GPU overhead until actually needed

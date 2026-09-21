@@ -38,7 +38,7 @@ import json
 import time
 import cv2
 
-from blink_detector import BlinkDetector, _get_blink_detector
+from utils.blink_detector import BlinkDetector, _get_blink_detector
 
 # ── ArUco setup (added) ─────────────────────────────────────────────────────
 _ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
@@ -53,7 +53,7 @@ def _import_ros():
     import rclpy as _rclpy; rclpy = _rclpy
     from std_msgs.msg import String as _Str; String = _Str
     from seabird_config import camera_to_world as _c2w; camera_to_world = _c2w
-    from beacon_camera import BeaconCamera as _BC; BeaconCamera = _BC
+    from utils.beacon_camera import BeaconCamera as _BC; BeaconCamera = _BC
 
 # ── Color classification ───────────────────────────────────────────────────────
 

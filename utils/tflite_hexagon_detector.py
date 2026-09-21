@@ -14,7 +14,7 @@ specific and must be supplied via `delegate_path`; if it's absent or fails
 to load, inference falls back to the interpreter's default CPU backend.
 
 Usage:
-    from tflite_hexagon_detector import TFLiteHexagonDetector
+    from utils.tflite_hexagon_detector import TFLiteHexagonDetector
     det = TFLiteHexagonDetector(weights="path/to/model_int8.tflite",
                                  class_names=["beacon"],
                                  delegate_path="/usr/lib/libhexagon_delegate.so")
@@ -27,7 +27,7 @@ from typing import List, Optional, Tuple
 import cv2
 import numpy as np
 
-from camera_interface import Detection, Intrinsics
+from utils.camera_interface import Detection, Intrinsics
 
 _tflite = None
 

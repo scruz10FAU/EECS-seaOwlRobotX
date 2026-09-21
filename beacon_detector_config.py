@@ -26,7 +26,7 @@ import time
 import cv2
 import math
 
-from blink_detector import BlinkDetector, _get_blink_detector, configure_variance_mode
+from utils.blink_detector import BlinkDetector, _get_blink_detector, configure_variance_mode
 from ultralytics import YOLO
 
 EARTH_RADIUS_M = 6378137.0
@@ -200,7 +200,7 @@ def _import_ros():
     global rclpy, String, _BeaconCameraBase
     import rclpy as _rclpy; rclpy = _rclpy
     from std_msgs.msg import String as _Str; String = _Str
-    from beacon_camera import BeaconCamera as _BC; _BeaconCameraBase = _BC
+    from utils.beacon_camera import BeaconCamera as _BC; _BeaconCameraBase = _BC
 
 
 def _camera_to_world(p_cam, drone_pos, drone_quat_wxyz, mount_offset, R_body_to_cam):
@@ -231,7 +231,7 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
     from sensor_msgs.msg import Image
     from geometry_msgs.msg import PoseStamped
     from geographic_msgs.msg import GeoPointStamped
-    from camera_interface import Intrinsics
+    from utils.camera_interface import Intrinsics
     from cv_bridge import CvBridge as _CvBridge
     import message_filters
 
@@ -564,7 +564,7 @@ _WINNER_THRESHOLD = 0.25   # green/blue minimum to win
 
 def _apply_color_config(det_cfg: dict) -> None:
     """Apply per-device color classification thresholds, hue bands, and blink params from config."""
-    import blink_detector as _bd
+    import utils.blink_detector as _bd
     global _RED_THRESHOLD, _WINNER_THRESHOLD, _HUE_BANDS
     _RED_THRESHOLD    = det_cfg.get("red_threshold",    _RED_THRESHOLD)
     _WINNER_THRESHOLD = det_cfg.get("winner_threshold", _WINNER_THRESHOLD)

@@ -20,10 +20,10 @@ from geographic_msgs.msg import GeoPointStamped
 from std_msgs.msg import String
 import message_filters
 
-from camera_interface import CameraInterface, CameraConfig, Detection, Intrinsics
+from utils.camera_interface import CameraInterface, CameraConfig, Detection, Intrinsics
 from seabird_config import IMG_W, IMG_H, FX, FY, CX, CY
-from yolo_detector import YoloDetector
-from tflite_hexagon_detector import TFLiteHexagonDetector
+from utils.yolo_detector import YoloDetector
+from utils.tflite_hexagon_detector import TFLiteHexagonDetector
 
 _bridge = CvBridge()
 
