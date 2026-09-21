@@ -1,5 +1,5 @@
 {
-  "model":      "models/best_beacon_square3.pt",
+  "model":      "models/best_square3_914.pt",
   "crop_model": "models/beacon_square_top93b.pt",
   "conf":       0.5,
   "display":    false,
