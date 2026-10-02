@@ -57,12 +57,10 @@ def _build_message(color, is_blinking, lat, lon, tracking_id,
     return {
         "gps_position": {"latitude": lat, "longitude": lon, "altitude": altitude},
 
-        "blink": {
-            "is_blinking": is_blinking,
-            "blink_color": blink_color,
-            "blink_hz": blink_hz,
-            "phase": phase,
-        },
+        "blink": is_blinking,
+        "blink_color": blink_color,
+        "blink_hz": blink_hz,
+        "phase": phase,
         "color": color,
         "tracking_id": tracking_id
 
