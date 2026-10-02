@@ -13,6 +13,7 @@ Shared helper modules used by the top-level scripts in the main folder. None of 
 | `tflite_hexagon_detector.py` | `TFLiteHexagonDetector` — int8 TFLite inference backend for the ModalAI VOXL2/Starling2 Max Hexagon NPU delegate. Drop-in alternative to `YoloDetector`; falls back to CPU if the delegate isn't available. |
 | `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
 | `beacon_camera.py` | `BeaconCamera` ROS2 node — camera image subscriptions, depth decoding, pose/GPS callbacks, and detector backend selection. |
+| `beacon_mavlink_protocol.py` | Binary wire format (pack/unpack) for relaying beacon detections to the ground station as a MAVLink `MEMORY_VECT` message. Shared by `beacon_mavlink_bridge.py` (drone) and `beacon_mavlink_ground.py` (ground station). |
 
 ---
 
@@ -185,3 +186,24 @@ ROS2 node that wraps camera subscriptions, depth synchronization, drone pose, GP
 If the decoded depth map has a different resolution than the RGB frame, it is resized to match using `cv2.INTER_NEAREST`.
 
 RGB and depth frames are synchronized with `message_filters.ApproximateTimeSynchronizer` (50 ms slop).
+
+---
+
+## beacon_mavlink_protocol.py
+
+Pure encode/decode module — no ROS or `pymavlink` dependency, just `struct`. Shared verbatim by `beacon_mavlink_bridge.py` (drone side) and `beacon_mavlink_ground.py` (ground station side); see the main `README.md` for the full picture of how the two scripts use it.
+
+```python
+from utils.beacon_mavlink_protocol import pack_value_array, unpack_value_array
+
+value = pack_value_array(latitude, longitude, color, is_blinking)   # -> 32-entry signed-int8 list
+# ... send `value` as a MAVLink MEMORY_VECT message ...
+beacon = unpack_value_array(value)   # -> BeaconMavlinkMessage(latitude, longitude, color, is_blinking)
+```
+
+Packs `latitude`/`longitude` as int32, ×1e7-scaled (same convention as MAVLink's own `GLOBAL_POSITION_INT`), plus `color` and `is_blinking` as `uint8` enums, into the first 10 bytes of the 32-byte `value` array MAVLink's `MEMORY_VECT` message carries — the remaining bytes are zero-padded. `BEACON_MAVLINK_ADDRESS` (`0xBEAC`) is used as `MEMORY_VECT.address`, a sentinel the ground-station decoder filters on to distinguish this traffic from any other real memory-vector use on the link. `BEACON_MAVLINK_VERSION` is carried in `MEMORY_VECT.ver` so a future payload-layout change can be detected and rejected cleanly instead of silently misdecoding.
+
+| Enum | Values |
+|---|---|
+| `color` | `unknown`=0, `red`=1, `green`=2, `blue`=3, `white`=4 |
+| `is_blinking` | `None`=0, `False`=1, `True`=2 |

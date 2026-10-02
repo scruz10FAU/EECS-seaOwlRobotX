@@ -48,12 +48,42 @@ _ARUCO_DETECTOR = cv2.aruco.ArucoDetector(_ARUCO_DICT, _ARUCO_PARAMS)
 EARTH_RADIUS_M = 6378137.0
 
 # Lazily imported only when ROS mode is used
+_ZED_CAMERA_DEFAULTS = {}  # set by _import_ros() -- fx/fy/cx/cy/img_w/img_h from the JSON config
+
+
 def _import_ros():
-    global rclpy, String, camera_to_world, BeaconCamera
+    """
+    seabird_config.py is no longer used anywhere -- this script has no JSON
+    --config flag of its own, so it reuses beacon_detector_config.py's
+    load_config()/_camera_to_world() against beacon_detector_config's own
+    default config file for the fallback camera intrinsics and the
+    camera->world transform.
+    """
+    global rclpy, String, camera_to_world, BeaconCamera, _ZED_CAMERA_DEFAULTS
     import rclpy as _rclpy; rclpy = _rclpy
     from std_msgs.msg import String as _Str; String = _Str
-    from seabird_config import camera_to_world as _c2w; camera_to_world = _c2w
+    from beacon_detector_config import load_config, _DEFAULT_CONFIG, _camera_to_world
     from utils.beacon_camera import BeaconCamera as _BC; BeaconCamera = _BC
+
+    # _DEFAULT_CONFIG ("beacon_config.json") doesn't resolve from the repo
+    # root -- the actual file lives under configs/. Try both so this keeps
+    # working regardless of where it's invoked from.
+    config_path = _DEFAULT_CONFIG if os.path.isfile(_DEFAULT_CONFIG) \
+        else os.path.join("configs", _DEFAULT_CONFIG)
+    cfg = load_config(config_path)
+    cam = cfg["camera"]
+    _ZED_CAMERA_DEFAULTS = dict(
+        fx=cam["fx"], fy=cam["fy"], cx=cam["cx"], cy=cam["cy"],
+        img_w=cam["img_w"], img_h=cam["img_h"],
+    )
+
+    mount_offset  = cam["_mount_offset"]
+    r_body_to_cam = cam["_R_body_to_cam"]
+
+    def _c2w(p_cam, drone_pos, drone_quat_wxyz):
+        return _camera_to_world(p_cam, drone_pos, drone_quat_wxyz, mount_offset, r_body_to_cam)
+
+    camera_to_world = _c2w
 
 # ── Color classification ───────────────────────────────────────────────────────
 
@@ -601,7 +631,7 @@ def run_video_ros(video_path: str,
 
     blink_detector = BlinkDetector()
     rclpy.init()
-    cam        = BeaconCamera(gps_msg_type=gps_msg_type)
+    cam        = BeaconCamera(gps_msg_type=gps_msg_type, **_ZED_CAMERA_DEFAULTS)
     model      = YOLO(model_path)
     crop_model = YOLO(crop_model_path)
     print(f"[beacon-ros-video] Beacon model : {model_path}  conf≥{conf}")
@@ -761,14 +791,14 @@ def main(model: str = "models/one_beacon.pt",
          target_color=None, target_blinking=None,
          gps_msg_type: str = "geopoint_stamped") -> None:
 
-    _import_ros()   # pull in ROS2 / camera_interface / seabird_config
+    _import_ros()   # pull in ROS2 / camera_interface / JSON-config camera defaults
 
     DEBUG_DIR   = os.path.expanduser("~/seabird_dataset/beacon_debug")
     SAVE_EVERY_N = 30
     os.makedirs(DEBUG_DIR, exist_ok=True)
 
     rclpy.init()
-    cam = BeaconCamera(gps_msg_type=gps_msg_type)
+    cam = BeaconCamera(gps_msg_type=gps_msg_type, **_ZED_CAMERA_DEFAULTS)
 
     if not cam.open():
         print("[beacon] Failed to open camera")

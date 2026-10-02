@@ -21,7 +21,6 @@ from std_msgs.msg import String
 import message_filters
 
 from utils.camera_interface import CameraInterface, CameraConfig, Detection, Intrinsics
-from seabird_config import IMG_W, IMG_H, FX, FY, CX, CY
 from utils.yolo_detector import YoloDetector
 from utils.tflite_hexagon_detector import TFLiteHexagonDetector
 
@@ -40,9 +39,18 @@ class BeaconCamera(Node):
         /seabird/beacon_detections  — JSON with label "beacon", detected color, position
     """
 
-    def __init__(self, topic_prefix=DEFAULT_TOPIC_PREFIX, gps_msg_type="geopoint_stamped"):
+    def __init__(self, topic_prefix=DEFAULT_TOPIC_PREFIX, gps_msg_type="geopoint_stamped",
+                 fx=None, fy=None, cx=None, cy=None, img_w=None, img_h=None):
         super().__init__("beacon_camera")
         self._topic_prefix = topic_prefix
+
+        # Fallback camera intrinsics used by _on_camera_info() when nothing
+        # else has set self._intrinsics yet. Callers (e.g. beacon_detector.py's
+        # _import_ros()) are responsible for passing real values in -- this
+        # class has no built-in camera defaults of its own.
+        self._fx, self._fy = fx, fy
+        self._cx, self._cy = cx, cy
+        self._img_w, self._img_h = img_w, img_h
 
         # "geopoint_stamped" (default) -- geographic_msgs/GeoPointStamped, published
         #   RELIABLE/TRANSIENT_LOCAL by MAVROS (GPS_TOPIC).
@@ -260,12 +268,20 @@ class BeaconCamera(Node):
     def _on_camera_info(self, _msg):
         if self._intrinsics is not None:
             return
+        if None in (self._fx, self._fy, self._cx, self._cy, self._img_w, self._img_h):
+            self.get_logger().warn(
+                "No camera intrinsics were passed to BeaconCamera() -- cannot set "
+                "self._intrinsics. Pass fx/fy/cx/cy/img_w/img_h to the constructor.",
+                throttle_duration_sec=5.0,
+            )
+            return
         self._intrinsics = Intrinsics(
-            fx=FX, fy=FY, cx=CX, cy=CY, width=IMG_W, height=IMG_H
+            fx=self._fx, fy=self._fy, cx=self._cx, cy=self._cy,
+            width=self._img_w, height=self._img_h,
         )
         self.get_logger().info(
-            f"Intrinsics set from config: fx={FX:.1f} fy={FY:.1f} "
-            f"cx={CX:.1f} cy={CY:.1f} {IMG_W}x{IMG_H}"
+            f"Intrinsics set from config: fx={self._fx:.1f} fy={self._fy:.1f} "
+            f"cx={self._cx:.1f} cy={self._cy:.1f} {self._img_w}x{self._img_h}"
         )
         self.destroy_subscription(self._info_sub)
 

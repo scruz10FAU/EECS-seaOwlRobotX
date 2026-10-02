@@ -17,8 +17,11 @@ Detection pipeline for colored, optionally blinking, beacon lights mounted on a 
 | `sweep_lawnmower.py` | Autonomous boustrophedon (lawnmower) flight mission. Searches a fixed rectangular area. |
 | `sweep_rrt.py` | Autonomous RRT beacon search. Explores a configurable radius from takeoff, hovering to verify blink status on each new detection. |
 | `data_recorder.py` | ROS2 node that saves camera frames and detection labels to disk during a mission. |
+| `beacon_mavlink_bridge.py` | ROS2 node — relays `/seabird/beacon_detections` to the ground station as a binary MAVLink message over the existing flight-controller link. |
+| `beacon_mavlink_ground.py` | Ground-station counterpart to `beacon_mavlink_bridge.py` — decodes the MAVLink message back into GPS/color/blink status. Runs on a separate machine. |
+| `mock_beacon_publisher.py` | Publishes synthetic `/seabird/beacon_detections` messages for testing downstream consumers — no camera or detection pipeline required. |
 | `start_seabird_beacon.sh` | Mission launcher. Starts the detector, sweep, and recorder as tagged, logged child processes. |
-| `utils/` | Shared helper modules (`BlinkDetector`, `BeaconCamera`, detector backends, camera interfaces) imported by the scripts above — see [utils/README.md](utils/README.md). |
+| `utils/` | Shared helper modules (`BlinkDetector`, `BeaconCamera`, detector backends, camera interfaces, the MAVLink wire format) imported by the scripts above — see [utils/README.md](utils/README.md). |
 
 ---
 
@@ -408,6 +411,44 @@ Three independent image-saving flags can be combined freely. All write to a dire
 ```
 
 `position_3d`, `world_position`, and `gps_position` are `null` if depth or pose data is unavailable.
+
+---
+
+## beacon_mavlink_bridge.py / beacon_mavlink_ground.py
+
+Relays beacon detections to the ground station as a compact binary message over the existing MAVLink link to the flight controller, rather than requiring the ground station to be on the same ROS2 network. No custom MAVLink dialect is used — the payload (latitude, longitude ×1e7 as int32, color, blink status, both as uint8 enums) is packed into the `value` byte array of a standard MAVLink `MEMORY_VECT` message, with a sentinel `address` (`0xBEAC`) distinguishing it from any other real memory-vector traffic on the link. Wire format lives in `utils/beacon_mavlink_protocol.py` and is shared by both scripts.
+
+**`beacon_mavlink_bridge.py`** — ROS2 node, runs alongside the detector on the drone. Subscribes to `/seabird/beacon_detections`, and for each detection with a known GPS position, opens (once) and sends through a `pymavlink` connection to the same MAVLink endpoint `sweep_lawnmower.py`/`sweep_rrt.py` use via `MAVSDK_ADDRESS` (PX4 SITL in sim, `voxl-mavlink-server` on the physical drone) — using `pymavlink` instead of MAVSDK here since MAVSDK's Python API has no generic "send an arbitrary MAVLink message" call.
+
+```bash
+python3 beacon_mavlink_bridge.py                                              # sim default (udp://:14540)
+python3 beacon_mavlink_bridge.py --mavlink-endpoint udpout:127.0.0.1:14551   # physical drone
+```
+
+**`beacon_mavlink_ground.py`** — counterpart script for the ground-station machine (not run on the drone). Listens on a MAVLink connection, filters `MEMORY_VECT` messages by the sentinel address, and prints decoded GPS/color/blink status. Copy this file **and** the `utils/` folder (for `utils/beacon_mavlink_protocol.py`) to the ground station together, so the import resolves.
+
+```bash
+python3 beacon_mavlink_ground.py --mavlink-endpoint udpin:0.0.0.0:14550
+python3 beacon_mavlink_ground.py --mavlink-endpoint /dev/ttyUSB0 --baud 57600
+```
+
+Both scripts require `pip install pymavlink`. Whether messages sent by the bridge actually reach the ground station's radio link depends on how PX4/`voxl-mavlink-server` are configured to forward third-party-injected traffic between endpoints — verify end-to-end delivery against your actual hardware/radio setup before relying on it operationally; it hasn't been tested against real MAVLink hardware in this session.
+
+---
+
+## mock_beacon_publisher.py
+
+Publishes synthetic `/seabird/beacon_detections` messages matching the exact JSON schema `beacon_detector_config.py`'s live ROS mode publishes (see "Published JSON fields" above) — for testing `beacon_mavlink_bridge.py`, `sweep_rrt.py`, `sweep_lawnmower.py`, or any other subscriber without running a camera, YOLO models, or the detection pipeline at all.
+
+Two modes:
+- **No `--color` flag**: cycles through a built-in set of 5 varied samples (different colors, blink states, and GPS fixes) indefinitely, so a subscriber sees realistic variation with zero configuration.
+- **`--color` given**: publishes one fixed, repeated sample built from `--color`/`--blinking`/`--blink-hz`/`--lat`/`--lon`, for targeted single-case testing.
+
+```bash
+python3 mock_beacon_publisher.py                         # cycles the built-in sample set at 1 Hz
+python3 mock_beacon_publisher.py --rate 2.0 --count 10    # 2 Hz, stop after 10 messages
+python3 mock_beacon_publisher.py --color red --blinking true --lat 26.3712 --lon -80.1034
+```
 
 ---
 
