@@ -55,25 +55,15 @@ def _build_message(color, is_blinking, lat, lon, tracking_id,
         hue_votes[color] = 0.9
 
     return {
-        "color": color,
+        "gps_position": {"latitude": lat, "longitude": lon, "altitude": altitude},
+
         "blink": {
             "is_blinking": is_blinking,
             "blink_color": blink_color,
             "blink_hz": blink_hz,
             "phase": phase,
         },
-        "label": "beacon",
-        "color_confidence": 0.75,
-        "intensity": 0.7,
-        "hue_votes": hue_votes,
-        "confidence": confidence,
-        "bbox": [120, 80, 210, 170],
-        "position_3d": [0.12, -0.05, 4.82],
-        "world_position": [1.3, 0.4, 4.8],
-        "gps_position": {"latitude": lat, "longitude": lon, "altitude": altitude},
-        "drone_position": [0.0, 0.0, 5.0],
-        "tracking_id": tracking_id,
-        "timestamp": time.time(),
+        "color": color
     }
 
 
