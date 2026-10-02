@@ -100,7 +100,7 @@ def _run(node: MockBeaconPublisher, message_source, rate_hz: float, count: int) 
 
         node.get_logger().info(
             f"Published: color={msg_dict['color']} "
-            f"blinking={msg_dict['blink']['is_blinking']} "
+            f"blinking={msg_dict['blink']} "
             f"gps=({msg_dict['gps_position']['latitude']:.6f}, "
             f"{msg_dict['gps_position']['longitude']:.6f}) "
             f"tracking_id={msg_dict['tracking_id']}"
