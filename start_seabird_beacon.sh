@@ -82,7 +82,7 @@ DETECTOR_ARGS="${DETECTOR_ARGS:---config beacon_config_sim.json}"
 declare -a COMPONENTS=(
     "DETECTOR|beacon_detector_config.py|32"  # green   — YOLO+HSV beacon detection
     "SWEEP   |sweep_rrt.py|35"              # magenta — takeoff + RRT beacon search
-    "RECORDER|data_recorder.py|36"           # cyan    — dataset: frames + labels to disk
+#    "RECORDER|data_recorder.py|36"           # cyan    — dataset: frames + labels to disk
 )
 
 # Inter-component startup delay (seconds) — lets each node set up its
