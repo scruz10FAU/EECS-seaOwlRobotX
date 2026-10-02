@@ -63,7 +63,9 @@ def _build_message(color, is_blinking, lat, lon, tracking_id,
             "blink_hz": blink_hz,
             "phase": phase,
         },
-        "color": color
+        "color": color,
+        "tracking_id": tracking_id
+
     }
 
 
