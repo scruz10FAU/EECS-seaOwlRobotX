@@ -10,7 +10,7 @@
   "save_det_images": true,
   "save_frames":     false,
   "target_color":    null,
-  "target_blinking": true,
+  "target_blinking": null,
   "video":      null,
   "ros_video":  null,
 
@@ -80,6 +80,15 @@
   "detection": {
     "depth_source": "bbox",
     "max_detections": 50,
-    "imgsz": 640
+    "imgsz": 640,
+    "red_threshold":    0.40,
+    "winner_threshold": 0.25,
+    "red_hue_high":     5
+  },
+  
+  "gps_ground_truth": {
+  "enabled": true,
+  "latitude": 26.7117290,
+  "longitude": -80.2865831
   }
 }
