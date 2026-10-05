@@ -128,7 +128,7 @@ MAVSDK_CONNECT_TIMEOUT_S    = 10.0
 PX4_HEARTBEAT_TIMEOUT_S     = 20.0
 
 # ── Safety ────────────────────────────────────────────────────────────────────
-BATTERY_RTL_PERCENT  = 0.30   # trigger RTL when battery.remaining_percent < this (0.0–1.0)
+#BATTERY_RTL_PERCENT  = 0.30   # trigger RTL when battery.remaining_percent < this (0.0–1.0)
 DETECTOR_TIMEOUT_S   = 30.0   # abort pre-flight if no message from beacon detector within this time
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -756,36 +756,36 @@ def _bearing_to_beacon(color: str) -> float:
 
 # ── Safety monitors ──────────────────────────────────────────────────────────
 
-async def monitor_battery(drone: System) -> None:
-    """Background coroutine — sets _battery_low and logs when battery drops below threshold."""
-    global _battery_low
-    try:
-        async for battery in drone.telemetry.battery():
-            if not _battery_low and battery.remaining_percent < BATTERY_RTL_PERCENT:
-                _battery_low = True
-                log(f"[rrt] ⚡ BATTERY LOW: {battery.remaining_percent * 100:.0f}% "
-                    f"(threshold {BATTERY_RTL_PERCENT * 100:.0f}%) — will RTL")
-    except Exception:
-        log("[rrt] ERROR: monitor_battery() failed")
-        traceback.print_exc()
+#async def monitor_battery(drone: System) -> None:
+    #"""Background coroutine — sets _battery_low and logs when battery drops below threshold."""
+    #global _battery_low
+    #try:
+        #async for battery in drone.telemetry.battery():
+            #if not _battery_low and battery.remaining_percent < BATTERY_RTL_PERCENT:
+                #_battery_low = True
+                #log(f"[rrt] ⚡ BATTERY LOW: {battery.remaining_percent * 100:.0f}% "
+                    #f"(threshold {BATTERY_RTL_PERCENT * 100:.0f}%) — will RTL")
+    #except Exception:
+        #log("[rrt] ERROR: monitor_battery() failed")
+        #traceback.print_exc()
 
 
-async def wait_for_detector() -> bool:
-    """
-    Wait up to DETECTOR_TIMEOUT_S for at least one message on /seabird/beacon_detections.
-    Returns True if the detector is confirmed live, False on timeout.
-    """
-    log(f"[rrt] Waiting for beacon detector on /seabird/beacon_detections "
-        f"({DETECTOR_TIMEOUT_S:.0f}s timeout)...")
-    t0 = asyncio.get_event_loop().time()
-    while asyncio.get_event_loop().time() - t0 < DETECTOR_TIMEOUT_S:
-        if _detector_alive.is_set():
-            log("[rrt] ✓ Beacon detector is publishing")
-            return True
-        await asyncio.sleep(0.5)
-    log("[rrt] ERROR: No message on /seabird/beacon_detections — "
-        "is beacon_detector_config.py running?")
-    return False
+#async def wait_for_detector() -> bool:
+    #"""
+    #Wait up to DETECTOR_TIMEOUT_S for at least one message on /seabird/beacon_detections.
+    #Returns True if the detector is confirmed live, False on timeout.
+    #"""
+    #log(f"[rrt] Waiting for beacon detector on /seabird/beacon_detections "
+        #f"({DETECTOR_TIMEOUT_S:.0f}s timeout)...")
+    #t0 = asyncio.get_event_loop().time()
+    #while asyncio.get_event_loop().time() - t0 < DETECTOR_TIMEOUT_S:
+        #if _detector_alive.is_set():
+            #log("[rrt] ✓ Beacon detector is publishing")
+            #return True
+        #await asyncio.sleep(0.5)
+    #log("[rrt] ERROR: No message on /seabird/beacon_detections — "
+        #"is beacon_detector_config.py running?")
+   # return False
 
 
 # ── Mission ───────────────────────────────────────────────────────────────────
@@ -841,15 +841,15 @@ async def run_mission() -> None:
     await wait_for_ready_position(drone)
 
     asyncio.ensure_future(track_position(drone))
-    asyncio.ensure_future(monitor_battery(drone))
+    #asyncio.ensure_future(monitor_battery(drone))
     await asyncio.sleep(0.5)
     log(f"[rrt] Start position: N={_state.north_m:.2f}  E={_state.east_m:.2f}  "
         f"D={_state.down_m:.2f}")
 
     # ── Detector pre-flight check ─────────────────────────────────────────────
-    if not await wait_for_detector():
-        log("[rrt] ABORT: beacon detector not detected — not arming")
-        return
+    #if not await wait_for_detector():
+        #log("[rrt] ABORT: beacon detector not detected — not arming")
+        #return
 
     # ── Arm ───────────────────────────────────────────────────────────────────
     log("[rrt] Arming...")
