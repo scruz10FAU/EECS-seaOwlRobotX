@@ -1,0 +1,3 @@
+[INFO] [1791231817.996563576] [beacon_camera]: Intrinsics set from config: fx=486.9 fy=526.8 cx=535.3 cy=435.0 640x480
+[INFO] [1791231818.000977965] [beacon_camera]: depth_source=bbox — subscribing to RGB only
+[INFO] [1791231818.021280341] [beacon_camera]: BeaconCamera open — waiting for frames…

@@ -1,0 +1,8 @@
+Creating new Ultralytics Settings v0.0.6 file ✅ 
+View Ultralytics Settings with 'yolo settings' or at '/root/.config/Ultralytics/settings.json'
+Update Settings with 'yolo settings key=value', i.e. 'yolo settings runs_dir=path/to/dir'. For help see https://docs.ultralytics.com/quickstart/#ultralytics-settings.
+[beacon] Loaded config: configs/modal_config.json
+[INFO] [1791231349.673278033] [beacon_camera]: Intrinsics set from config: fx=486.9 fy=526.8 cx=535.3 cy=435.0 640x480
+[INFO] [1791231349.678363904] [beacon_camera]: depth_source=bbox — subscribing to RGB only
+[INFO] [1791231349.696558163] [beacon_camera]: BeaconCamera open — waiting for frames…
+[beacon] Crop model not found: archive/models/beacon_square_top93b.pt

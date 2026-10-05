@@ -1,0 +1,31 @@
+[2026-10-05 20:23:32] ============================================================
+[2026-10-05 20:23:32]   SEABIRD — RRT Beacon Search
+[2026-10-05 20:23:32] ============================================================
+[2026-10-05 20:23:32]   MAVSDK_ADDRESS      = udpin://0.0.0.0:14551
+[2026-10-05 20:23:32]   MAX_SEARCH_RADIUS_M = 10.0 m
+[2026-10-05 20:23:32]   RRT_STEP_M          = 1.5 m
+[2026-10-05 20:23:32]   RRT_MAX_NODES       = 279
+[2026-10-05 20:23:32]   BENCH_TEST          = False
+[2026-10-05 20:23:32] ============================================================
+[2026-10-05 20:23:32] 
+[2026-10-05 20:23:32] [rrt] ROS2 detection listener started
+[2026-10-05 20:23:32] [rrt] run_mission() entered
+[2026-10-05 20:23:32] [rrt] MAVSDK_ADDRESS=udpin://0.0.0.0:14551
+[2026-10-05 20:23:32] [rrt] Connecting to udpin://0.0.0.0:14551...
+[INFO] [1791231813.157351362] [rrt_listener]: [rrt_listener] Subscribed /seabird/beacon_detections  |  Publishing /seabird/flight_path  /seabird/rrt_tree  /seabird/rrt_nodes
+[2026-10-05 20:23:33] [rrt] drone.connect() returned
+[2026-10-05 20:23:33] [rrt] connection_state: is_connected=True
+[2026-10-05 20:23:33] [rrt] ✓ Connected to PX4
+[2026-10-05 20:23:33] [rrt] Waiting for PX4 position readiness...
+[2026-10-05 20:23:33] [rrt] health: global=False home=True local=False
+[2026-10-05 20:23:35] [rrt] health: global=True home=True local=True
+[2026-10-05 20:23:35] [rrt] ✓ Position ready
+[2026-10-05 20:23:35] [rrt] Start position: N=-0.82  E=3.55  D=-0.95
+[2026-10-05 20:23:35] [rrt] Arming...
+[2026-10-05 20:23:35] [rrt] ✓ Armed
+[2026-10-05 20:23:35] [rrt] Taking off to 5.0m...
+[2026-10-05 20:23:35] [rrt] Stabilising for 8s...
+[2026-10-05 20:23:43] [rrt] ✓ Airborne — N=-0.3  E=3.3  Alt≈3.9m
+[2026-10-05 20:23:43] [rrt] Priming offboard setpoint stream (3 s)...
+[2026-10-05 20:23:46] [rrt] Switching to offboard mode...
+[2026-10-05 20:23:46] [rrt] Offboard start failed: NO_SETPOINT_SET: 'No Setpoint Set'; origin: start(); params: ()

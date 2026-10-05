@@ -1,0 +1,4 @@
+2026-10-02 19:51:21 DETECTOR ARGS --config configs/modal_config.json
+2026-10-02 19:51:21 DETECTOR STARTED subshell_pid=60 script=beacon_detector_config.py
+2026-10-02 19:51:23 SWEEP STARTED subshell_pid=84 script=sweep_rrt.py
+2026-10-02 19:51:25 SWEEP EXITED rc=0

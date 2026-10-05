@@ -1,0 +1,19 @@
+[2026-10-02 19:51:23] ============================================================
+[2026-10-02 19:51:23]   SEABIRD — RRT Beacon Search
+[2026-10-02 19:51:23] ============================================================
+[2026-10-02 19:51:23]   MAVSDK_ADDRESS      = udpin://0.0.0.0:14551
+[2026-10-02 19:51:23]   MAX_SEARCH_RADIUS_M = 10.0 m
+[2026-10-02 19:51:23]   RRT_STEP_M          = 1.5 m
+[2026-10-02 19:51:23]   RRT_MAX_NODES       = 279
+[2026-10-02 19:51:23]   BENCH_TEST          = True
+[2026-10-02 19:51:23] ============================================================
+[2026-10-02 19:51:23] 
+[2026-10-02 19:51:23] [rrt] ROS2 detection listener started
+[2026-10-02 19:51:23] [rrt] run_mission() entered
+[2026-10-02 19:51:23] [rrt] MAVSDK_ADDRESS=udpin://0.0.0.0:14551
+[2026-10-02 19:51:23] [rrt] Connecting to udpin://0.0.0.0:14551...
+[INFO] [1790970684.205968248] [rrt_listener]: [rrt_listener] Subscribed /seabird/beacon_detections  |  Publishing /seabird/flight_path  /seabird/rrt_tree  /seabird/rrt_nodes
+[2026-10-02 19:51:24] [rrt] drone.connect() returned
+[2026-10-02 19:51:24] [rrt] connection_state: is_connected=True
+[2026-10-02 19:51:24] [rrt] ✓ Connected to PX4
+[2026-10-02 19:51:24] *** BENCH_TEST — connection verified, not arming or taking off ***
