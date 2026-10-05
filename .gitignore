@@ -1,1 +1,5 @@
 ./rb_beacon_config.json ./bb_beacon_config.json ./gb_beacon_config.json
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

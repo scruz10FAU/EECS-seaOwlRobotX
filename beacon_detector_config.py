@@ -26,7 +26,7 @@ import time
 import cv2
 import math
 
-from blink_detector import BlinkDetector, _get_blink_detector, configure_variance_mode
+from utils.blink_detector import BlinkDetector, _get_blink_detector, configure_variance_mode
 from ultralytics import YOLO
 
 EARTH_RADIUS_M = 6378137.0
@@ -75,7 +75,18 @@ _DEFAULT_ARUCO = {
     "calibration_file": None,
 }
 
+_DEFAULT_GPS_GT = {
+    "enabled":   False,
+    "latitude":  None,   # known GPS latitude of the detected object
+    "longitude": None,   # known GPS longitude of the detected object
+    # Vertical separation uses drone_pos[2] (measured AGL height) vs.
+    # detection.beacon_z_m (object's known AGL height, default 0.0) —
+    # not GPS altitude, which is too noisy for a short-range ground truth.
+}
+
 _DEFAULT_DETECTION = {
+    "backend":         "ultralytics",  # "ultralytics" (.pt, CPU/GPU) or "tflite_hexagon" (int8 .tflite via ModalAI's Hexagon NPU delegate)
+    "tflite_delegate_path": None,      # path to the VOXL2-SDK Hexagon delegate .so; None/missing/failed load falls back to CPU
     "confirm_frames":  3,
     "pub_cooldown_s":  1.0,
     "depth_min_m":     1.0,
@@ -121,6 +132,7 @@ def load_config(path: str) -> dict:
         "save_crops":      bool(raw.get("save_crops",      False)),
         "save_det_images": bool(raw.get("save_det_images", False)),
         "save_frames":     bool(raw.get("save_frames",     False)),
+        "save_color_pixels": bool(raw.get("save_color_pixels", False)),
         "target_color":    raw.get("target_color",    None),
         "target_blinking": raw.get("target_blinking", None),
         "video":      raw.get("video",      None),
@@ -133,6 +145,7 @@ def load_config(path: str) -> dict:
         "px4":        raw.get("px4",        {}),
         "labeler":    raw.get("labeler",    {}),
         "aruco":      {**_DEFAULT_ARUCO,     **raw.get("aruco",     {})},
+        "gps_ground_truth": {**_DEFAULT_GPS_GT, **raw.get("gps_ground_truth", {})},
         "detection":  {**_DEFAULT_DETECTION, **raw.get("detection", {})},
     }
 
@@ -187,7 +200,7 @@ def _import_ros():
     global rclpy, String, _BeaconCameraBase
     import rclpy as _rclpy; rclpy = _rclpy
     from std_msgs.msg import String as _Str; String = _Str
-    from beacon_camera import BeaconCamera as _BC; _BeaconCameraBase = _BC
+    from utils.beacon_camera import BeaconCamera as _BC; _BeaconCameraBase = _BC
 
 
 def _camera_to_world(p_cam, drone_pos, drone_quat_wxyz, mount_offset, R_body_to_cam):
@@ -218,7 +231,7 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
     from sensor_msgs.msg import Image
     from geometry_msgs.msg import PoseStamped
     from geographic_msgs.msg import GeoPointStamped
-    from camera_interface import Intrinsics
+    from utils.camera_interface import Intrinsics
     from cv_bridge import CvBridge as _CvBridge
     import message_filters
 
@@ -232,6 +245,50 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
     detections_topic  = topics["detections_pub"]
     aruco_gt_topic    = topics.get("aruco_pub", "/seabird/aruco_ground_truth")
     depth_source      = cfg_detection.get("depth_source", "topic")
+
+    # "geopoint_stamped" (default) -- geographic_msgs/GeoPointStamped, published
+    #   by MAVROS in sim (topics.gps_origin = /mavros/global_position/gp_origin).
+    # "px4_sensor_gps" -- px4_msgs/msg/SensorGps, published directly by PX4's
+    #   uXRCE-DDS bridge on the physical rig (topics.gps_origin =
+    #   /fmu/out/vehicle_gps_position). lat/lon are int32 in 1e-7 deg, alt is
+    #   int32 in mm; fix_type < 3 means no usable 3D fix -- don't trust it.
+    gps_msg_type = topics.get("gps_msg_type", "geopoint_stamped")
+    GpsMsgType = GeoPointStamped
+    gps_enabled = True
+    if gps_msg_type == "px4_sensor_gps":
+        try:
+            from px4_msgs.msg import SensorGps
+            GpsMsgType = SensorGps
+        except ImportError:
+            print("[beacon] WARNING: gps_msg_type=\"px4_sensor_gps\" but the "
+                  "'px4_msgs' ROS2 package isn't installed in this environment "
+                  "(build it in this workspace, e.g. from "
+                  "github.com/PX4/px4_msgs) -- GPS origin subscription disabled "
+                  "for this run; gps_position/gps_ground_truth will stay blank.")
+            gps_enabled = False
+
+    # "vvhub_pose" (default) -- AGL height comes from drone_pos[2] via the
+    #   drone_pose topic (VVHub VIO, e.g. /vvhub_body_wrt_local/pose).
+    # "px4_local_position" -- height comes from px4_msgs/msg/VehicleLocalPosition
+    #   (topics.local_position, e.g. /fmu/out/vehicle_local_position) instead --
+    #   for when VIO is disabled (e.g. flying outdoors on GPS), so drone_pose
+    #   never publishes and drone_pos[2] would otherwise stay unavailable
+    #   forever. PX4's z is NED (down-positive), so height = -z; z_valid
+    #   gates against using a not-yet-converged estimate.
+    drone_height_source = topics.get("drone_height_source", "vvhub_pose")
+    local_position_topic = topics.get("local_position", "/fmu/out/vehicle_local_position")
+    px4_local_position_enabled = True
+    if drone_height_source == "px4_local_position":
+        try:
+            from px4_msgs.msg import VehicleLocalPosition
+        except ImportError:
+            print("[beacon] WARNING: drone_height_source=\"px4_local_position\" "
+                  "but the 'px4_msgs' ROS2 package isn't installed in this "
+                  "environment -- falling back to vvhub_pose height source "
+                  "(drone_pos[2]), which will stay unavailable if VIO is "
+                  "disabled.")
+            drone_height_source = "vvhub_pose"
+            px4_local_position_enabled = False
 
     fx, fy   = cfg_camera["fx"],    cfg_camera["fy"]
     cx, cy   = cfg_camera["cx"],    cfg_camera["cy"]
@@ -248,6 +305,126 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                 self._depth    = None
                 self._frame_ts = ts
                 self._new_frame = True
+
+        def _on_gps_origin_px4(self, msg):
+            """
+            px4_msgs/msg/SensorGps callback (physical rig, topics.gps_msg_type
+            == "px4_sensor_gps"). lat/lon are int32 in 1e-7 degrees, alt is
+            int32 in mm. fix_type < 3 means no usable 3D fix -- PX4 still
+            publishes at that point, but lat/lon/alt are meaningless (often
+            0 or stale) and eph/s_variance/c_variance carry sentinel "invalid"
+            values, so those readings are dropped rather than overwriting a
+            previous good fix with garbage.
+            """
+            with self._gps_origin_lock:
+                self._gps_last_msg_ts   = time.time()
+                self._gps_last_fix_type = msg.fix_type
+            if msg.fix_type < 3:
+                self.get_logger().warn(
+                    f"GPS origin (px4/SensorGps): no 3D fix yet "
+                    f"(fix_type={msg.fix_type}) — ignoring reading",
+                    throttle_duration_sec=5.0,
+                )
+                return
+            lat = msg.lat * 1e-7
+            lon = msg.lon * 1e-7
+            alt = msg.alt * 1e-3
+            with self._gps_origin_lock:
+                self._gps_origin = (lat, lon, alt)
+            self.get_logger().info(
+                f"GPS origin (px4/SensorGps): lat={lat:.7f} lon={lon:.7f} "
+                f"fix_type={msg.fix_type}"
+            )
+
+        def _on_local_position_px4(self, msg):
+            """
+            px4_msgs/msg/VehicleLocalPosition callback (topics.drone_height_source
+            == "px4_local_position"). z is NED (down-positive), so height AGL is
+            -z; z_valid gates against using an estimate that hasn't converged.
+            """
+            z_valid = getattr(msg, "z_valid", True)
+            with self._pose_lock:
+                self._height_last_msg_ts   = time.time()
+                self._height_last_z_valid  = z_valid
+            if not z_valid:
+                return
+            with self._pose_lock:
+                self._drone_height_agl_px4 = -msg.z
+
+        def get_drone_height_agl(self):
+            """
+            Unified drone AGL height accessor, regardless of
+            topics.drone_height_source -- vvhub_pose (drone_pos[2] from the
+            drone_pose/VIO topic) or px4_local_position (-z from
+            VehicleLocalPosition). Returns None if the configured source
+            hasn't produced a reading yet.
+            """
+            if drone_height_source == "px4_local_position":
+                with self._pose_lock:
+                    return getattr(self, "_drone_height_agl_px4", None)
+            with self._pose_lock:
+                return self._drone_pos[2] if self._drone_pos is not None else None
+
+        def get_gps_status(self):
+            """
+            Diagnostic snapshot of GPS origin health, for a periodic
+            "is this actually working" log line. Returns a dict rather than
+            a formatted string so callers can decide how/whether to print it.
+            """
+            if not gps_topic:
+                return {"state": "disabled", "topic": None}
+            if not gps_enabled:
+                return {"state": "px4_msgs_missing", "topic": gps_topic}
+            with self._gps_origin_lock:
+                has_fix       = self._gps_origin is not None
+                last_msg_ts   = self._gps_last_msg_ts
+                last_fix_type = self._gps_last_fix_type
+            if has_fix:
+                state = "ok"
+            elif last_msg_ts is not None:
+                state = "no_valid_fix"
+            else:
+                pubs = self.get_publishers_info_by_topic(gps_topic)
+                state = "waiting_no_publisher" if not pubs else "waiting_no_message"
+            return {
+                "state": state, "topic": gps_topic, "msg_type": gps_msg_type,
+                "last_msg_ts": last_msg_ts, "last_fix_type": last_fix_type,
+                "origin": self._gps_origin,
+            }
+
+        def get_height_status(self):
+            """Diagnostic snapshot of AGL height source health, same idea as get_gps_status()."""
+            if drone_height_source == "px4_local_position":
+                topic = local_position_topic
+                if not px4_local_position_enabled:
+                    return {"state": "px4_msgs_missing", "source": drone_height_source, "topic": topic}
+                with self._pose_lock:
+                    height        = getattr(self, "_drone_height_agl_px4", None)
+                    last_msg_ts   = getattr(self, "_height_last_msg_ts", None)
+                    last_z_valid  = getattr(self, "_height_last_z_valid", None)
+                if height is not None:
+                    state = "ok"
+                elif last_msg_ts is not None:
+                    state = "no_valid_fix"
+                else:
+                    pubs = self.get_publishers_info_by_topic(topic)
+                    state = "waiting_no_publisher" if not pubs else "waiting_no_message"
+                return {"state": state, "source": drone_height_source, "topic": topic,
+                       "last_msg_ts": last_msg_ts, "last_z_valid": last_z_valid, "height": height}
+
+            topic = drone_pose_topic
+            if not topic:
+                return {"state": "disabled", "source": drone_height_source, "topic": None}
+            with self._pose_lock:
+                height      = self._drone_pos[2] if self._drone_pos is not None else None
+                last_msg_ts = getattr(self, "_pose_last_msg_ts", None)
+            if height is not None:
+                state = "ok"
+            else:
+                pubs = self.get_publishers_info_by_topic(topic)
+                state = "waiting_no_publisher" if not pubs else "waiting_no_message"
+            return {"state": state, "source": drone_height_source, "topic": topic,
+                   "last_msg_ts": last_msg_ts, "height": height}
 
         def open(self):
             if self._is_open:
@@ -285,14 +462,33 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                 self._pose_sub = self.create_subscription(
                     PoseStamped, drone_pose_topic, self._on_drone_pose, qos
                 )
-            if gps_topic:
-                origin_qos = QoSProfile(
-                    reliability=ReliabilityPolicy.RELIABLE,
-                    durability=DurabilityPolicy.TRANSIENT_LOCAL,
-                    depth=1,
+            if drone_height_source == "px4_local_position" and px4_local_position_enabled:
+                self._local_pos_sub = self.create_subscription(
+                    VehicleLocalPosition, local_position_topic,
+                    self._on_local_position_px4, qos
                 )
+            if gps_topic and gps_enabled:
+                if gps_msg_type == "px4_sensor_gps":
+                    # PX4's uXRCE-DDS bridge publishes all /fmu/out/* topics
+                    # BEST_EFFORT/VOLATILE (sensor-data QoS) -- a RELIABLE
+                    # subscriber is incompatible with it and silently
+                    # receives nothing (DDS QoS mismatch, not a topic-name
+                    # or connectivity problem).
+                    origin_qos = QoSProfile(
+                        reliability=ReliabilityPolicy.BEST_EFFORT,
+                        history=HistoryPolicy.KEEP_LAST,
+                        depth=1,
+                    )
+                else:
+                    origin_qos = QoSProfile(
+                        reliability=ReliabilityPolicy.RELIABLE,
+                        durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                        depth=1,
+                    )
+                gps_callback = (self._on_gps_origin_px4 if gps_msg_type == "px4_sensor_gps"
+                               else self._on_gps_origin)
                 self._origin_sub = self.create_subscription(
-                    GeoPointStamped, gps_topic, self._on_gps_origin, origin_qos
+                    GpsMsgType, gps_topic, gps_callback, origin_qos
                 )
             self._is_open = True
             self.get_logger().info("BeaconCamera open — waiting for frames…")
@@ -312,14 +508,33 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                 self._pose_sub = self.create_subscription(
                     PoseStamped, drone_pose_topic, self._on_drone_pose, qos
                 )
-            if gps_topic:
-                origin_qos = QoSProfile(
-                    reliability=ReliabilityPolicy.RELIABLE,
-                    durability=DurabilityPolicy.TRANSIENT_LOCAL,
-                    depth=1,
+            if drone_height_source == "px4_local_position" and px4_local_position_enabled:
+                self._local_pos_sub = self.create_subscription(
+                    VehicleLocalPosition, local_position_topic,
+                    self._on_local_position_px4, qos
                 )
+            if gps_topic and gps_enabled:
+                if gps_msg_type == "px4_sensor_gps":
+                    # PX4's uXRCE-DDS bridge publishes all /fmu/out/* topics
+                    # BEST_EFFORT/VOLATILE (sensor-data QoS) -- a RELIABLE
+                    # subscriber is incompatible with it and silently
+                    # receives nothing (DDS QoS mismatch, not a topic-name
+                    # or connectivity problem).
+                    origin_qos = QoSProfile(
+                        reliability=ReliabilityPolicy.BEST_EFFORT,
+                        history=HistoryPolicy.KEEP_LAST,
+                        depth=1,
+                    )
+                else:
+                    origin_qos = QoSProfile(
+                        reliability=ReliabilityPolicy.RELIABLE,
+                        durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                        depth=1,
+                    )
+                gps_callback = (self._on_gps_origin_px4 if gps_msg_type == "px4_sensor_gps"
+                               else self._on_gps_origin)
                 self._origin_sub = self.create_subscription(
-                    GeoPointStamped, gps_topic, self._on_gps_origin, origin_qos
+                    GpsMsgType, gps_topic, gps_callback, origin_qos
                 )
             self._is_open = True
             self.get_logger().info("BeaconCamera open (video-file mode) — pose + GPS only")
@@ -349,7 +564,7 @@ _WINNER_THRESHOLD = 0.25   # green/blue minimum to win
 
 def _apply_color_config(det_cfg: dict) -> None:
     """Apply per-device color classification thresholds, hue bands, and blink params from config."""
-    import blink_detector as _bd
+    import utils.blink_detector as _bd
     global _RED_THRESHOLD, _WINNER_THRESHOLD, _HUE_BANDS
     _RED_THRESHOLD    = det_cfg.get("red_threshold",    _RED_THRESHOLD)
     _WINNER_THRESHOLD = det_cfg.get("winner_threshold", _WINNER_THRESHOLD)
@@ -423,6 +638,46 @@ def classify_beacon_color(bgr_crop: np.ndarray, seg_mask: np.ndarray = None) -> 
     if seg_mask is not None and seg_mask.shape == light_mask.shape:
         light_mask = cv2.bitwise_and(light_mask, seg_mask)
 
+    # Keep only the blob of lit pixels most likely to be the beacon top, using
+    # its known shape: a cube face, which projects to a square under any
+    # in-plane rotation and to a roughly-square, well-filled rotated
+    # rectangle under moderate slant/perspective. When the crop_model box
+    # doesn't tightly follow the beacon, it can include a patch of bright
+    # background (e.g. sunlit water) that would otherwise vote alongside the
+    # real LED and skew the hue classification — that patch is usually
+    # elongated or loosely fills its bounding rectangle, unlike the beacon
+    # face. A light morphological open first breaks any thin sliver
+    # connecting a background patch to the real blob.
+    if np.count_nonzero(light_mask) > 0:
+        opened = cv2.morphologyEx(light_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+        contours, _ = cv2.findContours(opened, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if len(contours) > 1:
+            def _shape_stats(cnt):
+                area = cv2.contourArea(cnt)
+                (_, (rw, rh), _) = cv2.minAreaRect(cnt)
+                if rw <= 0 or rh <= 0:
+                    return area, float("inf"), 0.0
+                aspect = max(rw, rh) / min(rw, rh)
+                extent = area / (rw * rh)
+                return area, aspect, extent
+
+            # aspect <= 1.6 tolerates in-plane rotation and moderate slant
+            # while still rejecting clearly elongated background (e.g. a
+            # strip of water along one edge of the box); extent >= 0.5
+            # rejects loosely-filled / irregular background shapes.
+            square_ish = []
+            for cnt in contours:
+                area, aspect, extent = _shape_stats(cnt)
+                if aspect <= 1.6 and extent >= 0.5:
+                    square_ish.append((area, cnt))
+
+            best_cnt = max(square_ish, key=lambda t: t[0])[1] if square_ish \
+                else max(contours, key=cv2.contourArea)
+
+            blob_mask = np.zeros_like(opened)
+            cv2.drawContours(blob_mask, [best_cnt], -1, 255, thickness=cv2.FILLED)
+            light_mask = cv2.bitwise_and(light_mask, blob_mask)
+
     lit_pixels   = np.count_nonzero(light_mask)
     total_pixels = bgr_crop.shape[0] * bgr_crop.shape[1]
     color_conf   = lit_pixels / max(total_pixels, 1)
@@ -465,11 +720,13 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
                          conf: float = 0.3) -> Tuple[str, float, np.ndarray, float, dict]:
     _empty = ("no_top", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0,
               {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0},
-              np.zeros((1, 1, 3), dtype=np.uint8), 0.0, 0.0, 0.0, 0.0)
+              np.zeros((1, 1, 3), dtype=np.uint8), 0.0, 0.0, 0.0, 0.0,
+              np.zeros((1, 1), dtype=np.uint8))
     if beacon_crop is None or beacon_crop.size == 0:
         return ("no_top", 0.0, np.zeros((1, 1), dtype=np.uint8), 0.0,
               {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0},
-              np.zeros((1, 1, 3), dtype=np.uint8), 0.0, 0.0, 0.0, 0.0)
+              np.zeros((1, 1, 3), dtype=np.uint8), 0.0, 0.0, 0.0, 0.0,
+              np.zeros((1, 1), dtype=np.uint8))
 
     h, w = beacon_crop.shape[:2]
     display_mask = np.zeros((h, w), dtype=np.uint8)
@@ -503,8 +760,22 @@ def isolate_and_classify(beacon_crop: np.ndarray, crop_model,
     lit_region = beacon_crop[rmin:rmax + 1, cmin:cmax + 1]
     mask_region = display_mask[rmin:rmax + 1, cmin:cmax + 1]
 
-    color, color_conf, _, intensity, votes, hue_var, hue_mean, hue_median, hue_mode = classify_beacon_color(lit_region, seg_mask=mask_region)
-    return color, color_conf, display_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode
+    color, color_conf, vote_mask, intensity, votes, hue_var, hue_mean, hue_median, hue_mode = classify_beacon_color(lit_region, seg_mask=mask_region)
+    return color, color_conf, display_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask
+
+
+def trace_vote_mask(image: np.ndarray, vote_mask: np.ndarray,
+                    color=(0, 255, 0), thickness: int = 1) -> np.ndarray:
+    """
+    Return a copy of image with the outline of vote_mask (the pixels that fed
+    the hue vote) drawn on top — lets a saved crop show both the original
+    colors and exactly which pixels were classified, in one image.
+    """
+    traced = image.copy()
+    if vote_mask is not None and vote_mask.any() and vote_mask.shape == image.shape[:2]:
+        contours, _ = cv2.findContours(vote_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cv2.drawContours(traced, contours, -1, color, thickness)
+    return traced
 
 
 # ── Detection logger ──────────────────────────────────────────────────────────
@@ -516,9 +787,12 @@ _LOG_HEADER = [
     "hue_variance", "hue_mean", "hue_median", "hue_mode",
     "det_confidence", "x1", "y1", "x2", "y2", "tracking_id",
     "pos3d_x", "pos3d_y", "pos3d_z", "distance_m",
-    "blink_is_blinking", "blink_hz", "blink_phase",
+    "blink_is_blinking", "blink_color", "blink_hz", "blink_phase",
     "target_color", "target_blinking", "target_match",
     "gt_aruco_id", "gt_dist_m", "gt_tvec_x", "gt_tvec_y", "gt_tvec_z",
+    "gt_gps_dist_m", "gt_gps_horiz_m", "gt_gps_vert_m",
+    "gt_gps_obj_lat", "gt_gps_obj_lon", "gt_gps_drone_height_agl",
+    "burst_color", "burst_is_blinking", "burst_blink_hz", "burst_blink_phase",
 ]
 
 
@@ -535,14 +809,15 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
                    det_conf: float, bbox, tracking_id: int = -1,
                    pos3d=None, blink_info: dict = None,
                    target_color=None, target_blinking=None,
-                   gt_info=None, img_w=None, img_h=None,
+                   gt_info=None, gps_gt_info=None, img_w=None, img_h=None,
                    hue_variance: float = 0.0, hue_mean: float = 0.0,
                    hue_median: float = 0.0, hue_mode: float = 0.0,
                    frame_ts: float = None,
                    ts_after_inference: float = None,
                    ts_after_classify: float = None,
                    ts_after_blink: float = None,
-                   burst_number: int = None) -> None:
+                   burst_number: int = None,
+                   burst_color: str = None, burst_blink_info: dict = None) -> None:
     x1, y1, x2, y2 = bbox
     px = py = pz = dist_m = ""
     if pos3d is not None:
@@ -550,6 +825,7 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         dist_m = f"{math.sqrt(pos3d[0]**2 + pos3d[1]**2 + pos3d[2]**2):.4f}"
     bi = blink_info or {}
     blink_blinking = "" if bi.get("is_blinking") is None else str(bi.get("is_blinking"))
+    blink_color = bi.get("blink_color", "")
     blink_hz    = f"{bi['blink_hz']:.3f}" if bi.get("blink_hz") is not None else ""
     blink_phase = bi.get("phase", "")
     if target_color is None and target_blinking is None:
@@ -567,6 +843,22 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         gt_id  = str(_gt_id)
         gt_dist = f"{_gt_dist:.4f}"
         gt_tx, gt_ty, gt_tz = [f"{v:.4f}" for v in _gt_tvec]
+    if gps_gt_info is None:
+        gt_gps_dist = gt_gps_horiz = gt_gps_vert = ""
+        gt_gps_obj_lat = gt_gps_obj_lon = gt_gps_height_agl = ""
+    else:
+        _gg_dist, _gg_horiz, _gg_vert, _gg_obj_lat, _gg_obj_lon, _gg_height_agl = gps_gt_info
+        gt_gps_dist  = f"{_gg_dist:.4f}"
+        gt_gps_horiz = f"{_gg_horiz:.4f}"
+        gt_gps_vert  = f"{_gg_vert:.4f}"
+        gt_gps_obj_lat = f"{_gg_obj_lat:.7f}"
+        gt_gps_obj_lon = f"{_gg_obj_lon:.7f}"
+        gt_gps_height_agl = f"{_gg_height_agl:.4f}"
+    bbi = burst_blink_info or {}
+    burst_color_col = burst_color if burst_color is not None else ""
+    burst_blinking  = "" if bbi.get("is_blinking") is None else str(bbi.get("is_blinking"))
+    burst_blink_hz  = f"{bbi['blink_hz']:.3f}" if bbi.get("blink_hz") is not None else ""
+    burst_blink_phase = bbi.get("phase", "")
     def _ts(v): return f"{v:.3f}" if v is not None else ""
     log_writer.writerow([
         f"{time.time():.3f}", _ts(frame_ts), _ts(ts_after_inference), _ts(ts_after_classify), _ts(ts_after_blink),
@@ -578,9 +870,12 @@ def _write_log_row(log_writer, frame_idx: int, color: str,
         f"{hue_variance:.2f}", f"{hue_mean:.2f}", f"{hue_median:.2f}", f"{hue_mode:.0f}",
         f"{det_conf:.4f}", x1, y1, x2, y2, tracking_id,
         px, py, pz, dist_m,
-        blink_blinking, blink_hz, blink_phase,
+        blink_blinking, blink_color, blink_hz, blink_phase,
         tc_col, tb_col, target_match,
         gt_id, gt_dist, gt_tx, gt_ty, gt_tz,
+        gt_gps_dist, gt_gps_horiz, gt_gps_vert,
+        gt_gps_obj_lat, gt_gps_obj_lon, gt_gps_height_agl,
+        burst_color_col, burst_blinking, burst_blink_hz, burst_blink_phase,
     ])
 
 
@@ -594,6 +889,88 @@ def local_enu_to_gps(world_pos: np.ndarray,
     dlat = np.degrees(north / EARTH_RADIUS_M)
     dlon = np.degrees(east / (EARTH_RADIUS_M * np.cos(np.radians(origin_lat))))
     return (origin_lat + dlat, origin_lon + dlon, origin_alt + up)
+
+
+def gps_ground_truth_distance(drone_lat: float, drone_lon: float, drone_height_agl: float,
+                              obj_lat: float, obj_lon: float, obj_height_agl: float = 0.0) -> Tuple[float, float, float]:
+    """
+    3D ground-truth distance between the drone's current GPS fix and a known
+    object GPS location. Horizontal separation comes from GPS lat/lon using
+    the same flat-earth approximation as local_enu_to_gps (its inverse) —
+    accurate at the short ranges typical of this mission. Vertical separation
+    uses measured AGL height (e.g. drone_pos[2] vs. detection.beacon_z_m),
+    NOT GPS altitude, which is far noisier than lat/lon over short ranges.
+    Returns (dist_3d_m, horizontal_m, vertical_m).
+    """
+    dlat_rad = math.radians(obj_lat - drone_lat)
+    dlon_rad = math.radians(obj_lon - drone_lon)
+    north = dlat_rad * EARTH_RADIUS_M
+    east  = dlon_rad * EARTH_RADIUS_M * math.cos(math.radians(drone_lat))
+    horiz = math.hypot(north, east)
+    vert  = drone_height_agl - obj_height_agl
+    return math.hypot(horiz, vert), horiz, vert
+
+
+def _format_gps_status(status: dict) -> str:
+    """Human-readable line for cam.get_gps_status() -- explains what's blocking
+    GPS origin if it isn't working, not just that it isn't."""
+    state = status["state"]
+    topic = status.get("topic")
+    if state == "disabled":
+        return "[beacon] GPS status: disabled (topics.gps_origin not set)"
+    if state == "px4_msgs_missing":
+        return (f"[beacon] GPS status: UNAVAILABLE — px4_msgs not installed, "
+                f"subscription to {topic} was never created (see startup warning)")
+    if state == "waiting_no_publisher":
+        return (f"[beacon] GPS status: NO DATA — no publisher visible for {topic}; "
+                f"topic doesn't exist or isn't reachable from this process "
+                f"(check DDS domain/bridge/build)")
+    if state == "waiting_no_message":
+        return (f"[beacon] GPS status: NO DATA — publisher(s) visible for {topic} "
+                f"but no message received yet (QoS mismatch?)")
+    if state == "no_valid_fix":
+        age = time.time() - status["last_msg_ts"]
+        fix_type = status.get("last_fix_type")
+        fix_note = f" (fix_type={fix_type})" if fix_type is not None else ""
+        return (f"[beacon] GPS status: NOT READY — receiving messages on {topic} "
+                f"(last {age:.1f}s ago) but no valid 3D fix yet{fix_note}")
+    if state == "ok":
+        lat, lon, alt = status["origin"]
+        age = time.time() - status["last_msg_ts"] if status.get("last_msg_ts") else float("nan")
+        return (f"[beacon] GPS status: OK — lat={lat:.7f} lon={lon:.7f} alt={alt:.2f}m "
+                f"(updated {age:.1f}s ago)")
+    return f"[beacon] GPS status: unrecognized state {state!r}"
+
+
+def _format_height_status(status: dict) -> str:
+    """Human-readable line for cam.get_height_status() -- same idea as
+    _format_gps_status() for the AGL height source."""
+    state = status["state"]
+    source = status.get("source")
+    topic = status.get("topic")
+    if state == "disabled":
+        return "[beacon] Height status: disabled (topics.drone_pose not set)"
+    if state == "px4_msgs_missing":
+        return (f"[beacon] Height status: UNAVAILABLE — px4_msgs not installed, "
+                f"subscription to {topic} was never created (see startup warning)")
+    if state == "waiting_no_publisher":
+        return (f"[beacon] Height status: NO DATA — no publisher visible for "
+                f"{topic} (source={source}); topic doesn't exist or isn't "
+                f"reachable from this process")
+    if state == "waiting_no_message":
+        return (f"[beacon] Height status: NO DATA — publisher(s) visible for "
+                f"{topic} (source={source}) but no message received yet "
+                f"(QoS mismatch?)")
+    if state == "no_valid_fix":
+        age = time.time() - status["last_msg_ts"]
+        return (f"[beacon] Height status: NOT READY — receiving messages on "
+                f"{topic} (source={source}, last {age:.1f}s ago) but "
+                f"z_valid=False (estimate hasn't converged)")
+    if state == "ok":
+        age = time.time() - status["last_msg_ts"] if status.get("last_msg_ts") else float("nan")
+        return (f"[beacon] Height status: OK — {status['height']:.2f}m AGL "
+                f"(source={source}, updated {age:.1f}s ago)")
+    return f"[beacon] Height status: unrecognized state {state!r}"
 
 
 def estimate_distance_from_bbox(
@@ -713,6 +1090,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
                     blink_detector: BlinkDetector = None,
                     video_ts: float = None,
                     save_crops_dir: str = None,
+                    color_pixels_dir: str = None,
                     target_color: str = None,
                     target_blinking=None,
                     aruco_gt=None,
@@ -725,7 +1103,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
         label = names.get(cls, str(cls))
 
         crop = clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-        beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
+        beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask = isolate_and_classify(crop, crop_model)
         _ts_classify = time.time()
         if beacon_color == "no_top":
             print("No beacon top detected")
@@ -741,7 +1119,7 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
         _ts_blink = time.time()
 
         if save_crops_dir is not None and lit_region.size > 0:
-            _date = time.strftime("%Y%m%d")
+            _date = time.strftime("%Y%m%d_%H%M%S")
             _gt   = (f"gt-{target_color or 'unk'}-"
                      f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
             _b    = blink_info.get("is_blinking") if blink_info else None
@@ -750,7 +1128,17 @@ def _annotate_frame(frame: np.ndarray, boxes, names: dict, crop_model,
             fname = (f"crop_{_date}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
                      f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                      f"_{_gt}.png")
-            cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
+            cv2.imwrite(os.path.join(save_crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
+
+        if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
+            _date = time.strftime("%Y%m%d_%H%M%S")
+            _gt   = (f"gt-{target_color or 'unk'}-"
+                     f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
+            fname = (f"pixels_{_date}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                     f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                     f"_{_gt}.png")
+            color_pixels = cv2.bitwise_and(lit_region, lit_region, mask=vote_mask)
+            cv2.imwrite(os.path.join(color_pixels_dir, fname), color_pixels)
 
         cv2.rectangle(frame, (x1, y1), (x2, y2), draw_color, 2)
 
@@ -851,6 +1239,12 @@ def run_video(cfg: dict) -> None:
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon-video] Saving crops → {crops_dir}/")
 
+    color_pixels_dir = None
+    if cfg.get("save_color_pixels", False):
+        color_pixels_dir = os.path.splitext(video_path)[0] + "_beacon_color_pixels"
+        os.makedirs(color_pixels_dir, exist_ok=True)
+        print(f"[beacon-video] Saving color-vote pixels → {color_pixels_dir}/")
+
     blink_detector = BlinkDetector(use_variance=cfg["detection"].get("use_variance_mode", False))
     frame_idx     = 0
     paused        = False
@@ -893,6 +1287,7 @@ def run_video(cfg: dict) -> None:
                                                 blink_detector=blink_detector,
                                                 video_ts=video_ts,
                                                 save_crops_dir=crops_dir,
+                                                color_pixels_dir=color_pixels_dir,
                                                 target_color=cfg.get("target_color"),
                                                 target_blinking=cfg.get("target_blinking"),
                                                 aruco_gt=aruco_gt,
@@ -934,7 +1329,7 @@ def run_video_ros(cfg: dict) -> None:
     display         = cfg["display"]
     topics          = cfg["topics"]
     save_crops      = cfg.get("save_crops", False)
-    date_tag = time.strftime("%Y%m%d")
+    date_tag = time.strftime("%Y%m%d_%H%M%S")
     _tc = cfg.get("target_color") or "unk"
     _tb = cfg.get("target_blinking")
     gt_tag   = f"gt-{_tc}-{'blink' if _tb is True else 'steady' if _tb is False else 'unk'}"
@@ -989,6 +1384,12 @@ def run_video_ros(cfg: dict) -> None:
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon-ros-video] Saving crops → {crops_dir}/")
 
+    color_pixels_dir = None
+    if cfg.get("save_color_pixels", False):
+        color_pixels_dir = os.path.splitext(video_path)[0] + "_beacon_color_pixels"
+        os.makedirs(color_pixels_dir, exist_ok=True)
+        print(f"[beacon-ros-video] Saving color-vote pixels → {color_pixels_dir}/")
+
     _apply_color_config(cfg["detection"])
     depth_source = cfg["detection"].get("depth_source", "topic")
     max_dets     = cfg["detection"].get("max_detections")
@@ -1007,6 +1408,12 @@ def run_video_ros(cfg: dict) -> None:
         aruco_camera_mat, aruco_dist_coeffs = _load_aruco_calibration(cfg["aruco"], cfg["camera"])
         print(f"[beacon-ros-video] ArUco ground truth enabled  "
               f"dict={cfg['aruco']['dictionary']}  marker={cfg['aruco']['marker_size_m']}m")
+
+    gps_gt_cfg = cfg.get("gps_ground_truth", {})
+    if gps_gt_cfg.get("enabled"):
+        print(f"[beacon-ros-video] GPS ground truth enabled  "
+              f"target=({gps_gt_cfg['latitude']:.7f}, {gps_gt_cfg['longitude']:.7f})  "
+              f"object_height_agl={cfg['detection'].get('beacon_z_m', 0.0):.2f}m")
 
     if not cam.open_for_video():
         print("[beacon-ros-video] Failed to open ROS node")
@@ -1037,6 +1444,18 @@ def run_video_ros(cfg: dict) -> None:
                 display_frame = raw.copy()
                 video_ts = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
 
+                gps_gt_info = None
+                _d_height_agl = cam.get_drone_height_agl()
+                if gps_gt_cfg.get("enabled") and _d_height_agl is not None:
+                    origin = cam.get_gps_origin()
+                    if origin is not None:
+                        _d_lat, _d_lon, _ = origin
+                        _gg = gps_ground_truth_distance(
+                            _d_lat, _d_lon, _d_height_agl,
+                            gps_gt_cfg["latitude"], gps_gt_cfg["longitude"],
+                            cfg["detection"].get("beacon_z_m", 0.0))
+                        gps_gt_info = (*_gg, gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], _d_height_agl)
+
                 aruco_gt = None
                 if aruco_detector is not None:
                     aruco_gt = detect_aruco_ground_truth(
@@ -1063,7 +1482,7 @@ def run_video_ros(cfg: dict) -> None:
                     det_conf = float(box.conf[0])
 
                     crop = raw[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-                    beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
+                    beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask = isolate_and_classify(crop, crop_model)
                     _ts_classify = time.time()
                     if beacon_color == "no_top":
                         print("No beacon top detected")
@@ -1130,6 +1549,8 @@ def run_video_ros(cfg: dict) -> None:
                     })
                     cam.detection_pub.publish(msg)
                     print(f"  {label_txt}")
+                    print(_format_gps_status(cam.get_gps_status()))
+                    print(_format_height_status(cam.get_height_status()))
                     det_count += 1
                     if max_dets is not None and det_count >= max_dets:
                         print(f"[beacon-ros-video] Reached max_detections={max_dets} — stopping")
@@ -1142,6 +1563,7 @@ def run_video_ros(cfg: dict) -> None:
                                        target_color=cfg.get("target_color"),
                                        target_blinking=cfg.get("target_blinking"),
                                        gt_info=aruco_gt,
+                                       gps_gt_info=gps_gt_info,
                                        img_w=raw.shape[1],
                                        img_h=raw.shape[0],
                                        hue_variance=hue_var, hue_mean=hue_mean,
@@ -1158,7 +1580,14 @@ def run_video_ros(cfg: dict) -> None:
                         fname = (f"crop_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
                                  f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                                  f"_{gt_tag}.png")
-                        cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
+                        cv2.imwrite(os.path.join(crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
+
+                    if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
+                        fname = (f"pixels_{date_tag}_f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                                 f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                                 f"_{gt_tag}.png")
+                        color_pixels = cv2.bitwise_and(lit_region, lit_region, mask=vote_mask)
+                        cv2.imwrite(os.path.join(color_pixels_dir, fname), color_pixels)
 
                 if writer:
                     writer.write(display_frame)
@@ -1230,10 +1659,16 @@ def main(cfg: dict) -> None:
         return
 
     
-    print(f"[beacon] Loading model: {model_path}")
+    print(f"[beacon] Loading model: {model_path}  (backend={cfg['detection'].get('backend', 'ultralytics')})")
     print(f"[beacon] Loading crop model: {crop_model_path}")
     crop_model = YOLO(crop_model_path)
-    if not cam.enable_detection(model_path, imgsz=cfg["detection"].get("imgsz", 640)):
+    if not cam.enable_detection(
+        model_path,
+        imgsz=cfg["detection"].get("imgsz", 640),
+        backend=cfg["detection"].get("backend", "ultralytics"),
+        conf_thresh=cfg["conf"],
+        delegate_path=cfg["detection"].get("tflite_delegate_path"),
+    ):
         print("[beacon] Detection failed to start")
         cam.close()
         try: rclpy.shutdown()
@@ -1259,6 +1694,13 @@ def main(cfg: dict) -> None:
         os.makedirs(crops_dir, exist_ok=True)
         print(f"[beacon] Saving crops → {crops_dir}/")
 
+    save_color_pixels = cfg.get("save_color_pixels", False)
+    color_pixels_dir = None
+    if save_color_pixels:
+        color_pixels_dir = os.path.join(DEBUG_DIR, "beacon_color_pixels")
+        os.makedirs(color_pixels_dir, exist_ok=True)
+        print(f"[beacon] Saving color-vote pixels → {color_pixels_dir}/")
+
     save_det_images = cfg.get("save_det_images", False)
     det_images_dir = None
     if save_det_images:
@@ -1273,7 +1715,7 @@ def main(cfg: dict) -> None:
         os.makedirs(frames_dir, exist_ok=True)
         print(f"[beacon] Saving full frames → {frames_dir}/")
 
-    date_tag = time.strftime("%Y%m%d")
+    date_tag = time.strftime("%Y%m%d_%H%M%S")
     _tc = cfg.get("target_color") or "unk"
     _tb = cfg.get("target_blinking")
     gt_tag   = f"gt-{_tc}-{'blink' if _tb is True else 'steady' if _tb is False else 'unk'}"
@@ -1284,6 +1726,12 @@ def main(cfg: dict) -> None:
         aruco_camera_mat, aruco_dist_coeffs = _load_aruco_calibration(cfg["aruco"], cfg["camera"])
         print(f"[beacon] ArUco ground truth enabled  "
               f"dict={cfg['aruco']['dictionary']}  marker={cfg['aruco']['marker_size_m']}m")
+
+    gps_gt_cfg = cfg.get("gps_ground_truth", {})
+    if gps_gt_cfg.get("enabled"):
+        print(f"[beacon] GPS ground truth enabled  "
+              f"target=({gps_gt_cfg['latitude']:.7f}, {gps_gt_cfg['longitude']:.7f})  "
+              f"object_height_agl={cfg['detection'].get('beacon_z_m', 0.0):.2f}m")
 
     _apply_color_config(cfg["detection"])
     depth_source  = cfg["detection"].get("depth_source", "topic")
@@ -1304,6 +1752,18 @@ def main(cfg: dict) -> None:
             intr       = cam._intrinsics
             drone_pos, drone_quat = cam.get_drone_pose()
             frame_ts   = cam.get_frame_timestamp() or time.time()
+
+            gps_gt_info = None
+            _d_height_agl = cam.get_drone_height_agl()
+            if gps_gt_cfg.get("enabled") and _d_height_agl is not None:
+                origin = cam.get_gps_origin()
+                if origin is not None:
+                    _d_lat, _d_lon, _ = origin
+                    _gg = gps_ground_truth_distance(
+                        _d_lat, _d_lon, _d_height_agl,
+                        gps_gt_cfg["latitude"], gps_gt_cfg["longitude"],
+                        cfg["detection"].get("beacon_z_m", 0.0))
+                    gps_gt_info = (*_gg, gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], _d_height_agl)
 
             if intr and not intrinsics_printed:
                 print(f"[beacon] Intrinsics ready: {intr.width}x{intr.height} "
@@ -1352,7 +1812,7 @@ def main(cfg: dict) -> None:
                     )
 
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
-                beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode = isolate_and_classify(crop, crop_model)
+                beacon_color, color_conf, light_mask, intensity, votes, lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask = isolate_and_classify(crop, crop_model)
                 _ts_classify = time.time()
                 if beacon_color == "no_top":
                     print("No beacon top detected")
@@ -1365,7 +1825,7 @@ def main(cfg: dict) -> None:
                     beacon_color = _tracker_colors[tid]
                 if crops_dir is not None and lit_region.size > 0:
                     fname = f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}_{gt_tag}.png"
-                    cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
+                    cv2.imwrite(os.path.join(crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
                 blink_info = _get_blink_detector(d.tracking_id).update(
                     frame_ts, beacon_color, intensity, color_conf,
                     hue_variance=hue_var)
@@ -1450,6 +1910,7 @@ def main(cfg: dict) -> None:
                                    target_color=cfg.get("target_color"),
                                    target_blinking=cfg.get("target_blinking"),
                                    gt_info=aruco_gt,
+                                   gps_gt_info=gps_gt_info,
                                    img_w=rgb.shape[1],
                                    img_h=rgb.shape[0],
                                    hue_variance=hue_var, hue_mean=hue_mean,
@@ -1465,7 +1926,14 @@ def main(cfg: dict) -> None:
                     fname = (f"crop_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
                              f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                              f"_{gt_tag}.png")
-                    cv2.imwrite(os.path.join(crops_dir, fname), lit_region)
+                    cv2.imwrite(os.path.join(crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
+
+                if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
+                    fname = (f"pixels_{date_tag}_f{frame_count:06d}_t{d.tracking_id:02d}_{beacon_color}"
+                             f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                             f"_{gt_tag}.png")
+                    color_pixels = cv2.bitwise_and(lit_region, lit_region, mask=vote_mask)
+                    cv2.imwrite(os.path.join(color_pixels_dir, fname), color_pixels)
 
                 if det_images_dir is not None:
                     pad = 20
@@ -1486,6 +1954,8 @@ def main(cfg: dict) -> None:
 
                 print(f"[beacon] {label_txt}"
                       + (f" dist={pos3d[2]:.2f}m" if pos3d is not None else ""))
+                print(_format_gps_status(cam.get_gps_status()))
+                print(_format_height_status(cam.get_height_status()))
 
             if max_dets is not None and det_count >= max_dets:
                 break

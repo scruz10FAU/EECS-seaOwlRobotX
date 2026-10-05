@@ -17,10 +17,11 @@ Detection pipeline for colored, optionally blinking, beacon lights mounted on a 
 | `sweep_lawnmower.py` | Autonomous boustrophedon (lawnmower) flight mission. Searches a fixed rectangular area. |
 | `sweep_rrt.py` | Autonomous RRT beacon search. Explores a configurable radius from takeoff, hovering to verify blink status on each new detection. |
 | `data_recorder.py` | ROS2 node that saves camera frames and detection labels to disk during a mission. |
+| `beacon_mavlink_bridge.py` | ROS2 node — relays `/seabird/beacon_detections` to the ground station as a binary MAVLink message over the existing flight-controller link. |
+| `beacon_mavlink_ground.py` | Ground-station counterpart to `beacon_mavlink_bridge.py` — decodes the MAVLink message back into GPS/color/blink status. Runs on a separate machine. |
+| `mock_beacon_publisher.py` | Publishes synthetic `/seabird/beacon_detections` messages for testing downstream consumers — no camera or detection pipeline required. |
 | `start_seabird_beacon.sh` | Mission launcher. Starts the detector, sweep, and recorder as tagged, logged child processes. |
-| `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
-| `beacon_camera.py` | `BeaconCamera` ROS2 node — camera image subscriptions, depth decoding, and pose/GPS callbacks. |
-| `batch_detect.py` | Headless batch processor — runs detection over multiple video files and writes a CSV + summary. |
+| `utils/` | Shared helper modules (`BlinkDetector`, `BeaconCamera`, detector backends, camera interfaces, the MAVLink wire format) imported by the scripts above — see [utils/README.md](utils/README.md). |
 
 ---
 
@@ -206,6 +207,8 @@ All keys are optional — omitted keys fall back to their defaults.
 | `topics.depth` | `<prefix>/depth/depth_registered` | Depth map subscription |
 | `topics.drone_pose` | `/mavros/local_position/pose` | Drone pose subscription (`null` to disable) |
 | `topics.gps_origin` | `/mavros/global_position/gp_origin` | GPS origin subscription (`null` to disable) |
+| `topics.drone_height_source` | `"vvhub_pose"` | AGL height source for GPS ground truth: `"vvhub_pose"` (default — `drone_pos[2]` from `topics.drone_pose`, i.e. VIO) or `"px4_local_position"` (from `topics.local_position` instead — for when VIO is disabled, e.g. flying outdoors on GPS and `drone_pose` never publishes) |
+| `topics.local_position` | `/fmu/out/vehicle_local_position` | PX4 local position subscription (`px4_msgs/msg/VehicleLocalPosition`). Only used when `drone_height_source` is `"px4_local_position"`; falls back to `"vvhub_pose"` with a warning if `px4_msgs` isn't installed |
 | `topics.detections_pub` | `/seabird/beacon_detections` | Beacon detection publish topic |
 | `topics.aruco_pub` | `/seabird/aruco_ground_truth` | ArUco ground-truth publish topic |
 
@@ -253,6 +256,18 @@ All keys are optional — omitted keys fall back to their defaults.
 | `marker_size_m` | `0.15` | Physical marker side length in metres |
 | `calibration_file` | `null` | Path to a `.npz` camera calibration file (from `cv2.calibrateCamera`). If `null`, falls back to theoretical intrinsics derived from the `camera` section. |
 
+**`gps_ground_truth` section**
+
+Computes a ground-truth distance from the drone's live GPS fix to a known GPS location of the detected object — an alternative to ArUco ground truth for outdoor tests where the true position of the beacon is known ahead of time rather than marked with a fiducial. Requires a `topics.gps_origin` subscription that carries the drone's live position (true on the physical config, which points it at `/fmu/out/vehicle_gps_position`) — not available in plain video-file mode (`video`, no `ros_video`).
+
+| Field | Default | Description |
+|---|---|---|
+| `enabled` | `false` | Enable GPS ground-truth distance computation |
+| `latitude` | `null` | Known latitude of the detected object |
+| `longitude` | `null` | Known longitude of the detected object |
+
+Horizontal separation is computed from GPS lat/lon using the same flat-earth approximation `local_enu_to_gps` uses (accurate at the short ranges typical of this mission). Vertical separation deliberately does **not** use GPS altitude (too noisy over short ranges) — it's the drone's measured AGL height minus `detection.beacon_z_m` (the beacon's own known AGL height, default `0.0` — reuses the same field `estimate_distance_from_bbox()` already uses for bbox-based depth, so a beacon's height above ground is configured in one place). That AGL height itself comes from `get_drone_height_agl()`, which transparently uses whichever source `topics.drone_height_source` selects — `drone_pos[2]` from the VIO pose topic by default, or PX4's own `VehicleLocalPosition.z` (negated, since PX4's NED convention is down-positive) when VIO is disabled — so callers don't need to know which one is active. Adds `gt_gps_dist_m`, `gt_gps_horiz_m`, `gt_gps_vert_m`, `gt_gps_obj_lat`, `gt_gps_obj_lon`, `gt_gps_drone_height_agl` to the CSV log (see below) — `gt_gps_obj_lat`/`gt_gps_obj_lon` echo the configured object location (not the drone's), so a session's CSV always records which ground-truth target it was measured against. Also adds a `gps_ground_truth: {distance_m, horizontal_m, vertical_m}` field on burst results published by `burst_beacon_detector.py`. Wired into `beacon_detector_config.py`'s live ROS mode (`main()`), `run_video_ros()`, and `burst_beacon_detector.py`'s and `staged_beacon_detector.py`'s live and ROS-video modes.
+
 ---
 
 ## Config files
@@ -268,11 +283,13 @@ Uses the modal camera driver and ToF depth sensor topics.
 | `topics.depth` | `/tof_depth` |
 | `topics.drone_pose` | `/vvhub_body_wrt_local/pose` |
 | `topics.gps_origin` | `/fmu/out/vehicle_gps_position` |
+| `topics.drone_height_source` | `"px4_local_position"` — set this when VIO/VVHub is disabled (e.g. flying outdoors on GPS), since `drone_pose` never publishes in that case |
+| `topics.local_position` | `/fmu/out/vehicle_local_position` (only used when `drone_height_source` is `"px4_local_position"`) |
 
 **Prerequisites before launching:**
 - Modal camera driver running (publishes `/hires_front_small_color` and `/tof_depth`)
-- VVHub running (publishes `/vvhub_body_wrt_local/pose`)
-- micro-ROS agent running (bridges PX4 → `/fmu/out/vehicle_gps_position`)
+- VVHub running (publishes `/vvhub_body_wrt_local/pose`) — **or**, if VIO is intentionally disabled outdoors, set `topics.drone_height_source` to `"px4_local_position"` instead so AGL height comes from PX4 directly.
+- micro-ROS agent running (bridges PX4 → `/fmu/out/vehicle_gps_position`, and `/fmu/out/vehicle_local_position` if using the `px4_local_position` height source)
 
 ### beacon_config_sim.json — Isaac Sim
 
@@ -295,7 +312,7 @@ Uses the Pegasus Simulator front camera. Pose and GPS are disabled (`null`) sinc
 
 ## beacon_detector.py
 
-The main script. Handles color classification, frame annotation, video playback modes, and the ROS live camera loop. Imports `BlinkDetector` from `blink_detector.py` and lazily imports `BeaconCamera` from `beacon_camera.py` only when ROS mode is invoked.
+The main script. Handles color classification, frame annotation, video playback modes, and the ROS live camera loop. Imports `BlinkDetector` from `utils/blink_detector.py` and lazily imports `BeaconCamera` from `utils/beacon_camera.py` only when ROS mode is invoked — see [utils/README.md](utils/README.md).
 
 ### Two-stage detection pipeline
 
@@ -397,134 +414,47 @@ Three independent image-saving flags can be combined freely. All write to a dire
 
 ---
 
-## blink_detector.py
+## beacon_mavlink_bridge.py / beacon_mavlink_ground.py
 
-Standalone module — no ROS or OpenCV dependency. Imported directly by `beacon_detector.py` and `batch_detect.py`.
+Relays beacon detections to the ground station as a compact binary message over the existing MAVLink link to the flight controller, rather than requiring the ground station to be on the same ROS2 network. No custom MAVLink dialect is used — the payload (latitude, longitude ×1e7 as int32, color, blink status, both as uint8 enums) is packed into the `value` byte array of a standard MAVLink `MEMORY_VECT` message, with a sentinel `address` (`0xBEAC`) distinguishing it from any other real memory-vector traffic on the link. Wire format lives in `utils/beacon_mavlink_protocol.py` and is shared by both scripts.
 
-### BlinkDetector
+**`beacon_mavlink_bridge.py`** — ROS2 node, runs alongside the detector on the drone. Subscribes to `/seabird/beacon_detections`, and for each detection with a known GPS position, opens (once) and sends through a `pymavlink` connection to the same MAVLink endpoint `sweep_lawnmower.py`/`sweep_rrt.py` use via `MAVSDK_ADDRESS` (PX4 SITL in sim, `voxl-mavlink-server` on the physical drone) — using `pymavlink` instead of MAVSDK here since MAVSDK's Python API has no generic "send an arbitrary MAVLink message" call.
 
-Maintains an 8-second rolling window of `(timestamp, color, intensity, color_conf)` samples and estimates whether the beacon is blinking and at what frequency.
-
-```python
-detector = BlinkDetector()
-result = detector.update(ts, color, intensity, color_conf)
-# result: {"is_blinking": True|False|None, "blink_color": str, "blink_hz": float|None, "phase": "on"|"off"|"unknown"}
+```bash
+python3 beacon_mavlink_bridge.py                                              # sim default (udp://:14540)
+python3 beacon_mavlink_bridge.py --mavlink-endpoint udpout:127.0.0.1:14551   # physical drone
 ```
 
-`color_conf` is the `color_confidence` value from `classify_beacon_color`. It is used to filter out low-confidence non-blue readings that would otherwise force the detector into the wrong color mode.
+**`beacon_mavlink_ground.py`** — counterpart script for the ground-station machine (not run on the drone). Listens on a MAVLink connection, filters `MEMORY_VECT` messages by the sentinel address, and prints decoded GPS/color/blink status. Copy this file **and** the `utils/` folder (for `utils/beacon_mavlink_protocol.py`) to the ground station together, so the import resolves.
 
-`is_blinking` has three states:
-- `None` — not enough data yet (window < 4 s)
-- `False` — confirmed not blinking
-- `True` — confirmed blinking at `blink_hz` Hz
-
-### Algorithm
-
-**Red / Green beacons:** YOLO loses the beacon entirely when the LED turns off. A rising edge is therefore a color transition from absent/`unknown` back to the signal color. If two consecutive detections are more than `_BLINK_GAP_OFF_SEC` apart, a synthetic `_off_` marker is injected between them to represent the missed off-period.
-
-**Blue beacons:** The beacon housing is always visible so inter-frame gaps are *not* off-periods — gap injection is skipped. Instead, `color_confidence` (fraction of lit pixels) separates the LED-on state (~0.4+) from the housing-only state (~0.02–0.05). Readings above `_BLINK_CC_ON_THRESHOLD` are treated as "on"; readings below (including `unknown` frames) are treated as "off".
-
-If all samples in the window are "on" (color_conf never drops below the threshold, as happens with some beacon types), the detector falls back to intensity oscillation: if the peak-to-peak swing of intensity across the window exceeds `_BLINK_INTENSITY_MIN_SWING`, the mean intensity is used to split samples into on/off and rising edges are counted as usual.
-
-**`blink_color` vs `color`:** `blink_color` in the result dict reflects the most common non-blue color seen across the entire rolling window — it is populated as soon as any non-blue frame enters the window, regardless of whether blinking is confirmed. When `is_blinking=False`, `blink_color` may differ from the current frame's `color` (e.g. LED is currently off → `color="blue"` but `blink_color="red"` from recent history). Trust `blink_color` only when `is_blinking=True`; use the frame-level `color` for instantaneous classification.
-
-### Key constants
-
-| Constant | Default | Meaning |
-|---|---|---|
-| `_BLINK_WINDOW_SEC` | `12.0 s` | Rolling window length |
-| `_BLINK_MIN_DATA_SEC` | `4.0 s` | Minimum history before deciding. Configurable via `blink_min_data_sec` |
-| `_BLINK_HZ_RANGE` | `0.12–2.0 Hz` | Valid blink frequency range |
-| `_BLINK_MIN_EDGE_GAP` | `0.20 s` | Debounce: minimum gap between rising edges. Configurable via `blink_min_edge_gap` |
-| `_BLINK_GAP_OFF_SEC` | `5.0 s` | Red/green: gap longer than this injects an off marker |
-| `_BLINK_CC_ON_THRESHOLD` | `0.15` | Blue beacons: `color_conf` above this = LED on |
-| `_BLINK_COLOR_CONF_MIN` | `0.001` | Minimum `color_conf` for a non-blue reading to count toward color mode |
-| `_BLINK_MAX_IOI_SEC` | `5.0 s` | Max inter-onset interval for blue beacons |
-| `_BLINK_MAX_IOI_SEC_COLOR` | `8.0 s` | Max inter-onset interval for red/green (allows long on-periods) |
-| `_BLINK_INTENSITY_MIN_SWING` | `0.05` | Min peak-to-peak intensity swing to activate intensity-fallback path. Configurable via `blink_intensity_min_swing` |
-| `_BLINK_MAX_IOI_RATIO` | `None` | Max ratio of longest to shortest IOI (blue beacons only). `None` = disabled. Configurable via `blink_max_ioi_ratio` |
-
-Parameters marked "Configurable" can be set per-deployment via the `detection` section of the JSON config (applied at startup by `_apply_color_config`).
-
-### Helper
-
-```python
-_get_blink_detector(tracking_id: int) -> BlinkDetector
+```bash
+python3 beacon_mavlink_ground.py --mavlink-endpoint udpin:0.0.0.0:14550
+python3 beacon_mavlink_ground.py --mavlink-endpoint /dev/ttyUSB0 --baud 57600
 ```
 
-Returns the `BlinkDetector` for a given YOLO tracking ID, creating one on first call.
+Both scripts require `pip install pymavlink`. Whether messages sent by the bridge actually reach the ground station's radio link depends on how PX4/`voxl-mavlink-server` are configured to forward third-party-injected traffic between endpoints — verify end-to-end delivery against your actual hardware/radio setup before relying on it operationally; it hasn't been tested against real MAVLink hardware in this session.
 
 ---
 
-## beacon_camera.py
+## mock_beacon_publisher.py
 
-ROS2 node that wraps camera subscriptions, depth synchronization, drone pose, and GPS origin. Imported by `beacon_detector.py` inside `_import_ros()` so ROS packages are never loaded unless ROS mode is actually invoked.
+Publishes synthetic `/seabird/beacon_detections` messages matching the exact JSON schema `beacon_detector_config.py`'s live ROS mode publishes (see "Published JSON fields" above) — for testing `beacon_mavlink_bridge.py`, `sweep_rrt.py`, `sweep_lawnmower.py`, or any other subscriber without running a camera, YOLO models, or the detection pipeline at all.
 
-### BeaconCamera(Node)
+Two modes:
+- **No `--color` flag**: cycles through a built-in set of 5 varied samples (different colors, blink states, and GPS fixes) indefinitely, so a subscriber sees realistic variation with zero configuration.
+- **`--color` given**: publishes one fixed, repeated sample built from `--color`/`--blinking`/`--blink-hz`/`--lat`/`--lon`, for targeted single-case testing.
 
-**Lifecycle**
-
-| Method | Description |
-|---|---|
-| `open()` | Subscribe to RGB+depth image topics, camera info, pose, GPS. Used for live camera mode. |
-| `open_for_video()` | Minimal setup for video-file mode: create publisher and subscribe to pose + GPS only. |
-| `close()` | Mark node as closed. |
-| `grab()` | Spin once and return `True` if a new synchronized frame arrived. |
-| `enable_detection(model_path, imgsz=640)` | Start `YoloDetector` with object tracking on the live RGB stream. `imgsz` controls YOLO inference resolution. |
-
-**Data accessors**
-
-| Method | Returns |
-|---|---|
-| `get_rgb()` | Latest BGR frame as `np.ndarray`, or `None` |
-| `get_depth()` | Latest float32 depth map, or `None` |
-| `get_frame_timestamp()` | ROS header timestamp of the latest frame as `float` seconds, or `None` |
-| `get_drone_pose()` | `(pos_xyz, quat_wxyz)` numpy arrays, or `(None, None)` |
-| `get_gps_origin()` | `(lat, lon, alt)` tuple, or `None` |
-| `get_detections()` | List of `Detection` objects from `YoloDetector` |
-
-**Depth decoding**
-
-| Encoding | dtype | Scale |
-|---|---|---|
-| `32FC1` | `float32` | metres, no scaling |
-| `16UC1` | `uint16` | × 0.001 → metres |
-| `8UC1` / other | `uint8` | raw value, no scaling |
-
-If the decoded depth map has a different resolution than the RGB frame, it is resized to match using `cv2.INTER_NEAREST`.
-
-RGB and depth frames are synchronized with `message_filters.ApproximateTimeSynchronizer` (50 ms slop).
+```bash
+python3 mock_beacon_publisher.py                         # cycles the built-in sample set at 1 Hz
+python3 mock_beacon_publisher.py --rate 2.0 --count 10    # 2 Hz, stop after 10 messages
+python3 mock_beacon_publisher.py --color red --blinking true --lat 26.3712 --lon -80.1034
+```
 
 ---
 
-## batch_detect.py
+## Utility modules
 
-Headless batch processor for running detection over multiple video files without opening any display window.
-
-### Usage
-
-```
-python3 batch_detect.py video1.mp4 video2.mp4 ...
-python3 batch_detect.py -m models/one_beacon.pt -cm models/best_crop.pt videos/*.mp4
-python3 batch_detect.py --output-dir /path/to/logs video1.mp4
-```
-
-**Flags**
-
-| Flag | Default | Description |
-|---|---|---|
-| `--model / -m` | `models/one_beacon.pt` | Stage-1 YOLO beacon model |
-| `--crop-model / -cm` | `models/best_crop.pt` | Stage-2 lit-area model |
-| `--conf / -c` | `0.5` | Detection confidence threshold |
-| `--output-dir / -o` | directory of first video | Where to write output files |
-
-### Output files
-
-**`batch_detections_<ts>.csv`** — one row per detection per frame across all videos.
-
-Columns: `video, timestamp, frame, color, color_confidence, intensity, is_blinking, blink_hz, blink_phase, vote_red, vote_green, vote_blue, vote_other, det_confidence, x1, y1, x2, y2`
-
-**`batch_summary_<ts>.txt`** — human-readable per-video breakdown. Includes frame count, detection rate, color breakdown, and blink statistics.
+`blink_detector.py`, `beacon_camera.py`, `camera_interface.py`, `yolo_detector.py`, and `tflite_hexagon_detector.py` live in `utils/` — see [utils/README.md](utils/README.md) for `BlinkDetector`, `BeaconCamera`, and the detector backend classes they document.
 
 ---
 
@@ -560,6 +490,9 @@ When `log: true` is set in the config, a CSV file is written to `~/seabird_datas
 | `target_color` / `target_blinking` | Ground-truth labels from config |
 | `target_match` | `True` if both color and blink state match the target |
 | `gt_aruco_id` / `gt_dist_m` / `gt_tvec_x/y/z` | ArUco ground-truth columns (blank if ArUco disabled) |
+| `gt_gps_dist_m` / `gt_gps_horiz_m` / `gt_gps_vert_m` | 3D / horizontal / vertical ground-truth distance from the drone's GPS fix to the known object location (blank if GPS ground truth disabled) |
+| `gt_gps_obj_lat` / `gt_gps_obj_lon` | Configured GPS latitude/longitude of the detected object, as used in the ground-truth calc (blank if GPS ground truth disabled) |
+| `gt_gps_drone_height_agl` | Drone's measured AGL height at the time of this row, as used in the ground-truth calc (blank if GPS ground truth disabled) |
 
 Subtracting `frame_timestamp` from `ts_after_blink` gives total per-detection processing latency. Subtracting adjacent timestamp columns isolates the latency of each individual step.
 

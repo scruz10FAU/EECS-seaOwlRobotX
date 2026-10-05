@@ -38,7 +38,7 @@ import json
 import time
 import cv2
 
-from blink_detector import BlinkDetector, _get_blink_detector
+from utils.blink_detector import BlinkDetector, _get_blink_detector
 
 # ── ArUco setup (added) ─────────────────────────────────────────────────────
 _ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
@@ -48,12 +48,42 @@ _ARUCO_DETECTOR = cv2.aruco.ArucoDetector(_ARUCO_DICT, _ARUCO_PARAMS)
 EARTH_RADIUS_M = 6378137.0
 
 # Lazily imported only when ROS mode is used
+_ZED_CAMERA_DEFAULTS = {}  # set by _import_ros() -- fx/fy/cx/cy/img_w/img_h from the JSON config
+
+
 def _import_ros():
-    global rclpy, String, camera_to_world, BeaconCamera
+    """
+    seabird_config.py is no longer used anywhere -- this script has no JSON
+    --config flag of its own, so it reuses beacon_detector_config.py's
+    load_config()/_camera_to_world() against beacon_detector_config's own
+    default config file for the fallback camera intrinsics and the
+    camera->world transform.
+    """
+    global rclpy, String, camera_to_world, BeaconCamera, _ZED_CAMERA_DEFAULTS
     import rclpy as _rclpy; rclpy = _rclpy
     from std_msgs.msg import String as _Str; String = _Str
-    from seabird_config import camera_to_world as _c2w; camera_to_world = _c2w
-    from beacon_camera import BeaconCamera as _BC; BeaconCamera = _BC
+    from beacon_detector_config import load_config, _DEFAULT_CONFIG, _camera_to_world
+    from utils.beacon_camera import BeaconCamera as _BC; BeaconCamera = _BC
+
+    # _DEFAULT_CONFIG ("beacon_config.json") doesn't resolve from the repo
+    # root -- the actual file lives under configs/. Try both so this keeps
+    # working regardless of where it's invoked from.
+    config_path = _DEFAULT_CONFIG if os.path.isfile(_DEFAULT_CONFIG) \
+        else os.path.join("configs", _DEFAULT_CONFIG)
+    cfg = load_config(config_path)
+    cam = cfg["camera"]
+    _ZED_CAMERA_DEFAULTS = dict(
+        fx=cam["fx"], fy=cam["fy"], cx=cam["cx"], cy=cam["cy"],
+        img_w=cam["img_w"], img_h=cam["img_h"],
+    )
+
+    mount_offset  = cam["_mount_offset"]
+    r_body_to_cam = cam["_R_body_to_cam"]
+
+    def _c2w(p_cam, drone_pos, drone_quat_wxyz):
+        return _camera_to_world(p_cam, drone_pos, drone_quat_wxyz, mount_offset, r_body_to_cam)
+
+    camera_to_world = _c2w
 
 # ── Color classification ───────────────────────────────────────────────────────
 
@@ -523,7 +553,8 @@ def run_video_ros(video_path: str,
                   save_crops: bool = False,
                   save_det_images: bool = False,
                   save_frames: bool = False,
-                  target_color=None, target_blinking=None) -> None:
+                  target_color=None, target_blinking=None,
+                  gps_msg_type: str = "geopoint_stamped") -> None:
     """
     Read frames from a local video file and publish detections to ROS.
 
@@ -600,7 +631,7 @@ def run_video_ros(video_path: str,
 
     blink_detector = BlinkDetector()
     rclpy.init()
-    cam        = BeaconCamera()
+    cam        = BeaconCamera(gps_msg_type=gps_msg_type, **_ZED_CAMERA_DEFAULTS)
     model      = YOLO(model_path)
     crop_model = YOLO(crop_model_path)
     print(f"[beacon-ros-video] Beacon model : {model_path}  conf≥{conf}")
@@ -757,16 +788,17 @@ def main(model: str = "models/one_beacon.pt",
          save_crops: bool = False,
          save_det_images: bool = False,
          save_frames: bool = False,
-         target_color=None, target_blinking=None) -> None:
+         target_color=None, target_blinking=None,
+         gps_msg_type: str = "geopoint_stamped") -> None:
 
-    _import_ros()   # pull in ROS2 / camera_interface / seabird_config
+    _import_ros()   # pull in ROS2 / camera_interface / JSON-config camera defaults
 
     DEBUG_DIR   = os.path.expanduser("~/seabird_dataset/beacon_debug")
     SAVE_EVERY_N = 30
     os.makedirs(DEBUG_DIR, exist_ok=True)
 
     rclpy.init()
-    cam = BeaconCamera()
+    cam = BeaconCamera(gps_msg_type=gps_msg_type, **_ZED_CAMERA_DEFAULTS)
 
     if not cam.open():
         print("[beacon] Failed to open camera")
@@ -1081,6 +1113,15 @@ if __name__ == "__main__":
         metavar="true|false",
         help="Expected blink state ('true' = blinking, 'false' = steady). Adds target_blinking/target_match columns to CSV log.",
     )
+    parser.add_argument(
+        "--gps-msg-type",
+        default="geopoint_stamped",
+        choices=["geopoint_stamped", "px4_sensor_gps"],
+        help="GPS origin message type on GPS_TOPIC: 'geopoint_stamped' "
+             "(default, MAVROS geographic_msgs/GeoPointStamped, sim) or "
+             "'px4_sensor_gps' (px4_msgs/msg/SensorGps, physical rig via "
+             "PX4's uXRCE-DDS bridge).",
+    )
     args = parser.parse_args()
 
     target_blinking = None
@@ -1092,7 +1133,8 @@ if __name__ == "__main__":
                       save_output=args.save, conf=args.conf, log=args.log,
                       display=args.display, save_crops=args.save_crops,
                       save_det_images=args.save_det_images, save_frames=args.save_frames,
-                      target_color=args.target_color, target_blinking=target_blinking)
+                      target_color=args.target_color, target_blinking=target_blinking,
+                      gps_msg_type=args.gps_msg_type)
     elif args.video is not None:
         run_video(args.video, model_path=args.model, crop_model_path=args.crop_model,
                   save_output=args.save, conf=args.conf, log=args.log,
@@ -1103,4 +1145,5 @@ if __name__ == "__main__":
         main(args.model, args.display, args.true_dist, crop_model_path=args.crop_model,
              log=args.log, save_crops=args.save_crops,
              save_det_images=args.save_det_images, save_frames=args.save_frames,
-             target_color=args.target_color, target_blinking=target_blinking)
+             target_color=args.target_color, target_blinking=target_blinking,
+             gps_msg_type=args.gps_msg_type)

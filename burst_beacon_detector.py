@@ -34,14 +34,18 @@ from beacon_detector_config import (
     _make_beacon_camera,
     _apply_color_config,
     isolate_and_classify,
+    trace_vote_mask,
     estimate_distance_from_bbox,
     _camera_to_world,
     local_enu_to_gps,
+    gps_ground_truth_distance,
     _open_log,
     _write_log_row,
+    _format_gps_status,
+    _format_height_status,
     _DEFAULT_CONFIG,
 )
-from blink_detector import BlinkDetector
+from utils.blink_detector import BlinkDetector
 
 # ── Burst parameters (can be overridden via config key "burst") ───────────────
 _BURST_INTERVAL = 0.5   # seconds between captured frames
@@ -56,21 +60,41 @@ _VideoDet = namedtuple("_VideoDet", ["bbox_2d", "position_3d", "confidence", "tr
 # ── Shared analysis ───────────────────────────────────────────────────────────
 
 def _analyse_burst(burst, crop_model, cfg, depth_source,
-                   save_crops_dir=None, det_images_dir=None,
+                   save_crops_dir=None, det_images_dir=None, color_pixels_dir=None,
+                   frames_dir=None,
                    target_color=None, target_blinking=None,
-                   log_writer=None, burst_number=None):
+                   log_writer=None, burst_number=None,
+                   gps_origin=None, drone_height_agl=None):
     """
     Run color classification and blink detection over a collected burst.
 
     burst: list of (frame_ts, rgb_clean, dets, depth, drone_pos, drone_quat)
     Returns last_valid dict (empty dict if no valid detection found).
+
+    gps_origin/drone_height_agl: captured once, at the moment the burst
+    started (first detection), by the caller -- NOT read live here. Analysis
+    runs after the whole burst has already been collected, so reading GPS/
+    height at analysis time would reflect wherever the drone has moved to
+    since, not where it was when the beacon was actually seen.
     """
     blink_detector = BlinkDetector(use_variance=cfg.get("detection", {}).get("use_variance_mode", False))
     last_valid: dict = {}
-    date_tag = time.strftime("%Y%m%d")
+    date_tag = time.strftime("%Y%m%d_%H%M%S")
+
+    gps_gt_cfg = cfg.get("gps_ground_truth", {})
+    obj_height_agl = cfg.get("detection", {}).get("beacon_z_m", 0.0)
+
+    # Per-frame log rows are buffered and only written after the burst-wide
+    # color/blink decision is finalised below, so every row can be stamped
+    # with the same overall burst_color/burst_is_blinking/etc. columns.
+    _pending_log_rows: list = []
 
     for frame_idx, (b_ts, b_rgb, b_dets, _, b_dpos, b_dquat) in enumerate(burst):
         if not b_dets:
+            if frames_dir is not None:
+                _bn = f"b{burst_number:03d}_" if burst_number is not None else ""
+                fname = f"burst_{date_tag}_{_bn}f{frame_idx:06d}_nodet.png"
+                cv2.imwrite(os.path.join(frames_dir, fname), b_rgb)
             continue
         for det_idx, d in enumerate(b_dets):
             x1, y1, x2, y2 = [int(v) for v in d.bbox_2d]
@@ -89,13 +113,13 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
 
             crop = b_rgb[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
             (beacon_color, color_conf, _, intensity, votes,
-             lit_region, hue_var, hue_mean, hue_median, hue_mode) = \
+             lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask) = \
                 isolate_and_classify(crop, crop_model)
             ts_after_classify = time.time()
 
             if beacon_color == "no_top":
                 (beacon_color, color_conf, _, intensity, votes,
-                    lit_region, hue_var, hue_mean, hue_median, hue_mode) = \
+                    lit_region, hue_var, hue_mean, hue_median, hue_mode, vote_mask) = \
                     isolate_and_classify(b_rgb, crop_model)
                 ts_after_classify = time.time()
 
@@ -127,6 +151,16 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                   f"blink_color={blink_info['blink_color']}  "
                   f"is_blinking={blink_info['is_blinking']}")
 
+            gps_gt_info = None
+            if gps_gt_cfg.get("enabled") and gps_origin is not None and drone_height_agl is not None:
+                drone_lat, drone_lon, _ = gps_origin
+                dist, horiz, vert = gps_ground_truth_distance(
+                    drone_lat, drone_lon, drone_height_agl,
+                    gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], obj_height_agl,
+                )
+                gps_gt_info = (dist, horiz, vert,
+                               gps_gt_cfg["latitude"], gps_gt_cfg["longitude"], drone_height_agl)
+
             last_valid = dict(
                 beacon_color=beacon_color, color_conf=color_conf,
                 intensity=intensity, votes=votes,
@@ -138,19 +172,21 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 frame_ts=b_ts, lit_region=lit_region,
                 tracking_id=int(d.tracking_id),
                 img_w=b_rgb.shape[1], img_h=b_rgb.shape[0],
+                gps_gt=gps_gt_info,
             )
 
             if log_writer is not None:
-                _write_log_row(
-                    log_writer, frame_idx,
-                    beacon_color, color_conf,
-                    intensity, votes,
-                    float(d.confidence), d.bbox_2d,
+                _pending_log_rows.append(dict(
+                    frame_idx=frame_idx,
+                    color=beacon_color, color_conf=color_conf,
+                    intensity=intensity, votes=votes,
+                    det_conf=float(d.confidence), bbox=d.bbox_2d,
                     tracking_id=int(d.tracking_id),
                     pos3d=pos3d,
                     blink_info=blink_info,
                     target_color=target_color,
                     target_blinking=target_blinking,
+                    gps_gt_info=gps_gt_info,
                     img_w=b_rgb.shape[1], img_h=b_rgb.shape[0],
                     hue_variance=hue_var,
                     hue_mean=hue_mean,
@@ -160,7 +196,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                     ts_after_classify=ts_after_classify,
                     ts_after_blink=ts_after_blink,
                     burst_number=burst_number,
-                )
+                ))
 
             _gt  = (f"gt-{target_color or 'unk'}-"
                     f"{'blink' if target_blinking is True else 'steady' if target_blinking is False else 'unk'}")
@@ -173,7 +209,14 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                 fname = (f"crop_{date_tag}_{_bn}f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
                          f"_{_det}_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
                          f"_{_gt}.png")
-                cv2.imwrite(os.path.join(save_crops_dir, fname), lit_region)
+                cv2.imwrite(os.path.join(save_crops_dir, fname), trace_vote_mask(lit_region, vote_mask))
+
+            if color_pixels_dir is not None and lit_region.size > 0 and vote_mask is not None:
+                fname = (f"pixels_{date_tag}_{_bn}f{frame_idx:06d}_d{det_idx:02d}_{beacon_color}"
+                         f"_r{int(votes['red']*100)}g{int(votes['green']*100)}b{int(votes['blue']*100)}"
+                         f"_{_gt}.png")
+                color_pixels = cv2.bitwise_and(lit_region, lit_region, mask=vote_mask)
+                cv2.imwrite(os.path.join(color_pixels_dir, fname), color_pixels)
 
             if det_images_dir is not None:
                 pad = 20
@@ -192,15 +235,22 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
         blink_detector.finalise()
         last_valid["blink_info"] = blink_detector._estimate()
 
+    if log_writer is not None:
+        burst_blink_info = last_valid.get("blink_info")
+        burst_color      = burst_blink_info.get("blink_color") if burst_blink_info else None
+        for row_kwargs in _pending_log_rows:
+            _write_log_row(log_writer, burst_color=burst_color,
+                           burst_blink_info=burst_blink_info, **row_kwargs)
+
     return last_valid
 
 
-def _publish_result(lv, burst, burst_count, cfg, get_gps_origin_fn, publish_fn):
+def _publish_result(lv, burst, burst_count, cfg, gps_origin, publish_fn):
     """
     Compute world/GPS coords, print and optionally publish the burst result.
 
     publish_fn: callable(json_str) or None for console-only mode.
-    get_gps_origin_fn: callable() -> (lat, lon, alt) or None.
+    gps_origin: (lat, lon, alt) captured at the start of burst collection, or None.
     """
     world_pos  = None
     gps_coords = None
@@ -210,17 +260,20 @@ def _publish_result(lv, burst, burst_count, cfg, get_gps_origin_fn, publish_fn):
             cfg["camera"]["_mount_offset"],
             cfg["camera"]["_R_body_to_cam"],
         )
-        origin = get_gps_origin_fn()
-        if origin is not None:
-            lat, lon, alt = local_enu_to_gps(world_pos, *origin)
+        if gps_origin is not None:
+            lat, lon, alt = local_enu_to_gps(world_pos, *gps_origin)
             gps_coords = {"latitude": lat, "longitude": lon, "altitude": alt}
 
     bi = lv["blink_info"]
+    gps_gt = lv.get("gps_gt")
     print(f"[burst] ── Burst #{burst_count} result ─────────────")
     print(f"[burst]   color={lv['beacon_color']}  "
           f"is_blinking={bi['is_blinking']}  "
           f"blink_color={bi['blink_color']}  "
           f"blink_hz={bi['blink_hz']}")
+    if gps_gt is not None:
+        print(f"[burst]   gps_ground_truth: dist={gps_gt[0]:.2f}m "
+              f"(horiz={gps_gt[1]:.2f}m vert={gps_gt[2]:.2f}m)")
 
     payload = {
         "color":            lv["beacon_color"],
@@ -238,6 +291,11 @@ def _publish_result(lv, burst, burst_count, cfg, get_gps_origin_fn, publish_fn):
         "gps_position":     gps_coords,
         "drone_position":   lv["drone_pos"].tolist()
                             if lv["drone_pos"] is not None else None,
+        "gps_ground_truth": {
+            "distance_m":   round(gps_gt[0], 4),
+            "horizontal_m": round(gps_gt[1], 4),
+            "vertical_m":   round(gps_gt[2], 4),
+        } if gps_gt is not None else None,
         "tracking_id":      lv["tracking_id"],
         "burst_frames":     len(burst),
         "timestamp":        round(lv["frame_ts"], 3),
@@ -252,6 +310,7 @@ def run_burst_ros(cfg: dict) -> None:
     burst_cfg = cfg.get("burst", {})
     interval  = burst_cfg.get("interval_sec", _BURST_INTERVAL)
     count     = burst_cfg.get("frame_count",  _BURST_COUNT)
+    nodet_save_interval = burst_cfg.get("nodet_save_interval_sec", 2.0)
 
     model_path      = cfg["model"]
     crop_model_path = cfg["crop_model"]
@@ -260,6 +319,8 @@ def run_burst_ros(cfg: dict) -> None:
     topics          = cfg["topics"]
     save_crops      = cfg.get("save_crops", False)
     save_det_images = cfg.get("save_det_images", False)
+    save_color_pixels = cfg.get("save_color_pixels", False)
+    save_frames     = cfg.get("save_frames", False)
     target_color    = cfg.get("target_color")
     target_blinking = cfg.get("target_blinking")
 
@@ -289,7 +350,13 @@ def run_burst_ros(cfg: dict) -> None:
             return
 
     crop_model = YOLO(crop_model_path)
-    if not cam.enable_detection(model_path, imgsz=cfg["detection"].get("imgsz", 640)):
+    if not cam.enable_detection(
+        model_path,
+        imgsz=cfg["detection"].get("imgsz", 640),
+        backend=cfg["detection"].get("backend", "ultralytics"),
+        conf_thresh=cfg["conf"],
+        delegate_path=cfg["detection"].get("tflite_delegate_path"),
+    ):
         print("[burst] Detection failed to start")
         cam.close()
         try: rclpy.shutdown()
@@ -299,6 +366,12 @@ def run_burst_ros(cfg: dict) -> None:
     print(f"[burst] Live ROS mode — waiting for beacon to trigger {count}-frame burst")
     print(f"[burst]   interval={interval}s  total={interval*count:.1f}s")
     print(f"[burst] Publishing → {topics['detections_pub']}")
+
+    gps_gt_cfg = cfg.get("gps_ground_truth", {})
+    if gps_gt_cfg.get("enabled"):
+        print(f"[burst] GPS ground truth enabled  "
+              f"target=({gps_gt_cfg['latitude']:.7f}, {gps_gt_cfg['longitude']:.7f})  "
+              f"object_height_agl={cfg['detection'].get('beacon_z_m', 0.0):.2f}m")
 
     log_fh = log_writer = None
     if log:
@@ -318,6 +391,19 @@ def run_burst_ros(cfg: dict) -> None:
         os.makedirs(det_images_dir, exist_ok=True)
         print(f"[burst] Saving detection images → {det_images_dir}/")
 
+    color_pixels_dir = None
+    if save_color_pixels:
+        color_pixels_dir = os.path.join(DEBUG_DIR, "beacon_color_pixels")
+        os.makedirs(color_pixels_dir, exist_ok=True)
+        print(f"[burst] Saving color-vote pixels → {color_pixels_dir}/")
+
+    frames_dir = None
+    if save_frames:
+        frames_dir = os.path.join(DEBUG_DIR, "full_frames")
+        os.makedirs(frames_dir, exist_ok=True)
+        print(f"[burst] Saving frames → {frames_dir}/ "
+              f"(one every {nodet_save_interval:.1f}s while searching with no detections)")
+
     if display:
         cv2.namedWindow("Burst Detector", cv2.WINDOW_NORMAL)
 
@@ -325,9 +411,12 @@ def run_burst_ros(cfg: dict) -> None:
     depth_source = cfg["detection"].get("depth_source", "topic")
     burst_count  = 0
 
-    state         = "searching"
-    burst: list   = []
-    last_burst_ts = -999.0
+    state             = "searching"
+    burst: list       = []
+    last_burst_ts     = -999.0
+    last_nodet_save   = -999.0
+    burst_gps_origin       = None
+    burst_drone_height_agl = None
 
     def _publish(json_str):
         msg      = String()
@@ -356,7 +445,18 @@ def run_burst_ros(cfg: dict) -> None:
                     state         = "collecting"
                     burst         = [(frame_ts, rgb_clean, dets, depth, drone_pos, drone_quat)]
                     last_burst_ts = frame_ts
+                    # Freeze GPS/height at the first detection, not at analysis
+                    # time (which runs after the whole burst finishes and the
+                    # drone may have moved).
+                    burst_gps_origin       = cam.get_gps_origin()
+                    burst_drone_height_agl = cam.get_drone_height_agl()
+                    print(_format_gps_status(cam.get_gps_status()))
+                    print(_format_height_status(cam.get_height_status()))
                     print(f"[burst]   1/{count}")
+                elif frames_dir is not None and frame_ts - last_nodet_save >= nodet_save_interval:
+                    fname = f"nodet_{time.strftime('%Y%m%d')}_t{frame_ts:.2f}.png"
+                    cv2.imwrite(os.path.join(frames_dir, fname), rgb_clean)
+                    last_nodet_save = frame_ts
 
             elif state == "collecting":
                 if frame_ts - last_burst_ts >= interval:
@@ -370,15 +470,19 @@ def run_burst_ros(cfg: dict) -> None:
                     lv = _analyse_burst(burst, crop_model, cfg, depth_source,
                                         save_crops_dir=crops_dir,
                                         det_images_dir=det_images_dir,
+                                        color_pixels_dir=color_pixels_dir,
+                                        frames_dir=frames_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
-                                        burst_number=burst_count)
+                                        burst_number=burst_count,
+                                        gps_origin=burst_gps_origin,
+                                        drone_height_agl=burst_drone_height_agl)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:
                         _publish_result(lv, burst, burst_count, cfg,
-                                        cam.get_gps_origin, _publish)
+                                        burst_gps_origin, _publish)
                     burst = []
                     state = "searching"
                     print("[burst] Resuming search")
@@ -426,6 +530,7 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     burst_cfg = cfg.get("burst", {})
     interval  = burst_cfg.get("interval_sec", _BURST_INTERVAL)
     count     = burst_cfg.get("frame_count",  _BURST_COUNT)
+    nodet_save_interval = burst_cfg.get("nodet_save_interval_sec", 2.0)
 
     model_path      = cfg["model"]
     crop_model_path = cfg["crop_model"]
@@ -433,6 +538,8 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     log             = cfg["log"]
     save_crops      = cfg.get("save_crops", False)
     save_det_images = cfg.get("save_det_images", False)
+    save_color_pixels = cfg.get("save_color_pixels", False)
+    save_frames     = cfg.get("save_frames", False)
     target_color    = cfg.get("target_color")
     target_blinking = cfg.get("target_blinking")
 
@@ -461,10 +568,11 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
           f"frames/burst={count}")
 
     # ── ROS setup (optional) ─────────────────────────────────────────────
-    cam        = None
-    rclpy      = None
-    publish_fn = None
-    get_gps_fn = lambda: None
+    cam           = None
+    rclpy         = None
+    publish_fn    = None
+    get_gps_fn    = lambda: None
+    get_height_fn = lambda: None
 
     if use_ros:
         _import_ros()
@@ -487,9 +595,20 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
             msg.data = json_str
             cam.detection_pub.publish(msg)
 
-        publish_fn = _publish
-        get_gps_fn = cam.get_gps_origin
+        publish_fn    = _publish
+        get_gps_fn    = cam.get_gps_origin
+        get_height_fn = cam.get_drone_height_agl
         print(f"[burst] Publishing → {topics['detections_pub']}")
+
+    gps_gt_cfg = cfg.get("gps_ground_truth", {})
+    if gps_gt_cfg.get("enabled"):
+        if not use_ros:
+            print("[burst] GPS ground truth configured but use_ros=False — "
+                  "no drone GPS available in this mode, ground truth disabled")
+        else:
+            print(f"[burst] GPS ground truth enabled  "
+                  f"target=({gps_gt_cfg['latitude']:.7f}, {gps_gt_cfg['longitude']:.7f})  "
+                  f"object_height_agl={cfg['detection'].get('beacon_z_m', 0.0):.2f}m")
 
     DEBUG_DIR = os.path.expanduser("seabird_dataset/beacon_debug")
     os.makedirs(DEBUG_DIR, exist_ok=True)
@@ -506,6 +625,19 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
         os.makedirs(det_images_dir, exist_ok=True)
         print(f"[burst] Saving detection images → {det_images_dir}/")
 
+    color_pixels_dir = None
+    if save_color_pixels:
+        color_pixels_dir = os.path.join(DEBUG_DIR, "beacon_color_pixels")
+        os.makedirs(color_pixels_dir, exist_ok=True)
+        print(f"[burst] Saving color-vote pixels → {color_pixels_dir}/")
+
+    frames_dir = None
+    if save_frames:
+        frames_dir = os.path.join(DEBUG_DIR, "full_frames")
+        os.makedirs(frames_dir, exist_ok=True)
+        print(f"[burst] Saving full frames → {frames_dir}/ "
+              f"(one every {nodet_save_interval:.1f}s while searching with no detections)")
+
     log_fh = log_writer = None
     if log:
         ts_tag    = time.strftime("%Y%m%d_%H%M%S")
@@ -521,9 +653,12 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
     depth_source = cfg["detection"].get("depth_source", "topic")
     burst_count  = 0
 
-    state         = "searching"
-    burst: list   = []
-    last_burst_ts = -999.0
+    state             = "searching"
+    burst: list       = []
+    last_burst_ts     = -999.0
+    last_nodet_save   = -999.0
+    burst_gps_origin       = None
+    burst_drone_height_agl = None
 
     try:
         while True:
@@ -560,7 +695,19 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                     state         = "collecting"
                     burst         = [(frame_ts, rgb_clean, dets, None, drone_pos, drone_quat)]
                     last_burst_ts = frame_ts
+                    # Freeze GPS/height at the first detection, not at analysis
+                    # time (which runs after the whole burst finishes and the
+                    # drone may have moved).
+                    burst_gps_origin       = get_gps_fn()
+                    burst_drone_height_agl = get_height_fn()
+                    if cam is not None:
+                        print(_format_gps_status(cam.get_gps_status()))
+                        print(_format_height_status(cam.get_height_status()))
                     print(f"[burst]   1/{count}  (t={frame_ts:.2f}s)")
+                elif frames_dir is not None and frame_ts - last_nodet_save >= nodet_save_interval:
+                    fname = f"nodet_{time.strftime('%Y%m%d')}_t{frame_ts:.2f}.png"
+                    cv2.imwrite(os.path.join(frames_dir, fname), rgb_clean)
+                    last_nodet_save = frame_ts
 
             elif state == "collecting":
                 if frame_ts - last_burst_ts >= interval:
@@ -574,15 +721,19 @@ def run_burst_video(cfg: dict, video_path: str, use_ros: bool) -> None:
                     lv = _analyse_burst(burst, crop_model, cfg, depth_source,
                                         save_crops_dir=crops_dir,
                                         det_images_dir=det_images_dir,
+                                        color_pixels_dir=color_pixels_dir,
+                                        frames_dir=frames_dir,
                                         target_color=target_color,
                                         target_blinking=target_blinking,
                                         log_writer=log_writer,
-                                        burst_number=burst_count)
+                                        burst_number=burst_count,
+                                        gps_origin=burst_gps_origin,
+                                        drone_height_agl=burst_drone_height_agl)
                     if not lv:
                         print("[burst] No valid detections in burst")
                     else:
                         _publish_result(lv, burst, burst_count, cfg,
-                                        get_gps_fn, publish_fn)
+                                        burst_gps_origin, publish_fn)
                     burst = []
                     state = "searching"
                     print("[burst] Resuming search")

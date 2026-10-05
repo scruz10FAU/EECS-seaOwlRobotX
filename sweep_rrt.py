@@ -75,6 +75,13 @@ MAX_SEARCH_RADIUS_M  = 10.0   # maximum distance from takeoff point; hard bounda
 RRT_STEP_M           = 1.5    # maximum edge length for each tree extension
 RRT_GOAL_BIAS        = 0.08   # probability of biasing sample toward least-explored sector
 
+# Reactive beacon attraction (Option A): when the detector has glimpsed a beacon
+# that is NOT yet confirmed/classified, bias a fraction of search samples toward
+# it so the drone drifts over to get a clean look. Attraction is suppressed once
+# a buoy is confirmed at that spot, so the drone does not fixate on known beacons.
+BEACON_ATTRACT_PROB  = 0.6    # chance a sample aims at an unconfirmed beacon
+BEACON_ATTRACT_JITTER_M = 1.0 # Gaussian spread (m) around the beacon target
+
 # Derived: enough nodes to cover the search disc approximately twice over.
 # Formula: 2 × (area of disc) / (area per step cell).
 # Scaled up by 2× because RRT coverage is less efficient than a grid.
@@ -88,7 +95,31 @@ BLINK_SETTLE_S          = 3.0   # stabilisation pause before polling — lets th
                                  # stop moving and the YOLO tracker lock a stable ID
 
 # ── Mission targets ───────────────────────────────────────────────────────────
-TARGET_COLORS        = {"red", "green", "blue"}
+# RobotX 2026 Task 1 (Safe Passage): the UAV classifies each buoy's TOP beacon
+# into one of five STATES. Each state has a fixed meaning to report to the USV /
+# RoboCommand. States are keyed on (color, is_blinking):
+#   flashing RED   -> STARBOARD marker (pass on USV starboard side)
+#   flashing GREEN -> PORT marker      (pass on USV port side)
+#   flashing BLUE  -> ENTRY point
+#   solid    BLUE  -> EXIT point
+#   OFF            -> inactive obstacle buoy
+STATE_STARBOARD = "red_flash"
+STATE_PORT      = "green_flash"
+STATE_ENTRY     = "blue_flash"
+STATE_EXIT      = "blue_solid"
+STATE_OBSTACLE  = "off"
+
+STATE_MEANING = {
+    STATE_STARBOARD: "FLASHING RED   -> pass on USV starboard side",
+    STATE_PORT:      "FLASHING GREEN -> pass on USV port side",
+    STATE_ENTRY:     "FLASHING BLUE  -> safe ENTRY point",
+    STATE_EXIT:      "SOLID BLUE     -> safe EXIT point",
+    STATE_OBSTACLE:  "OFF/BLACK      -> inactive obstacle buoy",
+}
+
+# Survey the whole field, then report. The field has a known buoy count.
+EXPECTED_BUOY_COUNT = 10      # Task 1 has ten buoys
+BUOY_MERGE_DIST_M   = 2.0     # detections within this distance = same buoy
 
 # ── MAVSDK ────────────────────────────────────────────────────────────────────
 MAVSDK_ADDRESS              = "udpin://0.0.0.0:14551"
@@ -111,9 +142,10 @@ def log(msg: str) -> None:
 
 # ── Shared detection state ────────────────────────────────────────────────────
 
-_detected_buoys: set  = set()   # colors whose blink status has been recorded
-_pending_beacon: dict = {}      # color -> latest detection dict (from ROS cb)
-_beacon_locations: dict = {}    # color -> (north, east) where first detected
+_classified_buoys: list = []    # confirmed buoys (deduplicated by location):
+                                #   {"state","north","east","world","gps",
+                                #    "color","is_blinking","blink_hz"}
+_pending_beacon: dict   = {}    # color -> latest raw detection dict (from ROS cb)
 _lock = threading.Lock()
 _battery_low: bool    = False   # set True by monitor_battery() when threshold crossed
 _detector_alive       = threading.Event()  # set when first /seabird/beacon_detections msg arrives
@@ -196,8 +228,7 @@ def _rclpy_thread_fn() -> None:
             if not color or color == "unknown":
                 return
             with _lock:
-                if color not in _detected_buoys:
-                    _pending_beacon[color] = data   # always update with latest frame
+                _pending_beacon[color] = data   # always keep the latest frame
 
         node.create_subscription(String, "/seabird/beacon_detections", _cb, 10)
         node.get_logger().info(
@@ -360,22 +391,174 @@ async def hold_position(drone: System, north: float, east: float,
 
 # ── Detection helpers ─────────────────────────────────────────────────────────
 
-def all_found() -> bool:
-    with _lock:
-        return _detected_buoys >= TARGET_COLORS
+def classify_state(det: dict) -> str:
+    """
+    Map a raw detection dict to one of the five RobotX Task 1 states.
+    Returns a STATE_* key, or "" if the blink status is not yet definitive
+    (is_blinking is None) so the caller keeps hovering to confirm.
+    """
+    color = det.get("color", "")
+    blink = det.get("blink") or {}
+    is_blinking = blink.get("is_blinking")   # True / False / None(uncertain)
 
-def found_count() -> int:
-    with _lock:
-        return len(_detected_buoys)
+    if is_blinking is None:
+        return ""                            # not confirmed yet
 
-def found_set() -> set:
-    with _lock:
-        return set(_detected_buoys)
+    if color == "red"   and is_blinking:  return STATE_STARBOARD
+    if color == "green" and is_blinking:  return STATE_PORT
+    if color == "blue"  and is_blinking:  return STATE_ENTRY
+    if color == "blue"  and not is_blinking: return STATE_EXIT
+    # red/green that are NOT blinking, or anything else, are treated as OFF/obstacle
+    return STATE_OBSTACLE
 
-def new_unverified_colors() -> list:
-    """Return colors currently pending verification at this node."""
+
+def _same_buoy(n: float, e: float, buoy: dict) -> bool:
+    dn = n - buoy["north"]; de = e - buoy["east"]
+    return (dn*dn + de*de) <= (BUOY_MERGE_DIST_M * BUOY_MERGE_DIST_M)
+
+
+def record_buoy(state: str, north: float, east: float, det: dict) -> bool:
+    """
+    Add or update a classified buoy at (north, east). Deduplicates by location:
+    if a buoy already exists within BUOY_MERGE_DIST_M it is updated in place.
+    Returns True if this was a NEW buoy.
+    """
+    blink = det.get("blink") or {}
+    entry = {
+        "state":       state,
+        "north":       north,
+        "east":        east,
+        "color":       det.get("color"),
+        "is_blinking": blink.get("is_blinking"),
+        "blink_hz":    blink.get("blink_hz"),
+        "world":       det.get("world_position"),
+        "gps":         det.get("gps_position"),
+    }
+    with _lock:
+        for b in _classified_buoys:
+            if _same_buoy(north, east, b):
+                b.update(entry)              # refine existing buoy
+                return False
+        _classified_buoys.append(entry)
+        return True
+
+
+def classified_count() -> int:
+    with _lock:
+        return len(_classified_buoys)
+
+def have_entry_and_exit() -> bool:
+    """True once at least one ENTRY and one EXIT buoy have been classified."""
+    with _lock:
+        states = {b["state"] for b in _classified_buoys}
+    return STATE_ENTRY in states and STATE_EXIT in states
+
+def survey_complete() -> bool:
+    """
+    Field survey is 'done enough' to report when we have located all expected
+    buoys AND found both the entry and exit markers.
+    """
+    return classified_count() >= EXPECTED_BUOY_COUNT and have_entry_and_exit()
+
+def unconfirmed_beacon_location(near_n: float, near_e: float):
+    """
+    Return (north, east) of the closest beacon the detector has reported a world
+    position for but which is NOT yet confirmed as a classified buoy, or None.
+
+    "Unconfirmed" = we have a pending detection with a world_position that is not
+    already within BUOY_MERGE_DIST_M of an existing classified buoy. This is what
+    the RRT biases toward (Option A) so the drone drifts over to confirm it, and
+    it automatically stops attracting once that spot becomes a classified buoy.
+    """
+    with _lock:
+        pend = list(_pending_beacon.values())
+        known = [(b["north"], b["east"]) for b in _classified_buoys]
+
+    best = None
+    best_d2 = float("inf")
+    for det in pend:
+        wp = det.get("world_position")
+        if not wp or len(wp) < 2:
+            continue
+        bn, be = float(wp[0]), float(wp[1])
+        # skip if this location is already a confirmed buoy
+        if any((bn - kn) ** 2 + (be - ke) ** 2 <= BUOY_MERGE_DIST_M ** 2
+               for kn, ke in known):
+            continue
+        d2 = (bn - near_n) ** 2 + (be - near_e) ** 2
+        if d2 < best_d2:
+            best_d2, best = d2, (bn, be)
+    return best
+
+
+
+def pending_colors() -> list:
+    """Colors currently awaiting state confirmation at this node."""
     with _lock:
         return list(_pending_beacon.keys())
+
+
+def _buoy_public(b: dict) -> dict:
+    """Trim an internal buoy dict to the fields worth reporting."""
+    return {
+        "state":       b["state"],
+        "meaning":     STATE_MEANING.get(b["state"], b["state"]),
+        "north":       round(b["north"], 2),
+        "east":        round(b["east"], 2),
+        "world":       b.get("world"),
+        "gps":         b.get("gps"),
+        "color":       b.get("color"),
+        "is_blinking": b.get("is_blinking"),
+        "blink_hz":    b.get("blink_hz"),
+    }
+
+
+def build_passage_report(nodes_explored: int) -> dict:
+    """
+    Assemble the structured Safe-Passage report from the classified buoys:
+    the ENTRY point, the EXIT point, the port (green) and starboard (red)
+    markers, and the OFF obstacles. This is what the USV / RoboCommand needs.
+    If several ENTRY or EXIT candidates were seen, the highest-blink-confidence
+    is not tracked here, so the FIRST is used and the rest listed as extras.
+    """
+    with _lock:
+        buoys = [dict(b) for b in _classified_buoys]
+
+    def of(state): return [b for b in buoys if b["state"] == state]
+
+    entries   = of(STATE_ENTRY)
+    exits     = of(STATE_EXIT)
+    starboard = of(STATE_STARBOARD)
+    port      = of(STATE_PORT)
+    obstacles = of(STATE_OBSTACLE)
+
+    return {
+        "task":       "safe_passage",
+        "tier":       "advanced",
+        "buoy_count": len(buoys),
+        "expected":   EXPECTED_BUOY_COUNT,
+        "entry":      _buoy_public(entries[0]) if entries else None,
+        "exit":       _buoy_public(exits[0])   if exits   else None,
+        "entry_extras": [_buoy_public(b) for b in entries[1:]],
+        "exit_extras":  [_buoy_public(b) for b in exits[1:]],
+        "starboard":  [_buoy_public(b) for b in starboard],
+        "port":       [_buoy_public(b) for b in port],
+        "obstacles":  [_buoy_public(b) for b in obstacles],
+        "all_buoys":  [_buoy_public(b) for b in buoys],
+        "nodes_explored": nodes_explored,
+        "timestamp":  time.time(),
+    }
+
+
+def _fmt_pt(b) -> str:
+    """One-line human string for a reported buoy point."""
+    if not b:
+        return "NOT FOUND"
+    gps = b.get("gps")
+    if gps:
+        return (f"N={b['north']:+.2f} E={b['east']:+.2f}  "
+                f"lat={gps['latitude']:.7f} lon={gps['longitude']:.7f}")
+    return f"N={b['north']:+.2f} E={b['east']:+.2f}  gps=n/a"
 
 
 # ── RRT class ─────────────────────────────────────────────────────────────────
@@ -422,6 +605,19 @@ class RRT:
         Biased toward the sector opposite the current node centroid so the tree
         fills the search area rather than staying near the start.
         """
+        # Option A — reactive beacon attraction:
+        # if the detector has glimpsed an unconfirmed beacon, bias toward it so
+        # the drone drifts over to confirm it (suppressed once confirmed).
+        if random.random() < BEACON_ATTRACT_PROB:
+            # use the newest tree tip as the "current" position reference
+            cur = self.nodes[-1]
+            loc = unconfirmed_beacon_location(cur.north, cur.east)
+            if loc is not None:
+                log(f"[rrt] ◉ biasing search toward unconfirmed beacon at "
+                    f"N={loc[0]:+.1f} E={loc[1]:+.1f}")
+                return (loc[0] + random.gauss(0.0, BEACON_ATTRACT_JITTER_M),
+                        loc[1] + random.gauss(0.0, BEACON_ATTRACT_JITTER_M))
+
         if len(self.nodes) > 3 and random.random() < RRT_GOAL_BIAS:
             # centroid of current tree nodes
             cn = sum(n.north for n in self.nodes) / len(self.nodes)
@@ -726,7 +922,7 @@ async def run_mission() -> None:
     log(f"[rrt]   Step length     {RRT_STEP_M:.1f} m")
     log(f"[rrt]   Max nodes       {RRT_MAX_NODES}")
     log(f"[rrt]   Verify timeout  {BLINK_VERIFY_TIMEOUT_S:.0f} s")
-    log(f"[rrt]   Targets         {TARGET_COLORS}")
+    log(f"[rrt]   Expected buoys  {EXPECTED_BUOY_COUNT}")
     log("[rrt] ═══════════════════════════════════════════")
     log("")
 
@@ -750,7 +946,7 @@ async def run_mission() -> None:
 
         log(f"[rrt] → node {rrt.size + 1:3d}  "
             f"N={new_n:+.2f}  E={new_e:+.2f}  yaw={yaw:.0f}°  "
-            f"detections={found_count()}")
+            f"buoys={classified_count()}/{EXPECTED_BUOY_COUNT}")
 
         reached = await fly_to(drone, new_n, new_e, down_m, yaw)
 
@@ -764,38 +960,54 @@ async def run_mission() -> None:
         publish_rrt_edge(parent_node.north, parent_node.east,
                          new_n, new_e, TAKEOFF_ALT_M)
 
-        # ── Check for new beacon detections ───────────────────────────────
-        unverified = new_unverified_colors()
+        # ── Check for new beacon detections ─────────────────────────────────────────
+        for color in pending_colors():
+            log(f"[rrt] ★ Beacon in view: '{color}' at N={new_n:+.2f} E={new_e:+.2f} "
+                f"— hovering to confirm state")
 
-        for color in unverified:
-            # Record where this beacon was first spotted
-            with _lock:
-                if color not in _beacon_locations:
-                    _beacon_locations[color] = (new_n, new_e)
-
-            log(f"[rrt] ★ New beacon: '{color}'  at N={new_n:+.2f} E={new_e:+.2f}")
-
-            # Hover and wait for definitive blink status
+            # Hover until the blink status is definitive (True/False, not None).
             det = await verify_beacon(drone, new_n, new_e, down_m, color)
+            if det is None:
+                with _lock:
+                    _pending_beacon.pop(color, None)
+                continue
 
-            # Record result and clear pending so the same color can retrigger
-            # at a new location (multiple beacons of the same color may exist).
+            state = classify_state(det)
+            if not state:
+                # still uncertain after the hover — leave pending, try again later
+                log(f"[rrt]   … '{color}' state unconfirmed (is_blinking=None), will retry")
+                with _lock:
+                    _pending_beacon.pop(color, None)
+                continue
+
+            # Prefer the detector's world position if present, else the node NE.
+            wp = det.get("world_position")
+            bn, be = (wp[0], wp[1]) if (wp and len(wp) >= 2) else (new_n, new_e)
+
+            is_new = record_buoy(state, bn, be, det)
             with _lock:
-                _detected_buoys.add(color)
                 _pending_beacon.pop(color, None)
 
-            blink_info   = (det.get("blink") or {}) if det else {}
-            blink_status = blink_info.get("is_blinking")
-            blink_hz     = blink_info.get("blink_hz")
-            log(f"[rrt]   Recorded '{color}': "
-                f"is_blinking={blink_status}  hz={blink_hz}  "
-                f"detections so far={found_count()}")
+            gps = det.get("gps_position")
+            gps_s = (f"lat={gps['latitude']:.7f} lon={gps['longitude']:.7f}"
+                     if gps else "gps=n/a")
+            tag = "NEW" if is_new else "upd"
+            log(f"[rrt]   [{tag}] {STATE_MEANING[state]}  "
+                f"N={bn:+.2f} E={be:+.2f}  {gps_s}  "
+                f"buoys={classified_count()}/{EXPECTED_BUOY_COUNT}")
+
+        # ── Stop early once the whole field is surveyed and entry+exit found ──
+        if survey_complete():
+            log(f"[rrt] ✓ Survey complete: all {EXPECTED_BUOY_COUNT} buoys classified, "
+                f"entry & exit found — ending search to report.")
+            break
+
 
         # Brief pause before next extension
         await asyncio.sleep(0.3)
 
     log(f"[rrt] Search complete — {rrt.size} nodes explored, "
-        f"{found_count()} beacon detection(s) recorded")
+        f"{classified_count()} buoys classified")
 
     # ── Return to launch ──────────────────────────────────────────────────────
     log("\n[rrt] Returning to launch...")
@@ -822,19 +1034,32 @@ async def run_mission() -> None:
         log("[rrt] ERROR: exception while waiting for landing")
         traceback.print_exc()
 
-    # ── Final report ──────────────────────────────────────────────────────────
+    # ── Build and emit the Safe-Passage report ──────────────────────────────
+    report = build_passage_report(rrt.size)
     log("")
-    log("═" * 52)
-    log("  SEABIRD RRT SEARCH — COMPLETE")
-    log("═" * 52)
-    log(f"  RRT nodes explored  : {rrt.size}")
-    log(f"  Search radius       : {MAX_SEARCH_RADIUS_M:.1f} m")
-    log(f"  Total detections    : {found_count()}")
-    log(f"  Unique colors seen  : {sorted(found_set()) or 'none'}")
-    for color, (fn, fe) in _beacon_locations.items():
-        log(f"    {color:<8} first seen N={fn:+.2f}  E={fe:+.2f}")
-    log("═" * 52)
+    log("═" * 60)
+    log("  SEABIRD — SAFE PASSAGE REPORT (RobotX 2026 Task 1)")
+    log("═" * 60)
+    log(f"  Nodes explored : {rrt.size}")
+    log(f"  Buoys found    : {report['buoy_count']} / {EXPECTED_BUOY_COUNT}")
+    entry = report["entry"]; exit_ = report["exit"]
+    log(f"  ENTRY (flash blue) : {_fmt_pt(entry)}")
+    log(f"  EXIT  (solid blue) : {_fmt_pt(exit_)}")
+    log(f"  STARBOARD (flash red)  markers: {len(report['starboard'])}")
+    for b in report["starboard"]:
+        log(f"      {_fmt_pt(b)}")
+    log(f"  PORT      (flash green) markers: {len(report['port'])}")
+    for b in report["port"]:
+        log(f"      {_fmt_pt(b)}")
+    log(f"  OBSTACLES (off) : {len(report['obstacles'])}")
+    log("═" * 60)
+
+    # Machine-readable report for RoboCommand / the USV.
+    # TODO(team): publish this dict (or your RoboCommand schema) on the
+    #             agreed topic / link. It is emitted here as JSON for now.
+    log("[rrt] REPORT_JSON " + json.dumps(report))
     log("")
+
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

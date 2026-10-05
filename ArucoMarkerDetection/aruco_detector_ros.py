@@ -126,7 +126,7 @@ def _import_ros():
     global rclpy, String, _BeaconCameraBase
     import rclpy as _rclpy;                      rclpy = _rclpy
     from std_msgs.msg import String as _S;       String = _S
-    from beacon_camera import BeaconCamera as _BC; _BeaconCameraBase = _BC
+    from utils.beacon_camera import BeaconCamera as _BC; _BeaconCameraBase = _BC
 
 
 # ---------------------------------------------------------------------------
@@ -146,7 +146,7 @@ def _make_aruco_camera(topics: dict, cfg_camera: dict):
     from sensor_msgs.msg import Image
     from geometry_msgs.msg import PoseStamped
     from geographic_msgs.msg import GeoPointStamped
-    from camera_interface import Intrinsics
+    from utils.camera_interface import Intrinsics
     from cv_bridge import CvBridge
 
     image_topic      = topics["image"]

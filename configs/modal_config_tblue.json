@@ -1,14 +1,14 @@
 {
-  "model":      "models/one_beacon630.pt",
-  "crop_model": "models/best_crop727.pt",
+  "model":      "models/best_square3_914.pt",
+  "crop_model": "models/beacon_square_top93b.pt",
   "conf":       0.5,
   "display":    false,
-  "true_dist":  4.572,
+  "true_dist":  4.24,
   "save":       false,
   "log":        true,
   "save_crops": true,
   "save_det_images": true,
-  "save_frames":     false,
+  "save_frames":     true,
   "target_color":    "blue",
   "target_blinking": true,
   "video":      null,
@@ -21,6 +21,8 @@
     "depth":          "/tof_depth",
     "drone_pose":     "/vvhub_body_wrt_local/pose",
     "gps_origin":     "/fmu/out/vehicle_gps_position",
+    "gps_msg_type":   "px4_sensor_gps",
+    "drone_height_source": "px4_local_position",
     "detections_pub": "/seabird/beacon_detections",
     "aruco_pub":      "/seabird/aruco_ground_truth"
   },
@@ -82,5 +84,11 @@
     "red_threshold":    0.40,
     "winner_threshold": 0.25,
     "red_hue_high":     5
+  },
+  
+  "gps_ground_truth": {
+  "enabled": true,
+  "latitude": 26.7117290,
+  "longitude": -80.2865831
   }
 }
