@@ -886,8 +886,18 @@ async def run_mission() -> None:
         for _ in range(30):                     # 30 × 0.1s = 3 s of priming
             await drone.offboard.set_position_ned(hold)
             await asyncio.sleep(0.1)
+
+    
+        await drone.offboard.set_position_ned(hold)
         log("[rrt] Switching to offboard mode...")
-        await drone.offboard.start()
+        try:
+            await drone.offboard.start()
+        except OffboardError as e:
+            log(f"[rrt] First offboard start failed ({e}), retrying...")
+            await drone.offboard.set_position_ned(hold)
+            await asyncio.sleep(0.2)
+            await drone.offboard.set_position_ned(hold)
+            await drone.offboard.start()
     except OffboardError as e:
         log(f"[rrt] Offboard start failed: {e}")
         try:
