@@ -429,7 +429,8 @@ python3 beacon_mavlink_bridge.py --mavlink-endpoint udpout:127.0.0.1:14551   # p
 
 ```bash
 python3 beacon_mavlink_ground.py --mavlink-endpoint udpin:0.0.0.0:14550
-python3 beacon_mavlink_ground.py --mavlink-endpoint /dev/ttyUSB0 --baud 57600
+python3 beacon_mavlink_ground.py --mavlink-endpoint /dev/ttyACM0 --baud 460800
+
 ```
 
 Both scripts require `pip install pymavlink`. Whether messages sent by the bridge actually reach the ground station's radio link depends on how PX4/`voxl-mavlink-server` are configured to forward third-party-injected traffic between endpoints — verify end-to-end delivery against your actual hardware/radio setup before relying on it operationally; it hasn't been tested against real MAVLink hardware in this session.
