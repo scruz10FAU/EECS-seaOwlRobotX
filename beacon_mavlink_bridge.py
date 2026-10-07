@@ -68,9 +68,10 @@ class BeaconMavlinkBridge(Node):
             )
             return
 
-        color = data.get("color", "unknown")
-        blink_info = data.get("blink") or {}
-        is_blinking = blink_info.get("is_blinking")
+        color = data.get("blink_color", "unknown")
+        #blink_info = data.get("blink") or {}
+        #is_blinking = blink_info.get("is_blinking")
+        is_blinking = data.get("blink")
 
         value = pack_value_array(gps["latitude"], gps["longitude"], color, is_blinking)
 
