@@ -719,12 +719,13 @@ async def verify_beacon(drone: System,
         with _lock:
             det = _pending_beacon.get(color)
 
-        if det is not None and (det.get("blink") or {}).get("is_blinking") is not None:
-            blink_info = det.get("blink") or {}
-            log(f"[rrt] ✓ '{color}' blink confirmed: "
-                f"is_blinking={blink_info.get('is_blinking')}  "
-                f"hz={blink_info.get('blink_hz', '?')}")
-            return det
+        if det is not None:
+            blink = det.get("blink") if isinstance(det.get("blink"), dict) else {}
+            if blink.get("is_blinking") is not None:
+                log(f"[rrt] ✓ '{color}' blink confirmed: "
+                    f"is_blinking={blink.get('is_blinking')}  "
+                    f"hz={blink.get('blink_hz', '?')}")
+                return det
 
     elapsed = asyncio.get_event_loop().time() - t0
     log(f"[rrt] ⚠ Blink verification timed out for '{color}' after {elapsed:.1f}s")
