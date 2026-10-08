@@ -20,6 +20,7 @@ Detection pipeline for colored, optionally blinking, beacon lights mounted on a 
 | `beacon_mavlink_bridge.py` | ROS2 node — relays `/seabird/beacon_detections` to the ground station as a binary MAVLink message over the existing flight-controller link. |
 | `beacon_mavlink_ground.py` | Ground-station counterpart to `beacon_mavlink_bridge.py` — decodes the MAVLink message back into GPS/color/blink status. Runs on a separate machine. |
 | `mock_beacon_publisher.py` | Publishes synthetic `/seabird/beacon_detections` messages for testing downstream consumers — no camera or detection pipeline required. |
+| `downward_beacon_classifier_node.py` | One-shot color/blink/GPS classification of a beacon's circular top face from a downward-facing camera, assuming another script already hovers the drone above it. No trained model — classical CV, using the known beacon/circle dimensions. |
 | `start_seabird_beacon.sh` | Mission launcher. Starts the detector, sweep, and recorder as tagged, logged child processes. |
 | `utils/` | Shared helper modules (`BlinkDetector`, `BeaconCamera`, detector backends, camera interfaces, the MAVLink wire format) imported by the scripts above — see [utils/README.md](utils/README.md). |
 
@@ -450,6 +451,46 @@ python3 mock_beacon_publisher.py                         # cycles the built-in s
 python3 mock_beacon_publisher.py --rate 2.0 --count 10    # 2 Hz, stop after 10 messages
 python3 mock_beacon_publisher.py --color red --blinking true --lat 26.3712 --lon -80.1034
 ```
+
+---
+
+## downward_beacon_classifier_node.py
+
+One-shot color/blink/GPS classification of a beacon's circular top face, using a **downward-facing camera** while the drone hovers directly above it — a different geometry from the main oblique-view pipeline. Assumes some other script already flew the drone into position; this script only classifies once it's there.
+
+No trained model needed: the beacon's top diameter and height are known, so the expected pixel radius of the circle is computed directly from the pinhole model (`fx`/`fy` + `drone_height_agl - beacon_height_m`), and a classical-CV isolation (Hough circle transform constrained to that size, near image center) finds it — no ML training required for this view. Color classification reuses `beacon_detector_config.classify_beacon_color()`'s hue-voting logic (via its `seg_mask` parameter) so thresholds stay consistent with the rest of the pipeline; blink detection reuses `BlinkDetector` unchanged; pose/GPS tracking reuses `BeaconCamera.open_for_video()` (pose + GPS only, no image/depth sync) rather than a new subscription pipeline.
+
+The actual classification algorithm (`utils/downward_beacon_classifier.py`) is a pure function with no ROS dependency — directly unit-testable with synthetic frames.
+
+### Config — new `downward_camera` section
+
+Sibling to `camera`/`detection`/`aruco`/`gps_ground_truth` (same pattern `load_config()` already uses for those):
+
+```json
+"downward_camera": {
+  "image_topic":      "/your/downward/camera/topic",
+  "focal_length_mm":  2.1,
+  "h_aperture_mm":    6.0,
+  "v_aperture_mm":    4.5,
+  "img_w":            640,
+  "img_h":            480,
+  "mount_offset_xyz": [0.0, 0.0, 0.0],
+  "pitch_deg":        90.0,
+  "beacon_height_m":        0.4382,
+  "beacon_top_diameter_m":  0.0780
+}
+```
+
+`beacon_height_m` (17.25in) and `beacon_top_diameter_m` (3.07in) are **separate fields from** `detection.beacon_height_m`/`beacon_z_m` — those are already used by the forward-camera's bbox-based distance estimation for a different (older, 12in) beacon design; keeping these distinct avoids any cross-talk between the two pipelines.
+
+### Usage
+
+```bash
+python3 downward_beacon_classifier_node.py --config configs/my_config.json
+python3 downward_beacon_classifier_node.py --config configs/my_config.json --duration 8.0
+```
+
+Publishes one result to `topics.detections_pub` using the same JSON schema as the rest of the pipeline (`color`, `blink`, `gps_position`, `world_position`), so it's immediately usable by `beacon_mavlink_bridge.py` or anything else already consuming that topic.
 
 ---
 

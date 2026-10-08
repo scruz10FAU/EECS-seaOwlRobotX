@@ -52,6 +52,19 @@
     "mount_offset_xyz": [0.30, 0.0, 0.05],
     "pitch_deg":        15.0
   },
+    
+  "downward_camera": {
+    "image_topic":      "/hires_down_small_color",
+    "focal_length_mm":  2.1,
+    "h_aperture_mm":    6.0,
+    "v_aperture_mm":    4.5,
+    "img_w":            640,
+    "img_h":            480,
+    "mount_offset_xyz": [0.0, 0.0, 0.0],
+    "pitch_deg":        90.0,
+    "beacon_height_m":        0.4382,
+    "beacon_top_diameter_m":  0.0780
+  },
 
   "drone_spawn": {
     "position":  [0.0, -8.0, 2.5],

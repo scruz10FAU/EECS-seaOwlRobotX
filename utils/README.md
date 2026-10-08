@@ -14,6 +14,7 @@ Shared helper modules used by the top-level scripts in the main folder. None of 
 | `blink_detector.py` | `BlinkDetector` class — rolling-window blink frequency estimator. |
 | `beacon_camera.py` | `BeaconCamera` ROS2 node — camera image subscriptions, depth decoding, pose/GPS callbacks, and detector backend selection. |
 | `beacon_mavlink_protocol.py` | Binary wire format (pack/unpack) for relaying beacon detections to the ground station as a MAVLink `MEMORY_VECT` message. Shared by `beacon_mavlink_bridge.py` (drone) and `beacon_mavlink_ground.py` (ground station). |
+| `downward_beacon_classifier.py` | Pure color/blink/GPS classification of a beacon's circular top face from a downward-facing camera — classical CV (no trained model), used by `downward_beacon_classifier_node.py`. |
 
 ---
 
@@ -207,3 +208,31 @@ Packs `latitude`/`longitude` as int32, ×1e7-scaled (same convention as MAVLink'
 |---|---|
 | `color` | `unknown`=0, `red`=1, `green`=2, `blue`=3, `white`=4 |
 | `is_blinking` | `None`=0, `False`=1, `True`=2 |
+
+---
+
+## downward_beacon_classifier.py
+
+Pure color/blink/GPS classification of a beacon's circular top face from a downward-facing camera — no ROS, no `rclpy`, just `numpy`/`cv2`/stdlib (`beacon_detector_config` is imported lazily inside functions, not at module load, to avoid its heavy top-level `ultralytics` import). Used by `downward_beacon_classifier_node.py` (see the main `README.md`).
+
+```python
+from utils.downward_beacon_classifier import classify_beacon_downward, expected_pixel_radius, isolate_circle
+
+radius_px = expected_pixel_radius(fx, fy, depth_m, beacon_top_diameter_m)
+mask, (bx, by, br) = isolate_circle(bgr_frame, cx, cy, radius_px)  # or None if nothing found
+
+result = classify_beacon_downward(
+    frame_source,            # iterable of (timestamp, bgr_frame)
+    drone_pos, drone_quat_wxyz, gps_origin, drone_height_agl,
+    downward_cam_cfg, detection_cfg, duration_s,
+)
+# -> {"color", "blink": {...}, "gps_position": {...} | None, "world_position": [...] | None, "n_frames_used"}
+```
+
+**Why classical CV, not a model**: the beacon's top diameter is known and the drone's AGL height is known, so the pinhole model gives an exact expected pixel radius for the circle at `depth_m = drone_height_agl - beacon_height_m` — `isolate_circle()` uses a Hough circle transform constrained to that size, near image center (since hovering accurately means the circle should be roughly centered), picking the candidate closest to center if several survive.
+
+**Color classification reuses the oblique-view pipeline's decision logic**, not a reimplementation: `classify_frame()` crops to the isolated circle's bounding box and calls `beacon_detector_config.classify_beacon_color(crop, seg_mask=crop_mask)` directly — the same hue-voting thresholds (`red_threshold`, `winner_threshold`, hue bands) apply to both camera views, configured via `_apply_color_config(detection_cfg)` at the start of `classify_beacon_downward()`.
+
+**Blink detection** instantiates a fresh `BlinkDetector()` per call (bypassing the tracking-id cache used by the live multi-detection pipeline, since there's only one beacon here) and feeds it one `.update()` per successfully-isolated frame; frames where the circle isn't found are simply skipped (not fed as "off" samples) — matching how the oblique pipeline already behaves for red/green beacons, where the detector loses the beacon entirely when its LED is off.
+
+**GPS projection**: back-projects the circle's pixel centroid at the known `depth_m` (equivalent to `camera_interface.Intrinsics.back_project()`, inlined), then reuses `beacon_detector_config._camera_to_world()` and `local_enu_to_gps()` unchanged — the existing `pitch_deg`-parameterized rotation math already generalizes correctly to a straight-down camera (`pitch_deg=90`) with no changes of its own.

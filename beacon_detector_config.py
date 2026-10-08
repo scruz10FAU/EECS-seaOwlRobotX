@@ -68,6 +68,19 @@ _DEFAULT_CAMERA = {
     "pitch_deg":        15.0,
 }
 
+_DEFAULT_DOWNWARD_CAMERA = {
+    "image_topic":      None,     # ROS image topic for the downward-facing camera
+    "focal_length_mm":  2.1,
+    "h_aperture_mm":    6.0,
+    "v_aperture_mm":    4.5,
+    "img_w":           640,
+    "img_h":           480,
+    "mount_offset_xyz": [0.0, 0.0, 0.0],
+    "pitch_deg":        90.0,     # straight down
+    "beacon_height_m":  0.4382,   # 17.25 in — full beacon height, used for depth = drone_height_agl - this
+    "beacon_top_diameter_m": 0.0780,  # 3.07 in — top circle diameter, used to size the expected pixel radius
+}
+
 _DEFAULT_ARUCO = {
     "enabled":          False,
     "dictionary":       "DICT_4X4_50",
@@ -112,6 +125,41 @@ _DEFAULT_DETECTION = {
 
 # ── Config loader ─────────────────────────────────────────────────────────────
 
+def _derive_camera_geometry(cam: dict) -> dict:
+    """
+    Compute derived camera intrinsics (fx, fy, cx, cy), mount offset, and the
+    body-to-camera rotation matrix for a camera config dict in-place, from its
+    focal_length_mm/h_aperture_mm/v_aperture_mm/img_w/img_h/mount_offset_xyz/
+    pitch_deg fields. Shared by every camera profile in the config (the main
+    forward camera and the downward-facing one) so this math lives in exactly
+    one place.
+    """
+    fl, ha, va = cam["focal_length_mm"], cam["h_aperture_mm"], cam["v_aperture_mm"]
+    w,  h      = cam["img_w"], cam["img_h"]
+    cam["fx"] = fl * w / ha
+    cam["fy"] = fl * h / va
+    cam["cx"] = w / 2.0
+    cam["cy"] = h / 2.0
+
+    cam["_mount_offset"] = np.array(cam["mount_offset_xyz"], dtype=np.float64)
+
+    # Body-to-camera rotation: Isaac FLU body frame → OpenCV camera frame,
+    # then pitched nose-down by pitch_deg (90° = straight down).
+    #   cam_X (right)   = -body_Y
+    #   cam_Y (down)    = -body_Z
+    #   cam_Z (forward) =  body_X
+    pr = np.radians(cam["pitch_deg"])
+    _R_base = np.array([[0, -1,  0],
+                         [0,  0, -1],
+                         [1,  0,  0]], dtype=np.float64)
+    _R_pitch = np.array([[1,            0,           0],
+                          [0,  np.cos(pr), -np.sin(pr)],
+                          [0,  np.sin(pr),  np.cos(pr)]], dtype=np.float64)
+    cam["_R_body_to_cam"] = _R_pitch @ _R_base
+
+    return cam
+
+
 def load_config(path: str) -> dict:
     """
     Load the JSON config file. Missing keys fall back to defaults.
@@ -139,6 +187,7 @@ def load_config(path: str) -> dict:
         "ros_video":  raw.get("ros_video",  None),
         "topics":     _merge_topics(raw.get("topics", {})),
         "camera":     {**_DEFAULT_CAMERA,  **raw.get("camera",  {})},
+        "downward_camera": {**_DEFAULT_DOWNWARD_CAMERA, **raw.get("downward_camera", {})},
         "paths":      raw.get("paths",      {}),
         "isaac":      raw.get("isaac",      {}),
         "drone_spawn":raw.get("drone_spawn",{}),
@@ -149,18 +198,12 @@ def load_config(path: str) -> dict:
         "detection":  {**_DEFAULT_DETECTION, **raw.get("detection", {})},
     }
 
-    # Compute derived camera intrinsics and mount geometry
-    cam = cfg["camera"]
-    fl, ha, va = cam["focal_length_mm"], cam["h_aperture_mm"], cam["v_aperture_mm"]
-    w,  h      = cam["img_w"], cam["img_h"]
-    cam["fx"] = fl * w / ha
-    cam["fy"] = fl * h / va
-    cam["cx"] = w / 2.0
-    cam["cy"] = h / 2.0
+    cam = _derive_camera_geometry(cfg["camera"])
 
     # If a calibration file is provided (same one used for ArUco), load the
     # calibrated fx/fy/cx/cy from it — these are more accurate than the
-    # theoretical values derived from lens specs above.
+    # theoretical values derived from lens specs above. Only applies to the
+    # main camera; the downward camera has no ArUco calibration association.
     cal_path = cfg["aruco"].get("calibration_file")
     if cal_path:
         cal_path = os.path.expanduser(cal_path)
@@ -172,21 +215,7 @@ def load_config(path: str) -> dict:
             cam["cx"] = float(_K[0, 2])
             cam["cy"] = float(_K[1, 2])
 
-    cam["_mount_offset"] = np.array(cam["mount_offset_xyz"], dtype=np.float64)
-
-    # Body-to-camera rotation: Isaac FLU body frame → OpenCV camera frame,
-    # then pitched nose-down by pitch_deg.
-    #   cam_X (right)   = -body_Y
-    #   cam_Y (down)    = -body_Z
-    #   cam_Z (forward) =  body_X
-    pr = np.radians(cam["pitch_deg"])
-    _R_base = np.array([[0, -1,  0],
-                         [0,  0, -1],
-                         [1,  0,  0]], dtype=np.float64)
-    _R_pitch = np.array([[1,            0,           0],
-                          [0,  np.cos(pr), -np.sin(pr)],
-                          [0,  np.sin(pr),  np.cos(pr)]], dtype=np.float64)
-    cam["_R_body_to_cam"] = _R_pitch @ _R_base
+    _derive_camera_geometry(cfg["downward_camera"])
 
     return cfg
 
