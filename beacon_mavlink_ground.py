@@ -57,8 +57,8 @@ def main():
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument(
-        "--mavlink-endpoint", required=True,
-        help="pymavlink connection string, e.g. udpin:0.0.0.0:14550 or /dev/ttyUSB0",
+        "--mavlink-endpoint", required=True, default="udpin:127.0.0.1:14551"
+        help="pymavlink connection string, e.g. udpin:127.0.0.1:14550 or /dev/ttyUSB0",
     )
     ap.add_argument(
         "--baud", type=int, default=57600,
