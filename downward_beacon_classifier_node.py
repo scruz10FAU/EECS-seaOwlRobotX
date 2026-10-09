@@ -97,11 +97,15 @@ def classify_beacon_at_current_position(
                  color/blink classification (and a local-frame
                  world_position) proceed; the resulting "gps_position" in
                  the output is then a placeholder, not a real fix.
-    fallback_height_agl: used ONLY if get_drone_height_agl() is still None.
-                 Unlike the GPS fallback, this isn't just cosmetic -- it
-                 drives depth_m = height_agl - beacon_height_m, which sizes
-                 the expected circle radius, so a missing height blocks
-                 circle detection entirely without a fallback here.
+    fallback_height_agl: used if get_drone_height_agl() is still None, OR if
+                 it returned a real but implausible value (at or below the
+                 beacon's own height -- the drone can't be below the beacon
+                 top while hovering above it, so that's telemetry to
+                 distrust, not a legitimate reading). Unlike the GPS
+                 fallback, this isn't just cosmetic -- it drives
+                 depth_m = height_agl - beacon_height_m, which sizes the
+                 expected circle radius, so a bad height blocks circle
+                 detection entirely without a fallback here.
     """
     t_end = time.time() + duration_s
     while time.time() < t_end:
@@ -112,15 +116,24 @@ def classify_beacon_at_current_position(
     drone_pos, drone_quat = pose_source.get_drone_pose()
     gps_origin = pose_source.get_gps_origin()
     drone_height_agl = pose_source.get_drone_height_agl()
+    beacon_height_m = cfg["downward_camera"]["beacon_height_m"]
 
     if gps_origin is None and fallback_gps_origin is not None:
         print(f"[downward] WARNING: no GPS origin -- using fallback {fallback_gps_origin} "
               f"(gps_position in the result will be a placeholder, not a real fix)")
         gps_origin = fallback_gps_origin
 
-    if drone_height_agl is None and fallback_height_agl is not None:
-        print(f"[downward] WARNING: no AGL height -- using fallback {fallback_height_agl:.2f}m")
-        drone_height_agl = fallback_height_agl
+    if drone_height_agl is None:
+        if fallback_height_agl is not None:
+            print(f"[downward] WARNING: no AGL height -- using fallback {fallback_height_agl:.2f}m")
+            drone_height_agl = fallback_height_agl
+    elif drone_height_agl <= beacon_height_m:
+        print(f"[downward] WARNING: AGL height ({drone_height_agl:.2f}m) is at or below the "
+              f"beacon height ({beacon_height_m:.2f}m) -- the drone can't be below the beacon "
+              f"top while hovering above it, so this telemetry looks wrong"
+              + (f"; using fallback {fallback_height_agl:.2f}m instead" if fallback_height_agl is not None else ""))
+        if fallback_height_agl is not None:
+            drone_height_agl = fallback_height_agl
 
     if drone_pos is None:
         # No pose at all (e.g. VIO not running). Fall back to a nominal
