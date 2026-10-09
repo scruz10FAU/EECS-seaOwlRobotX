@@ -492,6 +492,17 @@ python3 downward_beacon_classifier_node.py --config configs/my_config.json --dur
 
 Publishes one result to `topics.detections_pub` using the same JSON schema as the rest of the pipeline (`color`, `blink`, `gps_position`, `world_position`), so it's immediately usable by `beacon_mavlink_bridge.py` or anything else already consuming that topic.
 
+### Working without a GPS fix
+
+If `get_gps_origin()`/`get_drone_height_agl()`/`get_drone_pose()` don't arrive within `--pose-wait-timeout` (default 15s) — e.g. GPS-denied flight, or testing indoors — the script falls back to placeholder values instead of aborting, with a clear warning printed for each one substituted:
+
+| Flag | Default | Notes |
+|---|---|---|
+| `--fallback-latitude` / `--fallback-longitude` / `--fallback-altitude` | `0.0` | Used only if no real GPS origin arrives. The resulting `gps_position` in the output is then a placeholder, not a real fix — color/blink classification is unaffected either way. |
+| `--fallback-height-agl` | `1.0` | Used only if no real AGL height arrives. Unlike the GPS fallback, this **must exceed** `downward_camera.beacon_height_m` — it drives `depth_m = height_agl - beacon_height_m`, which sizes the expected circle radius, so a missing height would otherwise block circle detection entirely, not just the GPS output. The script checks this at startup and refuses to run if the fallback height doesn't clear the beacon. |
+
+A missing drone pose (position/orientation) falls back automatically to an assumed "directly above the beacon, no tilt" position using whichever height (real or fallback) ends up resolved — there's no separate flag for this since it's just the position implied by `--fallback-height-agl` when no real pose exists.
+
 ---
 
 ## Utility modules

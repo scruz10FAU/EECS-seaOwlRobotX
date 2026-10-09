@@ -76,12 +76,13 @@ def _wait_for_pose_data(pose_source, timeout_s: float) -> bool:
         rclpy.spin_once(pose_source, timeout_sec=0.1)
         if pose_source.get_gps_origin() is not None and pose_source.get_drone_height_agl() is not None:
             return True
-    print("[downward] ERROR: GPS origin and/or AGL height never arrivedcontinuing without coordinates")
-    return True
+    return False
 
 
-def classify_beacon_at_current_position(pose_source, image_grabber, cfg: dict,
-                                         duration_s: float) -> dict:
+def classify_beacon_at_current_position(
+    pose_source, image_grabber, cfg: dict, duration_s: float,
+    fallback_gps_origin=None, fallback_height_agl=None,
+) -> dict:
     """
     Spin for duration_s seconds collecting downward-camera frames, then run
     classify_beacon_downward() against them using the drone's pose/GPS/height
@@ -91,6 +92,16 @@ def classify_beacon_at_current_position(pose_source, image_grabber, cfg: dict,
                  get_drone_height_agl() -- e.g. a BeaconCamera opened via
                  open_for_video() (pose + GPS only, no image/depth).
     image_grabber: a _DownwardImageGrabber instance, already subscribed.
+    fallback_gps_origin: (lat, lon, alt) used ONLY if get_gps_origin() is
+                 still None -- e.g. no GPS fix / GPS-denied flight. Lets
+                 color/blink classification (and a local-frame
+                 world_position) proceed; the resulting "gps_position" in
+                 the output is then a placeholder, not a real fix.
+    fallback_height_agl: used ONLY if get_drone_height_agl() is still None.
+                 Unlike the GPS fallback, this isn't just cosmetic -- it
+                 drives depth_m = height_agl - beacon_height_m, which sizes
+                 the expected circle radius, so a missing height blocks
+                 circle detection entirely without a fallback here.
     """
     t_end = time.time() + duration_s
     while time.time() < t_end:
@@ -101,6 +112,25 @@ def classify_beacon_at_current_position(pose_source, image_grabber, cfg: dict,
     drone_pos, drone_quat = pose_source.get_drone_pose()
     gps_origin = pose_source.get_gps_origin()
     drone_height_agl = pose_source.get_drone_height_agl()
+
+    if gps_origin is None and fallback_gps_origin is not None:
+        print(f"[downward] WARNING: no GPS origin -- using fallback {fallback_gps_origin} "
+              f"(gps_position in the result will be a placeholder, not a real fix)")
+        gps_origin = fallback_gps_origin
+
+    if drone_height_agl is None and fallback_height_agl is not None:
+        print(f"[downward] WARNING: no AGL height -- using fallback {fallback_height_agl:.2f}m")
+        drone_height_agl = fallback_height_agl
+
+    if drone_pos is None:
+        # No pose at all (e.g. VIO not running). Fall back to a nominal
+        # "directly above the beacon at drone_height_agl" position so
+        # _camera_to_world() has something to work with -- world_position/
+        # gps_position in the result are then placeholders too.
+        print("[downward] WARNING: no drone pose -- assuming identity "
+              "position/orientation above the beacon")
+        drone_pos  = [0.0, 0.0, drone_height_agl if drone_height_agl is not None else 0.0]
+        drone_quat = [1.0, 0.0, 0.0, 0.0]
 
     return classify_beacon_downward(
         frames, drone_pos, drone_quat, gps_origin, drone_height_agl,
@@ -118,12 +148,26 @@ def main():
                      help="Seconds to sample the downward camera before classifying (default: 8.0)")
     ap.add_argument("--pose-wait-timeout", type=float, default=15.0,
                      help="Max seconds to wait for drone height/GPS origin before giving up (default: 15.0)")
+    ap.add_argument("--fallback-latitude", type=float, default=0.0,
+                     help="GPS origin latitude to use if no real GPS fix arrives (default: 0.0)")
+    ap.add_argument("--fallback-longitude", type=float, default=0.0,
+                     help="GPS origin longitude to use if no real GPS fix arrives (default: 0.0)")
+    ap.add_argument("--fallback-altitude", type=float, default=0.0,
+                     help="GPS origin altitude to use if no real GPS fix arrives (default: 0.0)")
+    ap.add_argument("--fallback-height-agl", type=float, default=1.0,
+                     help="Drone AGL height (metres) to assume if no real height arrives "
+                          "(default: 1.0 -- must exceed downward_camera.beacon_height_m)")
     args = ap.parse_args()
 
     cfg = bdc.load_config(args.config)
     down_cfg = cfg["downward_camera"]
     if not down_cfg.get("image_topic"):
         print("[downward] ERROR: downward_camera.image_topic is not set in the config")
+        return
+    if args.fallback_height_agl <= down_cfg["beacon_height_m"]:
+        print(f"[downward] ERROR: --fallback-height-agl ({args.fallback_height_agl:.2f}m) must "
+              f"exceed downward_camera.beacon_height_m ({down_cfg['beacon_height_m']:.2f}m) -- "
+              f"the drone must be above the beacon top")
         return
 
     bdc._import_ros()  # populates beacon_detector_config._BeaconCameraBase
@@ -135,14 +179,15 @@ def main():
 
     print(f"[downward] Waiting up to {args.pose_wait_timeout:.0f}s for GPS origin / AGL height...")
     if not _wait_for_pose_data(pose_source, args.pose_wait_timeout):
-        print("[downward] ERROR: GPS origin and/or AGL height never arrived -- aborting")
-        pose_source.destroy_node()
-        image_grabber.destroy_node()
-        rclpy.shutdown()
-        return
+        print("[downward] GPS origin and/or AGL height didn't arrive in time -- "
+              "continuing with fallback value(s) where needed")
 
     print(f"[downward] Sampling downward camera for {args.duration:.1f}s...")
-    result = classify_beacon_at_current_position(pose_source, image_grabber, cfg, args.duration)
+    result = classify_beacon_at_current_position(
+        pose_source, image_grabber, cfg, args.duration,
+        fallback_gps_origin=(args.fallback_latitude, args.fallback_longitude, args.fallback_altitude),
+        fallback_height_agl=args.fallback_height_agl,
+    )
     print(f"[downward] Result: {json.dumps(result, indent=2)}")
 
     if result["n_frames_used"] > 0:
