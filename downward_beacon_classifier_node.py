@@ -76,7 +76,8 @@ def _wait_for_pose_data(pose_source, timeout_s: float) -> bool:
         rclpy.spin_once(pose_source, timeout_sec=0.1)
         if pose_source.get_gps_origin() is not None and pose_source.get_drone_height_agl() is not None:
             return True
-    return False
+    print("[downward] ERROR: GPS origin and/or AGL height never arrivedcontinuing without coordinates")
+    return True
 
 
 def classify_beacon_at_current_position(pose_source, image_grabber, cfg: dict,
