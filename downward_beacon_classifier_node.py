@@ -82,6 +82,7 @@ def _wait_for_pose_data(pose_source, timeout_s: float) -> bool:
 def classify_beacon_at_current_position(
     pose_source, image_grabber, cfg: dict, duration_s: float,
     fallback_gps_origin=None, fallback_height_agl=None, debug_image_dir=None,
+    expected_radius_px_override=None,
 ) -> dict:
     """
     Spin for duration_s seconds collecting downward-camera frames, then run
@@ -106,6 +107,10 @@ def classify_beacon_at_current_position(
                  depth_m = height_agl - beacon_height_m, which sizes the
                  expected circle radius, so a bad height blocks circle
                  detection entirely without a fallback here.
+    expected_radius_px_override: if set, bypasses the height-derived circle
+                 radius entirely -- see classify_beacon_downward(). For
+                 hand-held bench testing where height telemetry doesn't
+                 reflect the actual (much closer) test distance at all.
     """
     t_end = time.time() + duration_s
     while time.time() < t_end:
@@ -149,6 +154,7 @@ def classify_beacon_at_current_position(
         frames, drone_pos, drone_quat, gps_origin, drone_height_agl,
         cfg["downward_camera"], cfg["detection"], duration_s,
         debug_image_dir=debug_image_dir,
+        expected_radius_px_override=expected_radius_px_override,
     )
 
 
@@ -175,6 +181,12 @@ def main():
                      help="Write per-frame debug images (circle overlay, crop, mask -- or "
                           "the raw frame when nothing was found) to this directory, showing "
                           "exactly what each frame's color/blink classification was based on")
+    ap.add_argument("--expected-radius-px", type=float, default=None,
+                     help="Bypass the height-derived circle radius entirely and use this "
+                          "pixel radius directly -- for hand-held bench testing where "
+                          "--fallback-height-agl doesn't reflect the actual (much closer) "
+                          "test distance. Measure it from a debug image: the radius of the "
+                          "disc outline you want detected, in pixels.")
     args = ap.parse_args()
 
     cfg = bdc.load_config(args.config)
@@ -202,6 +214,9 @@ def main():
 
     if args.save_debug_images:
         print(f"[downward] Saving debug images to {args.save_debug_images}/")
+    if args.expected_radius_px is not None:
+        print(f"[downward] Using --expected-radius-px override: {args.expected_radius_px:.1f}px "
+              f"(ignoring height-derived sizing)")
 
     print(f"[downward] Sampling downward camera for {args.duration:.1f}s...")
     result = classify_beacon_at_current_position(
@@ -209,6 +224,7 @@ def main():
         fallback_gps_origin=(args.fallback_latitude, args.fallback_longitude, args.fallback_altitude),
         fallback_height_agl=args.fallback_height_agl,
         debug_image_dir=args.save_debug_images,
+        expected_radius_px_override=args.expected_radius_px,
     )
     print(f"[downward] Result: {json.dumps(result, indent=2)}")
 
