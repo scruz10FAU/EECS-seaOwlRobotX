@@ -1561,20 +1561,14 @@ def run_video_ros(cfg: dict) -> None:
 
                     msg = String()
                     msg.data = json.dumps({
-                        "color":            beacon_color,
-                        "blink":            blink_info,
-                        "label":            "beacon",
-                        "color_confidence": color_conf,
-                        "intensity":        intensity,
-                        "hue_votes":        votes,
-                        "confidence":       det_conf,
-                        "bbox":             [x1, y1, x2, y2],
-                        "position_3d":      pos3d,
-                        "world_position":   None,
-                        "gps_position":     None,
-                        "drone_position":   drone_pos.tolist() if drone_pos is not None else None,
-                        "tracking_id":      -1,
-                        "timestamp":        time.time(),
+                        "gps_position": None,
+                        "blink":        blink_info["is_blinking"],
+                        "blink_color":  blink_info["blink_color"],
+                        "blink_hz":     blink_info["blink_hz"],
+                        "phase":        blink_info["phase"],
+                        "color":        beacon_color,
+                        "tracking_id":  -1,
+                        "timestamp":    time.time(),
                     })
                     cam.detection_pub.publish(msg)
                     print(f"  {label_txt}")
@@ -1909,20 +1903,14 @@ def main(cfg: dict) -> None:
 
                 msg = String()
                 msg.data = json.dumps({
-                    "color":            beacon_color,
-                    "blink":            blink_info,
-                    "label":            "beacon",
-                    "color_confidence": color_conf,
-                    "intensity":        intensity,
-                    "hue_votes":        votes,
-                    "confidence":       float(d.confidence),
-                    "bbox":           [int(v) for v in d.bbox_2d],
-                    "position_3d":    list(pos3d) if pos3d is not None else None,
-                    "world_position": world_pos.tolist()     if world_pos     is not None else None,
-                    "gps_position":   gps_coords,
-                    "drone_position": drone_pos.tolist()     if drone_pos     is not None else None,
-                    "tracking_id":    int(d.tracking_id),
-                    "timestamp":      time.time(),
+                    "gps_position": gps_coords,
+                    "blink":        blink_info["is_blinking"],
+                    "blink_color":  blink_info["blink_color"],
+                    "blink_hz":     blink_info["blink_hz"],
+                    "phase":        blink_info["phase"],
+                    "color":        beacon_color,
+                    "tracking_id":  int(d.tracking_id),
+                    "timestamp":    time.time(),
                 })
                 cam.detection_pub.publish(msg)
                 det_count += 1

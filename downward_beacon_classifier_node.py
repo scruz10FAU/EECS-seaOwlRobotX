@@ -81,7 +81,7 @@ def _wait_for_pose_data(pose_source, timeout_s: float) -> bool:
 
 def classify_beacon_at_current_position(
     pose_source, image_grabber, cfg: dict, duration_s: float,
-    fallback_gps_origin=None, fallback_height_agl=None,
+    fallback_gps_origin=None, fallback_height_agl=None, debug_image_dir=None,
 ) -> dict:
     """
     Spin for duration_s seconds collecting downward-camera frames, then run
@@ -148,6 +148,7 @@ def classify_beacon_at_current_position(
     return classify_beacon_downward(
         frames, drone_pos, drone_quat, gps_origin, drone_height_agl,
         cfg["downward_camera"], cfg["detection"], duration_s,
+        debug_image_dir=debug_image_dir,
     )
 
 
@@ -170,6 +171,10 @@ def main():
     ap.add_argument("--fallback-height-agl", type=float, default=1.0,
                      help="Drone AGL height (metres) to assume if no real height arrives "
                           "(default: 1.0 -- must exceed downward_camera.beacon_height_m)")
+    ap.add_argument("--save-debug-images", default=None, metavar="DIR",
+                     help="Write per-frame debug images (circle overlay, crop, mask -- or "
+                          "the raw frame when nothing was found) to this directory, showing "
+                          "exactly what each frame's color/blink classification was based on")
     args = ap.parse_args()
 
     cfg = bdc.load_config(args.config)
@@ -195,11 +200,15 @@ def main():
         print("[downward] GPS origin and/or AGL height didn't arrive in time -- "
               "continuing with fallback value(s) where needed")
 
+    if args.save_debug_images:
+        print(f"[downward] Saving debug images to {args.save_debug_images}/")
+
     print(f"[downward] Sampling downward camera for {args.duration:.1f}s...")
     result = classify_beacon_at_current_position(
         pose_source, image_grabber, cfg, args.duration,
         fallback_gps_origin=(args.fallback_latitude, args.fallback_longitude, args.fallback_altitude),
         fallback_height_agl=args.fallback_height_agl,
+        debug_image_dir=args.save_debug_images,
     )
     print(f"[downward] Result: {json.dumps(result, indent=2)}")
 

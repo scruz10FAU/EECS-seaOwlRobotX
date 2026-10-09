@@ -18,6 +18,7 @@ ultralytics/cv2-heavy top-level imports that aren't needed just to isolate a
 circle.
 """
 
+import os
 import time
 from typing import Optional, Tuple
 
@@ -76,6 +77,25 @@ def isolate_circle(
     return mask, (float(bx), float(by), float(br))
 
 
+def _crop_to_mask_bbox(bgr_frame: np.ndarray, mask: np.ndarray):
+    """
+    Crop both the frame and the mask to the mask's bounding box. Shared by
+    classify_frame() (the actual classification input) and the debug-image
+    saver (so what gets saved to disk is pixel-for-pixel what the
+    classifier saw) -- single source of truth for "what region is this
+    frame's classification actually based on".
+
+    Returns (crop, crop_mask), or (None, None) if the mask is empty.
+    """
+    rows = np.any(mask > 0, axis=1)
+    cols = np.any(mask > 0, axis=0)
+    if not rows.any() or not cols.any():
+        return None, None
+    rmin, rmax = np.where(rows)[0][[0, -1]]
+    cmin, cmax = np.where(cols)[0][[0, -1]]
+    return bgr_frame[rmin:rmax + 1, cmin:cmax + 1], mask[rmin:rmax + 1, cmin:cmax + 1]
+
+
 def classify_frame(bgr_frame: np.ndarray, mask: np.ndarray) -> Tuple[str, float, float, dict]:
     """
     Crop to the mask's bounding box (same crop-then-classify pattern
@@ -86,15 +106,9 @@ def classify_frame(bgr_frame: np.ndarray, mask: np.ndarray) -> Tuple[str, float,
     """
     import beacon_detector_config as bdc
 
-    rows = np.any(mask > 0, axis=1)
-    cols = np.any(mask > 0, axis=0)
-    if not rows.any() or not cols.any():
+    crop, crop_mask = _crop_to_mask_bbox(bgr_frame, mask)
+    if crop is None:
         return "unknown", 0.0, 0.0, {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0}
-
-    rmin, rmax = np.where(rows)[0][[0, -1]]
-    cmin, cmax = np.where(cols)[0][[0, -1]]
-    crop      = bgr_frame[rmin:rmax + 1, cmin:cmax + 1]
-    crop_mask = mask[rmin:rmax + 1, cmin:cmax + 1]
 
     color, color_conf, _light_mask, intensity, votes, *_ = bdc.classify_beacon_color(
         crop, seg_mask=crop_mask
@@ -102,9 +116,56 @@ def classify_frame(bgr_frame: np.ndarray, mask: np.ndarray) -> Tuple[str, float,
     return color, color_conf, intensity, votes
 
 
+def _save_debug_images(debug_image_dir: str, frame_idx: int, ts: float, frame: np.ndarray,
+                       circle, color: str, intensity: float = None, color_conf: float = None) -> None:
+    """
+    Write out exactly what a given frame's classification was based on:
+      frame_NNNN_<ts>_<color>_overlay.png  -- full frame with the circle
+                                               outline + label drawn on it
+                                               (context: where in the whole
+                                               image the circle was found)
+      frame_NNNN_<ts>_<color>_crop.png     -- the cropped region actually
+                                               passed to classify_beacon_color()
+      frame_NNNN_<ts>_<color>_mask.png     -- the binary mask (within that
+                                               crop) marking which pixels
+                                               were counted as "lit"
+
+    If circle is None (isolate_circle found nothing this frame), only the
+    raw full frame is saved, labeled "notfound", so you can see what the
+    camera captured when detection failed.
+    """
+    os.makedirs(debug_image_dir, exist_ok=True)
+    tag = f"frame_{frame_idx:04d}_{ts:.3f}"
+
+    if circle is None:
+        cv2.imwrite(os.path.join(debug_image_dir, f"{tag}_notfound.png"), frame)
+        return
+
+    bx, by, br = circle
+    overlay = frame.copy()
+    cv2.circle(overlay, (int(round(bx)), int(round(by))), int(round(br)), (0, 255, 255), 2)
+    cv2.drawMarker(overlay, (int(round(bx)), int(round(by))), (0, 255, 255),
+                   cv2.MARKER_CROSS, 12, 1)
+    label = f"frame={frame_idx} t={ts:.2f}s color={color}"
+    if intensity is not None:
+        label += f" int={intensity:.2f}"
+    if color_conf is not None:
+        label += f" cc={color_conf:.2f}"
+    cv2.putText(overlay, label, (8, 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1, cv2.LINE_AA)
+    cv2.imwrite(os.path.join(debug_image_dir, f"{tag}_{color}_overlay.png"), overlay)
+
+    mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+    cv2.circle(mask, (int(round(bx)), int(round(by))), int(round(br)), 255, thickness=-1)
+    crop, crop_mask = _crop_to_mask_bbox(frame, mask)
+    if crop is not None:
+        cv2.imwrite(os.path.join(debug_image_dir, f"{tag}_{color}_crop.png"), crop)
+        cv2.imwrite(os.path.join(debug_image_dir, f"{tag}_{color}_mask.png"), crop_mask)
+
+
 def classify_beacon_downward(
     frame_source, drone_pos, drone_quat_wxyz, gps_origin, drone_height_agl,
     downward_cam_cfg: dict, detection_cfg: dict, duration_s: float,
+    debug_image_dir: Optional[str] = None,
 ) -> dict:
     """
     One-shot downward-camera beacon classification.
@@ -123,6 +184,12 @@ def classify_beacon_downward(
     duration_s:         informational only; the caller controls how long
                         frame_source actually spans (see downward_beacon_
                         classifier_node.py for the live-sampling loop).
+    debug_image_dir:    if set, write out per-frame debug images (overlay,
+                        crop, mask -- or the raw frame tagged "notfound")
+                        showing exactly what each frame's classification was
+                        based on. See _save_debug_images(). None = no I/O,
+                        same as before (default, keeps this function pure
+                        for unit testing).
 
     Returns a dict matching this repo's standard detection JSON shape:
         {"color", "blink": {"is_blinking","blink_color","blink_hz","phase"},
@@ -151,9 +218,11 @@ def classify_beacon_downward(
     last_circle = None   # (bx, by, br) px, from the most recent successful isolation
     n_used = 0
 
-    for ts, frame in frame_source:
+    for frame_idx, (ts, frame) in enumerate(frame_source):
         found = isolate_circle(frame, cx, cy, radius_px)
         if found is None:
+            if debug_image_dir:
+                _save_debug_images(debug_image_dir, frame_idx, ts, frame, None, "unknown")
             continue
         mask, circle = found
         color, color_conf, intensity, _votes = classify_frame(frame, mask)
@@ -161,6 +230,8 @@ def classify_beacon_downward(
         last_color  = color
         last_circle = circle
         n_used += 1
+        if debug_image_dir:
+            _save_debug_images(debug_image_dir, frame_idx, ts, frame, circle, color, intensity, color_conf)
 
     gps_position = None
     world_position = None
