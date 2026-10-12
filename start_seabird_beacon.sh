@@ -81,7 +81,7 @@ DETECTOR_ARGS="${DETECTOR_ARGS:---config beacon_config_sim.json}"
 # All scripts are expected to be in the current working directory.
 declare -a COMPONENTS=(
     "DETECTOR|beacon_detector_config.py|32"  # green   — YOLO+HSV beacon detection
-    "SWEEP   |sweep_rrt.py|35"              # magenta — takeoff + RRT beacon search
+    "SWEEP   |sweep_rrt_overfly.py|35"              # magenta — takeoff + RRT beacon search
 #    "RECORDER|data_recorder.py|36"           # cyan    — dataset: frames + labels to disk
 )
 
