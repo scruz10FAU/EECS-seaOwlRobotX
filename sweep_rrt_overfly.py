@@ -1,0 +1,1312 @@
+#!/usr/bin/env python3
+"""
+sweep_rrt.py
+============
+Beacon search using Rapidly-exploring Random Trees (RRT).
+
+The drone grows an RRT from its takeoff position outward to MAX_SEARCH_RADIUS_M.
+At each tree extension the drone flies to the new node and checks whether any
+new beacon colors have appeared on /seabird/beacon_detections.  When a new color
+is seen the drone hovers in place until blink_is_blinking becomes True/False
+(or BLINK_VERIFY_TIMEOUT_S elapses), then resumes the search.  Multiple beacons
+of the same color may exist; the tree always grows to RRT_MAX_NODES before RTL.
+
+Beacon over-fly (BEACON_OVERFLY):
+  As soon as the detector gives an unconfirmed beacon a world position, the
+  search diverts to fly DIRECTLY OVER it — the beacon becomes an RRT goal and the
+  tree is grown toward it one RRT_STEP_M leg at a time (each leg end is a real
+  node), finishing with the drone overhead for the cleanest state read. Needs a
+  real world_position; without one it falls back to verifying at the node, as
+  before. See BEACON_POS_FRAME for the north/east convention.
+
+Safety features:
+  - Battery failsafe: triggers RTL when remaining < BATTERY_RTL_PERCENT.
+  - Detector pre-flight check: aborts if /seabird/beacon_detections is silent
+    for DETECTOR_TIMEOUT_S seconds before arming.
+
+Start beacon_detector_config.py before this script so detections arrive on
+/seabird/beacon_detections.
+
+Three RViz topics are published:
+  /seabird/flight_path    — nav_msgs/Path of visited positions
+  /seabird/path_marker    — LINE_STRIP of the same path
+  /seabird/rrt_tree       — LINE_LIST of every RRT edge
+  /seabird/rrt_nodes      — SPHERE_LIST of every RRT node
+
+Physical drone notes (same as sweep_lawnmower.py):
+  - MAVSDK must receive PX4 MAVLink on MAVSDK_ADDRESS.
+  - Start beacon_detector_config.py before this script so detections arrive
+    on /seabird/beacon_detections.
+"""
+
+import asyncio
+import math
+import json
+import random
+import threading
+import sys
+import time
+import traceback
+from typing import Optional
+
+import rclpy
+from std_msgs.msg import String
+from nav_msgs.msg import Path
+from geometry_msgs.msg import PoseStamped, Point
+from visualization_msgs.msg import Marker
+from std_msgs.msg import ColorRGBA
+
+try:
+    from mavsdk import System
+    from mavsdk.offboard import OffboardError, PositionNedYaw
+    from mavsdk.action import ActionError
+except ImportError:
+    print("[ERROR] mavsdk not installed. Run: pip install mavsdk --break-system-packages",
+          flush=True)
+    sys.exit(1)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  CONFIGURATION  — edit the constants in this block to tune the search
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Takeoff and flight
+TAKEOFF_ALT_M        = 5.0    # altitude in metres
+WAYPOINT_TOL_M       = 0.5    # arrival tolerance
+WAYPOINT_TIMEOUT     = 60.0   # seconds before a waypoint is skipped
+HOVER_STABILIZE_S    = 8.0    # seconds to stabilise after takeoff
+
+# ── Search area ───────────────────────────────────────────────────────────────
+MAX_SEARCH_RADIUS_M  = 10.0   # maximum distance from takeoff point; hard boundary
+
+# ── RRT parameters ────────────────────────────────────────────────────────────
+RRT_STEP_M           = 1.5    # maximum edge length for each tree extension
+RRT_GOAL_BIAS        = 0.08   # probability of biasing sample toward least-explored sector
+
+# Reactive beacon attraction (Option A): when the detector has glimpsed a beacon
+# that is NOT yet confirmed/classified, bias a fraction of search samples toward
+# it so the drone drifts over to get a clean look. Attraction is suppressed once
+# a buoy is confirmed at that spot, so the drone does not fixate on known beacons.
+BEACON_ATTRACT_PROB  = 0.6    # chance a sample aims at an unconfirmed beacon
+BEACON_ATTRACT_JITTER_M = 1.0 # Gaussian spread (m) around the beacon target
+
+# Beacon over-fly: when the detector has given an unconfirmed beacon a world
+# position, divert and fly DIRECTLY OVER it — inserting the legs to it (and the
+# beacon itself) as real RRT nodes — then hover overhead to read its state.
+# This is a stronger version of the attraction above: attraction only nudges the
+# random sampling, overfly commits to the beacon as a goal. The two cooperate.
+BEACON_OVERFLY          = True
+BEACON_OVERFLY_TOL_M    = 0.6    # how close "directly overhead" must be (m)
+BEACON_OVERFLY_OFFSET_M = 0.0    # standoff from the beacon along the approach
+                                 # direction; 0.0 = dead overhead. Raise only if
+                                 # a forward/angled camera loses the beacon when
+                                 # directly above it.
+BEACON_MAX_LEGS         = max(8, int(2.0 * MAX_SEARCH_RADIUS_M / RRT_STEP_M) + 4)
+MAX_OVERFLY_ATTEMPTS    = 3       # give up flying over a spot after this many
+                                  # passes that don't yield a confirmed state
+                                  # (prevents thrashing on an unreadable beacon)
+# Frame of the detection's "world_position". This file reads it as (north, east)
+# = (wp[0], wp[1]) — "ned". beacon_detector builds world_position from the MAVROS
+# ENU pose ([east, north, up]); if your REAL detector publishes ENU, set this to
+# "enu" and north/east are swapped consistently everywhere. Default "ned" keeps
+# the exact behaviour you've been testing in sim.
+BEACON_POS_FRAME        = "ned"
+
+# Derived: enough nodes to cover the search disc approximately twice over.
+# Formula: 2 × (area of disc) / (area per step cell).
+# Scaled up by 2× because RRT coverage is less efficient than a grid.
+# Clamped to a minimum of 20 so tiny radii still get a meaningful search.
+RRT_MAX_NODES = max(20, int(2.0 * math.pi * MAX_SEARCH_RADIUS_M ** 2 / RRT_STEP_M ** 2))
+
+# ── Beacon verification ───────────────────────────────────────────────────────
+BLINK_VERIFY_TIMEOUT_S  = 20.0  # max hover time to confirm blink_is_blinking
+BLINK_VERIFY_POLL_S     = 0.25  # poll interval during verification hover
+BLINK_SETTLE_S          = 3.0   # stabilisation pause before polling — lets the drone
+                                 # stop moving and the YOLO tracker lock a stable ID
+
+# ── Mission targets ───────────────────────────────────────────────────────────
+# RobotX 2026 Task 1 (Safe Passage): the UAV classifies each buoy's TOP beacon
+# into one of five STATES. Each state has a fixed meaning to report to the USV /
+# RoboCommand. States are keyed on (color, is_blinking):
+#   flashing RED   -> STARBOARD marker (pass on USV starboard side)
+#   flashing GREEN -> PORT marker      (pass on USV port side)
+#   flashing BLUE  -> ENTRY point
+#   solid    BLUE  -> EXIT point
+#   OFF            -> inactive obstacle buoy
+STATE_STARBOARD = "red_flash"
+STATE_PORT      = "green_flash"
+STATE_ENTRY     = "blue_flash"
+STATE_EXIT      = "blue_solid"
+STATE_OBSTACLE  = "off"
+
+STATE_MEANING = {
+    STATE_STARBOARD: "FLASHING RED   -> pass on USV starboard side",
+    STATE_PORT:      "FLASHING GREEN -> pass on USV port side",
+    STATE_ENTRY:     "FLASHING BLUE  -> safe ENTRY point",
+    STATE_EXIT:      "SOLID BLUE     -> safe EXIT point",
+    STATE_OBSTACLE:  "OFF/BLACK      -> inactive obstacle buoy",
+}
+
+# Survey the whole field, then report. The field has a known buoy count.
+EXPECTED_BUOY_COUNT = 10      # Task 1 has ten buoys
+BUOY_MERGE_DIST_M   = 2.0     # detections within this distance = same buoy
+
+# ── MAVSDK ────────────────────────────────────────────────────────────────────
+MAVSDK_ADDRESS              = "udpin://0.0.0.0:14550"
+BENCH_TEST                  = False
+MAVSDK_CONNECT_TIMEOUT_S    = 10.0
+PX4_HEARTBEAT_TIMEOUT_S     = 20.0
+
+# ── Safety ────────────────────────────────────────────────────────────────────
+#BATTERY_RTL_PERCENT  = 0.30   # trigger RTL when battery.remaining_percent < this (0.0–1.0)
+DETECTOR_TIMEOUT_S   = 30.0   # abort pre-flight if no message from beacon detector within this time
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+
+def log(msg: str) -> None:
+    print(f"[{time.strftime('%F %T')}] {msg}", file=sys.stderr, flush=True)
+
+
+# ── Shared detection state ────────────────────────────────────────────────────
+
+_classified_buoys: list = []    # confirmed buoys (deduplicated by location):
+                                #   {"state","north","east","world","gps",
+                                #    "color","is_blinking","blink_hz"}
+_pending_beacon: dict   = {}    # color -> latest raw detection dict (from ROS cb)
+_overfly_attempts: list = []    # [[north, east, count], ...] per beacon spot
+_lock = threading.Lock()
+_battery_low: bool    = False   # set True by monitor_battery() when threshold crossed
+_detector_alive       = threading.Event()  # set when first /seabird/beacon_detections msg arrives
+
+
+# ── ROS2 publishers (set in listener thread) ──────────────────────────────────
+
+_path_pub       = None
+_path_msg       = None
+_marker_pub     = None
+_marker_msg     = None
+_rrt_edge_pub   = None
+_rrt_edge_msg   = None
+_rrt_node_pub   = None
+_rrt_node_msg   = None
+_rclpy_node     = None
+
+
+# ── ROS2 listener thread ──────────────────────────────────────────────────────
+
+def _rclpy_thread_fn() -> None:
+    global _path_pub, _path_msg, _marker_pub, _marker_msg
+    global _rrt_edge_pub, _rrt_edge_msg, _rrt_node_pub, _rrt_node_msg, _rclpy_node
+
+    try:
+        rclpy.init()
+        node = rclpy.create_node("rrt_listener")
+        _rclpy_node = node
+
+        # ── Flight path (same topics as sweep_lawnmower) ──────────────────
+        _path_pub = node.create_publisher(Path, "/seabird/flight_path", 10)
+        _path_msg = Path()
+        _path_msg.header.frame_id = "map"
+
+        _marker_pub = node.create_publisher(Marker, "/seabird/path_marker", 10)
+        _marker_msg = Marker()
+        _marker_msg.header.frame_id = "map"
+        _marker_msg.ns    = "flight_path"
+        _marker_msg.id    = 0
+        _marker_msg.type  = Marker.LINE_STRIP
+        _marker_msg.action = Marker.ADD
+        _marker_msg.scale.x = 0.20
+        _marker_msg.color = ColorRGBA(r=0.0, g=0.8, b=1.0, a=1.0)
+        _marker_msg.pose.orientation.w = 1.0
+
+        # ── RRT tree edges — LINE_LIST (each pair = one edge) ─────────────
+        _rrt_edge_pub = node.create_publisher(Marker, "/seabird/rrt_tree", 10)
+        _rrt_edge_msg = Marker()
+        _rrt_edge_msg.header.frame_id = "map"
+        _rrt_edge_msg.ns    = "rrt_edges"
+        _rrt_edge_msg.id    = 1
+        _rrt_edge_msg.type  = Marker.LINE_LIST
+        _rrt_edge_msg.action = Marker.ADD
+        _rrt_edge_msg.scale.x = 0.08
+        _rrt_edge_msg.color = ColorRGBA(r=1.0, g=0.85, b=0.0, a=0.75)
+        _rrt_edge_msg.pose.orientation.w = 1.0
+
+        # ── RRT nodes — SPHERE_LIST ───────────────────────────────────────
+        _rrt_node_pub = node.create_publisher(Marker, "/seabird/rrt_nodes", 10)
+        _rrt_node_msg = Marker()
+        _rrt_node_msg.header.frame_id = "map"
+        _rrt_node_msg.ns    = "rrt_nodes"
+        _rrt_node_msg.id    = 2
+        _rrt_node_msg.type  = Marker.SPHERE_LIST
+        _rrt_node_msg.action = Marker.ADD
+        _rrt_node_msg.scale.x = 0.25
+        _rrt_node_msg.scale.y = 0.25
+        _rrt_node_msg.scale.z = 0.25
+        _rrt_node_msg.color = ColorRGBA(r=1.0, g=0.5, b=0.0, a=0.90)
+        _rrt_node_msg.pose.orientation.w = 1.0
+
+        # ── Detection subscription ────────────────────────────────────────
+        def _cb(msg: String) -> None:
+            _detector_alive.set()   # signal pre-flight check that detector is live
+            try:
+                data = json.loads(msg.data)
+            except json.JSONDecodeError:
+                return
+            color = data.get("color", "")
+            if not color or color == "unknown":
+                return
+            with _lock:
+                _pending_beacon[color] = data   # always keep the latest frame
+
+        node.create_subscription(String, "/seabird/beacon_detections", _cb, 10)
+        node.get_logger().info(
+            "[rrt_listener] Subscribed /seabird/beacon_detections  |  "
+            "Publishing /seabird/flight_path  /seabird/rrt_tree  /seabird/rrt_nodes"
+        )
+        rclpy.spin(node)
+
+    except Exception:
+        log("[rrt_listener] FATAL: unhandled exception")
+        traceback.print_exc()
+
+
+def start_rclpy_listener() -> threading.Thread:
+    t = threading.Thread(target=_rclpy_thread_fn, daemon=True, name="rclpy_listener")
+    t.start()
+    return t
+
+
+# ── Drone position state ──────────────────────────────────────────────────────
+
+class _DroneState:
+    north_m: float = 0.0
+    east_m:  float = 0.0
+    down_m:  float = 0.0
+
+_state = _DroneState()
+
+
+async def track_position(drone: System) -> None:
+    try:
+        async for pv in drone.telemetry.position_velocity_ned():
+            _state.north_m = pv.position.north_m
+            _state.east_m  = pv.position.east_m
+            _state.down_m  = pv.position.down_m
+    except Exception:
+        log("[rrt] ERROR: track_position() failed")
+        traceback.print_exc()
+
+
+# ── Path / RRT publishing helpers ─────────────────────────────────────────────
+
+def publish_path_point() -> None:
+    if _path_pub is None or _rclpy_node is None:
+        return
+    now = _rclpy_node.get_clock().now().to_msg()
+    pose = PoseStamped()
+    pose.header.frame_id = "map"
+    pose.header.stamp    = now
+    pose.pose.position.x = _state.north_m
+    pose.pose.position.y = _state.east_m
+    pose.pose.position.z = -_state.down_m
+    _path_msg.header.stamp = now
+    _path_msg.poses.append(pose)
+    _path_pub.publish(_path_msg)
+    pt = Point(x=_state.north_m, y=_state.east_m, z=-_state.down_m)
+    _marker_msg.header.stamp = now
+    _marker_msg.points.append(pt)
+    _marker_pub.publish(_marker_msg)
+
+
+def publish_rrt_edge(pn: float, pe: float, cn: float, ce: float, alt: float) -> None:
+    """Append a LINE_LIST pair (parent → child) for the new RRT edge."""
+    if _rrt_edge_pub is None or _rclpy_node is None:
+        return
+    now = _rclpy_node.get_clock().now().to_msg()
+    _rrt_edge_msg.header.stamp = now
+    _rrt_edge_msg.points.append(Point(x=pn, y=pe, z=alt))
+    _rrt_edge_msg.points.append(Point(x=cn, y=ce, z=alt))
+    _rrt_edge_pub.publish(_rrt_edge_msg)
+
+
+def publish_rrt_node(north: float, east: float, alt: float) -> None:
+    """Append a sphere at (north, east) to the SPHERE_LIST marker."""
+    if _rrt_node_pub is None or _rclpy_node is None:
+        return
+    now = _rclpy_node.get_clock().now().to_msg()
+    _rrt_node_msg.header.stamp = now
+    _rrt_node_msg.points.append(Point(x=north, y=east, z=alt))
+    _rrt_node_pub.publish(_rrt_node_msg)
+
+
+# ── Flight helpers ────────────────────────────────────────────────────────────
+
+async def wait_for_ready_position(drone: System) -> None:
+    log("[rrt] Waiting for PX4 position readiness...")
+    while True:
+        try:
+            health = await asyncio.wait_for(_get_one_health(drone), timeout=5.0)
+            log(
+                f"[rrt] health: global={health.is_global_position_ok} "
+                f"home={health.is_home_position_ok} "
+                f"local={health.is_local_position_ok}"
+            )
+            if health.is_local_position_ok and health.is_home_position_ok:
+                log("[rrt] ✓ Position ready")
+                return
+        except Exception:
+            log("[rrt] health check failed, retrying...")
+        await asyncio.sleep(1.0)
+
+
+async def _get_one_health(drone: System):
+    async for health in drone.telemetry.health():
+        return health
+
+
+async def fly_to(drone: System, north: float, east: float, down: float, yaw: float,
+                 tol: float = WAYPOINT_TOL_M,
+                 timeout: float = WAYPOINT_TIMEOUT) -> bool:
+    """
+    Fly to (north, east, down, yaw) in NED.  Returns True on arrival, False on timeout.
+    Continuously re-sends the setpoint to keep offboard mode alive.
+    """
+    target = PositionNedYaw(north, east, down, yaw)
+    await drone.offboard.set_position_ned(target)
+
+    t0 = asyncio.get_event_loop().time()
+    last_pub_s   = 0.0
+    last_log_s   = -1
+
+    while True:
+        await drone.offboard.set_position_ned(target)
+        await asyncio.sleep(0.1)
+
+        dist = math.sqrt(
+            (_state.north_m - north) ** 2
+            + (_state.east_m - east) ** 2
+            + (_state.down_m - down) ** 2
+        )
+        if dist < tol:
+            publish_path_point()
+            return True
+
+        elapsed = asyncio.get_event_loop().time() - t0
+        if elapsed > timeout:
+            log(f"  [fly_to] ⚠ Timeout ({timeout:.0f}s) at N={north:.1f} E={east:.1f}")
+            return False
+
+        if elapsed - last_pub_s >= 0.5:
+            publish_path_point()
+            last_pub_s = elapsed
+
+        s = int(elapsed)
+        if s % 5 == 0 and s > 0 and s != last_log_s:
+            last_log_s = s
+            log(f"  [fly_to] N={_state.north_m:.1f}/{north:.1f}  "
+                f"E={_state.east_m:.1f}/{east:.1f}  dist={dist:.1f}m  t={elapsed:.0f}s")
+
+
+async def hold_position(drone: System, north: float, east: float,
+                        down: float, yaw: float, duration_s: float) -> None:
+    """Hold a fixed setpoint for duration_s, keeping offboard alive."""
+    target = PositionNedYaw(north, east, down, yaw)
+    deadline = asyncio.get_event_loop().time() + duration_s
+    while asyncio.get_event_loop().time() < deadline:
+        await drone.offboard.set_position_ned(target)
+        await asyncio.sleep(0.1)
+
+
+# ── Detection helpers ─────────────────────────────────────────────────────────
+
+def classify_state(det: dict) -> str:
+    """
+    Map a raw detection dict to one of the five RobotX Task 1 states.
+    Returns a STATE_* key, or "" if the blink status is not yet definitive
+    (is_blinking is None) so the caller keeps hovering to confirm.
+    """
+    color = det.get("color", "")
+    blink = det.get("blink") or {}
+    is_blinking = blink.get("is_blinking")   # True / False / None(uncertain)
+
+    if is_blinking is None:
+        return ""                            # not confirmed yet
+
+    if color == "red"   and is_blinking:  return STATE_STARBOARD
+    if color == "green" and is_blinking:  return STATE_PORT
+    if color == "blue"  and is_blinking:  return STATE_ENTRY
+    if color == "blue"  and not is_blinking: return STATE_EXIT
+    # red/green that are NOT blinking, or anything else, are treated as OFF/obstacle
+    return STATE_OBSTACLE
+
+
+def _same_buoy(n: float, e: float, buoy: dict) -> bool:
+    dn = n - buoy["north"]; de = e - buoy["east"]
+    return (dn*dn + de*de) <= (BUOY_MERGE_DIST_M * BUOY_MERGE_DIST_M)
+
+
+def record_buoy(state: str, north: float, east: float, det: dict) -> bool:
+    """
+    Add or update a classified buoy at (north, east). Deduplicates by location:
+    if a buoy already exists within BUOY_MERGE_DIST_M it is updated in place.
+    Returns True if this was a NEW buoy.
+    """
+    blink = det.get("blink") or {}
+    entry = {
+        "state":       state,
+        "north":       north,
+        "east":        east,
+        "color":       det.get("color"),
+        "is_blinking": blink.get("is_blinking"),
+        "blink_hz":    blink.get("blink_hz"),
+        "world":       det.get("world_position"),
+        "gps":         det.get("gps_position"),
+    }
+    with _lock:
+        for b in _classified_buoys:
+            if _same_buoy(north, east, b):
+                b.update(entry)              # refine existing buoy
+                return False
+        _classified_buoys.append(entry)
+        return True
+
+
+def classified_count() -> int:
+    with _lock:
+        return len(_classified_buoys)
+
+def have_entry_and_exit() -> bool:
+    """True once at least one ENTRY and one EXIT buoy have been classified."""
+    with _lock:
+        states = {b["state"] for b in _classified_buoys}
+    return STATE_ENTRY in states and STATE_EXIT in states
+
+def survey_complete() -> bool:
+    """
+    Field survey is 'done enough' to report when we have located all expected
+    buoys AND found both the entry and exit markers.
+    """
+    return classified_count() >= EXPECTED_BUOY_COUNT and have_entry_and_exit()
+
+def beacon_ne(wp) -> Optional[tuple]:
+    """
+    Convert a detection's world_position to (north, east) per BEACON_POS_FRAME,
+    or None if there is no usable world position.
+      "ned" (default): wp is [north, east, down]  -> (wp[0], wp[1])
+      "enu":           wp is [east, north, up]    -> (wp[1], wp[0])
+    """
+    if not wp or len(wp) < 2:
+        return None
+    try:
+        if BEACON_POS_FRAME == "enu":
+            return (float(wp[1]), float(wp[0]))
+        return (float(wp[0]), float(wp[1]))
+    except (TypeError, ValueError):
+        return None
+
+
+def unconfirmed_beacon_location(near_n: float, near_e: float):
+    """
+    Return (north, east) of the closest beacon the detector has reported a world
+    position for but which is NOT yet confirmed as a classified buoy, or None.
+
+    "Unconfirmed" = we have a pending detection with a world_position that is not
+    already within BUOY_MERGE_DIST_M of an existing classified buoy. This is what
+    the RRT biases toward (Option A) so the drone drifts over to confirm it, and
+    it automatically stops attracting once that spot becomes a classified buoy.
+    """
+    with _lock:
+        pend = list(_pending_beacon.values())
+        known = [(b["north"], b["east"]) for b in _classified_buoys]
+
+    best = None
+    best_d2 = float("inf")
+    for det in pend:
+        ne = beacon_ne(det.get("world_position"))
+        if ne is None:
+            continue
+        bn, be = ne
+        # skip if this location is already a confirmed buoy
+        if any((bn - kn) ** 2 + (be - ke) ** 2 <= BUOY_MERGE_DIST_M ** 2
+               for kn, ke in known):
+            continue
+        d2 = (bn - near_n) ** 2 + (be - near_e) ** 2
+        if d2 < best_d2:
+            best_d2, best = d2, (bn, be)
+    return best
+
+
+# ── Beacon over-fly target selection + attempt tracking ───────────────────────
+
+def _overfly_attempt_rec(north: float, east: float):
+    """Return the [n, e, count] record for a spot within BUOY_MERGE_DIST_M, or None."""
+    for rec in _overfly_attempts:
+        if (north - rec[0]) ** 2 + (east - rec[1]) ** 2 <= BUOY_MERGE_DIST_M ** 2:
+            return rec
+    return None
+
+
+def _note_overfly_attempt(north: float, east: float) -> None:
+    """Record that we flew over (or tried to) this spot once more."""
+    rec = _overfly_attempt_rec(north, east)
+    if rec is not None:
+        rec[2] += 1
+    else:
+        _overfly_attempts.append([north, east, 1])
+
+
+def next_overfly_target(near_n: float, near_e: float):
+    """
+    Like unconfirmed_beacon_location(), but also skips spots we've already tried
+    to fly over MAX_OVERFLY_ATTEMPTS times without confirming a state (so one
+    stubbornly-unreadable beacon can't trap the drone). Returns (north, east) or None.
+    """
+    with _lock:
+        pend = list(_pending_beacon.values())
+        known = [(b["north"], b["east"]) for b in _classified_buoys]
+
+    best = None
+    best_d2 = float("inf")
+    for det in pend:
+        ne = beacon_ne(det.get("world_position"))
+        if ne is None:
+            continue
+        bn, be = ne
+        if any((bn - kn) ** 2 + (be - ke) ** 2 <= BUOY_MERGE_DIST_M ** 2
+               for kn, ke in known):
+            continue
+        rec = _overfly_attempt_rec(bn, be)
+        if rec is not None and rec[2] >= MAX_OVERFLY_ATTEMPTS:
+            continue
+        d2 = (bn - near_n) ** 2 + (be - near_e) ** 2
+        if d2 < best_d2:
+            best_d2, best = d2, (bn, be)
+    return best
+
+
+
+def pending_colors() -> list:
+    """Colors currently awaiting state confirmation at this node."""
+    with _lock:
+        return list(_pending_beacon.keys())
+
+
+def _buoy_public(b: dict) -> dict:
+    """Trim an internal buoy dict to the fields worth reporting."""
+    return {
+        "state":       b["state"],
+        "meaning":     STATE_MEANING.get(b["state"], b["state"]),
+        "north":       round(b["north"], 2),
+        "east":        round(b["east"], 2),
+        "world":       b.get("world"),
+        "gps":         b.get("gps"),
+        "color":       b.get("color"),
+        "is_blinking": b.get("is_blinking"),
+        "blink_hz":    b.get("blink_hz"),
+    }
+
+
+def build_passage_report(nodes_explored: int) -> dict:
+    """
+    Assemble the structured Safe-Passage report from the classified buoys:
+    the ENTRY point, the EXIT point, the port (green) and starboard (red)
+    markers, and the OFF obstacles. This is what the USV / RoboCommand needs.
+    If several ENTRY or EXIT candidates were seen, the highest-blink-confidence
+    is not tracked here, so the FIRST is used and the rest listed as extras.
+    """
+    with _lock:
+        buoys = [dict(b) for b in _classified_buoys]
+
+    def of(state): return [b for b in buoys if b["state"] == state]
+
+    entries   = of(STATE_ENTRY)
+    exits     = of(STATE_EXIT)
+    starboard = of(STATE_STARBOARD)
+    port      = of(STATE_PORT)
+    obstacles = of(STATE_OBSTACLE)
+
+    return {
+        "task":       "safe_passage",
+        "tier":       "advanced",
+        "buoy_count": len(buoys),
+        "expected":   EXPECTED_BUOY_COUNT,
+        "entry":      _buoy_public(entries[0]) if entries else None,
+        "exit":       _buoy_public(exits[0])   if exits   else None,
+        "entry_extras": [_buoy_public(b) for b in entries[1:]],
+        "exit_extras":  [_buoy_public(b) for b in exits[1:]],
+        "starboard":  [_buoy_public(b) for b in starboard],
+        "port":       [_buoy_public(b) for b in port],
+        "obstacles":  [_buoy_public(b) for b in obstacles],
+        "all_buoys":  [_buoy_public(b) for b in buoys],
+        "nodes_explored": nodes_explored,
+        "timestamp":  time.time(),
+    }
+
+
+def _fmt_pt(b) -> str:
+    """One-line human string for a reported buoy point."""
+    if not b:
+        return "NOT FOUND"
+    gps = b.get("gps")
+    if gps:
+        return (f"N={b['north']:+.2f} E={b['east']:+.2f}  "
+                f"lat={gps['latitude']:.7f} lon={gps['longitude']:.7f}")
+    return f"N={b['north']:+.2f} E={b['east']:+.2f}  gps=n/a"
+
+
+# ── RRT class ─────────────────────────────────────────────────────────────────
+
+class RRTNode:
+    """Single node in the RRT tree."""
+    __slots__ = ("north", "east", "parent")
+
+    def __init__(self, north: float, east: float, parent: Optional["RRTNode"] = None):
+        self.north  = north
+        self.east   = east
+        self.parent = parent
+
+
+class RRT:
+    """
+    2-D Rapidly-exploring Random Tree constrained to a circle of
+    MAX_SEARCH_RADIUS_M metres centred on the takeoff position.
+
+    Goal bias: with probability RRT_GOAL_BIAS the sample is nudged toward the
+    least-explored sector (opposite of the current node centroid) so the tree
+    spreads outward rather than clustering near the start.
+    """
+
+    def __init__(self, start_north: float, start_east: float) -> None:
+        self._origin_north = start_north
+        self._origin_east  = start_east
+        self.root  = RRTNode(start_north, start_east)
+        self.nodes = [self.root]
+
+    # ── Sampling ──────────────────────────────────────────────────────────────
+
+    def _uniform_in_circle(self) -> tuple:
+        """Uniform distribution over the search disc."""
+        angle = random.uniform(0.0, 2.0 * math.pi)
+        r     = math.sqrt(random.random()) * MAX_SEARCH_RADIUS_M
+        return (
+            self._origin_north + r * math.cos(angle),
+            self._origin_east  + r * math.sin(angle),
+        )
+
+    def _biased_sample(self) -> tuple:
+        """
+        Biased toward the sector opposite the current node centroid so the tree
+        fills the search area rather than staying near the start.
+        """
+        # Option A — reactive beacon attraction:
+        # if the detector has glimpsed an unconfirmed beacon, bias toward it so
+        # the drone drifts over to confirm it (suppressed once confirmed).
+        if random.random() < BEACON_ATTRACT_PROB:
+            # use the newest tree tip as the "current" position reference
+            cur = self.nodes[-1]
+            loc = unconfirmed_beacon_location(cur.north, cur.east)
+            if loc is not None:
+                log(f"[rrt] ◉ biasing search toward unconfirmed beacon at "
+                    f"N={loc[0]:+.1f} E={loc[1]:+.1f}")
+                return (loc[0] + random.gauss(0.0, BEACON_ATTRACT_JITTER_M),
+                        loc[1] + random.gauss(0.0, BEACON_ATTRACT_JITTER_M))
+
+        if len(self.nodes) > 3 and random.random() < RRT_GOAL_BIAS:
+            # centroid of current tree nodes
+            cn = sum(n.north for n in self.nodes) / len(self.nodes)
+            ce = sum(n.east  for n in self.nodes) / len(self.nodes)
+            # direction from centroid away from origin → unexplored sector
+            dn = self._origin_north - cn
+            de = self._origin_east  - ce
+            mag = math.sqrt(dn ** 2 + de ** 2) or 1.0
+            target_n = self._origin_north + (dn / mag) * MAX_SEARCH_RADIUS_M * 0.85
+            target_e = self._origin_east  + (de / mag) * MAX_SEARCH_RADIUS_M * 0.85
+            # Gaussian jitter so repeated biased samples aren't identical
+            target_n += random.gauss(0.0, MAX_SEARCH_RADIUS_M * 0.15)
+            target_e += random.gauss(0.0, MAX_SEARCH_RADIUS_M * 0.15)
+            return target_n, target_e
+        return self._uniform_in_circle()
+
+    # ── Core RRT operations ───────────────────────────────────────────────────
+
+    def nearest(self, north: float, east: float) -> RRTNode:
+        """Return the existing node closest to (north, east)."""
+        return min(
+            self.nodes,
+            key=lambda n: (n.north - north) ** 2 + (n.east - east) ** 2,
+        )
+
+    def steer(self, from_node: RRTNode,
+              target_n: float, target_e: float) -> tuple:
+        """
+        Step at most RRT_STEP_M from from_node toward (target_n, target_e).
+        Returns the new (north, east) position.
+        """
+        dn   = target_n - from_node.north
+        de   = target_e - from_node.east
+        dist = math.sqrt(dn ** 2 + de ** 2)
+        if dist <= RRT_STEP_M:
+            return target_n, target_e
+        scale = RRT_STEP_M / dist
+        return from_node.north + dn * scale, from_node.east + de * scale
+
+    def in_bounds(self, north: float, east: float) -> bool:
+        """True if (north, east) lies within MAX_SEARCH_RADIUS_M of origin."""
+        dn = north - self._origin_north
+        de = east  - self._origin_east
+        return math.sqrt(dn ** 2 + de ** 2) <= MAX_SEARCH_RADIUS_M
+
+    def add_node(self, north: float, east: float, parent: RRTNode) -> RRTNode:
+        node = RRTNode(north, east, parent)
+        self.nodes.append(node)
+        return node
+
+    def extend(self) -> tuple:
+        """
+        Sample, find nearest, steer.
+        Returns (new_north, new_east, parent_node).
+        The caller must call add_node() if the node is accepted.
+        """
+        q_rn, q_re = self._biased_sample()
+        q_near      = self.nearest(q_rn, q_re)
+        q_nn, q_ne  = self.steer(q_near, q_rn, q_re)
+        return q_nn, q_ne, q_near
+
+    @property
+    def size(self) -> int:
+        return len(self.nodes)
+
+
+# ── Beacon over-fly flight ────────────────────────────────────────────────────
+
+def _clamp_to_bounds(rrt: "RRT", north: float, east: float) -> tuple:
+    """Project a point onto the search-disc boundary if it falls outside, so a
+    beacon just past the radius is still approached (up to the boundary)."""
+    dn = north - rrt._origin_north
+    de = east  - rrt._origin_east
+    d  = math.hypot(dn, de)
+    if d <= MAX_SEARCH_RADIUS_M or d == 0.0:
+        return north, east
+    s = MAX_SEARCH_RADIUS_M / d
+    return rrt._origin_north + dn * s, rrt._origin_east + de * s
+
+
+async def fly_over_beacon(drone: System, rrt: RRT,
+                          bn: float, be: float, down_m: float) -> bool:
+    """
+    Grow the tree from its nearest node to the beacon at (bn, be) and fly there,
+    one RRT_STEP_M leg at a time, so each leg end becomes a real RRT node and the
+    drone finishes directly over the beacon. Returns True once within
+    BEACON_OVERFLY_TOL_M, False if a leg times out or the budget is exhausted.
+    """
+    # Optional standoff so a forward/angled camera doesn't lose the beacon.
+    gn, ge = bn, be
+    if BEACON_OVERFLY_OFFSET_M > 0.0:
+        adn = bn - _state.north_m
+        ade = be - _state.east_m
+        amag = math.hypot(adn, ade)
+        if amag > 1e-6:
+            gn = bn - (adn / amag) * BEACON_OVERFLY_OFFSET_M
+            ge = be - (ade / amag) * BEACON_OVERFLY_OFFSET_M
+    gn, ge = _clamp_to_bounds(rrt, gn, ge)
+
+    for _ in range(BEACON_MAX_LEGS):
+        if rrt.size >= RRT_MAX_NODES:
+            return False
+        node = rrt.nearest(gn, ge)
+        if math.hypot(gn - node.north, ge - node.east) <= BEACON_OVERFLY_TOL_M:
+            return True
+        nn, ne = rrt.steer(node, gn, ge)
+        yaw = math.degrees(math.atan2(ne - _state.east_m,
+                                      nn - _state.north_m)) % 360.0
+        log(f"[rrt]   ◎→ leg toward beacon: N={nn:+.2f} E={ne:+.2f} "
+            f"(beacon N={bn:+.2f} E={be:+.2f})")
+        reached = await fly_to(drone, nn, ne, down_m, yaw)
+        if not reached:
+            return False
+        node_new = rrt.add_node(nn, ne, node)
+        publish_rrt_node(nn, ne, TAKEOFF_ALT_M)
+        publish_rrt_edge(node.north, node.east, nn, ne, TAKEOFF_ALT_M)
+    return False
+
+
+# ── Beacon verification ───────────────────────────────────────────────────────
+
+async def verify_beacon(drone: System,
+                        hover_north: float, hover_east: float,
+                        hover_down: float, color: str) -> Optional[dict]:
+    """
+    Hover at the current position and wait until the blink detector reports
+    a definitive blink_is_blinking value (True or False, not None) for `color`,
+    or until BLINK_VERIFY_TIMEOUT_S elapses.
+
+    Returns the latest detection dict (may have blink_is_blinking=None on
+    timeout), or None if no detection was ever received for this color.
+    """
+    log(f"[rrt] ◉ Verifying blink for '{color}' — hovering {BLINK_SETTLE_S:.0f}s to stabilise, "
+        f"then polling up to {BLINK_VERIFY_TIMEOUT_S:.0f}s")
+
+    # Try to face toward the beacon using its reported camera-frame offset.
+    yaw = _bearing_to_beacon(color)
+    target = PositionNedYaw(hover_north, hover_east, hover_down, yaw)
+
+    # Hold position first so the drone stops moving and the YOLO tracker
+    # settles on a stable tracking_id before the blink window starts filling.
+    settle_end = asyncio.get_event_loop().time() + BLINK_SETTLE_S
+    while asyncio.get_event_loop().time() < settle_end:
+        await drone.offboard.set_position_ned(target)
+        await asyncio.sleep(BLINK_VERIFY_POLL_S)
+
+    t0 = asyncio.get_event_loop().time()
+    while asyncio.get_event_loop().time() - t0 < BLINK_VERIFY_TIMEOUT_S:
+        await drone.offboard.set_position_ned(target)
+        await asyncio.sleep(BLINK_VERIFY_POLL_S)
+
+        with _lock:
+            det = _pending_beacon.get(color)
+
+        if det is not None:
+            blink = det.get("blink") if isinstance(det.get("blink"), dict) else {}
+            if blink.get("is_blinking") is not None:
+                log(f"[rrt] ✓ '{color}' blink confirmed: "
+                    f"is_blinking={blink.get('is_blinking')}  "
+                    f"hz={blink.get('blink_hz', '?')}")
+                return det
+
+    elapsed = asyncio.get_event_loop().time() - t0
+    log(f"[rrt] ⚠ Blink verification timed out for '{color}' after {elapsed:.1f}s")
+    with _lock:
+        return _pending_beacon.get(color)
+
+
+def _bearing_to_beacon(color: str) -> float:
+    """
+    Rough yaw angle toward the beacon from the latest pos3d_x / pos3d_y reading.
+    pos3d is in camera/body frame; treating x as lateral and y as forward gives
+    a useful facing direction for a forward-mounted camera.
+    Returns 0.0 (north) if no position data is available.
+    """
+    with _lock:
+        det = _pending_beacon.get(color, {})
+    try:
+        pos3d = det.get("position_3d")
+        if not pos3d or len(pos3d) < 3:
+            return 0.0
+        bx = float(pos3d[0])   # x = lateral in camera frame
+        bz = float(pos3d[2])   # z = forward in camera frame
+        if abs(bx) < 0.01 and abs(bz) < 0.01:
+            return 0.0
+        return math.degrees(math.atan2(bx, bz)) % 360.0
+    except (TypeError, ValueError, IndexError):
+        return 0.0
+
+
+# ── Detection processing (shared by over-fly and per-node paths) ──────────────
+
+async def process_detections_here(drone: System, at_n: float, at_e: float,
+                                   down_m: float,
+                                   require_no_world_fix: bool = False) -> None:
+    """
+    For every beacon colour currently in view, hover at (at_n, at_e), confirm its
+    blink state, classify it, and record the buoy (deduplicated by location).
+    Used both after flying directly over a beacon and at an ordinary RRT node.
+
+    require_no_world_fix: when True, SKIP any beacon that has a world position —
+    those are left pending so the over-fly branch flies directly over them first,
+    instead of classifying them in place from wherever this node happens to be.
+    The over-fly branch calls this with the default (False) to process them.
+    """
+    for color in pending_colors():
+        if require_no_world_fix:
+            with _lock:
+                d0 = _pending_beacon.get(color)
+            if beacon_ne((d0 or {}).get("world_position")) is not None:
+                continue   # has a world fix — let the over-fly branch take it
+
+        log(f"[rrt] ★ Beacon in view: '{color}' at N={at_n:+.2f} E={at_e:+.2f} "
+            f"— hovering to confirm state")
+
+        det = await verify_beacon(drone, at_n, at_e, down_m, color)
+        if det is None:
+            with _lock:
+                _pending_beacon.pop(color, None)
+            continue
+
+        state = classify_state(det)
+        if not state:
+            log(f"[rrt]   … '{color}' state unconfirmed (is_blinking=None), will retry")
+            with _lock:
+                _pending_beacon.pop(color, None)
+            continue
+
+        # Prefer the detector's world position (frame-aware) else the hover NE.
+        ne = beacon_ne(det.get("world_position"))
+        bn, be = ne if ne is not None else (at_n, at_e)
+
+        is_new = record_buoy(state, bn, be, det)
+        with _lock:
+            _pending_beacon.pop(color, None)
+
+        gps = det.get("gps_position")
+        gps_s = (f"lat={gps['latitude']:.7f} lon={gps['longitude']:.7f}"
+                 if gps else "gps=n/a")
+        tag = "NEW" if is_new else "upd"
+        log(f"[rrt]   [{tag}] {STATE_MEANING[state]}  "
+            f"N={bn:+.2f} E={be:+.2f}  {gps_s}  "
+            f"buoys={classified_count()}/{EXPECTED_BUOY_COUNT}")
+
+
+# ── Safety monitors ──────────────────────────────────────────────────────────
+
+#async def monitor_battery(drone: System) -> None:
+    #"""Background coroutine — sets _battery_low and logs when battery drops below threshold."""
+    #global _battery_low
+    #try:
+        #async for battery in drone.telemetry.battery():
+            #if not _battery_low and battery.remaining_percent < BATTERY_RTL_PERCENT:
+                #_battery_low = True
+                #log(f"[rrt] ⚡ BATTERY LOW: {battery.remaining_percent * 100:.0f}% "
+                    #f"(threshold {BATTERY_RTL_PERCENT * 100:.0f}%) — will RTL")
+    #except Exception:
+        #log("[rrt] ERROR: monitor_battery() failed")
+        #traceback.print_exc()
+
+
+#async def wait_for_detector() -> bool:
+    #"""
+    #Wait up to DETECTOR_TIMEOUT_S for at least one message on /seabird/beacon_detections.
+    #Returns True if the detector is confirmed live, False on timeout.
+    #"""
+    #log(f"[rrt] Waiting for beacon detector on /seabird/beacon_detections "
+        #f"({DETECTOR_TIMEOUT_S:.0f}s timeout)...")
+    #t0 = asyncio.get_event_loop().time()
+    #while asyncio.get_event_loop().time() - t0 < DETECTOR_TIMEOUT_S:
+        #if _detector_alive.is_set():
+            #log("[rrt] ✓ Beacon detector is publishing")
+            #return True
+        #await asyncio.sleep(0.5)
+    #log("[rrt] ERROR: No message on /seabird/beacon_detections — "
+        #"is beacon_detector_config.py running?")
+   # return False
+
+
+# ── Mission ───────────────────────────────────────────────────────────────────
+
+async def run_mission() -> None:
+    log("[rrt] run_mission() entered")
+    log(f"[rrt] MAVSDK_ADDRESS={MAVSDK_ADDRESS}")
+
+    drone = System()
+
+    # ── Connect ───────────────────────────────────────────────────────────────
+    try:
+        log(f"[rrt] Connecting to {MAVSDK_ADDRESS}...")
+        await asyncio.wait_for(
+            drone.connect(system_address=MAVSDK_ADDRESS),
+            timeout=MAVSDK_CONNECT_TIMEOUT_S,
+        )
+        log("[rrt] drone.connect() returned")
+    except asyncio.TimeoutError:
+        log(f"[rrt] ERROR: connect timed out after {MAVSDK_CONNECT_TIMEOUT_S:.0f}s")
+        return
+    except Exception:
+        log("[rrt] ERROR: exception during connect()")
+        traceback.print_exc()
+        return
+
+    async def _wait_connected() -> bool:
+        async for state in drone.core.connection_state():
+            log(f"[rrt] connection_state: is_connected={state.is_connected}")
+            if state.is_connected:
+                log("[rrt] ✓ Connected to PX4")
+                return True
+        return False
+
+    try:
+        ok = await asyncio.wait_for(_wait_connected(), timeout=PX4_HEARTBEAT_TIMEOUT_S)
+        if not ok:
+            log("[rrt] ERROR: connection_state stream ended before PX4 connected")
+            return
+    except asyncio.TimeoutError:
+        log(f"[rrt] ERROR: PX4 heartbeat timed out after {PX4_HEARTBEAT_TIMEOUT_S:.0f}s")
+        log(f"[rrt] Verify MAVLink is arriving on {MAVSDK_ADDRESS}")
+        return
+    except Exception:
+        log("[rrt] ERROR: exception while waiting for PX4")
+        traceback.print_exc()
+        return
+
+    if BENCH_TEST:
+        log("*** BENCH_TEST — connection verified, not arming or taking off ***")
+        return
+
+    await wait_for_ready_position(drone)
+
+    asyncio.ensure_future(track_position(drone))
+    #asyncio.ensure_future(monitor_battery(drone))
+    await asyncio.sleep(0.5)
+    log(f"[rrt] Start position: N={_state.north_m:.2f}  E={_state.east_m:.2f}  "
+        f"D={_state.down_m:.2f}")
+
+    # ── Detector pre-flight check ─────────────────────────────────────────────
+    #if not await wait_for_detector():
+        #log("[rrt] ABORT: beacon detector not detected — not arming")
+        #return
+
+    # ── Arm ───────────────────────────────────────────────────────────────────
+    log("[rrt] Arming...")
+    try:
+        await drone.action.arm()
+    except ActionError as e:
+        log(f"[rrt] Arm failed: {e}")
+        return
+    except Exception:
+        log("[rrt] ERROR: arm() exception")
+        traceback.print_exc()
+        return
+    log("[rrt] ✓ Armed")
+
+    # ── Takeoff ───────────────────────────────────────────────────────────────
+    log(f"[rrt] Taking off to {TAKEOFF_ALT_M}m...")
+    try:
+        await drone.action.set_takeoff_altitude(TAKEOFF_ALT_M)
+        await drone.action.takeoff()
+    except Exception:
+        log("[rrt] ERROR: takeoff failed")
+        traceback.print_exc()
+        return
+
+    log(f"[rrt] Stabilising for {HOVER_STABILIZE_S:.0f}s...")
+    await asyncio.sleep(HOVER_STABILIZE_S)
+    log(f"[rrt] ✓ Airborne — N={_state.north_m:.1f}  E={_state.east_m:.1f}  "
+        f"Alt≈{-_state.down_m:.1f}m")
+
+    # ── Start offboard mode ───────────────────────────────────────────────────
+    log("[rrt] Priming offboard setpoint stream (3 s)...")
+    hold = PositionNedYaw(_state.north_m, _state.east_m, -TAKEOFF_ALT_M, 0.0)
+    try:
+        for _ in range(30):                     # 30 × 0.1s = 3 s of priming
+            await drone.offboard.set_position_ned(hold)
+            await asyncio.sleep(0.1)
+
+    
+        await drone.offboard.set_position_ned(hold)
+        log("[rrt] Switching to offboard mode...")
+        try:
+            await drone.offboard.start()
+        except OffboardError as e:
+            log(f"[rrt] First offboard start failed ({e}), retrying...")
+            await drone.offboard.set_position_ned(hold)
+            await asyncio.sleep(0.2)
+            await drone.offboard.set_position_ned(hold)
+            await drone.offboard.start()
+    except OffboardError as e:
+        log(f"[rrt] Offboard start failed: {e}")
+        try:
+            await drone.action.land()
+        except Exception:
+            pass
+        return
+    except Exception:
+        log("[rrt] ERROR: offboard start exception")
+        traceback.print_exc()
+        try:
+            await drone.action.land()
+        except Exception:
+            pass
+        return
+    log("[rrt] ✓ Offboard active")
+
+    # ── RRT search ────────────────────────────────────────────────────────────
+    origin_n = _state.north_m
+    origin_e = _state.east_m
+    down_m   = -TAKEOFF_ALT_M
+
+    rrt = RRT(origin_n, origin_e)
+    publish_rrt_node(origin_n, origin_e, TAKEOFF_ALT_M)
+
+    log("")
+    log("[rrt] ═══════════════════════════════════════════")
+    log("[rrt]   RRT BEACON SEARCH")
+    log("[rrt] ───────────────────────────────────────────")
+    log(f"[rrt]   Origin          N={origin_n:+.2f}  E={origin_e:+.2f}")
+    log(f"[rrt]   Max radius      {MAX_SEARCH_RADIUS_M:.1f} m")
+    log(f"[rrt]   Step length     {RRT_STEP_M:.1f} m")
+    log(f"[rrt]   Max nodes       {RRT_MAX_NODES}")
+    log(f"[rrt]   Verify timeout  {BLINK_VERIFY_TIMEOUT_S:.0f} s")
+    log(f"[rrt]   Expected buoys  {EXPECTED_BUOY_COUNT}")
+    log(f"[rrt]   Beacon overfly  {'ON' if BEACON_OVERFLY else 'OFF'} "
+        f"(tol {BEACON_OVERFLY_TOL_M:.1f} m, frame {BEACON_POS_FRAME})")
+    log("[rrt] ═══════════════════════════════════════════")
+    log("")
+
+    while rrt.size < RRT_MAX_NODES:
+
+        # ── Battery failsafe ──────────────────────────────────────────────
+        if _battery_low:
+            log("[rrt] ⚡ Battery low — stopping search and returning to launch")
+            break
+
+        # ── Priority: fly directly over an unconfirmed beacon ─────────────
+        # As soon as the detector has given an unconfirmed beacon a world
+        # position, divert and fly right over it (inserting the legs + beacon as
+        # RRT nodes), then confirm its state from directly overhead.
+        if BEACON_OVERFLY:
+            ov = next_overfly_target(_state.north_m, _state.east_m)
+            if ov is not None:
+                bn, be = ov
+                log(f"[rrt] ◎ Unconfirmed beacon at N={bn:+.2f} E={be:+.2f} "
+                    f"— flying directly over it")
+                arrived = await fly_over_beacon(drone, rrt, bn, be, down_m)
+                _note_overfly_attempt(bn, be)
+                if arrived:
+                    log("[rrt]   ✓ Overhead beacon — confirming state(s)")
+                    await process_detections_here(drone, bn, be, down_m)
+                else:
+                    log("[rrt]   ⚠ Could not reach the beacon overhead this pass")
+                if survey_complete():
+                    log(f"[rrt] ✓ Survey complete: all {EXPECTED_BUOY_COUNT} buoys "
+                        f"classified, entry & exit found — ending search to report.")
+                    break
+                await asyncio.sleep(0.3)
+                continue
+
+        # ── Extend the RRT ────────────────────────────────────────────────
+        new_n, new_e, parent_node = rrt.extend()
+
+        if not rrt.in_bounds(new_n, new_e):
+            continue
+
+        # Yaw faces direction of travel
+        dn  = new_n - _state.north_m
+        de  = new_e - _state.east_m
+        yaw = math.degrees(math.atan2(de, dn)) % 360.0
+
+        log(f"[rrt] → node {rrt.size + 1:3d}  "
+            f"N={new_n:+.2f}  E={new_e:+.2f}  yaw={yaw:.0f}°  "
+            f"buoys={classified_count()}/{EXPECTED_BUOY_COUNT}")
+
+        reached = await fly_to(drone, new_n, new_e, down_m, yaw)
+
+        if not reached:
+            log("[rrt]   ⚠ Waypoint skipped (timeout)")
+            continue
+
+        # Node accepted — add to tree and update RViz
+        new_node = rrt.add_node(new_n, new_e, parent_node)
+        publish_rrt_node(new_n, new_e, TAKEOFF_ALT_M)
+        publish_rrt_edge(parent_node.north, parent_node.east,
+                         new_n, new_e, TAKEOFF_ALT_M)
+
+        # ── Check for new beacon detections ─────────────────────────────────
+        # Beacons WITH a world position are handled by the over-fly branch at the
+        # top of the loop (so the drone flies directly over them). Here we only
+        # verify beacons with NO world fix, in place, as a fallback.
+        await process_detections_here(drone, new_n, new_e, down_m,
+                                      require_no_world_fix=True)
+
+        # ── Stop early once the whole field is surveyed and entry+exit found ──
+        if survey_complete():
+            log(f"[rrt] ✓ Survey complete: all {EXPECTED_BUOY_COUNT} buoys classified, "
+                f"entry & exit found — ending search to report.")
+            break
+
+
+        # Brief pause before next extension
+        await asyncio.sleep(0.3)
+
+    log(f"[rrt] Search complete — {rrt.size} nodes explored, "
+        f"{classified_count()} buoys classified")
+
+    # ── Return to launch ──────────────────────────────────────────────────────
+    log("\n[rrt] Returning to launch...")
+    try:
+        await drone.offboard.stop()
+    except Exception:
+        pass
+
+    try:
+        await drone.action.return_to_launch()
+    except Exception:
+        log("[rrt] ERROR: return_to_launch() failed")
+        traceback.print_exc()
+        return
+
+    log("[rrt] Waiting for landing...")
+    try:
+        async for in_air in drone.telemetry.in_air():
+            if not in_air:
+                log("[rrt] ✓ Landed")
+                break
+            await asyncio.sleep(1.0)
+    except Exception:
+        log("[rrt] ERROR: exception while waiting for landing")
+        traceback.print_exc()
+
+    # ── Build and emit the Safe-Passage report ──────────────────────────────
+    report = build_passage_report(rrt.size)
+    log("")
+    log("═" * 60)
+    log("  SEABIRD — SAFE PASSAGE REPORT (RobotX 2026 Task 1)")
+    log("═" * 60)
+    log(f"  Nodes explored : {rrt.size}")
+    log(f"  Buoys found    : {report['buoy_count']} / {EXPECTED_BUOY_COUNT}")
+    entry = report["entry"]; exit_ = report["exit"]
+    log(f"  ENTRY (flash blue) : {_fmt_pt(entry)}")
+    log(f"  EXIT  (solid blue) : {_fmt_pt(exit_)}")
+    log(f"  STARBOARD (flash red)  markers: {len(report['starboard'])}")
+    for b in report["starboard"]:
+        log(f"      {_fmt_pt(b)}")
+    log(f"  PORT      (flash green) markers: {len(report['port'])}")
+    for b in report["port"]:
+        log(f"      {_fmt_pt(b)}")
+    log(f"  OBSTACLES (off) : {len(report['obstacles'])}")
+    log("═" * 60)
+
+    # Machine-readable report for RoboCommand / the USV.
+    # TODO(team): publish this dict (or your RoboCommand schema) on the
+    #             agreed topic / link. It is emitted here as JSON for now.
+    log("[rrt] REPORT_JSON " + json.dumps(report))
+    log("")
+
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+
+def main() -> None:
+    try:
+        log("=" * 60)
+        log("  SEABIRD — RRT Beacon Search")
+        log("=" * 60)
+        log(f"  MAVSDK_ADDRESS      = {MAVSDK_ADDRESS}")
+        log(f"  MAX_SEARCH_RADIUS_M = {MAX_SEARCH_RADIUS_M} m")
+        log(f"  RRT_STEP_M          = {RRT_STEP_M} m")
+        log(f"  RRT_MAX_NODES       = {RRT_MAX_NODES}")
+        log(f"  BENCH_TEST          = {BENCH_TEST}")
+        log("=" * 60)
+        log("")
+
+        start_rclpy_listener()
+        log("[rrt] ROS2 detection listener started")
+
+        asyncio.run(run_mission())
+
+    except KeyboardInterrupt:
+        log("[rrt] Interrupted by user")
+    except Exception:
+        log("[rrt] FATAL: unhandled exception")
+        traceback.print_exc()
+        raise
+    finally:
+        try:
+            if rclpy.ok():
+                rclpy.shutdown()
+        except Exception:
+            pass
+
+
+if __name__ == "__main__":
+    main()
