@@ -47,22 +47,30 @@ _LOG_HEADER = [
     "target_color", "target_blinking", "color_match", "blink_match",
 ]
 
+_FRAME_LOG_HEADER = [
+    "frame_idx", "timestamp", "source", "bx", "by", "color", "color_conf", "intensity",
+    "hue_median", "hue_mean", "hue_mode", "hue_variance", "hue_min", "hue_max", "hue_n",
+    "vote_red", "vote_green", "vote_blue", "vote_other",
+    "target_color", "target_blinking",
+]
 
-def _build_log_path(base_path: str, target_color, target_blinking) -> str:
+
+def _build_log_path(base_path: str, target_color, target_blinking, ts: str, suffix: str = "") -> str:
     """
     Derive a unique, self-describing log filename from the configured base
-    path: base_gt-<color>-<blink|steady|unk>_<timestamp>.csv -- so repeated
-    runs against the same --log-file/config value never collide or silently
-    overwrite each other's results, and the ground truth for that run is
-    visible from the filename alone without opening it. Same gt tag
+    path: base_gt-<color>-<blink|steady|unk>_<timestamp>[_suffix].csv -- so
+    repeated runs against the same --log-file/config value never collide or
+    silently overwrite each other's results, and the ground truth for that
+    run is visible from the filename alone without opening it. Same gt tag
     convention and time.strftime() format beacon_detector_config.py's own
-    loggers already use elsewhere in this repo.
+    loggers already use elsewhere in this repo. ts is passed in (rather than
+    computed here) so the summary and per-frame logs for the same run share
+    the exact same timestamp tag.
     """
     root, _ext = os.path.splitext(base_path)
     tc = target_color or "unk"
     tb = "blink" if target_blinking is True else "steady" if target_blinking is False else "unk"
-    ts = time.strftime("%Y%m%d_%H%M%S")
-    return f"{root}_gt-{tc}-{tb}_{ts}.csv"
+    return f"{root}_gt-{tc}-{tb}_{ts}{suffix}.csv"
 
 
 def _write_log_row(log_path: str, result: dict, target_color, target_blinking) -> None:
@@ -90,6 +98,33 @@ def _write_log_row(log_path: str, result: dict, target_color, target_blinking) -
             color_match, blink_match,
         ])
     print(f"[downward] Logged result → {log_path}")
+
+
+def _write_frame_log(log_path: str, frame_log: list, target_color, target_blinking) -> None:
+    """
+    Write one row per sampled frame to log_path -- the intensity/hue
+    statistics classify_beacon_color() already computes on every call
+    (median/mean/mode/variance/min/max/n, plus the red/green/blue/other hue
+    votes) previously only ever printed to stdout and lost once the
+    terminal scrolled past, never captured anywhere structured. Ground
+    truth is repeated on every row (not just once) so each row is
+    self-contained for debugging without cross-referencing the summary log.
+    """
+    with open(log_path, "w", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(_FRAME_LOG_HEADER)
+        tc_col = target_color or ""
+        tb_col = target_blinking if target_blinking is not None else ""
+        for rec in frame_log:
+            writer.writerow([
+                rec["frame_idx"], rec["timestamp"], rec["source"], rec["bx"], rec["by"],
+                rec["color"], rec["color_conf"], rec["intensity"],
+                rec["hue_median"], rec["hue_mean"], rec["hue_mode"], rec["hue_variance"],
+                rec["hue_min"], rec["hue_max"], rec["hue_n"],
+                rec["vote_red"], rec["vote_green"], rec["vote_blue"], rec["vote_other"],
+                tc_col, tb_col,
+            ])
+    print(f"[downward] Logged {len(frame_log)} per-frame rows → {log_path}")
 
 
 class _DownwardImageGrabber(Node):
@@ -352,13 +387,17 @@ def main():
         tracking_id=tracking_id,
     )
     n_frames_used = result.pop("n_frames_used", None)
+    frame_log = result.pop("frame_log", [])
 
     print(f"[downward] Result: {json.dumps(result, indent=2)}")
 
     if log_file:
         target_color, target_blinking = cfg.get("target_color"), cfg.get("target_blinking")
-        log_path = _build_log_path(log_file, target_color, target_blinking)
+        ts_tag = time.strftime("%Y%m%d_%H%M%S")
+        log_path = _build_log_path(log_file, target_color, target_blinking, ts_tag)
         _write_log_row(log_path, result, target_color, target_blinking)
+        frames_path = _build_log_path(log_file, target_color, target_blinking, ts_tag, suffix="_frames")
+        _write_frame_log(frames_path, frame_log, target_color, target_blinking)
 
     if n_frames_used > 0:
         msg = String()
