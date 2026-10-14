@@ -54,7 +54,7 @@
   },  
   
   "downward_camera": {
-    "image_topic":      "/hires_down_small_color",
+    "image_topic":      "/hires_front_small_color",
     "focal_length_mm":  2.1,
     "h_aperture_mm":    6.0,
     "v_aperture_mm":    4.5,
@@ -64,6 +64,19 @@
     "pitch_deg":        90.0,
     "beacon_height_m":        0.4382,
     "beacon_top_diameter_m":  0.0780
+  },
+
+  "downward_test": {
+    "duration":            4.0,
+    "pose_wait_timeout":   15.0,
+    "fallback_latitude":   0.0,
+    "fallback_longitude":  0.0,
+    "fallback_altitude":   0.0,
+    "fallback_height_agl": 1.0,
+    "save_debug_images":   "debug_down",
+    "expected_radius_px":  null,
+    "tracking_id":         -1,
+    "log_file":            "downward_log"
   },
 
   "drone_spawn": {

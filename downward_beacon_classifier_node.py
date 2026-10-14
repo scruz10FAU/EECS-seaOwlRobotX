@@ -24,7 +24,9 @@ Usage:
 """
 
 import argparse
+import csv
 import json
+import os
 import time
 
 import rclpy
@@ -38,6 +40,56 @@ import beacon_detector_config as bdc
 from utils.downward_beacon_classifier import classify_beacon_downward
 
 _bridge = CvBridge()
+
+_LOG_HEADER = [
+    "timestamp", "color", "blink", "blink_color", "blink_hz", "phase",
+    "latitude", "longitude", "altitude", "tracking_id",
+    "target_color", "target_blinking", "color_match", "blink_match",
+]
+
+
+def _build_log_path(base_path: str, target_color, target_blinking) -> str:
+    """
+    Derive a unique, self-describing log filename from the configured base
+    path: base_gt-<color>-<blink|steady|unk>_<timestamp>.csv -- so repeated
+    runs against the same --log-file/config value never collide or silently
+    overwrite each other's results, and the ground truth for that run is
+    visible from the filename alone without opening it. Same gt tag
+    convention and time.strftime() format beacon_detector_config.py's own
+    loggers already use elsewhere in this repo.
+    """
+    root, _ext = os.path.splitext(base_path)
+    tc = target_color or "unk"
+    tb = "blink" if target_blinking is True else "steady" if target_blinking is False else "unk"
+    ts = time.strftime("%Y%m%d_%H%M%S")
+    return f"{root}_gt-{tc}-{tb}_{ts}.csv"
+
+
+def _write_log_row(log_path: str, result: dict, target_color, target_blinking) -> None:
+    """
+    Write this run's result as a one-row CSV (plus header) to log_path --
+    comparing against ground truth (target_color/target_blinking), read the
+    same way as the rest of this repo's pipeline (beacon_detector_config.py's
+    top-level cfg["target_color"]/cfg["target_blinking"], set via the
+    config's own "target_color"/"target_blinking" fields, not anything new
+    here). log_path is expected to already be unique per run (see
+    _build_log_path()), so this always starts a fresh file rather than
+    appending.
+    """
+    gps = result.get("gps_position") or {}
+    with open(log_path, "w", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(_LOG_HEADER)
+        color_match = "" if target_color is None else str(result["color"] == target_color)
+        blink_match = "" if target_blinking is None else str(result["blink"] == target_blinking)
+        writer.writerow([
+            result["timestamp"], result["color"], result["blink"], result["blink_color"],
+            result["blink_hz"], result["phase"],
+            gps.get("latitude", ""), gps.get("longitude", ""), gps.get("altitude", ""),
+            result["tracking_id"], target_color or "", target_blinking if target_blinking is not None else "",
+            color_match, blink_match,
+        ])
+    print(f"[downward] Logged result → {log_path}")
 
 
 class _DownwardImageGrabber(Node):
@@ -82,7 +134,7 @@ def _wait_for_pose_data(pose_source, timeout_s: float) -> bool:
 def classify_beacon_at_current_position(
     pose_source, image_grabber, cfg: dict, duration_s: float,
     fallback_gps_origin=None, fallback_height_agl=None, debug_image_dir=None,
-    expected_radius_px_override=None,
+    expected_radius_px_override=None, tracking_id: int = -1,
 ) -> dict:
     """
     Spin for duration_s seconds collecting downward-camera frames, then run
@@ -111,6 +163,10 @@ def classify_beacon_at_current_position(
                  radius entirely -- see classify_beacon_downward(). For
                  hand-held bench testing where height telemetry doesn't
                  reflect the actual (much closer) test distance at all.
+    tracking_id: passthrough to classify_beacon_downward() -- set this if a
+                 multi-beacon mission script is calling in per beacon, so
+                 the published result is tagged with which one this was.
+                 Default -1 (no real tracker; see classify_beacon_downward()).
     """
     t_end = time.time() + duration_s
     while time.time() < t_end:
@@ -155,6 +211,7 @@ def classify_beacon_at_current_position(
         cfg["downward_camera"], cfg["detection"], duration_s,
         debug_image_dir=debug_image_dir,
         expected_radius_px_override=expected_radius_px_override,
+        tracking_id=tracking_id,
     )
 
 
@@ -164,38 +221,80 @@ def main():
     )
     ap.add_argument("--config", default=bdc._DEFAULT_CONFIG,
                      help=f"JSON config path (default: {bdc._DEFAULT_CONFIG})")
-    ap.add_argument("--duration", type=float, default=8.0,
-                     help="Seconds to sample the downward camera before classifying (default: 8.0)")
-    ap.add_argument("--pose-wait-timeout", type=float, default=15.0,
-                     help="Max seconds to wait for drone height/GPS origin before giving up (default: 15.0)")
-    ap.add_argument("--fallback-latitude", type=float, default=0.0,
-                     help="GPS origin latitude to use if no real GPS fix arrives (default: 0.0)")
-    ap.add_argument("--fallback-longitude", type=float, default=0.0,
-                     help="GPS origin longitude to use if no real GPS fix arrives (default: 0.0)")
-    ap.add_argument("--fallback-altitude", type=float, default=0.0,
-                     help="GPS origin altitude to use if no real GPS fix arrives (default: 0.0)")
-    ap.add_argument("--fallback-height-agl", type=float, default=1.0,
-                     help="Drone AGL height (metres) to assume if no real height arrives "
-                          "(default: 1.0 -- must exceed downward_camera.beacon_height_m)")
+    # Every flag below defaults to None here -- the config's downward_test
+    # section (see beacon_detector_config.py's _DEFAULT_DOWNWARD_TEST) is the
+    # actual source of truth for each one; a flag only overrides its config
+    # value when explicitly passed on the command line (resolved just below,
+    # after the config is loaded).
+    ap.add_argument("--duration", type=float, default=None,
+                     help="Seconds to sample the downward camera before classifying "
+                          "(default: downward_test.duration, 8.0)")
+    ap.add_argument("--pose-wait-timeout", type=float, default=None,
+                     help="Max seconds to wait for drone height/GPS origin before giving up "
+                          "(default: downward_test.pose_wait_timeout, 15.0)")
+    ap.add_argument("--fallback-latitude", type=float, default=None,
+                     help="GPS origin latitude to use if no real GPS fix arrives "
+                          "(default: downward_test.fallback_latitude, 0.0)")
+    ap.add_argument("--fallback-longitude", type=float, default=None,
+                     help="GPS origin longitude to use if no real GPS fix arrives "
+                          "(default: downward_test.fallback_longitude, 0.0)")
+    ap.add_argument("--fallback-altitude", type=float, default=None,
+                     help="GPS origin altitude to use if no real GPS fix arrives "
+                          "(default: downward_test.fallback_altitude, 0.0)")
+    ap.add_argument("--fallback-height-agl", type=float, default=None,
+                     help="Drone AGL height (metres) to assume if no real height arrives -- "
+                          "must exceed downward_camera.beacon_height_m "
+                          "(default: downward_test.fallback_height_agl, 1.0)")
     ap.add_argument("--save-debug-images", default=None, metavar="DIR",
                      help="Write per-frame debug images (circle overlay, crop, mask -- or "
                           "the raw frame when nothing was found) to this directory, showing "
-                          "exactly what each frame's color/blink classification was based on")
+                          "exactly what each frame's color/blink classification was based on "
+                          "(default: downward_test.save_debug_images, disabled)")
     ap.add_argument("--expected-radius-px", type=float, default=None,
                      help="Bypass the height-derived circle radius entirely and use this "
                           "pixel radius directly -- for hand-held bench testing where "
                           "--fallback-height-agl doesn't reflect the actual (much closer) "
                           "test distance. Measure it from a debug image: the radius of the "
-                          "disc outline you want detected, in pixels.")
+                          "disc outline you want detected, in pixels "
+                          "(default: downward_test.expected_radius_px, disabled)")
+    ap.add_argument("--tracking-id", type=int, default=None,
+                     help="Tag the published result with this ID -- for a multi-beacon "
+                          "mission script calling this in per beacon "
+                          "(default: downward_test.tracking_id, -1, meaning no real tracker)")
+    ap.add_argument("--log-file", default=None, metavar="PATH",
+                     help="Append this run's result as one CSV row to PATH (creating it with "
+                          "a header if it doesn't exist yet), including a color_match/"
+                          "blink_match comparison against the config's top-level "
+                          "target_color/target_blinking ground-truth fields -- the same "
+                          "fields beacon_detector_config.py's own logger reads, not anything "
+                          "new. Those columns are left blank when a target isn't set "
+                          "(default: downward_test.log_file, disabled)")
     args = ap.parse_args()
 
     cfg = bdc.load_config(args.config)
     down_cfg = cfg["downward_camera"]
+    test_cfg = cfg["downward_test"]
+
+    def _resolved(name):
+        cli_value = getattr(args, name)
+        return cli_value if cli_value is not None else test_cfg[name]
+
+    duration            = _resolved("duration")
+    pose_wait_timeout    = _resolved("pose_wait_timeout")
+    fallback_latitude    = _resolved("fallback_latitude")
+    fallback_longitude   = _resolved("fallback_longitude")
+    fallback_altitude    = _resolved("fallback_altitude")
+    fallback_height_agl  = _resolved("fallback_height_agl")
+    save_debug_images    = _resolved("save_debug_images")
+    expected_radius_px   = _resolved("expected_radius_px")
+    tracking_id          = _resolved("tracking_id")
+    log_file             = _resolved("log_file")
+
     if not down_cfg.get("image_topic"):
         print("[downward] ERROR: downward_camera.image_topic is not set in the config")
         return
-    if args.fallback_height_agl <= down_cfg["beacon_height_m"]:
-        print(f"[downward] ERROR: --fallback-height-agl ({args.fallback_height_agl:.2f}m) must "
+    if fallback_height_agl <= down_cfg["beacon_height_m"]:
+        print(f"[downward] ERROR: --fallback-height-agl ({fallback_height_agl:.2f}m) must "
               f"exceed downward_camera.beacon_height_m ({down_cfg['beacon_height_m']:.2f}m) -- "
               f"the drone must be above the beacon top")
         return
@@ -207,32 +306,55 @@ def main():
     pose_source.open_for_video()  # pose + GPS only, no image/depth sync
     image_grabber = _DownwardImageGrabber(down_cfg["image_topic"])
 
-    print(f"[downward] Waiting up to {args.pose_wait_timeout:.0f}s for GPS origin / AGL height...")
-    if not _wait_for_pose_data(pose_source, args.pose_wait_timeout):
+    print(f"[downward] Waiting up to {pose_wait_timeout:.0f}s for GPS origin / AGL height...")
+    if not _wait_for_pose_data(pose_source, pose_wait_timeout):
         print("[downward] GPS origin and/or AGL height didn't arrive in time -- "
               "continuing with fallback value(s) where needed")
 
-    if args.save_debug_images:
-        print(f"[downward] Saving debug images to {args.save_debug_images}/")
-    if args.expected_radius_px is not None:
-        print(f"[downward] Using --expected-radius-px override: {args.expected_radius_px:.1f}px "
+    if save_debug_images:
+        print(f"[downward] Saving debug images to {save_debug_images}/")
+    if expected_radius_px is not None:
+        print(f"[downward] Using expected-radius-px override: {expected_radius_px:.1f}px "
               f"(ignoring height-derived sizing)")
 
-    print(f"[downward] Sampling downward camera for {args.duration:.1f}s...")
+    print(f"[downward] Sampling downward camera for {duration:.1f}s...")
     result = classify_beacon_at_current_position(
-        pose_source, image_grabber, cfg, args.duration,
-        fallback_gps_origin=(args.fallback_latitude, args.fallback_longitude, args.fallback_altitude),
-        fallback_height_agl=args.fallback_height_agl,
-        debug_image_dir=args.save_debug_images,
-        expected_radius_px_override=args.expected_radius_px,
+        pose_source, image_grabber, cfg, duration,
+        fallback_gps_origin=(fallback_latitude, fallback_longitude, fallback_altitude),
+        fallback_height_agl=fallback_height_agl,
+        debug_image_dir=save_debug_images,
+        expected_radius_px_override=expected_radius_px,
+        tracking_id=tracking_id,
     )
+    n_frames_used = result.pop("n_frames_used", None)
+
     print(f"[downward] Result: {json.dumps(result, indent=2)}")
 
-    if result["n_frames_used"] > 0:
+    if log_file:
+        target_color, target_blinking = cfg.get("target_color"), cfg.get("target_blinking")
+        log_path = _build_log_path(log_file, target_color, target_blinking)
+        _write_log_row(log_path, result, target_color, target_blinking)
+
+    if n_frames_used > 0:
         msg = String()
         msg.data = json.dumps(result)
         pose_source.detection_pub.publish(msg)
         print(f"[downward] Published to {cfg['topics']['detections_pub']}")
+        # detection_pub uses the default VOLATILE durability (see
+        # _ConfiguredBeaconCamera in beacon_detector_config.py) -- a
+        # subscriber only receives messages published *after* it finishes
+        # connecting, nothing is replayed. Since this script publishes
+        # exactly once, a listener that isn't already up and discovered
+        # before this call (ros2 topic echo started late, or started at
+        # nearly the same moment as this script) will simply never see it,
+        # regardless of whether classification succeeded. Spin briefly here
+        # so the message actually has time to flush over the wire and so a
+        # listener whose discovery was still completing gets a chance to
+        # receive it, before the node (and the publisher with it) is torn
+        # down immediately below.
+        t_end = time.time() + 1.0
+        while time.time() < t_end:
+            rclpy.spin_once(pose_source, timeout_sec=0.1)
     else:
         print("[downward] No frames matched the expected circle -- nothing published")
 

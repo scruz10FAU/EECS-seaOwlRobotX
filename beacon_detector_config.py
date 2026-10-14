@@ -81,6 +81,22 @@ _DEFAULT_DOWNWARD_CAMERA = {
     "beacon_top_diameter_m": 0.0780,  # 3.07 in — top circle diameter, used to size the expected pixel radius
 }
 
+_DEFAULT_DOWNWARD_TEST = {
+    # downward_beacon_classifier_node.py's run parameters -- config is the
+    # source of truth for all of these; each has a matching CLI flag that
+    # overrides it only when explicitly passed (see that script's main()).
+    "duration":            4.0,
+    "pose_wait_timeout":   15.0,
+    "fallback_latitude":   0.0,
+    "fallback_longitude":  0.0,
+    "fallback_altitude":   0.0,
+    "fallback_height_agl": 1.0,
+    "save_debug_images":   None,   # directory, or null to disable
+    "expected_radius_px":  None,   # pixel radius override, or null to use height-derived sizing
+    "tracking_id":         -1,
+    "log_file":            None,   # CSV path, or null to disable
+}
+
 _DEFAULT_ARUCO = {
     "enabled":          False,
     "dictionary":       "DICT_4X4_50",
@@ -188,6 +204,7 @@ def load_config(path: str) -> dict:
         "topics":     _merge_topics(raw.get("topics", {})),
         "camera":     {**_DEFAULT_CAMERA,  **raw.get("camera",  {})},
         "downward_camera": {**_DEFAULT_DOWNWARD_CAMERA, **raw.get("downward_camera", {})},
+        "downward_test":   {**_DEFAULT_DOWNWARD_TEST,   **raw.get("downward_test",   {})},
         "paths":      raw.get("paths",      {}),
         "isaac":      raw.get("isaac",      {}),
         "drone_spawn":raw.get("drone_spawn",{}),
