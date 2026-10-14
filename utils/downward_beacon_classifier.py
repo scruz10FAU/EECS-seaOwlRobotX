@@ -86,7 +86,7 @@ def expected_pixel_radius(fx: float, fy: float, depth_m: float, diameter_m: floa
     f_avg = (fx + fy) / 2.0
     return (diameter_m / 2.0) * f_avg / depth_m
 
-
+"""
 def find_disc(
     bgr_frame: np.ndarray, search_center: Tuple[float, float], search_radius: float,
     disc_radius_px: float, radius_tolerance: float = 0.3,
@@ -157,6 +157,7 @@ def find_disc(
     if best_pos is None or best_score < min_score:
         return None
     return best_pos
+"""
 
 
 def find_lit_blob(
