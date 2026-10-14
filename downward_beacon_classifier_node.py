@@ -99,9 +99,22 @@ class _DownwardImageGrabber(Node):
     BeaconCamera -- no depth sync, no pose/gps, no detector backend.
     """
 
-    def __init__(self, image_topic: str):
+    def __init__(self, image_topic: str, max_sample_hz: float = None):
+        """
+        max_sample_hz: if set, drop frames arriving sooner than 1/max_sample_hz
+        after the last one kept, instead of buffering every frame the topic
+        publishes. The topic's native rate is typically far higher than
+        needed -- e.g. a 0.5 Hz blink only needs >1 Hz (Nyquist) to detect at
+        all, and a handful of Hz for a clean edge/phase read, not 20-30 fps --
+        so this cuts down the per-frame debug-image I/O, per-frame log
+        volume, and total CV work for a run, all proportionally to how far
+        above max_sample_hz the native rate is. None (default) keeps every
+        frame, same as before.
+        """
         super().__init__("downward_image_grabber")
         self._frames = []
+        self._min_interval = (1.0 / max_sample_hz) if max_sample_hz else 0.0
+        self._last_kept_ts = None
         qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             history=HistoryPolicy.KEEP_LAST,
@@ -111,9 +124,12 @@ class _DownwardImageGrabber(Node):
         self.get_logger().info(f"Subscribed to downward camera: {image_topic}")
 
     def _on_image(self, msg: Image) -> None:
-        bgr = _bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
         ts = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        if self._last_kept_ts is not None and (ts - self._last_kept_ts) < self._min_interval:
+            return
+        bgr = _bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
         self._frames.append((ts, bgr))
+        self._last_kept_ts = ts
 
     def drain_frames(self):
         """Return and clear all frames buffered so far."""
@@ -229,6 +245,12 @@ def main():
     ap.add_argument("--duration", type=float, default=None,
                      help="Seconds to sample the downward camera before classifying "
                           "(default: downward_test.duration, 8.0)")
+    ap.add_argument("--max-sample-hz", type=float, default=None,
+                     help="Drop frames arriving sooner than 1/this many seconds after the "
+                          "last one kept, instead of buffering every frame the topic "
+                          "publishes -- the native rate is typically far higher than needed "
+                          "for a slow blink signal. Pass 0 to disable and keep every frame "
+                          "(default: downward_test.max_sample_hz, 5.0)")
     ap.add_argument("--pose-wait-timeout", type=float, default=None,
                      help="Max seconds to wait for drone height/GPS origin before giving up "
                           "(default: downward_test.pose_wait_timeout, 15.0)")
@@ -280,6 +302,7 @@ def main():
         return cli_value if cli_value is not None else test_cfg[name]
 
     duration            = _resolved("duration")
+    max_sample_hz        = _resolved("max_sample_hz")
     pose_wait_timeout    = _resolved("pose_wait_timeout")
     fallback_latitude    = _resolved("fallback_latitude")
     fallback_longitude   = _resolved("fallback_longitude")
@@ -304,7 +327,9 @@ def main():
 
     pose_source = bdc._make_beacon_camera(cfg["topics"], cfg["camera"], cfg["detection"])
     pose_source.open_for_video()  # pose + GPS only, no image/depth sync
-    image_grabber = _DownwardImageGrabber(down_cfg["image_topic"])
+    image_grabber = _DownwardImageGrabber(down_cfg["image_topic"], max_sample_hz=max_sample_hz)
+    if max_sample_hz:
+        print(f"[downward] Sampling downward camera frames at up to {max_sample_hz:.1f} Hz")
 
     print(f"[downward] Waiting up to {pose_wait_timeout:.0f}s for GPS origin / AGL height...")
     if not _wait_for_pose_data(pose_source, pose_wait_timeout):

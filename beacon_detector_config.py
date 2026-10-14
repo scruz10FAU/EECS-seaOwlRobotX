@@ -86,6 +86,7 @@ _DEFAULT_DOWNWARD_TEST = {
     # source of truth for all of these; each has a matching CLI flag that
     # overrides it only when explicitly passed (see that script's main()).
     "duration":            4.0,
+    "max_sample_hz":       5.0,     # null = keep every frame the topic publishes
     "pose_wait_timeout":   15.0,
     "fallback_latitude":   0.0,
     "fallback_longitude":  0.0,

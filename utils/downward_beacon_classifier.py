@@ -1,82 +1,10 @@
-"""
-downward_beacon_classifier.py — color/blink/GPS classification of a beacon's
-circular top face from a downward-facing camera, assuming the drone is
-already hovering directly above it.
-
-No trained model needed. Four earlier attempts at isolating the disc/LED
-all failed against real footage:
-  1. Hough circles on the LED's own edge/contrast -- too fragile.
-  2. Adaptive thresholding assuming the disc is "always darker" than its
-     surroundings -- false: its absolute brightness depends entirely on
-     what's nearby, not something you can threshold frame-to-frame.
-  3. Position persistence keyed on find_lit_blob() alone (a saturated+bright
-     blob is "the LED"), locking onto the first confident hit and reusing it
-     for LED-off frames -- false: confirmed via real footage that ordinary
-     indoor flooring (and probably other matte surfaces, e.g. choppy water)
-     routinely contains small, round, highly saturated+bright specular
-     highlights -- measured examples reaching S=255/V=255 -- so no
-     brightness/saturation/circularity gate on its own reliably excludes
-     "floor glint" while still accepting "real LED". It doesn't help that
-     this also means the very first frame can anchor onto the wrong thing
-     before the LED has even been seen.
-  4. Locating the housing by lowest average saturation (achromaticity) --
-     false: confirmed via real footage that a brightly-lit LED's glow tints
-     the whole disc face, and under strong/warm indoor lighting even the
-     housing's own supposedly-neutral material reads with elevated, non-low
-     saturation (measured ~60-120 at the housing's own edge, not the ~30
-     measured on a different, dimmer-lit test) -- so "achromatic" isn't a
-     stable signal either, and plain Hough circles alone are far too
-     fragile: in one real frame, 40 circles were detected at the beacon's
-     expected radius, almost all of them from ordinary floor-grain texture
-     and nearby furniture, with no vote-count threshold that keeps the real
-     one while dropping the noise (tightening the threshold loses the real
-     circle before it loses several rounded furniture edges, which rack up
-     more combined votes than the beacon's one clean ring).
-
-Current approach -- HOUGH CIRCLES, THEN SCORE BY BRIGHTNESS CONTRAST:
-find_disc() still runs Hough (cv2.HoughCircles) restricted to radii near the
-expected disc size, same as attempt #4 -- but instead of trusting Hough's
-own vote count to pick the right one (it doesn't reliably), each candidate
-is scored by how much brighter its small center region is than its own
-surrounding ring, in plain grayscale -- i.e. literally "does this candidate
-look like a lit beacon: bright core, darker housing around it". This is
-unaffected by the whole-scene color-cast problem that sank attempt #4
-(it never looks at hue/saturation, only relative brightness between a
-candidate's own center and its own ring), and confirmed directly against
-real footage to separate the beacon from every other circular object in a
-cluttered room (a remote control, a round vacuum canister, suitcase corners)
-by a wide, decisive margin -- e.g. the real beacon scored 63 vs. the next
-candidate's 16, and 107 vs. 17, on two different real frames, while false
-candidates scored near zero or negative (their "center" was no brighter, or
-even darker, than their own surroundings -- the opposite of a lit beacon).
-Position persistence still applies (the drone is holding roughly still):
-once found, the housing's location is reused for the rest of the sampling
-window instead of re-searching every frame. find_lit_blob() then only has
-to search a small window tightly scoped to the housing itself -- not the
-whole frame -- so the floor is structurally excluded rather than merely
-out-thresholded. Color classification reuses
-beacon_detector_config.classify_beacon_color()'s hue-voting logic on a crop
-sized to the known disc diameter, centered on whatever position was
-determined (detected / locked / geometric fallback). Blink detection reuses
-BlinkDetector unchanged.
-
-No ROS/rclpy dependency — this module is pure numpy/cv2/stdlib so it's
-directly unit-testable with synthetic frames. beacon_detector_config is
-imported lazily (inside functions, not at module load) since it pulls in
-ultralytics/cv2-heavy top-level imports that aren't needed just to isolate a
-circle.
-"""
-
+"""Downward beacon color/blink/GPS classifier (API-compatible rewrite)."""
 import os
 import time
 from typing import Optional, Tuple
-
 import cv2
 import numpy as np
-
 from utils.blink_detector import BlinkDetector
-
-
 def expected_pixel_radius(fx: float, fy: float, depth_m: float, diameter_m: float) -> float:
     """
     Expected circle radius in pixels for a known-diameter circle at a known
@@ -85,79 +13,87 @@ def expected_pixel_radius(fx: float, fy: float, depth_m: float, diameter_m: floa
     """
     f_avg = (fx + fy) / 2.0
     return (diameter_m / 2.0) * f_avg / depth_m
+def _disc_candidates(bgr_frame, search_center, search_radius, disc_radius_px,
+                     radius_tolerance=0.3, center_frac=0.30,
+                     ring_inner_frac=0.45, ring_outer_frac=0.85):
+    """Find and rank housing circles; return [(score, (x, y), radius, metrics), ...].
 
-"""
+    Bright-center contrast is useful when lit; circumference support and a
+    mostly-dark annulus provide independent evidence when the LED is off.
+    """
+    h, w = bgr_frame.shape[:2]
+    gray = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 1.5)
+    min_r = max(1, int(round(disc_radius_px * (1 - radius_tolerance))))
+    max_r = max(min_r + 1, int(round(disc_radius_px * (1 + radius_tolerance))))
+    circles = cv2.HoughCircles(
+        blurred, cv2.HOUGH_GRADIENT, dp=1.2,
+        minDist=max(1.0, disc_radius_px),
+        param1=120, param2=35, minRadius=min_r, maxRadius=max_r,
+    )
+    if circles is None:
+        return []
+
+    # Edge evidence computed on the same blurred image as Hough.
+    edges = cv2.Canny(blurred, 60, 120)
+    yy, xx = np.ogrid[:h, :w]
+    scx, scy = search_center
+    candidates = []
+    for x, y, r in circles[0]:
+        x, y, r = float(x), float(y), float(r)
+        if (x - scx)**2 + (y - scy)**2 > search_radius**2:
+            continue
+        dist_sq = (xx - x)**2 + (yy - y)**2
+        center = dist_sq <= max(3.0, r * center_frac)**2
+        ring = ((dist_sq >= (r * ring_inner_frac)**2) &
+                (dist_sq <= (r * ring_outer_frac)**2))
+        if not np.any(center) or not np.any(ring):
+            continue
+        contrast = float(gray[center].mean() - gray[ring].mean())
+
+        # Sample the perimeter across 72 angular bins. Allow a +/- 3 px radial
+        # tolerance for imperfect circle edges and antialiasing.
+        angles = np.linspace(0, 2*np.pi, 72, endpoint=False)
+        supported = 0
+        for angle in angles:
+            for delta in (-3, -2, -1, 0, 1, 2, 3):
+                px = int(round(x + (r + delta)*np.cos(angle)))
+                py = int(round(y + (r + delta)*np.sin(angle)))
+                if 0 <= px < w and 0 <= py < h and edges[py, px]:
+                    supported += 1
+                    break
+        edge_support = supported / len(angles)
+        ring_gray = gray[ring]
+        # Preference for low-variance/dark annuli rather than global darkness.
+        ring_std = float(ring_gray.std())
+        # Keep contrast in original grayscale units, with modest bonuses for
+        # coherent outer edges and a uniform interior annulus.
+        score = contrast + 22.0 * edge_support - 0.08 * ring_std
+        candidates.append((score, (x, y), r, {
+            "contrast": contrast, "edge_support": edge_support,
+            "ring_std": ring_std,
+        }))
+    return sorted(candidates, key=lambda c: c[0], reverse=True)
+
+
 def find_disc(
     bgr_frame: np.ndarray, search_center: Tuple[float, float], search_radius: float,
     disc_radius_px: float, radius_tolerance: float = 0.3,
     center_frac: float = 0.30, ring_inner_frac: float = 0.45, ring_outer_frac: float = 0.85,
     min_score: float = 20.0,
 ) -> Optional[Tuple[float, float]]:
+    """Return the best accepted housing center (x, y), or None.
+
+    Public signature and return type are unchanged. The minimum score now
+    applies to a combined contrast/edge-support score, not contrast alone.
     """
-    Locate the beacon: run Hough circle detection restricted to radii near
-    disc_radius_px, then -- since Hough's own vote count isn't a reliable
-    way to pick the right candidate among several real circular objects in a
-    cluttered room (see module docstring) -- score each candidate by how
-    much brighter its small center region is than its own surrounding ring,
-    in plain grayscale. That's the beacon's actual physical structure (a
-    bright lit core inside a darker housing), checked directly rather than
-    inferred from Hough's internal vote count, and it's unaffected by the
-    whole-scene warm color cast that broke the earlier achromaticity-based
-    approach, since it only ever compares a candidate's own center to its
-    own ring, never absolute hue/saturation.
-
-    search_center/search_radius: candidates are restricted to within
-    search_radius of search_center, same role as in earlier versions -- the
-    drone/camera is expected to be roughly over the beacon, so this excludes
-    other real circular objects (furniture, luggage) known to be well
-    outside any plausible hover position.
-    radius_tolerance: Hough's minRadius/maxRadius are disc_radius_px scaled
-    by (1 -+ radius_tolerance).
-    center_frac/ring_inner_frac/ring_outer_frac: the center/ring sample
-    regions, as fractions of each candidate's own detected radius.
-    min_score: minimum (center_brightness - ring_brightness) required to
-    accept a candidate at all -- confirmed against real footage that the
-    real beacon scores several times higher than this (63, 107 in two
-    different frames) while false candidates score near zero or negative,
-    so this is a wide, forgiving margin, not a tight tuned cutoff.
-
-    Returns (cx, cy) of the best-scoring candidate, or None if no Hough
-    candidate was found in the window, or none scored above min_score.
-    """
-    h, w = bgr_frame.shape[:2]
-    gray = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 1.5)
-
-    min_r = max(1, int(round(disc_radius_px * (1 - radius_tolerance))))
-    max_r = max(min_r + 1, int(round(disc_radius_px * (1 + radius_tolerance))))
-    circles = cv2.HoughCircles(
-        blurred, cv2.HOUGH_GRADIENT, dp=1.2, minDist=disc_radius_px,
-        param1=120, param2=35, minRadius=min_r, maxRadius=max_r,
+    candidates = _disc_candidates(
+        bgr_frame, search_center, search_radius, disc_radius_px,
+        radius_tolerance, center_frac, ring_inner_frac, ring_outer_frac,
     )
-    if circles is None:
+    if not candidates or candidates[0][0] < min_score:
         return None
-
-    yy, xx = np.ogrid[:h, :w]
-    scx, scy = search_center
-    best_pos, best_score = None, -np.inf
-    for x, y, r in circles[0]:
-        x, y, r = float(x), float(y), float(r)
-        if (x - scx) ** 2 + (y - scy) ** 2 > search_radius ** 2:
-            continue
-        light_r = max(3.0, r * center_frac)
-        dist_sq = (xx - x) ** 2 + (yy - y) ** 2
-        center_mask = dist_sq <= light_r ** 2
-        ring_mask = (dist_sq >= (r * ring_inner_frac) ** 2) & (dist_sq <= (r * ring_outer_frac) ** 2)
-        if not center_mask.any() or not ring_mask.any():
-            continue
-        score = float(np.mean(gray[center_mask])) - float(np.mean(gray[ring_mask]))
-        if score > best_score:
-            best_score, best_pos = score, (x, y)
-
-    if best_pos is None or best_score < min_score:
-        return None
-    return best_pos
-"""
+    return candidates[0][1]
 
 
 def find_lit_blob(
@@ -174,7 +110,6 @@ def find_lit_blob(
     search to a window around the expected/locked position is what keeps
     this from being distracted by unrelated bright clutter elsewhere in a
     cluttered frame.
-
     The SAT/VAL gate alone isn't enough, though -- confirmed against real
     bench-test footage that plain indoor flooring can satisfy it over a huge,
     irregularly-shaped area (wood grain highlights, ambient glare), which
@@ -186,7 +121,6 @@ def find_lit_blob(
     other fragment in that same frame scored well under this threshold too
     (0.16-0.53) -- i.e. the correct answer for that frame was "nothing
     qualifies", not "take the biggest one anyway".
-
     Returns (blob_x, blob_y, pixel_count) -- the lit blob's centroid and
     size -- or None if nothing large enough and round enough qualifies within
     the window.
@@ -195,13 +129,11 @@ def find_lit_blob(
     hsv = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2HSV)
     s, v = hsv[:, :, 1], hsv[:, :, 2]
     lit = ((s >= sat_min) & (v >= val_min)).astype(np.uint8) * 255
-
     window = np.zeros((h, w), dtype=np.uint8)
     cv2.circle(window, (int(round(search_center[0])), int(round(search_center[1]))),
                int(round(search_radius)), 255, thickness=-1)
     lit = cv2.bitwise_and(lit, window)
     lit = cv2.morphologyEx(lit, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
-
     contours, _ = cv2.findContours(lit, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     candidates = []
     for c in contours:
@@ -222,8 +154,6 @@ def find_lit_blob(
     if moments["m00"] == 0:
         return None
     return moments["m10"] / moments["m00"], moments["m01"] / moments["m00"], _area
-
-
 def _crop_to_mask_bbox(bgr_frame: np.ndarray, mask: np.ndarray):
     """
     Crop both the frame and the mask to the mask's bounding box. Shared by
@@ -231,7 +161,6 @@ def _crop_to_mask_bbox(bgr_frame: np.ndarray, mask: np.ndarray):
     saver (so what gets saved to disk is pixel-for-pixel what the
     classifier saw) -- single source of truth for "what region is this
     frame's classification actually based on".
-
     Returns (crop, crop_mask), or (None, None) if the mask is empty.
     """
     rows = np.any(mask > 0, axis=1)
@@ -241,8 +170,6 @@ def _crop_to_mask_bbox(bgr_frame: np.ndarray, mask: np.ndarray):
     rmin, rmax = np.where(rows)[0][[0, -1]]
     cmin, cmax = np.where(cols)[0][[0, -1]]
     return bgr_frame[rmin:rmax + 1, cmin:cmax + 1], mask[rmin:rmax + 1, cmin:cmax + 1]
-
-
 def classify_frame(bgr_frame: np.ndarray, mask: np.ndarray) -> Tuple[str, float, float, dict]:
     """
     Crop to the mask's bounding box (same crop-then-classify pattern
@@ -252,24 +179,18 @@ def classify_frame(bgr_frame: np.ndarray, mask: np.ndarray) -> Tuple[str, float,
     as the oblique-view pipeline, no reimplementation.
     """
     import beacon_detector_config as bdc
-
     crop, crop_mask = _crop_to_mask_bbox(bgr_frame, mask)
     if crop is None:
         return "unknown", 0.0, 0.0, {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0}
-
     color, color_conf, _light_mask, intensity, votes, *_ = bdc.classify_beacon_color(
         crop, seg_mask=crop_mask
     )
     return color, color_conf, intensity, votes
-
-
 _SOURCE_COLORS = {
     "detected": (0, 255, 0),     # green -- a lit blob was found this frame
     "locked":   (0, 255, 255),   # yellow -- reusing a previously-confirmed position (LED off this frame)
     "fallback": (0, 165, 255),   # orange -- no lock yet and nothing lit; pure geometric guess
 }
-
-
 def _save_debug_images(debug_image_dir: str, frame_idx: int, ts: float, frame: np.ndarray,
                        circle, color: str, source: str,
                        intensity: float = None, color_conf: float = None) -> None:
@@ -291,7 +212,6 @@ def _save_debug_images(debug_image_dir: str, frame_idx: int, ts: float, frame: n
     """
     os.makedirs(debug_image_dir, exist_ok=True)
     tag = f"frame_{frame_idx:04d}_{ts:.3f}_{color}_{source}"
-
     bx, by, br = circle
     outline_color = _SOURCE_COLORS.get(source, (255, 255, 255))
     overlay = frame.copy()
@@ -305,13 +225,34 @@ def _save_debug_images(debug_image_dir: str, frame_idx: int, ts: float, frame: n
         label += f" cc={color_conf:.2f}"
     cv2.putText(overlay, label, (8, 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, outline_color, 1, cv2.LINE_AA)
     cv2.imwrite(os.path.join(debug_image_dir, f"{tag}_overlay.png"), overlay)
-
     mask = np.zeros(frame.shape[:2], dtype=np.uint8)
     cv2.circle(mask, (int(round(bx)), int(round(by))), int(round(br)), 255, thickness=-1)
     crop, crop_mask = _crop_to_mask_bbox(frame, mask)
     if crop is not None:
         cv2.imwrite(os.path.join(debug_image_dir, f"{tag}_crop.png"), crop)
         cv2.imwrite(os.path.join(debug_image_dir, f"{tag}_mask.png"), crop_mask)
+def _save_housing_diagnostics(debug_image_dir, frame_idx, ts, frame,
+                              housing, blob, circle, source):
+    """Diagnostic overlay: blue housing, green LED blob, yellow ROI."""
+    os.makedirs(debug_image_dir, exist_ok=True)
+    overlay = frame.copy()
+    x, y, r = circle
+    cv2.circle(overlay, (round(x), round(y)), round(r), (0, 255, 255), 2)
+    if housing is not None:
+        hx, hy = housing
+        cv2.drawMarker(overlay, (round(hx), round(hy)), (255, 0, 0),
+                       cv2.MARKER_CROSS, 24, 2)
+        cv2.putText(overlay, "HOUSING", (round(hx)+12, round(hy)-8),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 0, 0), 2)
+    if blob is not None:
+        lx, ly, _area = blob
+        cv2.drawMarker(overlay, (round(lx), round(ly)), (0, 255, 0),
+                       cv2.MARKER_CROSS, 16, 2)
+    cv2.putText(overlay, "blue=housing green=LED yellow=ROI " + source,
+                (8, 36), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                (255, 255, 255), 2)
+    tag = f"frame_{frame_idx:04d}_{ts:.3f}"
+    cv2.imwrite(os.path.join(debug_image_dir, tag + "_diagnostic.png"), overlay)
 
 
 def classify_beacon_downward(
@@ -323,7 +264,6 @@ def classify_beacon_downward(
 ) -> dict:
     """
     One-shot downward-camera beacon classification.
-
     frame_source:      iterable of (timestamp, bgr_frame) pairs, spanning
                         roughly duration_s seconds -- caller-supplied so this
                         function has no ROS dependency of its own.
@@ -366,7 +306,6 @@ def classify_beacon_downward(
                         caller (e.g. a multi-beacon mission script) wants the
                         result tagged with which beacon in the mission this
                         was.
-
     Returns a dict matching this repo's standard detection JSON shape:
         {"color", "blink": {"is_blinking","blink_color","blink_hz","phase"},
          "gps_position": {"latitude","longitude","altitude"} | None,
@@ -374,12 +313,10 @@ def classify_beacon_downward(
     """
     import beacon_detector_config as bdc
     bdc._apply_color_config(detection_cfg)
-
     fx, fy = downward_cam_cfg["fx"], downward_cam_cfg["fy"]
     cx, cy = downward_cam_cfg["cx"], downward_cam_cfg["cy"]
     beacon_height_m = downward_cam_cfg["beacon_height_m"]
     beacon_diam_m   = downward_cam_cfg["beacon_top_diameter_m"]
-
     depth_m = drone_height_agl - beacon_height_m
     if depth_m <= 0:
         raise ValueError(
@@ -390,96 +327,83 @@ def classify_beacon_downward(
         expected_radius_px_override if expected_radius_px_override is not None
         else expected_pixel_radius(fx, fy, depth_m, beacon_diam_m)
     )
-
     blink_detector = BlinkDetector()
     blink_result = {"is_blinking": None, "blink_color": "unknown", "blink_hz": None, "phase": "unknown"}
     last_color  = "unknown"
     last_circle = None   # (bx, by, br) px, from the most recent sampled position
     n_used = 0
-
-    # Housing localization: find_disc() locates the beacon's housing --
-    # large, circular, nearly achromatic -- which works every frame
-    # regardless of whether the LED is lit (see module docstring for why
-    # relying on the LED alone, or on the disc's brightness, both failed
-    # against real footage). Located once and persisted for the rest of the
-    # sampling window rather than re-searched every frame, same reasoning as
-    # before: the drone/beacon are both essentially static while hovering,
-    # so re-locating it every frame only risks frame-to-frame jitter between
-    # similarly-plausible low-saturation spots for no benefit.
-    #
-    # disc_search_radius is generous -- find_disc() needs room to locate the
-    # housing even if the drone/camera isn't perfectly centred over it. This
-    # is deliberately NOT scaled down for a small radius_px (e.g. a
-    # height-derived radius at typical hover altitude is much smaller than a
-    # bench-test --expected-radius-px override): it represents how far off
-    # center the hover/test framing might be, not how big the disc itself
-    # is -- measured directly against real footage where the disc sat ~100-
-    # 150px from the frame's geometric center despite a radius_px of only
-    # ~25. lit_search_radius is tight -- once the housing is found,
-    # find_lit_blob() only needs to look inside it for the actual LED, which
-    # structurally excludes the floor around it rather than merely
-    # out-thresholding it.
+    # Housing center is the authoritative beacon position. An LED glint
+    # never overwrites it. Reacquire every five frames, with local search
+    # near the previous center to reduce jumps between similar objects.
     disc_pos = None
+    last_verified_frame = None
     disc_search_radius = max(radius_px * 1.5, 150.0)
-    lit_search_radius  = max(radius_px * 1.1, 20.0)
-
-    locked_pos = None
-    # Now that find_lit_blob()'s search window is scoped tightly to the
-    # housing itself, a real LED glint can be a small fraction of the full
-    # disc's area -- no longer needs a size floor sized to exclude a
-    # whole-floor false positive (that's find_disc()'s/the tight window's
-    # job now).
-    min_blob_pixels = max(20, 0.01 * np.pi * radius_px ** 2)
+    #disc_search_radius = 1280.0
+    lit_search_radius = max(radius_px * 0.65, 12.0)
+    min_blob_pixels = max(20, 0.01 * np.pi * radius_px**2)
+    reacquire_every = 5
+    max_stale_frames = 10
 
     def _classify_at(frame, bx, by):
         mask = np.zeros(frame.shape[:2], dtype=np.uint8)
-        cv2.circle(mask, (int(round(bx)), int(round(by))), int(round(radius_px)), 255, thickness=-1)
+        cv2.circle(mask, (int(round(bx)), int(round(by))),
+                   int(round(radius_px)), 255, thickness=-1)
         return classify_frame(frame, mask)
 
     for frame_idx, (ts, frame) in enumerate(frame_source):
-        if disc_pos is None:
-            disc_pos = find_disc(frame, (cx, cy), disc_search_radius, radius_px)
-
-        if disc_pos is not None:
-            lit_center, lit_radius = disc_pos, lit_search_radius
-        else:
-            lit_center, lit_radius = (cx, cy), disc_search_radius
-
-        blob = find_lit_blob(frame, lit_center, lit_radius, min_pixels=min_blob_pixels)
-
-        color = color_conf = intensity = None
-        if blob is not None:
-            bx, by, _area = blob
-            # A blob just means "something passed a loose SAT/VAL check" --
-            # mundane clutter can too. Only trust it enough to (re)lock the
-            # position if it actually classifies as a real target color, not
-            # "unknown"/"white".
-            cand_color, cand_conf, cand_intensity, _votes = _classify_at(frame, bx, by)
-            if cand_color in ("red", "green", "blue"):
-                locked_pos = (bx, by)
-                color, color_conf, intensity = cand_color, cand_conf, cand_intensity
-                source = "detected"
-
-        if color is None:
-            if locked_pos is not None:
-                bx, by = locked_pos
-                source = "locked"
-            elif disc_pos is not None:
-                bx, by = disc_pos
-                source = "fallback"
+        new_detection = None
+        # Try initial acquisition on every frame, or local reacquisition
+        # every fifth frame once localized.
+        if disc_pos is None or frame_idx % reacquire_every == 0:
+            if disc_pos is None:
+                center, search = (cx, cy), disc_search_radius
             else:
-                bx, by = cx, cy
-                source = "fallback"
+                center = disc_pos
+                search = max(25.0, radius_px * 0.75)
+            
+            print(
+                f"FRAME={frame.shape[1]}x{frame.shape[0]} "
+                f"CX={cx} CY={cy} "
+                f"RADIUS={radius_px:.1f} "
+                f"SEARCH={search:.1f}"
+            )
+            
+            new_detection = find_disc(frame, center, search, radius_px)
+            if new_detection is not None:
+                disc_pos = new_detection
+                last_verified_frame = frame_idx
+
+        if (last_verified_frame is not None and
+                frame_idx - last_verified_frame > max_stale_frames):
+            disc_pos = None
+
+        # Never use arbitrary bright blobs to establish housing localization.
+        # Color can still be sampled at the geometric center, but if no
+        # housing is localized the output GPS position remains None.
+        if disc_pos is not None:
+            bx, by = disc_pos
+            blob = find_lit_blob(frame, disc_pos, lit_search_radius,
+                                 min_pixels=min_blob_pixels)
             color, color_conf, intensity, _votes = _classify_at(frame, bx, by)
+            source = "detected" if new_detection is not None else "locked"
+        else:
+            bx, by = cx, cy
+            blob = None
+            color, color_conf, intensity = "unknown", 0.0, 0.0
+            source = "fallback"
 
         circle = (bx, by, radius_px)
         blink_result = blink_detector.update(ts, color, intensity, color_conf)
-        last_color  = color
-        last_circle = circle
+        last_color = color
+        # Keep the last *verified* housing location for GPS back-projection;
+        # an arbitrary center fallback must never produce coordinates.
+        last_circle = circle if disc_pos is not None else None
         n_used += 1
         if debug_image_dir:
-            _save_debug_images(debug_image_dir, frame_idx, ts, frame, circle, color,
-                               source, intensity, color_conf)
+            _save_debug_images(debug_image_dir, frame_idx, ts, frame, circle,
+                               color, source, intensity, color_conf)
+            _save_housing_diagnostics(debug_image_dir, frame_idx, ts, frame,
+                                      disc_pos, blob, circle, source)
 
     gps_position = None
     world_position = None
@@ -524,4 +448,3 @@ def classify_beacon_downward(
         "timestamp": time.time(),
         "n_frames_used": n_used,
     }
-
