@@ -170,22 +170,47 @@ def _crop_to_mask_bbox(bgr_frame: np.ndarray, mask: np.ndarray):
     rmin, rmax = np.where(rows)[0][[0, -1]]
     cmin, cmax = np.where(cols)[0][[0, -1]]
     return bgr_frame[rmin:rmax + 1, cmin:cmax + 1], mask[rmin:rmax + 1, cmin:cmax + 1]
-def classify_frame(bgr_frame: np.ndarray, mask: np.ndarray) -> Tuple[str, float, float, dict]:
+def classify_frame(bgr_frame: np.ndarray, mask: np.ndarray) -> Tuple[str, float, float, dict, dict]:
     """
     Crop to the mask's bounding box (same crop-then-classify pattern
     beacon_detector_config.isolate_and_classify() uses) and reuse
     beacon_detector_config.classify_beacon_color() for the actual hue-vote
     decision, passing our circle mask as seg_mask -- same thresholds/logic
     as the oblique-view pipeline, no reimplementation.
+
+    The 5th return value, hue_stats, carries the same per-frame hue
+    median/mean/mode/variance/min/max/n that classify_beacon_color() already
+    computes and prints to stdout on every call -- previously discarded here
+    (via `*_`), so that data only ever existed as terminal scrollback, never
+    in the per-run JSON result or the CSV log. Returning it lets the caller
+    log it per frame instead.
     """
     import beacon_detector_config as bdc
+    empty_votes = {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0}
+    empty_hue_stats = {"median": 0.0, "mean": 0.0, "mode": 0.0, "variance": 0.0, "min": 0.0, "max": 0.0, "n": 0}
     crop, crop_mask = _crop_to_mask_bbox(bgr_frame, mask)
     if crop is None:
-        return "unknown", 0.0, 0.0, {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0}
-    color, color_conf, _light_mask, intensity, votes, *_ = bdc.classify_beacon_color(
+        return "unknown", 0.0, 0.0, empty_votes, empty_hue_stats
+    color, color_conf, _light_mask, intensity, votes, hue_var, hue_mean, hue_median, hue_mode = bdc.classify_beacon_color(
         crop, seg_mask=crop_mask
     )
-    return color, color_conf, intensity, votes
+    # _light_mask already reflects classify_beacon_color()'s own refinement
+    # (seg_mask intersected, then narrowed to the single best blob-shaped
+    # contour) -- the exact same pixels its hue_var/mean/median/mode were
+    # computed from, so reusing it here (rather than re-deriving a mask)
+    # guarantees min/max describe that identical pixel set.
+    n_lit = int(np.count_nonzero(_light_mask))
+    if n_lit > 0:
+        hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+        lit_hues = hsv[:, :, 0][_light_mask > 0]
+        hue_min, hue_max = float(lit_hues.min()), float(lit_hues.max())
+    else:
+        hue_min = hue_max = 0.0
+    hue_stats = {
+        "median": hue_median, "mean": hue_mean, "mode": hue_mode,
+        "variance": hue_var, "min": hue_min, "max": hue_max, "n": n_lit,
+    }
+    return color, color_conf, intensity, votes, hue_stats
 _SOURCE_COLORS = {
     "detected": (0, 255, 0),     # green -- a lit blob was found this frame
     "locked":   (0, 255, 255),   # yellow -- reusing a previously-confirmed position (LED off this frame)
@@ -332,6 +357,12 @@ def classify_beacon_downward(
     last_color  = "unknown"
     last_circle = None   # (bx, by, br) px, from the most recent sampled position
     n_used = 0
+    # One record per sampled frame -- the same intensity/hue data
+    # classify_beacon_color() already prints to stdout on every call, kept
+    # here instead of only ever existing as terminal scrollback, so the
+    # caller can write it to a CSV log alongside this run's ground truth.
+    # Popped from the result dict before publishing, same as n_frames_used.
+    frame_log = []
     # Housing center is the authoritative beacon position. An LED glint
     # never overwrites it. Reacquire every five frames, with local search
     # near the previous center to reduce jumps between similar objects.
@@ -380,16 +411,19 @@ def classify_beacon_downward(
         # Never use arbitrary bright blobs to establish housing localization.
         # Color can still be sampled at the geometric center, but if no
         # housing is localized the output GPS position remains None.
+        _empty_votes = {"red": 0.0, "green": 0.0, "blue": 0.0, "other": 0.0}
+        _empty_hue_stats = {"median": 0.0, "mean": 0.0, "mode": 0.0, "variance": 0.0, "min": 0.0, "max": 0.0, "n": 0}
         if disc_pos is not None:
             bx, by = disc_pos
             blob = find_lit_blob(frame, disc_pos, lit_search_radius,
                                  min_pixels=min_blob_pixels)
-            color, color_conf, intensity, _votes = _classify_at(frame, bx, by)
+            color, color_conf, intensity, votes, hue_stats = _classify_at(frame, bx, by)
             source = "detected" if new_detection is not None else "locked"
         else:
             bx, by = cx, cy
             blob = None
             color, color_conf, intensity = "unknown", 0.0, 0.0
+            votes, hue_stats = _empty_votes, _empty_hue_stats
             source = "fallback"
 
         circle = (bx, by, radius_px)
@@ -399,6 +433,13 @@ def classify_beacon_downward(
         # an arbitrary center fallback must never produce coordinates.
         last_circle = circle if disc_pos is not None else None
         n_used += 1
+        frame_log.append({
+            "frame_idx": frame_idx, "timestamp": ts, "source": source,
+            "bx": bx, "by": by, "color": color, "color_conf": color_conf,
+            "intensity": intensity, **{f"hue_{k}": v for k, v in hue_stats.items()},
+            "vote_red": votes["red"], "vote_green": votes["green"],
+            "vote_blue": votes["blue"], "vote_other": votes["other"],
+        })
         if debug_image_dir:
             _save_debug_images(debug_image_dir, frame_idx, ts, frame, circle,
                                color, source, intensity, color_conf)
@@ -447,4 +488,5 @@ def classify_beacon_downward(
         "tracking_id":  tracking_id,
         "timestamp": time.time(),
         "n_frames_used": n_used,
+        "frame_log": frame_log,
     }
