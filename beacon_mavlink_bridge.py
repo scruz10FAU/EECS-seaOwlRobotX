@@ -48,7 +48,11 @@ class BeaconMavlinkBridge(Node):
         self._lock = threading.Lock()
 
         self.get_logger().info(f"Connecting to MAVLink endpoint: {mavlink_endpoint}")
-        self._mav = mavutil.mavlink_connection(mavlink_endpoint)
+        self._mav = mavutil.mavlink_connection(
+            mavlink_endpoint,
+            source_system=1,
+            source_component=191
+        )
 
         self.create_subscription(String, detections_topic, self._on_detection, 10)
         self.get_logger().info(f"Subscribed to {detections_topic} — relaying to MAVLink")

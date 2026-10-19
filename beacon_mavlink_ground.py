@@ -20,6 +20,8 @@ machine -- otherwise no ROS dependency at all, matching the rest of this
 script's design (nothing here needs ROS by default).
 
 Usage:
+IN WSL:
+    python3 beacon_mavlink_ground.py --mavlink-endpoint udpin:127.0.0.1:14551 --baud 460800
     python3 beacon_mavlink_ground.py --mavlink-endpoint udpin:0.0.0.0:14550
     python3 beacon_mavlink_ground.py --mavlink-endpoint /dev/ttyUSB0 --baud 57600
     python3 beacon_mavlink_ground.py --mavlink-endpoint udpin:0.0.0.0:14550 --publish-ros
