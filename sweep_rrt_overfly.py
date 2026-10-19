@@ -433,7 +433,7 @@ def classify_state(det: dict) -> str:
     Returns a STATE_* key, or "" if the blink status is not yet definitive
     (is_blinking is None) so the caller keeps hovering to confirm.
     """
-    result = classify_beacon_downward_once(cfg, duration=6.0, tracking_id=beacon_index)
+    result = classify_beacon_downward_once(cfg, duration=6.0, tracking_id=-1)
     color, is_blinking = result["color"], result["blink"]
     #color = det.get("color", "")
     #blink = det.get("blink") or {}
