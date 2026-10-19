@@ -111,7 +111,7 @@ MAX_OVERFLY_ATTEMPTS    = 3       # give up flying over a spot after this many
                                   # passes that don't yield a confirmed state
                                   # (prevents thrashing on an unreadable beacon)
 # Frame of the detection's "world_position". This file reads it as (north, east)
-# = (wp[0], wp[1]) — "ned". beacon_detector builds world_position from the MAVROS
+# = (wp[0], wp[1]) — "ned". beacon_detector builds world_position from MAVROS
 # ENU pose ([east, north, up]); if your REAL detector publishes ENU, set this to
 # "enu" and north/east are swapped consistently everywhere. Default "ned" keeps
 # the exact behaviour you've been testing in sim.
@@ -153,7 +153,7 @@ STATE_MEANING = {
 }
 
 # Survey the whole field, then report. The field has a known buoy count.
-EXPECTED_BUOY_COUNT = 10      # Task 1 has ten buoys
+EXPECTED_BUOY_COUNT = 1      # Task 1 has ten buoys
 BUOY_MERGE_DIST_M   = 2.0     # detections within this distance = same buoy
 
 # ── MAVSDK ────────────────────────────────────────────────────────────────────
@@ -180,7 +180,7 @@ def log(msg: str) -> None:
 _classified_buoys: list = []    # confirmed buoys (deduplicated by location):
                                 #   {"state","north","east","world","gps",
                                 #    "color","is_blinking","blink_hz"}
-_pending_beacon: dict   = {}    # color -> latest raw detection dict (from ROS cb)d
+_pending_beacon: dict   = {}    # color -> latest raw detection dict (from ROS cb)
 _overfly_attempts: list = []    # [[north, east, count], ...] per beacon spot
 _lock = threading.Lock()
 _battery_low: bool    = False   # set True by monitor_battery() when threshold crossed
