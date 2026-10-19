@@ -157,7 +157,7 @@ EXPECTED_BUOY_COUNT = 10      # Task 1 has ten buoys
 BUOY_MERGE_DIST_M   = 2.0     # detections within this distance = same buoy
 
 # ── MAVSDK ────────────────────────────────────────────────────────────────────
-MAVSDK_ADDRESS              = "udpin://0.0.0.0:14550"
+MAVSDK_ADDRESS              = "udpin://0.0.0.0:14551"
 BENCH_TEST                  = False
 MAVSDK_CONNECT_TIMEOUT_S    = 10.0
 PX4_HEARTBEAT_TIMEOUT_S     = 20.0
@@ -180,7 +180,7 @@ def log(msg: str) -> None:
 _classified_buoys: list = []    # confirmed buoys (deduplicated by location):
                                 #   {"state","north","east","world","gps",
                                 #    "color","is_blinking","blink_hz"}
-_pending_beacon: dict   = {}    # color -> latest raw detection dict (from ROS cb)
+_pending_beacon: dict   = {}    # color -> latest raw detection dict (from ROS cb)d
 _overfly_attempts: list = []    # [[north, east, count], ...] per beacon spot
 _lock = threading.Lock()
 _battery_low: bool    = False   # set True by monitor_battery() when threshold crossed
