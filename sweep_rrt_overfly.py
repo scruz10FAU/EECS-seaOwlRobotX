@@ -435,9 +435,9 @@ def classify_state(det: dict) -> str:
     """
     result = classify_beacon_downward_once(cfg, duration=6.0, tracking_id=beacon_index)
     color, is_blinking = result["color"], result["blink"]
-    color = det.get("color", "")
-    blink = det.get("blink") or {}
-    is_blinking = blink.get("is_blinking")   # True / False / None(uncertain)
+    #color = det.get("color", "")
+    #blink = det.get("blink") or {}
+    #is_blinking = blink.get("is_blinking")   # True / False / None(uncertain)
 
     if is_blinking is None:
         return ""                            # not confirmed yet
