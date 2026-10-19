@@ -54,7 +54,7 @@
   },  
   
   "downward_camera": {
-    "image_topic":      "/hires_front_small_color",
+    "image_topic":      "/hires_down_small_color",
     "focal_length_mm":  2.1,
     "h_aperture_mm":    6.0,
     "v_aperture_mm":    4.5,
