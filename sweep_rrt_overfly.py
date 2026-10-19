@@ -58,7 +58,7 @@ from visualization_msgs.msg import Marker
 from std_msgs.msg import ColorRGBA
 
 import beacon_detector_config as bdc
-from dowwnward_beacon_classifier_node import classify_beacon_downward_once
+from downward_beacon_classifier_node import classify_beacon_downward_once
 cfg = bdc.load_config("configs/modal_config.json")
 
 try:
@@ -427,13 +427,18 @@ async def hold_position(drone: System, north: float, east: float,
 
 # ── Detection helpers ─────────────────────────────────────────────────────────
 
-def classify_state(det: dict) -> str:
+async def classify_state(det: dict) -> str:
     """
     Map a raw detection dict to one of the five RobotX Task 1 states.
     Returns a STATE_* key, or "" if the blink status is not yet definitive
     (is_blinking is None) so the caller keeps hovering to confirm.
     """
-    result = classify_beacon_downward_once(cfg, duration=6.0, tracking_id=-1)
+    
+    try:
+        result = await asyncio.to_thread(classify_beacon_downward_once, cfg, duration=8.0, tracking_id=-1)
+    except ValueError as e:
+        log(f"[rrt] ⚠ downward classification failed: {e}")
+        return ""   # same "not confirmed yet" return used elsewhere in this function
     color, is_blinking = result["color"], result["blink"]
     #color = det.get("color", "")
     #blink = det.get("blink") or {}
@@ -942,7 +947,7 @@ async def process_detections_here(drone: System, at_n: float, at_e: float,
                 _pending_beacon.pop(color, None)
             continue
 
-        state = classify_state(det)
+        state = await classify_state(det)
         if not state:
             log(f"[rrt]   … '{color}' state unconfirmed (is_blinking=None), will retry")
             with _lock:
