@@ -42,6 +42,12 @@ _DEFAULT_TOPICS = {
     "gps_origin":     "/mavros/global_position/gp_origin",
     "detections_pub": "/seabird/beacon_detections",
     "aruco_pub":      "/seabird/aruco_ground_truth",
+    # Separate from detections_pub -- the downward classifier's schema
+    # (flat: gps_position/blink/blink_color/blink_hz/phase/color/tracking_id)
+    # differs from the oblique pipeline's (bbox/position_3d/world_position/
+    # det_confidence/etc.), so a subscriber expecting one shape shouldn't
+    # silently receive the other.
+    "downward_detections_pub": "/seabird/beacon_detections_downward",
 }
 
 def _merge_topics(raw: dict) -> dict:

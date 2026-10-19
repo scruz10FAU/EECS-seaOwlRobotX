@@ -39,7 +39,7 @@ from utils.beacon_mavlink_protocol import (
 )
 
 DEFAULT_MAVLINK_ENDPOINT = "udp://:14540"   # matches sweep_lawnmower.py's sim MAVSDK_ADDRESS
-DEFAULT_DETECTIONS_TOPIC = "/seabird/beacon_detections"
+DEFAULT_DETECTIONS_TOPIC = "/seabird/beacon_detections_downward"
 
 
 class BeaconMavlinkBridge(Node):

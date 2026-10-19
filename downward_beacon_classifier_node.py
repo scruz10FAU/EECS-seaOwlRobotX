@@ -13,10 +13,13 @@ pose/GPS pipeline. Only the downward image subscription
 (_DownwardImageGrabber below) is new; the actual classification logic lives
 in utils/downward_beacon_classifier.py (pure, no ROS dependency).
 
-Publishes one result to topics.detections_pub using the same JSON schema the
-rest of the pipeline uses (color, blink, gps_position, world_position), so
-it's immediately usable by beacon_mavlink_bridge.py and anything else
-already consuming that topic.
+Publishes one result to topics.downward_detections_pub (default
+/seabird/beacon_detections_downward) -- deliberately NOT topics.detections_pub,
+which the oblique forward-camera pipeline uses for a different JSON shape
+(bbox/position_3d/world_position/det_confidence/etc.); this classifier's
+result is a flatter schema (gps_position, blink, blink_color, blink_hz,
+phase, color, tracking_id, timestamp), so a subscriber expecting one
+shouldn't silently receive the other.
 
 Usage:
     python3 downward_beacon_classifier_node.py --config configs/my_config.json
@@ -134,7 +137,7 @@ class _DownwardImageGrabber(Node):
     BeaconCamera -- no depth sync, no pose/gps, no detector backend.
     """
 
-    def __init__(self, image_topic: str, max_sample_hz: float = None):
+    def __init__(self, image_topic: str, max_sample_hz: float = None, detections_topic: str = None):
         """
         max_sample_hz: if set, drop frames arriving sooner than 1/max_sample_hz
         after the last one kept, instead of buffering every frame the topic
@@ -145,6 +148,11 @@ class _DownwardImageGrabber(Node):
         volume, and total CV work for a run, all proportionally to how far
         above max_sample_hz the native rate is. None (default) keeps every
         frame, same as before.
+        detections_topic: if set, creates self.detection_pub here -- a
+        publisher dedicated to this classifier's own result schema, deliberately
+        separate from the oblique pipeline's topics.detections_pub (different
+        JSON shape; see topics.downward_detections_pub in beacon_detector_config.py).
+        None (default) leaves self.detection_pub unset.
         """
         super().__init__("downward_image_grabber")
         self._frames = []
@@ -157,6 +165,10 @@ class _DownwardImageGrabber(Node):
         )
         self.create_subscription(Image, image_topic, self._on_image, qos)
         self.get_logger().info(f"Subscribed to downward camera: {image_topic}")
+
+        self.detection_pub = None
+        if detections_topic:
+            self.detection_pub = self.create_publisher(String, detections_topic, 10)
 
     def _on_image(self, msg: Image) -> None:
         ts = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
@@ -295,7 +307,10 @@ def setup_downward_classifier(cfg: dict, max_sample_hz: float = None, pose_wait_
 
     pose_source = bdc._make_beacon_camera(cfg["topics"], cfg["camera"], cfg["detection"])
     pose_source.open_for_video()  # pose + GPS only, no image/depth sync
-    image_grabber = _DownwardImageGrabber(down_cfg["image_topic"], max_sample_hz=max_sample_hz)
+    image_grabber = _DownwardImageGrabber(
+        down_cfg["image_topic"], max_sample_hz=max_sample_hz,
+        detections_topic=cfg["topics"]["downward_detections_pub"],
+    )
     if max_sample_hz:
         print(f"[downward] Sampling downward camera frames at up to {max_sample_hz:.1f} Hz")
 
@@ -412,10 +427,10 @@ def classify_beacon_downward_once(
             if n_frames_used > 0:
                 msg = String()
                 msg.data = json.dumps(result)
-                pose_source.detection_pub.publish(msg)
-                print(f"[downward] Published to {cfg['topics']['detections_pub']}")
-                # detection_pub uses the default VOLATILE durability (see
-                # _ConfiguredBeaconCamera in beacon_detector_config.py) -- a
+                image_grabber.detection_pub.publish(msg)
+                print(f"[downward] Published to {cfg['topics']['downward_detections_pub']}")
+                # detection_pub (created in _DownwardImageGrabber.__init__) uses
+                # the default VOLATILE durability (no explicit QoSProfile) -- a
                 # subscriber only receives messages published *after* it finishes
                 # connecting, nothing is replayed. Since this script publishes
                 # exactly once, a listener that isn't already up and discovered
