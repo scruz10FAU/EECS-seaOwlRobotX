@@ -266,6 +266,177 @@ def classify_beacon_at_current_position(
     )
 
 
+def setup_downward_classifier(cfg: dict, max_sample_hz: float = None, pose_wait_timeout: float = 15.0):
+    """
+    Stand up the pose/GPS source and downward-image subscriber needed for a
+    classification pass, and wait up to pose_wait_timeout seconds for pose
+    data to arrive. Factored out of main() so an importable one-shot entry
+    point (classify_beacon_downward_once()) and the CLI can share it.
+
+    Safe to call whether or not the calling process already has its own
+    active rclpy context (e.g. a mission script running its own ROS node on
+    a background thread) -- only calls rclpy.init() if rclpy.ok() is
+    currently False. The returned owns_rclpy flag tells the caller whether
+    IT is responsible for eventually calling rclpy.shutdown() (via
+    teardown_downward_classifier()) -- never tear down a context this call
+    didn't create, or you'll kill the caller's own ROS node out from under
+    it.
+
+    Returns (pose_source, image_grabber, owns_rclpy).
+    """
+    down_cfg = cfg["downward_camera"]
+    if not down_cfg.get("image_topic"):
+        raise ValueError("downward_camera.image_topic is not set in the config")
+
+    bdc._import_ros()  # populates beacon_detector_config._BeaconCameraBase
+    owns_rclpy = not rclpy.ok()
+    if owns_rclpy:
+        rclpy.init()
+
+    pose_source = bdc._make_beacon_camera(cfg["topics"], cfg["camera"], cfg["detection"])
+    pose_source.open_for_video()  # pose + GPS only, no image/depth sync
+    image_grabber = _DownwardImageGrabber(down_cfg["image_topic"], max_sample_hz=max_sample_hz)
+    if max_sample_hz:
+        print(f"[downward] Sampling downward camera frames at up to {max_sample_hz:.1f} Hz")
+
+    print(f"[downward] Waiting up to {pose_wait_timeout:.0f}s for GPS origin / AGL height...")
+    if not _wait_for_pose_data(pose_source, pose_wait_timeout):
+        print("[downward] GPS origin and/or AGL height didn't arrive in time -- "
+              "continuing with fallback value(s) where needed")
+
+    return pose_source, image_grabber, owns_rclpy
+
+
+def teardown_downward_classifier(pose_source, image_grabber, owns_rclpy: bool) -> None:
+    """
+    Destroy the nodes setup_downward_classifier() created. Only calls
+    rclpy.shutdown() if owns_rclpy is True -- i.e. this classification pass
+    was the one that initialized rclpy -- so a caller with its own
+    already-active ROS node never has its context torn down from under it.
+    """
+    pose_source.destroy_node()
+    image_grabber.destroy_node()
+    if owns_rclpy:
+        rclpy.shutdown()
+
+
+def classify_beacon_downward_once(
+    cfg: dict, duration: float = None, max_sample_hz: float = None,
+    pose_wait_timeout: float = None, fallback_latitude: float = None,
+    fallback_longitude: float = None, fallback_altitude: float = None,
+    fallback_height_agl: float = None, save_debug_images: str = None,
+    expected_radius_px: float = None, tracking_id: int = None,
+    log_file: str = None, publish: bool = True,
+) -> dict:
+    """
+    Importable one-shot entry point: run a single downward-camera
+    classification pass and return the result dict directly -- for another
+    script (e.g. a mission/sweep script, once it's hovering over a beacon)
+    to call in-process, without going through a subprocess or needing to
+    parse the published topic itself.
+
+    Every parameter defaults to None and is resolved against
+    cfg["downward_test"] exactly like the CLI's own flags are (see
+    beacon_detector_config.py's _DEFAULT_DOWNWARD_TEST) -- pass a value here
+    to override that config's default for this one call.
+
+    Safe to call whether or not the calling process already has its own
+    active rclpy context elsewhere (see setup_downward_classifier()). Each
+    call creates and fully destroys its own pose/image nodes, so repeated
+    calls (e.g. once per beacon across a mission) don't collide.
+
+    Raises ValueError if downward_camera.image_topic isn't set, or if the
+    resolved fallback_height_agl doesn't exceed downward_camera.beacon_height_m
+    -- raising (rather than printing + silently returning, as main() did
+    before this was factored out) so a caller can't mistake a config error
+    for a legitimate "nothing found" result.
+    """
+    down_cfg = cfg["downward_camera"]
+    test_cfg = cfg["downward_test"]
+
+    def _resolved(name, value):
+        return value if value is not None else test_cfg[name]
+
+    duration             = _resolved("duration", duration)
+    max_sample_hz         = _resolved("max_sample_hz", max_sample_hz)
+    pose_wait_timeout     = _resolved("pose_wait_timeout", pose_wait_timeout)
+    fallback_latitude     = _resolved("fallback_latitude", fallback_latitude)
+    fallback_longitude    = _resolved("fallback_longitude", fallback_longitude)
+    fallback_altitude     = _resolved("fallback_altitude", fallback_altitude)
+    fallback_height_agl   = _resolved("fallback_height_agl", fallback_height_agl)
+    save_debug_images     = _resolved("save_debug_images", save_debug_images)
+    expected_radius_px    = _resolved("expected_radius_px", expected_radius_px)
+    tracking_id           = _resolved("tracking_id", tracking_id)
+    log_file              = _resolved("log_file", log_file)
+
+    if fallback_height_agl <= down_cfg["beacon_height_m"]:
+        raise ValueError(
+            f"fallback_height_agl ({fallback_height_agl:.2f}m) must exceed "
+            f"downward_camera.beacon_height_m ({down_cfg['beacon_height_m']:.2f}m) -- "
+            f"the drone must be above the beacon top"
+        )
+
+    if save_debug_images:
+        print(f"[downward] Saving debug images to {save_debug_images}/")
+    if expected_radius_px is not None:
+        print(f"[downward] Using expected-radius-px override: {expected_radius_px:.1f}px "
+              f"(ignoring height-derived sizing)")
+
+    pose_source, image_grabber, owns_rclpy = setup_downward_classifier(
+        cfg, max_sample_hz=max_sample_hz, pose_wait_timeout=pose_wait_timeout,
+    )
+    try:
+        print(f"[downward] Sampling downward camera for {duration:.1f}s...")
+        result = classify_beacon_at_current_position(
+            pose_source, image_grabber, cfg, duration,
+            fallback_gps_origin=(fallback_latitude, fallback_longitude, fallback_altitude),
+            fallback_height_agl=fallback_height_agl,
+            debug_image_dir=save_debug_images,
+            expected_radius_px_override=expected_radius_px,
+            tracking_id=tracking_id,
+        )
+        n_frames_used = result.pop("n_frames_used", None)
+        frame_log = result.pop("frame_log", [])
+
+        print(f"[downward] Result: {json.dumps(result, indent=2)}")
+
+        if log_file:
+            target_color, target_blinking = cfg.get("target_color"), cfg.get("target_blinking")
+            ts_tag = time.strftime("%Y%m%d_%H%M%S")
+            log_path = _build_log_path(log_file, target_color, target_blinking, ts_tag)
+            _write_log_row(log_path, result, target_color, target_blinking)
+            frames_path = _build_log_path(log_file, target_color, target_blinking, ts_tag, suffix="_frames")
+            _write_frame_log(frames_path, frame_log, target_color, target_blinking)
+
+        if publish:
+            if n_frames_used > 0:
+                msg = String()
+                msg.data = json.dumps(result)
+                pose_source.detection_pub.publish(msg)
+                print(f"[downward] Published to {cfg['topics']['detections_pub']}")
+                # detection_pub uses the default VOLATILE durability (see
+                # _ConfiguredBeaconCamera in beacon_detector_config.py) -- a
+                # subscriber only receives messages published *after* it finishes
+                # connecting, nothing is replayed. Since this script publishes
+                # exactly once, a listener that isn't already up and discovered
+                # before this call (ros2 topic echo started late, or started at
+                # nearly the same moment as this script) will simply never see it,
+                # regardless of whether classification succeeded. Spin briefly here
+                # so the message actually has time to flush over the wire and so a
+                # listener whose discovery was still completing gets a chance to
+                # receive it, before the node (and the publisher with it) is torn
+                # down immediately below.
+                t_end = time.time() + 1.0
+                while time.time() < t_end:
+                    rclpy.spin_once(pose_source, timeout_sec=0.1)
+            else:
+                print("[downward] No frames matched the expected circle -- nothing published")
+
+        return result
+    finally:
+        teardown_downward_classifier(pose_source, image_grabber, owns_rclpy)
+
+
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -329,102 +500,23 @@ def main():
     args = ap.parse_args()
 
     cfg = bdc.load_config(args.config)
-    down_cfg = cfg["downward_camera"]
-    test_cfg = cfg["downward_test"]
-
-    def _resolved(name):
-        cli_value = getattr(args, name)
-        return cli_value if cli_value is not None else test_cfg[name]
-
-    duration            = _resolved("duration")
-    max_sample_hz        = _resolved("max_sample_hz")
-    pose_wait_timeout    = _resolved("pose_wait_timeout")
-    fallback_latitude    = _resolved("fallback_latitude")
-    fallback_longitude   = _resolved("fallback_longitude")
-    fallback_altitude    = _resolved("fallback_altitude")
-    fallback_height_agl  = _resolved("fallback_height_agl")
-    save_debug_images    = _resolved("save_debug_images")
-    expected_radius_px   = _resolved("expected_radius_px")
-    tracking_id          = _resolved("tracking_id")
-    log_file             = _resolved("log_file")
-
-    if not down_cfg.get("image_topic"):
-        print("[downward] ERROR: downward_camera.image_topic is not set in the config")
-        return
-    if fallback_height_agl <= down_cfg["beacon_height_m"]:
-        print(f"[downward] ERROR: --fallback-height-agl ({fallback_height_agl:.2f}m) must "
-              f"exceed downward_camera.beacon_height_m ({down_cfg['beacon_height_m']:.2f}m) -- "
-              f"the drone must be above the beacon top")
-        return
-
-    bdc._import_ros()  # populates beacon_detector_config._BeaconCameraBase
-    rclpy.init()
-
-    pose_source = bdc._make_beacon_camera(cfg["topics"], cfg["camera"], cfg["detection"])
-    pose_source.open_for_video()  # pose + GPS only, no image/depth sync
-    image_grabber = _DownwardImageGrabber(down_cfg["image_topic"], max_sample_hz=max_sample_hz)
-    if max_sample_hz:
-        print(f"[downward] Sampling downward camera frames at up to {max_sample_hz:.1f} Hz")
-
-    print(f"[downward] Waiting up to {pose_wait_timeout:.0f}s for GPS origin / AGL height...")
-    if not _wait_for_pose_data(pose_source, pose_wait_timeout):
-        print("[downward] GPS origin and/or AGL height didn't arrive in time -- "
-              "continuing with fallback value(s) where needed")
-
-    if save_debug_images:
-        print(f"[downward] Saving debug images to {save_debug_images}/")
-    if expected_radius_px is not None:
-        print(f"[downward] Using expected-radius-px override: {expected_radius_px:.1f}px "
-              f"(ignoring height-derived sizing)")
-
-    print(f"[downward] Sampling downward camera for {duration:.1f}s...")
-    result = classify_beacon_at_current_position(
-        pose_source, image_grabber, cfg, duration,
-        fallback_gps_origin=(fallback_latitude, fallback_longitude, fallback_altitude),
-        fallback_height_agl=fallback_height_agl,
-        debug_image_dir=save_debug_images,
-        expected_radius_px_override=expected_radius_px,
-        tracking_id=tracking_id,
-    )
-    n_frames_used = result.pop("n_frames_used", None)
-    frame_log = result.pop("frame_log", [])
-
-    print(f"[downward] Result: {json.dumps(result, indent=2)}")
-
-    if log_file:
-        target_color, target_blinking = cfg.get("target_color"), cfg.get("target_blinking")
-        ts_tag = time.strftime("%Y%m%d_%H%M%S")
-        log_path = _build_log_path(log_file, target_color, target_blinking, ts_tag)
-        _write_log_row(log_path, result, target_color, target_blinking)
-        frames_path = _build_log_path(log_file, target_color, target_blinking, ts_tag, suffix="_frames")
-        _write_frame_log(frames_path, frame_log, target_color, target_blinking)
-
-    if n_frames_used > 0:
-        msg = String()
-        msg.data = json.dumps(result)
-        pose_source.detection_pub.publish(msg)
-        print(f"[downward] Published to {cfg['topics']['detections_pub']}")
-        # detection_pub uses the default VOLATILE durability (see
-        # _ConfiguredBeaconCamera in beacon_detector_config.py) -- a
-        # subscriber only receives messages published *after* it finishes
-        # connecting, nothing is replayed. Since this script publishes
-        # exactly once, a listener that isn't already up and discovered
-        # before this call (ros2 topic echo started late, or started at
-        # nearly the same moment as this script) will simply never see it,
-        # regardless of whether classification succeeded. Spin briefly here
-        # so the message actually has time to flush over the wire and so a
-        # listener whose discovery was still completing gets a chance to
-        # receive it, before the node (and the publisher with it) is torn
-        # down immediately below.
-        t_end = time.time() + 1.0
-        while time.time() < t_end:
-            rclpy.spin_once(pose_source, timeout_sec=0.1)
-    else:
-        print("[downward] No frames matched the expected circle -- nothing published")
-
-    pose_source.destroy_node()
-    image_grabber.destroy_node()
-    rclpy.shutdown()
+    try:
+        classify_beacon_downward_once(
+            cfg,
+            duration=args.duration,
+            max_sample_hz=args.max_sample_hz,
+            pose_wait_timeout=args.pose_wait_timeout,
+            fallback_latitude=args.fallback_latitude,
+            fallback_longitude=args.fallback_longitude,
+            fallback_altitude=args.fallback_altitude,
+            fallback_height_agl=args.fallback_height_agl,
+            save_debug_images=args.save_debug_images,
+            expected_radius_px=args.expected_radius_px,
+            tracking_id=args.tracking_id,
+            log_file=args.log_file,
+        )
+    except ValueError as e:
+        print(f"[downward] ERROR: {e}")
 
 
 if __name__ == "__main__":
