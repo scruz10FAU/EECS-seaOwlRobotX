@@ -427,33 +427,43 @@ async def hold_position(drone: System, north: float, east: float,
 
 # ── Detection helpers ─────────────────────────────────────────────────────────
 
-async def classify_state(det: dict) -> str:
+async def classify_state(drone: System, hover_north: float, hover_east: float,
+                         hover_down: float) -> str:
     """
-    Map a raw detection dict to one of the five RobotX Task 1 states.
-    Returns a STATE_* key, or "" if the blink status is not yet definitive
-    (is_blinking is None) so the caller keeps hovering to confirm.
+    Fly-over state read: run the downward classifier (~8 s) while HOLDING
+    position — streaming offboard setpoints the whole time, so PX4 doesn't drop
+    offboard mode during the read. Maps (color, is_blinking) to a Task-1 state,
+    or "" if not definitive / on failure.
     """
-    
+    hold = PositionNedYaw(hover_north, hover_east, hover_down, 0.0)
+
+    # Blocking downward read runs in a thread; meanwhile keep sending setpoints
+    # — without this, offboard fails safe after ~1 s of silence.
+    task = asyncio.create_task(
+        asyncio.to_thread(classify_beacon_downward_once, cfg, duration=8.0, tracking_id=-1)
+    )
+    while not task.done():
+        await drone.offboard.set_position_ned(hold)
+        await asyncio.sleep(0.1)
+
     try:
-        result = await asyncio.to_thread(classify_beacon_downward_once, cfg, duration=8.0, tracking_id=-1)
-    except ValueError as e:
+        result = await task
+        color = result["color"]
+        raw = result["blink"]
+        # Accept either a bare bool/None or a dict {"is_blinking": ...}
+        is_blinking = raw["is_blinking"] if isinstance(raw, dict) else raw
+    except Exception as e:                      # camera error, missing keys, timeout…
         log(f"[rrt] ⚠ downward classification failed: {e}")
-        return ""   # same "not confirmed yet" return used elsewhere in this function
-    color, is_blinking = result["color"], result["blink"]
-    #color = det.get("color", "")
-    #blink = det.get("blink") or {}
-    #is_blinking = blink.get("is_blinking")   # True / False / None(uncertain)
+        return ""                               # same "not confirmed yet" behaviour
 
     if is_blinking is None:
-        return ""                            # not confirmed yet
+        return ""
 
-    if color == "red"   and is_blinking:  return STATE_STARBOARD
-    if color == "green" and is_blinking:  return STATE_PORT
-    if color == "blue"  and is_blinking:  return STATE_ENTRY
+    if color == "red"   and is_blinking:     return STATE_STARBOARD
+    if color == "green" and is_blinking:     return STATE_PORT
+    if color == "blue"  and is_blinking:     return STATE_ENTRY
     if color == "blue"  and not is_blinking: return STATE_EXIT
-    # red/green that are NOT blinking, or anything else, are treated as OFF/obstacle
     return STATE_OBSTACLE
-
 
 def _same_buoy(n: float, e: float, buoy: dict) -> bool:
     dn = n - buoy["north"]; de = e - buoy["east"]
@@ -854,44 +864,29 @@ async def verify_beacon(drone: System,
     Hover at the current position and wait until the blink detector reports
     a definitive blink_is_blinking value (True or False, not None) for `color`,
     or until BLINK_VERIFY_TIMEOUT_S elapses.
-
+ 
     Returns the latest detection dict (may have blink_is_blinking=None on
     timeout), or None if no detection was ever received for this color.
     """
-    log(f"[rrt] ◉ Verifying blink for '{color}' — hovering {BLINK_SETTLE_S:.0f}s to stabilise, "
-        f"then polling up to {BLINK_VERIFY_TIMEOUT_S:.0f}s")
-
-    # Try to face toward the beacon using its reported camera-frame offset.
+    log(f"[rrt] ◉ Settling {BLINK_SETTLE_S:.0f}s over '{color}' before the downward read")
+ 
+    # Face toward the beacon using its reported camera-frame offset.
     yaw = _bearing_to_beacon(color)
     target = PositionNedYaw(hover_north, hover_east, hover_down, yaw)
-
-    # Hold position first so the drone stops moving and the YOLO tracker
-    # settles on a stable tracking_id before the blink window starts filling.
+ 
+    # Hold still so the beacon is stable in the downward camera. We no longer
+    # poll the TOPIC's blink here — the colour+blink STATE is read by
+    # classify_state() via the downward classifier. We just settle, stream
+    # setpoints (keeping offboard alive), then return the latest detection for
+    # this colour so the caller has its world_position / GPS.
     settle_end = asyncio.get_event_loop().time() + BLINK_SETTLE_S
     while asyncio.get_event_loop().time() < settle_end:
         await drone.offboard.set_position_ned(target)
         await asyncio.sleep(BLINK_VERIFY_POLL_S)
-
-    t0 = asyncio.get_event_loop().time()
-    while asyncio.get_event_loop().time() - t0 < BLINK_VERIFY_TIMEOUT_S:
-        await drone.offboard.set_position_ned(target)
-        await asyncio.sleep(BLINK_VERIFY_POLL_S)
-
-        with _lock:
-            det = _pending_beacon.get(color)
-
-        if det is not None:
-            blink = det.get("blink") if isinstance(det.get("blink"), dict) else {}
-            if blink.get("is_blinking") is not None:
-                log(f"[rrt] ✓ '{color}' blink confirmed: "
-                    f"is_blinking={blink.get('is_blinking')}  "
-                    f"hz={blink.get('blink_hz', '?')}")
-                return det
-
-    elapsed = asyncio.get_event_loop().time() - t0
-    log(f"[rrt] ⚠ Blink verification timed out for '{color}' after {elapsed:.1f}s")
+ 
     with _lock:
         return _pending_beacon.get(color)
+
 
 
 def _bearing_to_beacon(color: str) -> float:
@@ -947,7 +942,7 @@ async def process_detections_here(drone: System, at_n: float, at_e: float,
                 _pending_beacon.pop(color, None)
             continue
 
-        state = await classify_state(det)
+        state = await classify_state(drone, at_n, at_e, down_m)
         if not state:
             log(f"[rrt]   … '{color}' state unconfirmed (is_blinking=None), will retry")
             with _lock:
