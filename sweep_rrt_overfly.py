@@ -49,12 +49,17 @@ import time
 import traceback
 from typing import Optional
 
+
 import rclpy
 from std_msgs.msg import String
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Point
 from visualization_msgs.msg import Marker
 from std_msgs.msg import ColorRGBA
+
+import beacon_detector_config as bdc
+from dowwnward_beacon_classifier_node import classify_beacon_downward_once
+cfg = bdc.load_config("configs/modal_config.json")
 
 try:
     from mavsdk import System
@@ -428,6 +433,8 @@ def classify_state(det: dict) -> str:
     Returns a STATE_* key, or "" if the blink status is not yet definitive
     (is_blinking is None) so the caller keeps hovering to confirm.
     """
+    result = classify_beacon_downward_once(cfg, duration=6.0, tracking_id=beacon_index)
+    color, is_blinking = result["color"], result["blink"]
     color = det.get("color", "")
     blink = det.get("blink") or {}
     is_blinking = blink.get("is_blinking")   # True / False / None(uncertain)
