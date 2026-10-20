@@ -25,7 +25,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
-DEFAULT_TOPIC = "/seabird/beacon_detections"
+DEFAULT_TOPIC = "/seabird/beacon_detections_downward"
 
 # Built-in variety for unattended cycling: different colors, blink states,
 # and GPS fixes so downstream consumers (e.g. beacon_mavlink_bridge.py,

@@ -42,6 +42,9 @@ def main():
     print('QGC must use UDP, not direct serial. Ctrl+C to stop.', flush=True)
 
     serial_port = None
+    last_stats = time.monotonic()
+    rx_bytes = 0
+    rx_packets = 0
     try:
         while True:
             if serial_port is None:
@@ -57,6 +60,8 @@ def main():
                 if n:
                     data = serial_port.read(min(n, 4096))
                     if data:
+                        rx_bytes += len(data)
+                        rx_packets += 1
                         for dest in (args.qgc, args.wsl):
                             try:
                                 udp.sendto(data, dest)
@@ -76,6 +81,15 @@ def main():
                     if data:
                         serial_port.write(data)
                 time.sleep(0.002)
+                if time.monotonic() - last_stats >= 5:
+                    print(
+                        f"Serial RX: {rx_bytes} bytes, "
+                        f"UDP fanout: {rx_packets} chunks per destination / 5 sec",
+                        flush=True
+                    )
+                    rx_bytes = 0
+                    rx_packets = 0
+                    last_stats = time.monotonic()
             except (SerialException, SerialTimeoutException, OSError) as e:
                 print(f'Serial connection lost: {e}; reconnecting', flush=True)
                 try:
