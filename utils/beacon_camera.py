@@ -16,6 +16,8 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import PoseStamped
+from px4_msgs.msg import VehicleOdometry
+from rclpy.qos import qos_profile_sensor_data
 from geographic_msgs.msg import GeoPointStamped
 from std_msgs.msg import String
 import message_filters
@@ -130,9 +132,7 @@ class BeaconCamera(Node):
 
         self.detection_pub = self.create_publisher(String, "/seabird/beacon_detections", 10)
 
-        self._pose_sub = self.create_subscription(
-            PoseStamped, DRONE_POSE_TOPIC, self._on_drone_pose, qos
-        )
+        self._subscribe_drone_pose(qos)
 
         if self._gps_enabled:
             self._origin_sub = self.create_subscription(
@@ -142,6 +142,44 @@ class BeaconCamera(Node):
         self._is_open = True
         self.get_logger().info("BeaconCamera open — waiting for frames…")
         return True
+
+    def _on_px4_odometry(self, msg: VehicleOdometry):
+        pos = np.asarray(msg.position, dtype=float)
+        quat = np.asarray(msg.q, dtype=float)
+
+        if not np.all(np.isfinite(pos)):
+            return
+
+        if not np.all(np.isfinite(quat)):
+            return
+
+        norm = np.linalg.norm(quat)
+
+        if norm < 1e-6:
+            return
+
+        quat /= norm
+
+        with self._pose_lock:
+            self._drone_pos = pos.copy()
+            self._drone_quat_wxyz = quat.copy()
+            self._pose_last_msg_ts = time.time()
+
+    def _subscribe_drone_pose(self, qos):
+        if DRONE_POSE_TOPIC == "/fmu/out/vehicle_odometry":
+            self._pose_sub = self.create_subscription(
+                VehicleOdometry,
+                DRONE_POSE_TOPIC,
+                self._on_px4_odometry,
+                qos_profile_sensor_data
+            )
+        else:
+            self._pose_sub = self.create_subscription(
+                PoseStamped,
+                DRONE_POSE_TOPIC,
+                self._on_drone_pose,
+                qos
+            )
 
     def open_for_video(self):
         """
@@ -160,9 +198,7 @@ class BeaconCamera(Node):
 
         self.detection_pub = self.create_publisher(String, "/seabird/beacon_detections", 10)
 
-        self._pose_sub = self.create_subscription(
-            PoseStamped, DRONE_POSE_TOPIC, self._on_drone_pose, qos
-        )
+        self._subscribe_drone_pose(qos)
 
         if self._gps_enabled:
             self._origin_sub = self.create_subscription(

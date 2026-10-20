@@ -19,7 +19,7 @@
     "image":          "/hires_front_small_color",
     "camera_info":    "/hires_front_small_color/camera_info",
     "depth":          "/tof_depth",
-    "drone_pose":     "/vvhub_body_wrt_local/pose",
+    "drone_pose":     "/fmu/out/vehicle_odometry",
     "gps_origin":     "/fmu/out/vehicle_gps_position",
     "gps_msg_type":   "px4_sensor_gps",
     "drone_height_source": "px4_local_position",

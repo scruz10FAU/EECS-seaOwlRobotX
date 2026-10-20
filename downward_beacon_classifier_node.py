@@ -205,7 +205,7 @@ def classify_beacon_at_current_position(
     sampled at the end of that window.
 
     pose_source: anything exposing get_drone_pose(), get_gps_origin(),
-                 get_drone_height_agl() -- e.g. a BeaconCamera opened via
+                 get_drone_height_agl()gps -- e.g. a BeaconCamera opened via
                  open_for_video() (pose + GPS only, no image/depth).
     image_grabber: a _DownwardImageGrabber instance, already subscribed.
     fallback_gps_origin: (lat, lon, alt) used ONLY if get_gps_origin() is
@@ -258,6 +258,8 @@ def classify_beacon_at_current_position(
               + (f"; using fallback {fallback_height_agl:.2f}m instead" if fallback_height_agl is not None else ""))
         if fallback_height_agl is not None:
             drone_height_agl = fallback_height_agl
+
+    print(f"[downward] Drone height AGL used is {drone_height_agl} ")
 
     if drone_pos is None:
         # No pose at all (e.g. VIO not running). Fall back to a nominal
@@ -318,6 +320,13 @@ def setup_downward_classifier(cfg: dict, max_sample_hz: float = None, pose_wait_
     if not _wait_for_pose_data(pose_source, pose_wait_timeout):
         print("[downward] GPS origin and/or AGL height didn't arrive in time -- "
               "continuing with fallback value(s) where needed")
+        # Say WHY, not just that it didn't arrive -- "no publisher visible"
+        # (DDS/bridge/connectivity -- e.g. PX4 never connected to the
+        # micro-ROS agent) is a completely different problem than "receiving
+        # messages but no valid fix yet" (GPS/EKF just hasn't converged), and
+        # the generic timeout message above can't tell those apart.
+        print(bdc._format_gps_status(pose_source.get_gps_status()))
+        print(bdc._format_height_status(pose_source.get_height_status()))
 
     return pose_source, image_grabber, owns_rclpy
 
