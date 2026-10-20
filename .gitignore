@@ -8,3 +8,4 @@ __pycache__/
 *_saved_model/
 voxl/*.onnx
 calibration_image_sample_data_*.npy
+.claude*
