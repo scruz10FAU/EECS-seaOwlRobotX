@@ -28,6 +28,22 @@ base, its method (pnp / box / ray), slant and horizontal distance, and lat/lon
 beacon with --drift random walk, reset when the video restarts) and listed
 bottom-left once they have --min-fixes fixes.
 
+Live (ROS) does the same localisation from PX4 over microDDS
+(/fmu/out/vehicle_local_position, vehicle_attitude, vehicle_gps_position; the
+pose interpolated to each image's capture stamp, see Px4State), with lat/lon
+from PX4's own reference origin. --no-locate turns it off.
+
+Published on --map-topic (std_msgs/String, JSON; default /seabird/beacon_map),
+once per processed frame while localising, live or replay:
+  {"stamp", "source": "live"|"replay", "frame", "drone": {"ned", "lat", "lon"},
+   "water_z_ned",
+   "beacons": [{"id", "ned", "lat", "lon", "sigma_m", "n", "outliers", "age_s",
+                "seen"}],                    # the map, entries with >= --min-fixes
+   "fixes":   [{"method", "ned", "lat", "lon", "sigma_m", "range_m", "horiz_m",
+                "rms_px", "n_diamonds", "n_boxes"}]}   # this frame
+ned is PX4 local NED (m), lat/lon null without a global reference, sigma_m the
+horizontal 1-sigma (map: including drift since last seen).
+
 Sources:
   ROS 2 (default)  sensor_msgs/Image on --topic (mono8, bgr8 or rgb8)
   --video PATH     a video file, looped (offline testing, no ROS needed)
@@ -43,6 +59,7 @@ Usage:
 
 import argparse
 import csv
+import json
 import math
 import os
 import threading
@@ -54,7 +71,7 @@ import cv2
 import numpy as np
 
 from beacon_pose import (BeaconBoxObs, BeaconMap, BeaconModel, CameraModel, DiamondObs,
-                         camera_pose_from_drone, dedupe_diamonds, diamond_quality,
+                         StateBuffer, camera_pose_from_drone, dedupe_diamonds, diamond_quality,
                          load_modalai_extrinsics, load_pose_config, locate_beacons,
                          ned_to_lla, size_range)
 from tflite_hexagon_detector import TFLiteHexagonDetector
@@ -181,28 +198,160 @@ def image_msg_to_array(msg) -> Optional[np.ndarray]:
     return None
 
 
-def start_ros_source(topic: str, box: LatestFrame):
-    import rclpy
-    from rclpy.qos import qos_profile_sensor_data
-    from sensor_msgs.msg import Image
+def image_stamp(msg, offset_s: float = 0.0) -> float:
+    """Capture time of a sensor_msgs/Image (Unix s): header.stamp + offset_s, or the
+    receive time if the publisher left the stamp empty. On VOXL2 the stamp is the
+    camera capture time on the same clock as PX4's microDDS timestamps."""
+    st = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+    return (st if st > 0 else time.time()) + offset_s
 
-    rclpy.init()
-    node = rclpy.create_node("beacon_overlay")
-    warned = set()
 
-    def on_image(msg):
-        img = image_msg_to_array(msg)
-        if img is None:
-            if msg.encoding not in warned:
-                warned.add(msg.encoding)
-                node.get_logger().error(f"unsupported encoding '{msg.encoding}' on {topic}")
-            return
-        box.put((img, None, 0))
+class Px4State:
+    """PX4 state from microDDS as a telemetry row (load_telemetry's keys, plus
+    ref_lat/ref_lon/ref_alt). Position and attitude are buffered by PX4's
+    timestamp_sample and interpolated to the image capture stamp; the rest
+    (validity, reference, GPS) is the latest value."""
 
-    # Best effort matches both best-effort and reliable publishers.
-    node.create_subscription(Image, topic, on_image, qos_profile_sensor_data)
-    threading.Thread(target=rclpy.spin, args=(node,), daemon=True).start()
-    print(f"[overlay] subscribed to {topic}")
+    MAX_AGE_S = 0.5          # local position / attitude must be this fresh
+    MAX_EXTRAP_S = 0.05      # capture stamp may be this far past the newest sample
+    CLOCK_MISMATCH_S = 1.0   # beyond this, stamps aren't comparable: use the latest
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._row, self._rx = {}, {}
+        self.pos, self.att = StateBuffer(), StateBuffer(quat=True)
+        self.stats = {"interp": 0, "latest": 0, "none": 0}
+        self._warned = False
+
+    def update(self, group, **kv):
+        with self._lock:
+            self._row.update(kv)
+            self._rx[group] = time.monotonic()
+
+    def snapshot(self, stamp: float) -> dict:
+        """Row for an image captured at `stamp` (Unix s). Pose keys are None unless
+        local position and attitude are fresh and PX4 reports xy/z valid."""
+        now = time.monotonic()
+        with self._lock:
+            row = dict(self._row)
+            fresh = {g: now - t <= self.MAX_AGE_S for g, t in self._rx.items()}
+        if not fresh.get("gps"):
+            row["gps_fix_type"] = None
+        p = q = None
+        if fresh.get("local") and fresh.get("attitude") and row.get("pose_valid"):
+            p, q = self.pos.at(stamp, self.MAX_EXTRAP_S), self.att.at(stamp, self.MAX_EXTRAP_S)
+            if p is not None and q is not None:
+                self.stats["interp"] += 1
+                row["pose_dt_ms"] = (self.att.latest_t - stamp) * 1e3
+            else:
+                lt = self.att.latest_t
+                if lt is not None and abs(stamp - lt) > self.CLOCK_MISMATCH_S:
+                    if not self._warned:
+                        print(f"[overlay] WARNING: image stamp {stamp:.3f} vs PX4 {lt:.3f}: "
+                              f"clocks differ, using the latest pose (no lag compensation)")
+                        self._warned = True
+                    p, q = self.pos.latest(), self.att.latest()
+                    self.stats["latest"] += 1
+        if p is None or q is None:
+            self.stats["none"] += 1
+            for k in ("local_x", "local_y", "local_z", "qw", "qx", "qy", "qz"):
+                row[k] = None
+        else:
+            row.update(local_x=float(p[0]), local_y=float(p[1]), local_z=float(p[2]),
+                       qw=float(q[0]), qx=float(q[1]), qy=float(q[2]), qz=float(q[3]))
+        return row
+
+
+class RosIO:
+    """One rclpy node for the camera, PX4 and the beacon-map publisher."""
+
+    def __init__(self):
+        import rclpy
+        self._rclpy = rclpy
+        rclpy.init()
+        self.node = rclpy.create_node("beacon_overlay")
+        self._spinning = False
+
+    def spin(self):
+        if not self._spinning:
+            threading.Thread(target=self._rclpy.spin, args=(self.node,), daemon=True).start()
+            self._spinning = True
+
+    def subscribe_image(self, topic: str, box: LatestFrame, px4: Optional[Px4State],
+                        offset_s: float = 0.0):
+        from rclpy.qos import qos_profile_sensor_data
+        from sensor_msgs.msg import Image
+
+        warned = set()
+        count = [0]
+
+        def on_image(msg):
+            img = image_msg_to_array(msg)
+            if img is None:
+                if msg.encoding not in warned:
+                    warned.add(msg.encoding)
+                    self.node.get_logger().error(f"unsupported encoding '{msg.encoding}' on {topic}")
+                return
+            telem = None
+            if px4 is not None:
+                stamp = image_stamp(msg, offset_s)
+                telem = px4.snapshot(stamp)
+                telem.update(frame=count[0], frame_stamp=stamp)
+            count[0] += 1
+            box.put((img, telem, 0))
+
+        # Best effort matches both best-effort and reliable publishers.
+        self.node.create_subscription(Image, topic, on_image, qos_profile_sensor_data)
+        print(f"[overlay] subscribed to {topic}")
+
+    def subscribe_px4(self) -> Optional[Px4State]:
+        try:
+            from px4_msgs.msg import SensorGps, VehicleAttitude, VehicleLocalPosition
+        except ImportError:
+            print("[overlay] WARNING: px4_msgs not available; no live localisation")
+            return None
+        from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
+        qos = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
+                         history=HistoryPolicy.KEEP_LAST, depth=1)
+        st = Px4State()
+
+        def on_local(m):
+            glob = bool(m.xy_global) and math.isfinite(m.ref_lat) and math.isfinite(m.ref_lon)
+            st.pos.add(m.timestamp_sample * 1e-6, (m.x, m.y, m.z))
+            st.update("local", pose_valid=bool(m.xy_valid and m.z_valid),
+                      height_agl_m=float(-m.z) if m.z_valid else None,
+                      heading_deg=math.degrees(m.heading) if math.isfinite(m.heading) else None,
+                      ref_lat=float(m.ref_lat) if glob else None,
+                      ref_lon=float(m.ref_lon) if glob else None,
+                      ref_alt=float(m.ref_alt) if glob and m.z_global else None)
+
+        def on_attitude(m):
+            st.att.add(m.timestamp_sample * 1e-6, [float(v) for v in m.q])
+            st.update("attitude")
+
+        def on_gps(m):
+            # lat/lon int32 1e-7 deg, alt int32 mm; fix_type < 3 = no 3D fix.
+            st.update("gps", gps_lat=m.lat * 1e-7, gps_lon=m.lon * 1e-7, gps_alt_msl_m=m.alt * 1e-3,
+                      gps_fix_type=float(m.fix_type), gps_sats=float(m.satellites_used),
+                      gps_eph=float(m.eph))
+
+        for msg_type, t, cb in ((VehicleLocalPosition, "/fmu/out/vehicle_local_position", on_local),
+                                (VehicleAttitude, "/fmu/out/vehicle_attitude", on_attitude),
+                                (SensorGps, "/fmu/out/vehicle_gps_position", on_gps)):
+            self.node.create_subscription(msg_type, t, cb, qos)
+        print("[overlay] subscribed to PX4 local position / attitude / GPS")
+        return st
+
+    def string_publisher(self, topic: str):
+        from std_msgs.msg import String
+        pub = self.node.create_publisher(String, topic, 10)
+        print(f"[overlay] publishing beacon map on {topic}")
+
+        def publish(text: str):
+            msg = String()
+            msg.data = text
+            pub.publish(msg)
+        return publish
 
 
 def start_file_source(path: str, is_video: bool, box: LatestFrame, fps: float):
@@ -335,7 +484,9 @@ class Overlay:
             resize_mode=args.resize)
         if not self.detector.start(enable_tracking=False):
             raise SystemExit(f"failed to load {args.model}")
-        self.locate = bool(args.telemetry)
+        self.locate = args.locate
+        self.source = "replay" if args.telemetry else "live"
+        self.publish = None       # callable(str), set by main() when publishing
         if self.locate:
             self.R_body_cam, self.t_body_cam = load_modalai_extrinsics(
                 args.extrinsics, args.camera_frame, "body")
@@ -395,12 +546,12 @@ class Overlay:
             self._localise(out, telem, loop, obs, boxes)
         return out, infer_ms, len(keep), len(boxes)
 
-    # ── Localisation (with --telemetry) ──
+    # ── Localisation (--telemetry replay, or live PX4) ──
 
     def _localise(self, out, telem, loop, obs, boxes):
         need = ("local_x", "local_y", "local_z", "qw", "qx", "qy", "qz")
         if any(telem.get(k) is None for k in need):
-            put_label(out, "no PX4 pose in this telemetry row", (6, 40), WEAK)
+            put_label(out, "no valid PX4 pose: not localising", (6, 40), WEAK)
             return
         if loop != self.map_loop:
             self.map, self.map_loop = BeaconMap(**self.map_args), loop
@@ -410,15 +561,23 @@ class Overlay:
         box_obs = [BeaconBoxObs(bbox=d.bbox_2d, score=d.confidence) for d in boxes]
         fixes = locate_beacons(obs, self.cam, pose, self.water_z, self.model, self.params,
                                boxes=box_obs)
+        ref = (telem["ref_lat"], telem["ref_lon"], telem.get("ref_alt") or 0.0) \
+            if telem.get("ref_lat") is not None else None
         gps = (telem["gps_lat"], telem["gps_lon"], telem["gps_alt_msl_m"]) \
             if telem.get("gps_fix_type") and telem["gps_fix_type"] >= 3 else None
 
+        def lat_lon(pos):
+            """Lat/lon of an NED point: from PX4's reference origin (live), else via
+            the drone's own GPS fix and NED offset (recordings), else None."""
+            if ref is not None:
+                return ned_to_lla(pos, *ref)[:2]
+            if gps is not None:
+                return ned_to_lla(np.asarray(pos) - drone_ned, *gps)[:2]
+            return None
+
         def where(pos):
-            """Lat/lon of an NED point, via the drone's own GPS fix and NED offset."""
-            if gps is None:
-                return f"NED {pos[0]:.1f}, {pos[1]:.1f}"
-            lat, lon, _ = ned_to_lla(pos - drone_ned, *gps)
-            return f"{lat:.6f}, {lon:.6f}"
+            ll = lat_lon(pos)
+            return f"{ll[0]:.6f}, {ll[1]:.6f}" if ll else f"NED {pos[0]:.1f}, {pos[1]:.1f}"
 
         for f in fixes:
             px = self._project(pose, f.pos_ned)
@@ -434,7 +593,9 @@ class Overlay:
             put_label(out, f"{where(f.pos_ned)} +/-{sig:.1f} m", (x + 10, y + 32), color)
 
         t = telem["frame_stamp"] if telem.get("frame_stamp") is not None else telem["frame"] / 10
-        self.map.update(fixes, t)
+        seen = {b["id"] for b in self.map.update(fixes, t)}
+        if self.publish is not None:
+            self._publish(telem, t, pose, drone_ned, fixes, seen, lat_lon)
         rows = []
         for b in self.map.beacons:
             if b["n"] < self.min_fixes:
@@ -450,9 +611,44 @@ class Overlay:
         y0 = out.shape[0] - 10 - 18 * len(rows)
         if rows:
             cv2.rectangle(out, (0, y0 - 18), (out.shape[1], out.shape[0]), (0, 0, 0), -1)
-            put_label(out, "fused (this loop):", (6, y0 - 4), FUSED)
+            put_label(out, "fused (this loop):" if self.source == "replay" else "beacon map:",
+                      (6, y0 - 4), FUSED)
         for k, r in enumerate(rows):
             put_label(out, r, (6, y0 + 14 + 18 * k), FUSED)
+
+    def _publish(self, telem, t, pose, drone_ned, fixes, seen, lat_lon):
+        def ll(pos):
+            v = lat_lon(pos)
+            return (round(v[0], 8), round(v[1], 8)) if v else (None, None)
+
+        def sig(cov):
+            return round(math.sqrt(max(float(np.trace(cov[:2, :2])), 0.0)), 3)
+
+        def ned(pos):
+            return [round(float(v), 3) for v in pos]
+
+        beacons = []
+        for b in self.map.beacons:
+            if b["n"] < self.min_fixes:
+                continue
+            lat, lon = ll(b["pos"])
+            beacons.append(dict(id=b["id"], ned=ned(b["pos"]), lat=lat, lon=lon,
+                                sigma_m=sig(self.map.cov_at(b, t)), n=b["n"],
+                                outliers=b["outliers"], age_s=round(t - b["last_t"], 3),
+                                seen=b["id"] in seen))
+        fx = []
+        for f in fixes:
+            lat, lon = ll(f.pos_ned)
+            fx.append(dict(method=f.method, ned=ned(f.pos_ned), lat=lat, lon=lon,
+                           sigma_m=sig(f.cov), range_m=round(f.range_m, 3),
+                           horiz_m=round(float(np.linalg.norm(f.pos_ned[:2] - pose.c_ned[:2])), 3),
+                           rms_px=None if f.rms_px is None else round(f.rms_px, 3),
+                           n_diamonds=len(f.members), n_boxes=len(f.box_members)))
+        lat, lon = ll(drone_ned)
+        self.publish(json.dumps(dict(
+            stamp=t, source=self.source, frame=telem.get("frame"),
+            drone=dict(ned=ned(drone_ned), lat=lat, lon=lon), water_z_ned=self.water_z,
+            beacons=beacons, fixes=fx)))
 
     def _project(self, pose, p_ned) -> Optional[np.ndarray]:
         """NED point -> pixel, or None if behind the camera / far off-frame."""
@@ -491,6 +687,9 @@ def main():
                     help="frame -> model input; must match training (the 2-class pose "
                          "model was trained stretched)")
     ap.add_argument("--topic", default="/tracking_front")
+    ap.add_argument("--image-time-offset", type=float, default=0.0, metavar="MS",
+                    help="live: added to the image header stamp before looking up the PX4 "
+                         "pose (residual capture-time error, e.g. half the exposure)")
     ap.add_argument("--intrinsics", default="/data/modalai/opencv_tracking_front_intrinsics.yml")
     ap.add_argument("--pose-config", default=os.path.join(HERE, "configs", "beacon_pose.json"))
     ap.add_argument("--port", type=int, default=8091)
@@ -518,13 +717,34 @@ def main():
                          "floating beacon instead of splitting it; 0 = static beacons")
     ap.add_argument("--min-fixes", type=int, default=3,
                     help="draw a mapped beacon only once it has this many fixes")
+    ap.add_argument("--no-locate", action="store_true",
+                    help="live: don't localise from PX4 (camera-only ranges)")
+    ap.add_argument("--map-topic", default="/seabird/beacon_map",
+                    help="std_msgs/String JSON beacon map, published while localising")
+    ap.add_argument("--no-publish", action="store_true", help="don't publish --map-topic")
     ap.add_argument("--once", metavar="OUT.jpg",
                     help="process one frame, write the annotated JPEG and exit (no server)")
     args = ap.parse_args()
     if args.telemetry and not args.video:
         ap.error("--telemetry needs --video")
+    live = not (args.video or args.image)
+    args.locate = bool(args.telemetry) or (live and not args.no_locate)
+
+    ros = None
+    if live or (args.locate and not args.no_publish and not args.once):
+        try:
+            ros = RosIO()
+        except ImportError:
+            if live:
+                raise
+            print("[overlay] WARNING: rclpy not available; not publishing")
+    px4 = ros.subscribe_px4() if live and args.locate else None
+    if live and px4 is None:
+        args.locate = False
 
     overlay = Overlay(args)
+    if ros is not None and args.locate and not args.no_publish and not args.once:
+        overlay.publish = ros.string_publisher(args.map_topic)
     frames = LatestFrame()
     if args.telemetry:
         rows = load_telemetry(args.telemetry)
@@ -533,7 +753,9 @@ def main():
     elif args.video or args.image:
         start_file_source(args.video or args.image, bool(args.video), frames, args.file_fps)
     else:
-        start_ros_source(args.topic, frames)
+        ros.subscribe_image(args.topic, frames, px4, args.image_time_offset / 1e3)
+    if ros is not None:
+        ros.spin()
 
     hub = FrameHub()
     if not args.once:
@@ -559,6 +781,8 @@ def main():
         if telem is not None:
             alt = telem.get("height_agl_m")
             hdg = telem.get("heading_deg")
+            if alt is not None and hdg is not None and telem.get("local_x") is None:
+                alt = None    # live: pose not valid/fresh, don't show stale numbers
             hud += (f" | frame {telem['frame']} | alt {alt:.1f} m | hdg {hdg:.0f} deg"
                     if alt is not None and hdg is not None else f" | frame {telem['frame']}")
             if telem.get("gps_fix_type") is not None:
@@ -582,7 +806,12 @@ def main():
 
         n += 1
         if now - last_log > 5:
-            print(f"[overlay] {hud} | frames {n}", flush=True)
+            sync = ""
+            if px4 is not None:
+                sync = " | pose @capture {interp}, latest {latest}, none {none}".format(**px4.stats)
+                if telem is not None and telem.get("pose_dt_ms") is not None:
+                    sync += f" (newest PX4 sample {telem['pose_dt_ms']:+.0f} ms from capture)"
+            print(f"[overlay] {hud} | frames {n}{sync}", flush=True)
             last_log = now
         if args.max_fps > 0:
             time.sleep(max(0.0, 1 / args.max_fps - (time.monotonic() - now)))

@@ -26,6 +26,7 @@ import itertools
 import json
 import math
 import re
+import threading
 from collections import deque
 from dataclasses import dataclass, field, fields
 from typing import List, Optional, Sequence, Tuple
@@ -173,35 +174,55 @@ def camera_pose_from_drone(pos_ned, q_wxyz, R_body_cam, t_body_cam):
                       np.asarray(pos_ned, float) + R_ned_body @ t_body_cam)
 
 
-class PoseBuffer:
-    """Short history of (t, pos_ned, q_wxyz) for interpolating to image stamps."""
+class StateBuffer:
+    """Recent time-stamped samples of one quantity (a vector, or a wxyz quaternion
+    with quat=True), interpolated to a query time (linear / slerp).
 
-    def __init__(self, maxlen=400):
+    Feed it PX4's timestamp_sample and query with an image's capture stamp, so
+    the pose belongs to the moment the frame was exposed rather than when it
+    arrived (~35 ms later on VOXL2). Thread-safe: ROS callbacks add, the
+    processing loop queries.
+    """
+
+    def __init__(self, quat=False, maxlen=400):
+        self.quat = quat
         self._buf = deque(maxlen=maxlen)
+        self._lock = threading.Lock()
 
-    def add(self, t, pos_ned, q_wxyz):
-        if self._buf and t <= self._buf[-1][0]:
-            return
-        self._buf.append((float(t), np.asarray(pos_ned, float), np.asarray(q_wxyz, float)))
+    def add(self, t, v):
+        with self._lock:
+            if self._buf and t <= self._buf[-1][0]:
+                return                       # duplicate / out of order
+            self._buf.append((float(t), np.asarray(v, float)))
+
+    @property
+    def latest_t(self) -> Optional[float]:
+        with self._lock:
+            return self._buf[-1][0] if self._buf else None
+
+    def latest(self):
+        with self._lock:
+            return self._buf[-1][1] if self._buf else None
 
     def at(self, t, max_extrapolate=0.05):
-        """Interpolated (pos, q) at time t, or None if t is outside the buffer."""
-        if not self._buf:
+        """Value at time t, or None if t is before the buffer or more than
+        max_extrapolate past its newest sample (then: the newest value)."""
+        with self._lock:
+            buf = list(self._buf)
+        if not buf or t < buf[0][0]:
             return None
-        if t >= self._buf[-1][0]:
-            return self._buf[-1][1:] if t - self._buf[-1][0] <= max_extrapolate else None
-        if t < self._buf[0][0]:
-            return None
-        lo, hi = 0, len(self._buf) - 1
+        if t >= buf[-1][0]:
+            return buf[-1][1] if t - buf[-1][0] <= max_extrapolate else None
+        lo, hi = 0, len(buf) - 1
         while hi - lo > 1:
             mid = (lo + hi) // 2
-            if self._buf[mid][0] <= t:
+            if buf[mid][0] <= t:
                 lo = mid
             else:
                 hi = mid
-        (t0, p0, q0), (t1, p1, q1) = self._buf[lo], self._buf[hi]
+        (t0, v0), (t1, v1) = buf[lo], buf[hi]
         f = (t - t0) / (t1 - t0)
-        return p0 + f * (p1 - p0), _slerp(q0, q1, f)
+        return _slerp(v0, v1, f) if self.quat else v0 + f * (v1 - v0)
 
 
 # ─── Geodesy (PX4 MapProjection, azimuthal equidistant) ───────────────

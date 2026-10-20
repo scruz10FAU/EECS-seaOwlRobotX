@@ -159,6 +159,26 @@ def test_camera_strided_input():
     assert np.allclose(CAM.project(P4[:, :3]), px, atol=1e-9)
 
 
+def test_state_buffer_vector():
+    b = bp.StateBuffer()
+    for t, v in [(10.0, (0, 0, 0)), (10.1, (1, 2, 0)), (10.1, (9, 9, 9)), (10.05, (9, 9, 9))]:
+        b.add(t, v)                                 # duplicate / out-of-order ignored
+    assert np.allclose(b.at(10.025), [0.25, 0.5, 0])
+    assert b.at(9.99) is None                       # before the history
+    assert np.allclose(b.at(10.12), [1, 2, 0])      # within max_extrapolate: newest
+    assert b.at(10.2) is None                       # stale
+
+
+def test_state_buffer_quaternion():
+    # 90 deg yaw over 0.1 s; at a 35 ms capture lag the latest sample is 31.5 deg off.
+    b = bp.StateBuffer(quat=True)
+    b.add(0.0, (1, 0, 0, 0))
+    b.add(0.1, (math.cos(math.pi / 4), 0, 0, math.sin(math.pi / 4)))
+    q = b.at(0.065)
+    yaw = math.degrees(2 * math.atan2(q[3], q[0]))
+    assert abs(yaw - 58.5) < 1e-6 and abs(np.linalg.norm(q) - 1) < 1e-12
+
+
 def test_lla_roundtrip():
     ref = (26.7117290, -80.2865831, 5.0)
     for ned in ([0, 0, 0], [120.0, -45.0, -3.0], [-800.0, 600.0, 10.0]):

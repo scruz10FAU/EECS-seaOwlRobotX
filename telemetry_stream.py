@@ -5,8 +5,8 @@ served over HTTP for telemetry_viewer.py on a laptop.
 
     http://<drone-ip>:8092/                 (browser viewer, image only)
     http://<drone-ip>:8092/stream.mjpg      MJPEG; every part carries an
-                                            X-Telemetry: <json> header taken
-                                            when that frame was encoded
+                                            X-Telemetry: <json> header for
+                                            that frame (pose at its capture)
     http://<drone-ip>:8092/telemetry.json   latest telemetry snapshot
     http://<drone-ip>:8092/snapshot.jpg
     POST /camera?exp_ms=2.0&gain=100        manual exposure (voxl-camera-server
@@ -23,6 +23,13 @@ Telemetry (PX4 over microDDS, best effort):
   /fmu/out/sensor_combined         gyro (rad/s) + accelerometer (m/s^2), body FRD
 Every group carries age_s (seconds since its last message); a group is null
 until its first message arrives.
+
+Per frame, local x/y/z (+ height_agl_m) and the attitude are interpolated to the
+image's capture stamp (header.stamp + --image-time-offset) from PX4's
+timestamp_sample history, and those groups get at_frame: true. On VOXL2 both are
+on the same clock and frames arrive ~35 ms after capture, so the latest values
+would lag the image by that much. Without a match (stamp outside the history,
+e.g. clocks differ) the group keeps its latest values and at_frame: false.
 
 Sources:
   ROS 2 (default)  sensor_msgs/Image on --topic (mono8, bgr8 or rgb8)
@@ -48,7 +55,8 @@ from urllib.parse import parse_qs
 
 import cv2
 
-from beacon_overlay import FrameHub, LatestFrame, image_msg_to_array, start_file_source
+from beacon_overlay import FrameHub, LatestFrame, image_msg_to_array, image_stamp, start_file_source
+from beacon_pose import StateBuffer
 
 
 # ─── Telemetry ────────────────────────────────────────────────────────
@@ -62,14 +70,17 @@ def quat_to_euler_deg(w, x, y, z):
 
 
 class Telemetry:
-    """Latest value per group, stamped with the local receive time."""
+    """Latest value per group, stamped with the local receive time, plus local
+    position / attitude history (PX4 timestamp_sample) for snapshot_at()."""
 
     GROUPS = ("gps", "local", "attitude", "imu")
+    MAX_EXTRAP_S = 0.05
 
     def __init__(self):
         self._lock = threading.Lock()
         self._data = {g: None for g in self.GROUPS}
         self._rx = {g: None for g in self.GROUPS}
+        self.pos, self.att = StateBuffer(), StateBuffer(quat=True)
 
     def set(self, group, values):
         with self._lock:
@@ -87,8 +98,29 @@ class Telemetry:
                     out[g] = dict(self._data[g], age_s=round(now - self._rx[g], 3))
             return out
 
+    def snapshot_at(self, stamp: float) -> dict:
+        """snapshot(), with local x/y/z and attitude interpolated to `stamp`."""
+        out = self.snapshot()
+        loc, att = out["local"], out["attitude"]
+        p = self.pos.at(stamp, self.MAX_EXTRAP_S)
+        if loc is not None:
+            loc["at_frame"] = p is not None
+            if p is not None:
+                loc.update(x=float(p[0]), y=float(p[1]), z=float(p[2]))
+                if loc.get("z_valid"):
+                    loc["height_agl_m"] = float(-p[2])
+        q = self.att.at(stamp, self.MAX_EXTRAP_S)
+        if att is not None:
+            att["at_frame"] = q is not None
+            if q is not None:
+                w, x, y, z = (float(v) for v in q)
+                roll, pitch, yaw = quat_to_euler_deg(w, x, y, z)
+                att.update(qw=w, qx=x, qy=y, qz=z, roll_deg=roll, pitch_deg=pitch, yaw_deg=yaw)
+        return out
 
-def start_ros(topic: Optional[str], frames: LatestFrame, telem: Telemetry):
+
+def start_ros(topic: Optional[str], frames: LatestFrame, telem: Telemetry,
+              offset_s: float = 0.0):
     """One node: image (if topic) + PX4 telemetry. Returns False if ROS is missing."""
     try:
         import rclpy
@@ -112,8 +144,7 @@ def start_ros(topic: Optional[str], frames: LatestFrame, telem: Telemetry):
                     warned.add(msg.encoding)
                     log.error(f"unsupported encoding '{msg.encoding}' on {topic}")
                 return
-            stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
-            frames.put((img, stamp))
+            frames.put((img, image_stamp(msg, offset_s)))
 
         # Best effort matches both best-effort and reliable publishers.
         node.create_subscription(Image, topic, on_image, qos_profile_sensor_data)
@@ -136,6 +167,7 @@ def start_ros(topic: Optional[str], frames: LatestFrame, telem: Telemetry):
                 "eph": float(m.eph), "epv": float(m.epv)})
 
         def on_local(m):
+            telem.pos.add(m.timestamp_sample * 1e-6, (m.x, m.y, m.z))
             telem.set("local", {
                 "x": float(m.x), "y": float(m.y), "z": float(m.z),
                 "height_agl_m": float(-m.z) if m.z_valid else None,
@@ -143,6 +175,7 @@ def start_ros(topic: Optional[str], frames: LatestFrame, telem: Telemetry):
                 "xy_valid": bool(m.xy_valid), "z_valid": bool(m.z_valid)})
 
         def on_attitude(m):
+            telem.att.add(m.timestamp_sample * 1e-6, [float(v) for v in m.q])
             w, x, y, z = (float(v) for v in m.q)
             roll, pitch, yaw = quat_to_euler_deg(w, x, y, z)
             telem.set("attitude", {"qw": w, "qx": x, "qy": y, "qz": z,
@@ -296,6 +329,8 @@ def make_handler(hub: TelemetryHub, telem: Telemetry, cam: CameraControl):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--topic", default="/tracking_front")
+    ap.add_argument("--image-time-offset", type=float, default=0.0, metavar="MS",
+                    help="added to the image header stamp before interpolating the pose")
     ap.add_argument("--port", type=int, default=8092)
     ap.add_argument("--camera", default="tracking_front",
                     help="voxl-camera-server pipe that exposure commands go to")
@@ -317,13 +352,13 @@ def main():
 
         def relay():
             while True:
-                img = raw.take()
-                if img is not None:
-                    frames.put((img, time.time()))
+                item = raw.take()      # (img, telemetry, loop) from beacon_overlay
+                if item is not None:
+                    frames.put((item[0], time.time()))
 
         threading.Thread(target=relay, daemon=True).start()
         start_ros(None, frames, telem)
-    elif not start_ros(args.topic, frames, telem):
+    elif not start_ros(args.topic, frames, telem, args.image_time_offset / 1e3):
         raise SystemExit("ROS 2 unavailable: use --video or --image")
 
     hub = TelemetryHub()
@@ -347,7 +382,7 @@ def main():
         ok, jpeg = cv2.imencode(".jpg", img, enc)
         if not ok:
             continue
-        snap = telem.snapshot()
+        snap = telem.snapshot_at(stamp)
         snap["frame"] = {"stamp": stamp, "width": img.shape[1], "height": img.shape[0]}
         hub.publish(jpeg.tobytes(), json.dumps(snap, separators=(",", ":")).encode())
 

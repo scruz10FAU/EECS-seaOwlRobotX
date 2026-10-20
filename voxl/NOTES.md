@@ -1052,35 +1052,97 @@ Recording `20261015_154558_510023` (engineering west pool, 710 frames, ~10 fps,
   `gate_m` (3 m) can still merge: set it from the minimum beacon spacing.
 - 8 fps on `.146` GPU (inference ~55 ms of it).
 
-## Open
+## Beacon map on ROS (`/seabird/beacon_map`) [2026-10-19]
 
-- **Box localisation is not wired into ROS yet.** Neither are diamonds:
-  `locate_beacons(..., boxes=...)` has no caller.
-- **The dataset has no far-range beacons.** `beacon` boxes are 35-527 px (median
-  ~64 px) in 640 images. Far-range examples (5-20 px) are needed for the class's
-  purpose.
-- **COCO -> YOLO-pose converter pending** **[reported: deferred]**. It must
-  ignore RoboFlow's placeholder `dummy` keypoint on `beacon` and write beacon rows
-  as box + four `0 0 0`.
-- ~~Retrained pose model in progress.~~ Landed: the 2-class model above. Still to
-  do on it: GPU benchmark on `.121`, and whether `flip_idx` was set in training.
-- ~~Phase 1 (OpenCL container) not started.~~ Done without the dpkg-repack recipe:
-  `libtflite_gpu_shim.so` + `tflite_gpu.py` (ctypes), first linked against the
-  host's TFLite 2.17 (invoke ~38 ms on `.121`, fully delegated), now built with
-  TFLite 2.19 inside the image (see "TFLite built in the container").
-  `voxl/beacon_overlay/run.sh` (`GPU=1`, default) passes the kgsl/ion device nodes
-  and host driver libraries into the container.
-- **Labeler calibration is from the wrong board.**
-  `pose_data_gen/beacon_labeler/config/starling2_max_tracking_front.yaml` matches
-  `.146`'s file, not `.121`'s, but the training images came from `.121`
-  **[reported]**. The labels are raw pixels, so they stand; the CAD refit
-  (undistort + slack fit) ran with a cx 41 px off. Re-run it with `.121`'s file.
-  Runtime is unaffected: `beacon_overlay` reads the drone's own file.
-- ~~Which model Sam settles on (1-class vs the untested 4-class).~~ The 2-class
-  pose model.
-- Target requirement **[reported]**: a detection at least every 0.5 s to resolve a
-  1 Hz blink. TFLite on CPU alone (199 ms ≈ 5 Hz) already clears this — the GPU is
-  headroom, not a prerequisite.
-- ~~Real-drone camera pipe names and SDK version unverified.~~ Verified on
-  `192.168.50.121` (see above).
-- Sustained thermal behaviour unmeasured.
+`beacon_overlay.py` publishes the map as `std_msgs/String` JSON (repo convention,
+like `/seabird/beacon_detections`) once per processed frame while localising, live
+or replay (`--map-topic`, `--no-publish`). Schema in the module docstring:
+`beacons` (map entries with >= `--min-fixes`: id, ned, lat/lon, sigma_m incl.
+drift, n, outliers, age_s, seen) and this frame's `fixes` (method, ned, lat/lon,
+sigma_m, range_m, horiz_m, rms_px). Kept off `/seabird/beacon_detections`:
+`sweep_rrt.py` treats every message there as a colour detection, and colour is
+stage 2's job.
+
+- **Live:** one rclpy node takes `/tracking_front` and PX4's
+  `/fmu/out/vehicle_local_position`, `vehicle_attitude`, `vehicle_gps_position`
+  (best effort; both <= 0.5 s old, `xy_valid` and `z_valid` required). Lat/lon
+  from PX4's `ref_lat`/`ref_lon`; replay uses the drone GPS + NED offset.
+- **Pose at capture time** [measured on `.146`]: `/tracking_front` `header.stamp`
+  is the capture time in Unix time and arrives 35 ms later (34-51 ms); PX4's
+  microDDS `timestamp`/`timestamp_sample` are on the same clock and arrive ~3 ms
+  after. Position and attitude are buffered by `timestamp_sample`
+  (`beacon_pose.StateBuffer`, linear / slerp) and looked up at the image stamp
+  (+ `--image-time-offset` ms) in both `beacon_overlay.py` (`Px4State`) and
+  `telemetry_stream.py` (`snapshot_at`; groups get `at_frame`). Before, the
+  latest pose at arrival was used: 3.2 deg of heading at 90 deg/s, ~0.45 m at
+  8 m. Stamps > 1 s apart: warn once, fall back to the latest pose. Checked live:
+  30/30 `telemetry_stream` frames matched (`at_frame: true`). Recordings made
+  before this carry the lagged pose (one row per frame; not recoverable).
+  `--image-time-offset` is still to be fitted from a brisk-yaw flight (minimise
+  fix scatter / horizon error), e.g. half the exposure if the stamp is its start.
+- **Bench caveat:** with the replay overlay running (~2.5 cores) the UDP-only
+  camera bridge on `.146` drops `/tracking_front` to < 1 Hz; with it stopped
+  22 Hz. The camera pipe itself stays at 30 fps (`voxl-inspect-cam`).
+- **`.146` [measured]:** PX4 is on domain 8 like the camera; in the container
+  attitude ~90 Hz, local position ~55 Hz, GPS ~5 Hz. Indoors `xy_valid` false and
+  no global ref, so live localises/publishes nothing (by design). Replay publishes
+  at 8.2 Hz. (`ros2 topic echo` of the px4_msgs topics prints nothing here; an
+  rclpy subscriber receives them.)
+- Not yet consumed by anything; the mission scripts still read
+  `/seabird/beacon_detections` / `/seabird/buoy_detections`.
+
+## Open (to do) [updated 2026-10-19]
+
+Done items are written up in their own sections above.
+
+**Flight drone (`.121`), next time it's reachable**
+1. Build and run the container there: rsync the repo to `/home/root/seaowl`, copy
+   `YOLOv11n_pose_diamond_beacon_float16.tflite` to `/data/models_eval/`, then
+   `voxl/beacon_overlay/run.sh build` (`BASE=voxl2-humble`, ~15 min) and
+   `run.sh start` (domain 0). Confirm the whole graph is delegated and measure
+   GPU invoke time for the 2-class model under TFLite 2.19.
+2. Outdoor live test with GPS: confirm `/seabird/beacon_map` publishes, the log's
+   "pose @capture" count rises (not "latest" / "none"), and fixes land on the
+   beacon.
+3. Fit `--image-time-offset` (beacon_overlay and telemetry_stream) from a
+   brisk-yaw pass in front of a beacon: pick the offset that minimises fix scatter
+   or horizon error. Currently 0.
+4. Sustained thermals with the GPU running (only short bursts measured).
+
+**Localisation / map**
+5. Decide `--water-z` for the mission: water height relative to where PX4 arms
+   (the pool recording needed 1.6 m). Either measure it per site or estimate it
+   online from PnP base heights.
+6. Set `BeaconMap` `gate_m` (3 m) from the minimum beacon spacing at the
+   competition: beacons closer than the gate can merge.
+7. The ~2 m drift of the beacon estimate over the 70 s pool recording is
+   unexplained: beacon drift, drone GPS/EKF drift, or heading error (mag
+   calibration). Repeat with a moored/fixed beacon to separate them.
+8. Write a mission consumer for `/seabird/beacon_map`; the sweep scripts still read
+   `/seabird/beacon_detections` / `/seabird/buoy_detections`.
+
+**Model / data**
+9. COCO -> YOLO-pose converter **[reported: deferred]**: ignore RoboFlow's
+   placeholder `dummy` keypoint on `beacon`, write beacon rows as box + four
+   `0 0 0`, `kpt_shape [4,3]`, `flip_idx [0,3,2,1]` only with horizontal flips.
+10. Check whether training set `flip_idx` (checkpoint has `fliplr 0.5` but no
+    record of it; without it Ultralytics disables flips for pose).
+11. Add far-range beacons (5-20 px boxes) to the dataset; current boxes are
+    35-527 px.
+12. Diamond recall is low (0.41 at conf 0.25 on held-out frames): mostly small or
+    oblique diamonds.
+13. Which board shot the 2026-10-15 pool session is unresolved: the labeler's
+    calibration matches `.146`, the training images are reported to be from `.121`,
+    and the replay PnP fits equally well with either. If `.121`, re-run the
+    labeler's CAD refit with `.121`'s calibration (labels themselves are raw
+    pixels and stand).
+
+**Tooling**
+14. `voxl/telemetry_stream/run.sh` has no `ROS_DOMAIN_ID` (needs 8 on `.146`) and
+    hard-codes the `voxl2-humble` image (absent on `.146`).
+15. Overlay runs at ~8 fps with ~55 ms inference: profile resize / decode / draw /
+    JPEG encode if a faster stream is wanted. On `.146` the replay's CPU load also
+    starves the UDP camera bridge.
+
+Target requirement **[reported]**: a detection at least every 0.5 s to resolve a
+1 Hz blink. Met with margin on the GPU (and on the CPU alone).
