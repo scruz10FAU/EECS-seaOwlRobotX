@@ -5,7 +5,8 @@ __pycache__/
 *.pyd
 
 # Model exports (regenerate from the .pt with yolo export)
-*_saved_model/
+**/*_saved_model/*
+!voxl/YOLOv11n_pose_diamond_beacon_saved_model/YOLOv11n_pose_diamond_beacon_float16.tflite
 voxl/*.onnx
 calibration_image_sample_data_*.npy
 .claude*
