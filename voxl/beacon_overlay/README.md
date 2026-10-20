@@ -28,7 +28,8 @@ scp voxl/YOLOv11n_pose_diamond_beacon_saved_model/YOLOv11n_pose_diamond_beacon_f
   $DRONE:/data/models_eval/
 ```
 
-(No `.tflite` yet? See [step 1](#1-export-the-model-dev-machine).)
+The fp16 `.tflite` is committed to the repo, so a fresh clone can deploy as is.
+Re-export it only after retraining ([step 1](#1-export-the-model-dev-machine)).
 
 **On the drone:**
 
@@ -130,7 +131,11 @@ Find a board's domain with `tr '\0' '\n' < /proc/$(pgrep -f voxl_mpa_to_ros2_nod
   `vehicle_gps_position` over microDDS on the same domain as the camera (needed for
   localisation, not for detection).
 
-## 1. Export the model (*dev machine*)
+## 1. Export the model (*dev machine*; only after retraining)
+
+`voxl/YOLOv11n_pose_diamond_beacon_saved_model/YOLOv11n_pose_diamond_beacon_float16.tflite`
+is tracked in git (the rest of the `*_saved_model/` export is ignored). Regenerate
+it from the `.pt` when the model changes, and commit the new `.tflite`:
 
 ```bash
 source ~/.venvs/yolo-pose/bin/activate     # ultralytics 8.4.55, tensorflow 2.19.0, onnx==1.17.0
