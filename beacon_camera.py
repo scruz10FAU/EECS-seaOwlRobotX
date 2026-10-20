@@ -197,7 +197,8 @@ class BeaconCamera(Node):
 
     def enable_detection(self, model_path, imgsz=640, backend="ultralytics",
                          conf_thresh=0.5, delegate_path=None, class_names=None,
-                         track_iou_thresh=0.3, track_max_age=30):
+                         track_iou_thresh=0.3, track_max_age=30, kpt_shape=None,
+                         iou_thresh=None):
         """
         backend: "ultralytics" (default, YOLO .pt via CPU/GPU) or
                  "tflite_hexagon" (int8 .tflite via ModalAI's Hexagon NPU
@@ -217,6 +218,13 @@ class BeaconCamera(Node):
                  this list, so it must never be shorter than the model's class
                  count; the colour of a beacon is decided downstream by
                  classify_beacon_color(), not by the label used here.
+
+        kpt_shape: pose models on the tflite_hexagon backend, e.g. [4, 3]
+                 (x, y, conf per keypoint). Ultralytics reads it from the .pt.
+                 Keypoints arrive on Detection.keypoints.
+
+        iou_thresh: NMS IoU threshold for either backend; None keeps each
+                 backend's own default.
         """
         if backend == "tflite_hexagon":
             self._detector = TFLiteHexagonDetector(
@@ -227,6 +235,8 @@ class BeaconCamera(Node):
                 delegate_path=delegate_path,
                 track_iou_thresh=track_iou_thresh,
                 track_max_age=track_max_age,
+                kpt_shape=kpt_shape,
+                **({"iou_thresh": iou_thresh} if iou_thresh is not None else {}),
             )
         else:
             self._detector = YoloDetector(
@@ -234,6 +244,7 @@ class BeaconCamera(Node):
                 class_names=class_names,
                 imgsz=imgsz,
                 conf_thresh=conf_thresh,
+                **({"iou_thresh": iou_thresh} if iou_thresh is not None else {}),
             )
         # Both backends track now: ultralytics via .track(persist=True),
         # TFLite via its own greedy-IoU matcher. Downstream blink and colour

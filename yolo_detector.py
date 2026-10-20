@@ -18,6 +18,7 @@ Usage:
     detections = det.detect(rgb_frame, depth_map, intrinsics)
 """
 
+import os
 import sys
 # Only insert 3.11 site-packages when running inside Isaac's Python (3.11).
 # When running as a ROS2 node under system Python 3.10, ultralytics must
@@ -54,6 +55,7 @@ class YoloDetector:
                       e.g. ["red_buoy", "green_buoy", "blue_buoy"]
         imgsz:        Inference resolution (should match training — 320)
         conf_thresh:  Minimum confidence to keep a detection
+        iou_thresh:   NMS IoU threshold (ultralytics' default is 0.7)
         device:       "cuda:0", "cpu", or None (auto)
     """
 
@@ -64,12 +66,14 @@ class YoloDetector:
         imgsz: int = 320,
         conf_thresh: float = 0.5,
         device: Optional[str] = None,
+        iou_thresh: float = 0.7,
     ):
         self.weights = weights
         self.class_names = class_names
         self.imgsz = imgsz
         self.conf_thresh = conf_thresh
         self.device = device
+        self.iou_thresh = iou_thresh
 
         self._model = None
         self._tracking = False
@@ -148,12 +152,12 @@ class YoloDetector:
         # Run inference — track() for persistent IDs, predict() otherwise
         if self._tracking:
             results = self._model.track(
-                rgb, imgsz=self.imgsz, conf=self.conf_thresh,
+                rgb, imgsz=self.imgsz, conf=self.conf_thresh, iou=self.iou_thresh,
                 verbose=False, persist=True, device=self.device,
             )
         else:
             results = self._model.predict(
-                rgb, imgsz=self.imgsz, conf=self.conf_thresh,
+                rgb, imgsz=self.imgsz, conf=self.conf_thresh, iou=self.iou_thresh,
                 verbose=False, device=self.device,
             )
 
@@ -179,6 +183,8 @@ class YoloDetector:
           .conf  — (N,) confidence scores
           .cls   — (N,) class indices (float → int)
           .id    — (N,) tracking IDs if tracking enabled, else None
+        Pose models add result.keypoints: .xy (N, K, 2) pixels in the original
+        image, .conf (N, K) or None.
         """
         boxes = result.boxes
         if boxes is None or len(boxes) == 0:
@@ -190,6 +196,13 @@ class YoloDetector:
         xyxy = boxes.xyxy.cpu().numpy()       # (N, 4)
         confs = boxes.conf.cpu().numpy()       # (N,)
         cls_ids = boxes.cls.cpu().numpy().astype(int)  # (N,)
+
+        kpts = None
+        if getattr(result, "keypoints", None) is not None and result.keypoints.xy is not None:
+            kxy = result.keypoints.xy.cpu().numpy().astype(np.float64)       # (N, K, 2)
+            kc = result.keypoints.conf
+            kc = kc.cpu().numpy() if kc is not None else np.ones(kxy.shape[:2])
+            kpts = np.concatenate([kxy, kc[..., None]], axis=2)              # (N, K, 3)
 
         # Tracking IDs — None if predict() was used instead of track()
         track_ids = None
@@ -223,6 +236,7 @@ class YoloDetector:
                 bbox_2d=(x1, y1, x2, y2),
                 position_3d=pos_3d,
                 velocity_3d=None,  # no velocity estimation yet
+                keypoints=kpts[i] if kpts is not None else None,
             ))
 
         return detections

@@ -63,6 +63,9 @@ class TFLiteHexagonDetector:
         delegate_path: Path to the Hexagon delegate .so (VOXL2-SDK-specific).
                        None, missing, or a failed load falls back to CPU.
         num_threads:   CPU thread count when not using the delegate.
+        kpt_shape:     Pose models only: (num_keypoints, dims), e.g. (4, 3) for
+                       x, y, conf. The output channel count alone can't tell a
+                       pose model from a many-class detector, so it must be given.
     """
 
     def __init__(
@@ -71,12 +74,16 @@ class TFLiteHexagonDetector:
         class_names: Optional[List[str]] = None,
         imgsz: int = 640,
         conf_thresh: float = 0.5,
-        iou_thresh: float = 0.45,
+        iou_thresh: float = 0.65,
         delegate_path: Optional[str] = None,
         num_threads: int = 4,
         track_iou_thresh: float = 0.3,
         track_max_age: int = 30,
         input_is_bgr: bool = True,
+        kpt_shape: Optional[Tuple[int, int]] = None,
+        gpu_lib: Optional[str] = None,
+        use_gpu: bool = True,
+        resize_mode: str = "letterbox",
     ):
         self.weights = weights
         self.class_names = class_names
@@ -88,6 +95,20 @@ class TFLiteHexagonDetector:
         self.track_iou_thresh = track_iou_thresh
         self.track_max_age = track_max_age
         self.input_is_bgr = input_is_bgr
+        self.kpt_shape = tuple(kpt_shape) if kpt_shape else None
+        self._kpt_channels = self.kpt_shape[0] * self.kpt_shape[1] if self.kpt_shape else 0
+        # VOXL2 GPU: path to libtflite_gpu_shim.so (see tflite_gpu.py). Takes
+        # precedence over delegate_path; None = tflite_runtime. use_gpu=False
+        # runs the shim's own TFLite on the CPU (XNNPACK).
+        self.gpu_lib = gpu_lib
+        self.use_gpu = use_gpu
+        # How the frame becomes the square model input -- must match training.
+        # "letterbox": aspect-preserving + 114 padding (Ultralytics default).
+        # "stretch": plain resize, aspect not kept (the 2-class pose model was
+        # trained on 1280x800 tracking frames stretched to 640x640).
+        if resize_mode not in ("letterbox", "stretch"):
+            raise ValueError(f"resize_mode must be 'letterbox' or 'stretch', not {resize_mode!r}")
+        self.resize_mode = resize_mode
 
         self._tracking = False
         self._tracks: List[dict] = []   # {"id", "bbox", "misses"}
@@ -108,24 +129,16 @@ class TFLiteHexagonDetector:
         reports tracking_id=-1.
         """
         try:
-            tflite = _lazy_import_tflite()
-
-            delegates = []
-            if self.delegate_path:
-                try:
-                    delegates = [tflite.load_delegate(self.delegate_path)]
-                    self._using_delegate = True
-                except Exception as e:
-                    print(f"[tflite-hexagon] WARNING: failed to load delegate "
-                          f"'{self.delegate_path}' ({e}) -- falling back to CPU")
-                    delegates = []
-                    self._using_delegate = False
-
-            self._interpreter = tflite.Interpreter(
-                model_path=self.weights,
-                experimental_delegates=delegates,
-                num_threads=self.num_threads,
-            )
+            if self.gpu_lib:
+                from tflite_gpu import Interpreter as GpuInterpreter
+                self._interpreter = GpuInterpreter(self.weights, self.gpu_lib,
+                                                   num_threads=self.num_threads,
+                                                   use_gpu=self.use_gpu)
+                self._using_delegate = self._interpreter.gpu_active
+                if self._interpreter.message:
+                    print(f"[tflite-hexagon] WARNING: {self._interpreter.message}")
+            else:
+                self._interpreter = self._make_runtime_interpreter()
             self._interpreter.allocate_tensors()
             self._input_detail = self._interpreter.get_input_details()[0]
             self._output_detail = self._interpreter.get_output_details()[0]
@@ -160,12 +173,39 @@ class TFLiteHexagonDetector:
 
             print(f"[tflite-hexagon] Model loaded: {self.weights}")
             print(f"[tflite-hexagon] Classes: {self.class_names}")
-            print(f"[tflite-hexagon] Hexagon delegate active: {self._using_delegate}")
+            print(f"[tflite-hexagon] Backend: {self.backend}")
             return True
         except Exception as e:
             print(f"[tflite-hexagon] ERROR loading model: {e}")
             self._interpreter = None
             return False
+
+    @property
+    def backend(self) -> str:
+        if self.gpu_lib:
+            if not self.use_gpu:
+                return "cpu (shim)"
+            return "gpu (OpenCL)" if self._using_delegate else "cpu (GPU fallback)"
+        return "delegate" if self._using_delegate else "cpu"
+
+    def _make_runtime_interpreter(self):
+        """tflite_runtime / tf.lite interpreter, with delegate_path if it loads."""
+        tflite = _lazy_import_tflite()
+        delegates = []
+        self._using_delegate = False
+        if self.delegate_path:
+            try:
+                delegates = [tflite.load_delegate(self.delegate_path)]
+                self._using_delegate = True
+            except Exception as e:
+                print(f"[tflite-hexagon] WARNING: failed to load delegate "
+                      f"'{self.delegate_path}' ({e}) -- falling back to CPU")
+                delegates = []
+        return tflite.Interpreter(
+            model_path=self.weights,
+            experimental_delegates=delegates,
+            num_threads=self.num_threads,
+        )
 
     def _reconcile_class_names(self) -> None:
         """Derive num_classes from the output tensor and make self.class_names
@@ -175,8 +215,11 @@ class TFLiteHexagonDetector:
         shape = self._output_detail["shape"]
         if len(shape) != 3 or shape[1] >= shape[2]:
             return  # not the [1, 4+nc, anchors] layout _decode() expects
-        num_classes = int(shape[1]) - 4
+        num_classes = int(shape[1]) - 4 - self._kpt_channels
         if num_classes < 1:
+            print(f"[tflite-hexagon] WARNING: output has {shape[1]} channels, too few "
+                  f"for 4 box + {self._kpt_channels} keypoint channels (kpt_shape "
+                  f"{self.kpt_shape}).")
             return
 
         if not self.class_names:
@@ -214,17 +257,26 @@ class TFLiteHexagonDetector:
         # B swapped. voxl-tflite-server feeds RGB too (CV_YUV2RGB_*,
         # model_helper.cpp:237). Measured on one real frame: the same beacon
         # scores 0.494 as BGR vs 0.637 as RGB -- either side of conf 0.5.
-        frame = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB) if self.input_is_bgr else rgb
+        if rgb.ndim == 2 or rgb.shape[2] == 1:
+            # mono8 (e.g. tracking_front): replicate to 3 channels, the same
+            # thing ultralytics does when it loads a greyscale training image.
+            frame = cv2.cvtColor(rgb, cv2.COLOR_GRAY2RGB)
+        else:
+            frame = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB) if self.input_is_bgr else rgb
 
-        letterboxed, scale, pad_x, pad_y = self._letterbox(frame, self.imgsz)
-        input_tensor = self._prepare_input(letterboxed)
+        if self.resize_mode == "stretch":
+            square, sx, sy, pad_x, pad_y = self._stretch(frame, self.imgsz)
+        else:
+            square, scale, pad_x, pad_y = self._letterbox(frame, self.imgsz)
+            sx = sy = scale
+        input_tensor = self._prepare_input(square)
 
         self._interpreter.set_tensor(self._input_detail["index"], input_tensor)
         self._interpreter.invoke()
         raw = self._interpreter.get_tensor(self._output_detail["index"])
 
         h, w = rgb.shape[:2]
-        boxes, scores, cls_ids = self._decode(raw, scale, pad_x, pad_y, w, h)
+        boxes, scores, cls_ids, kpts = self._decode(raw, sx, sy, pad_x, pad_y, w, h)
         if len(boxes) == 0:
             return self._track([])
 
@@ -258,6 +310,7 @@ class TFLiteHexagonDetector:
                 bbox_2d=(x1, y1, x2, y2),
                 position_3d=pos_3d,
                 velocity_3d=None,
+                keypoints=kpts[i] if kpts is not None else None,
             ))
 
         return self._track(detections)
@@ -364,12 +417,21 @@ class TFLiteHexagonDetector:
         canvas[pad_y:pad_y + nh, pad_x:pad_x + nw] = resized
         return canvas, scale, pad_x, pad_y
 
-    def _prepare_input(self, letterboxed: np.ndarray) -> np.ndarray:
-        """Cast the letterboxed uint8 frame to whatever dtype the model's
+    @staticmethod
+    def _stretch(rgb: np.ndarray, size: int) -> Tuple[np.ndarray, float, float, int, int]:
+        """Resize to size x size without keeping aspect ratio. Returns the
+        per-axis scales (1280x800 -> 640: 0.5, 0.8) and zero padding, so
+        _decode() undoes it the same way it undoes a letterbox."""
+        h, w = rgb.shape[:2]
+        square = cv2.resize(rgb, (size, size), interpolation=cv2.INTER_LINEAR)
+        return square, size / w, size / h, 0, 0
+
+    def _prepare_input(self, square: np.ndarray) -> np.ndarray:
+        """Cast the square uint8 frame to whatever dtype the model's
         input tensor expects, applying its quantization scale/zero-point for
         an int8/uint8 input, or plain [0,1] normalization for float32."""
         dtype = self._input_detail["dtype"]
-        batched = letterboxed[np.newaxis, ...]
+        batched = square[np.newaxis, ...]
         if dtype in (np.uint8, np.int8):
             scale, zero_point = self._input_detail["quantization"]
             if not scale:
@@ -378,31 +440,45 @@ class TFLiteHexagonDetector:
             return np.clip(quantized, np.iinfo(dtype).min, np.iinfo(dtype).max).astype(dtype)
         return batched.astype(np.float32) / 255.0
 
-    def _decode(self, raw: np.ndarray, scale: float, pad_x: int, pad_y: int,
-                orig_w: int, orig_h: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _decode(self, raw: np.ndarray, sx: float, sy: float, pad_x: int, pad_y: int,
+                orig_w: int, orig_h: int):
         """
-        Decode a raw YOLOv8-style TFLite output tensor — [1, 4+num_classes,
-        num_anchors], no built-in NMS — into (boxes_xyxy, scores, cls_ids)
-        in ORIGINAL frame pixel coordinates. Confidence-thresholded but not
-        yet NMS'd (NMS happens in detect(), which also builds Detections).
+        Decode a raw YOLOv8/11-style TFLite output tensor — [1, 4+num_classes
+        (+K*D keypoint channels for pose), num_anchors], no built-in NMS — into
+        (boxes_xyxy, scores, cls_ids, keypoints) in ORIGINAL frame pixel
+        coordinates. keypoints is (N, K, D) or None for a detect model.
+        sx/sy: input-pixels per frame-pixel on each axis (equal for letterbox).
+        Confidence-thresholded but not yet NMS'd (NMS happens in detect(),
+        which also builds Detections).
         """
         out_scale, out_zero = self._output_detail["quantization"]
         if out_scale:
             raw = (raw.astype(np.float32) - out_zero) * out_scale
 
-        raw = raw[0].T  # (num_anchors, 4+num_classes)
+        raw = raw[0].T  # (num_anchors, 4+num_classes[+K*D])
         box_xywh = raw[:, :4]
-        class_scores = raw[:, 4:]
+        nc_end = raw.shape[1] - self._kpt_channels
+        class_scores = raw[:, 4:nc_end]
         cls_ids = np.argmax(class_scores, axis=1)
         confs = class_scores[np.arange(len(cls_ids)), cls_ids]
 
         keep = confs >= self.conf_thresh
         if not np.any(keep):
-            return np.zeros((0, 4)), np.zeros((0,)), np.zeros((0,), dtype=int)
+            return np.zeros((0, 4)), np.zeros((0,)), np.zeros((0,), dtype=int), None
 
         box_xywh = box_xywh[keep]
         confs = confs[keep]
         cls_ids = cls_ids[keep]
+
+        kpts = None
+        if self._kpt_channels:
+            # Pose export: per keypoint (x, y[, conf]); x/y normalised to the
+            # model input like the boxes, conf already sigmoided. Measured on
+            # the YOLO11n-pose diamond export: agrees with the .pt to ~1 px.
+            # Not clipped -- a corner just outside the frame is still geometry.
+            kpts = raw[keep, nc_end:].reshape(-1, *self.kpt_shape).astype(np.float64)
+            kpts[:, :, 0] = (kpts[:, :, 0] * self.imgsz - pad_x) / sx
+            kpts[:, :, 1] = (kpts[:, :, 1] * self.imgsz - pad_y) / sy
 
         # Ultralytics TFLite exports emit NORMALIZED xywh in [0,1] relative to
         # the model's square input, NOT pixels in the letterboxed frame. Lift
@@ -414,17 +490,17 @@ class TFLiteHexagonDetector:
         cy = box_xywh[:, 1] * self.imgsz
         bw = box_xywh[:, 2] * self.imgsz
         bh = box_xywh[:, 3] * self.imgsz
-        x1 = (cx - bw / 2.0 - pad_x) / scale
-        y1 = (cy - bh / 2.0 - pad_y) / scale
-        x2 = (cx + bw / 2.0 - pad_x) / scale
-        y2 = (cy + bh / 2.0 - pad_y) / scale
+        x1 = (cx - bw / 2.0 - pad_x) / sx
+        y1 = (cy - bh / 2.0 - pad_y) / sy
+        x2 = (cx + bw / 2.0 - pad_x) / sx
+        y2 = (cy + bh / 2.0 - pad_y) / sy
 
         x1 = np.clip(x1, 0, orig_w - 1)
         y1 = np.clip(y1, 0, orig_h - 1)
         x2 = np.clip(x2, 0, orig_w - 1)
         y2 = np.clip(y2, 0, orig_h - 1)
 
-        return np.stack([x1, y1, x2, y2], axis=1), confs, cls_ids
+        return np.stack([x1, y1, x2, y2], axis=1), confs, cls_ids, kpts
 
     def _back_project_bbox_center(
         self,

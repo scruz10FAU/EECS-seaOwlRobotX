@@ -232,7 +232,7 @@ All keys are optional — omitted keys fall back to their defaults.
 | `min_area_frac` | `0.001` | Minimum detection area as a fraction of frame area |
 | `stage2_conf` | `0.30` | Stage-2 model confidence threshold |
 | `depth_source` | `"topic"` | Distance source: `"topic"` uses the depth ROS topic; `"bbox"` estimates distance from the bounding box height and drone altitude (no depth sensor required) |
-| `beacon_height_m` | `0.3048` | Physical beacon height in metres (12 in) — used only when `depth_source` is `"bbox"` |
+| `beacon_height_m` | `0.2915` | Vertical height of the beacon's white section in metres (CAD) — used only when `depth_source` is `"bbox"` |
 | `beacon_z_m` | `0.0` | Known beacon altitude in the ENU world frame (metres) — used to remove the vertical offset from the slant range when `depth_source` is `"bbox"` |
 | `max_detections` | `null` | Stop after this many published detections. `null` = unlimited |
 | `imgsz` | `640` | YOLO inference resolution in pixels. Should match model training size |
