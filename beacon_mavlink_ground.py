@@ -28,8 +28,10 @@ IN WSL:
 """
 
 import argparse
+import csv
 import json
 import time
+from datetime import datetime
 
 from pymavlink import mavutil
 
@@ -51,6 +53,7 @@ def _build_detection_json(beacon) -> dict:
         "longitude":   beacon.longitude,
         "color":       beacon.color,
         "is_blinking": beacon.is_blinking,
+        "tracking_id": beacon.tracking_id,
     }
 
 
@@ -75,7 +78,20 @@ def main():
         "--ros-topic", default=DEFAULT_ROS_TOPIC,
         help=f"ROS2 topic to publish on when --publish-ros is set (default: {DEFAULT_ROS_TOPIC})",
     )
+    ap.add_argument(
+        "--log", metavar="PATH", default=None,
+        help="Append each decoded beacon and its receive time to PATH as CSV",
+    )
     args = ap.parse_args()
+
+    log_file = log_writer = None
+    if args.log:
+        log_file = open(args.log, "a", newline="")
+        log_writer = csv.writer(log_file)
+        if log_file.tell() == 0:
+            log_writer.writerow(["iso_time", "epoch_time", "latitude", "longitude",
+                                 "color", "is_blinking", "tracking_id"])
+            log_file.flush()
 
     ros_publisher = None
     ros_node = None
@@ -108,10 +124,19 @@ def main():
                 continue
 
             beacon = unpack_value_array(msg.value)
+            received = time.time()
             ts = time.strftime("%H:%M:%S")
             blink_str = "unknown" if beacon.is_blinking is None else str(beacon.is_blinking)
             print(f"[{ts}] beacon: lat={beacon.latitude:.6f} lon={beacon.longitude:.6f} "
-                  f"color={beacon.color} blinking={blink_str}")
+                  f"color={beacon.color} blinking={blink_str} tracking_id={beacon.tracking_id}")
+
+            if log_writer is not None:
+                log_writer.writerow([
+                    datetime.fromtimestamp(received).isoformat(timespec="milliseconds"),
+                    f"{received:.6f}", beacon.latitude, beacon.longitude,
+                    beacon.color, blink_str, beacon.tracking_id,
+                ])
+                log_file.flush()
 
             if ros_publisher is not None:
                 out = String()
@@ -120,6 +145,8 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        if log_file is not None:
+            log_file.close()
         if ros_node is not None:
             ros_node.destroy_node()
             import rclpy

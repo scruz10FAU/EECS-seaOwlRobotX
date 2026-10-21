@@ -14,18 +14,24 @@ Usage:
     python3 mock_beacon_publisher.py --rate 2.0 --count 10    # 2 Hz, stop after 10 messages
     python3 mock_beacon_publisher.py --color red --blinking true --lat 26.3712 --lon -80.1034
                                                                # publish one fixed sample repeatedly
+    python3 mock_beacon_publisher.py --log published.csv      # also record each message + publish time
 """
 
 import argparse
+import csv
 import itertools
 import json
 import time
+from datetime import datetime
 
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
 DEFAULT_TOPIC = "/seabird/beacon_detections_downward"
+
+_LOG_FIELDS = ["iso_time", "epoch_time", "topic", "tracking_id", "color", "blink",
+               "blink_color", "blink_hz", "phase", "latitude", "longitude", "altitude"]
 
 # Built-in variety for unattended cycling: different colors, blink states,
 # and GPS fixes so downstream consumers (e.g. beacon_mavlink_bridge.py,
@@ -86,8 +92,10 @@ class MockBeaconPublisher(Node):
         self.get_logger().info(f"Publishing synthetic beacon detections on {topic}")
 
 
-def _run(node: MockBeaconPublisher, message_source, rate_hz: float, count: int) -> None:
+def _run(node: MockBeaconPublisher, message_source, rate_hz: float, count: int,
+         topic: str, log_file=None) -> None:
     period = 1.0 / rate_hz if rate_hz > 0 else 0.0
+    log_writer = csv.writer(log_file) if log_file is not None else None
     sent = 0
     for msg_dict in message_source:
         if count and sent >= count:
@@ -97,6 +105,16 @@ def _run(node: MockBeaconPublisher, message_source, rate_hz: float, count: int) 
         out = String()
         out.data = json.dumps(msg_dict)
         node.publisher.publish(out)
+
+        if log_writer is not None:
+            gps = msg_dict["gps_position"]
+            log_writer.writerow([
+                datetime.fromtimestamp(msg_dict["timestamp"]).isoformat(timespec="milliseconds"),
+                f"{msg_dict['timestamp']:.6f}", topic, msg_dict["tracking_id"], msg_dict["color"],
+                msg_dict["blink"], msg_dict["blink_color"], msg_dict["blink_hz"], msg_dict["phase"],
+                gps["latitude"], gps["longitude"], gps["altitude"],
+            ])
+            log_file.flush()
 
         node.get_logger().info(
             f"Published: color={msg_dict['color']} "
@@ -144,8 +162,16 @@ def main():
                     help="Latitude for the single-sample mode (default: 26.371200)")
     ap.add_argument("--lon", type=float, default=-80.103400,
                     help="Longitude for the single-sample mode (default: -80.103400)")
+    ap.add_argument("--log", metavar="PATH", default=None,
+                    help="Append each published message and its publish time to PATH as CSV")
     args = ap.parse_args()
 
+    log_file = None
+    if args.log:
+        log_file = open(args.log, "a", newline="")
+        if log_file.tell() == 0:
+            csv.writer(log_file).writerow(_LOG_FIELDS)
+            log_file.flush()
     rclpy.init()
     node = MockBeaconPublisher(args.topic)
     try:
@@ -157,10 +183,12 @@ def main():
             source = itertools.repeat(fixed)
         else:
             source = _cycle_fixtures()
-        _run(node, source, args.rate, args.count)
+        _run(node, source, args.rate, args.count, args.topic, log_file)
     except KeyboardInterrupt:
         pass
     finally:
+        if log_file is not None:
+            log_file.close()
         node.destroy_node()
         rclpy.shutdown()
 

@@ -417,7 +417,7 @@ Three independent image-saving flags can be combined freely. All write to a dire
 
 ## beacon_mavlink_bridge.py / beacon_mavlink_ground.py
 
-Relays beacon detections to the ground station as a compact binary message over the existing MAVLink link to the flight controller, rather than requiring the ground station to be on the same ROS2 network. No custom MAVLink dialect is used — the payload (latitude, longitude ×1e7 as int32, color, blink status, both as uint8 enums) is packed into the `value` byte array of a standard MAVLink `MEMORY_VECT` message, with a sentinel `address` (`0xBEAC`) distinguishing it from any other real memory-vector traffic on the link. Wire format lives in `utils/beacon_mavlink_protocol.py` and is shared by both scripts.
+Relays beacon detections to the ground station as a compact binary message over the existing MAVLink link to the flight controller, rather than requiring the ground station to be on the same ROS2 network. No custom MAVLink dialect is used — the payload (latitude, longitude ×1e7 as int32, color, blink status, both as uint8 enums, and `tracking_id` as int32, `-1` if no tracker) is packed into the `value` byte array of a standard MAVLink `MEMORY_VECT` message, with a sentinel `address` (`0xBEAC`) distinguishing it from any other real memory-vector traffic on the link. Wire format lives in `utils/beacon_mavlink_protocol.py` and is shared by both scripts. The current protocol version is 2 (v2 added `tracking_id`); each side rejects messages from the other version, so update the drone and ground station together.
 
 **`beacon_mavlink_bridge.py`** — ROS2 node, runs alongside the detector on the drone. Subscribes to `/seabird/beacon_detections`, and for each detection with a known GPS position, opens (once) and sends through a `pymavlink` connection to the same MAVLink endpoint `sweep_lawnmower.py`/`sweep_rrt.py` use via `MAVSDK_ADDRESS` (PX4 SITL in sim, `voxl-mavlink-server` on the physical drone) — using `pymavlink` instead of MAVSDK here since MAVSDK's Python API has no generic "send an arbitrary MAVLink message" call.
 
@@ -426,12 +426,12 @@ python3 beacon_mavlink_bridge.py                                              # 
 python3 beacon_mavlink_bridge.py --mavlink-endpoint udpout:127.0.0.1:14551   # physical drone
 ```
 
-**`beacon_mavlink_ground.py`** — counterpart script for the ground-station machine (not run on the drone). Listens on a MAVLink connection, filters `MEMORY_VECT` messages by the sentinel address, and prints decoded GPS/color/blink status. Copy this file **and** the `utils/` folder (for `utils/beacon_mavlink_protocol.py`) to the ground station together, so the import resolves.
+**`beacon_mavlink_ground.py`** — counterpart script for the ground-station machine (not run on the drone). Listens on a MAVLink connection, filters `MEMORY_VECT` messages by the sentinel address, and prints decoded GPS/color/blink status/tracking ID. `--publish-ros` republishes each decoded beacon as JSON on `/seabird/beacon_info`; `--log PATH` appends one CSV row per decoded beacon (`iso_time, epoch_time, latitude, longitude, color, is_blinking, tracking_id`), where the time is when the message was received. Copy this file **and** the `utils/` folder (for `utils/beacon_mavlink_protocol.py`) to the ground station together, so the import resolves.
 
 ```bash
 python3 beacon_mavlink_ground.py --mavlink-endpoint udpin:0.0.0.0:14550
 python3 beacon_mavlink_ground.py --mavlink-endpoint /dev/ttyACM0 --baud 460800
-
+python3 beacon_mavlink_ground.py --mavlink-endpoint udpin:0.0.0.0:14551 --publish-ros --log received.csv
 ```
 
 Both scripts require `pip install pymavlink`. Whether messages sent by the bridge actually reach the ground station's radio link depends on how PX4/`voxl-mavlink-server` are configured to forward third-party-injected traffic between endpoints — verify end-to-end delivery against your actual hardware/radio setup before relying on it operationally; it hasn't been tested against real MAVLink hardware in this session.
@@ -450,7 +450,10 @@ Two modes:
 python3 mock_beacon_publisher.py                         # cycles the built-in sample set at 1 Hz
 python3 mock_beacon_publisher.py --rate 2.0 --count 10    # 2 Hz, stop after 10 messages
 python3 mock_beacon_publisher.py --color red --blinking true --lat 26.3712 --lon -80.1034
+python3 mock_beacon_publisher.py --log published.csv      # also record each message + publish time
 ```
+
+`--log PATH` appends one CSV row per published message: `iso_time, epoch_time, topic, tracking_id, color, blink, blink_color, blink_hz, phase, latitude, longitude, altitude`. The time is the message's own `timestamp` field, so the log always matches what was sent. `tracking_id` counts up from 0 in cycling mode and is always 0 in single-sample mode.
 
 ---
 

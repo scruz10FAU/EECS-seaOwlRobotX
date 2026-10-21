@@ -7,6 +7,7 @@ Only this process should open the radio COM port.
 import argparse
 import socket
 import time
+from datetime import datetime
 
 import serial
 from serial import SerialException, SerialTimeoutException
@@ -23,6 +24,13 @@ def address(value):
         raise argparse.ArgumentTypeError('Use HOST:PORT, e.g. 127.0.0.1:14550') from e
 
 
+def log_wsl_send(log, data, status='SENT'):
+    now = time.time()
+    iso = datetime.fromtimestamp(now).isoformat(timespec='milliseconds')
+    log.write(f'{iso},{now:.6f},{status},{len(data)},{data.hex()}\n')
+    log.flush()
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--com', default='COM6', help='Radio serial port (default: COM6)')
@@ -30,7 +38,16 @@ def main():
     p.add_argument('--qgc', type=address, default=('127.0.0.1', 14550), help='QGC UDP destination')
     p.add_argument('--wsl', type=address, default=('127.0.0.1', 14551), help='WSL UDP destination')
     p.add_argument('--listen', type=int, default=14600, help='UDP port for QGC commands')
+    p.add_argument('--wsl-log', metavar='PATH', default=None,
+                   help='Append a CSV row (time, status, bytes, hex) for every chunk sent to WSL')
     args = p.parse_args()
+
+    wsl_log = None
+    if args.wsl_log:
+        wsl_log = open(args.wsl_log, 'a', newline='')
+        if wsl_log.tell() == 0:
+            wsl_log.write('iso_time,epoch_time,status,bytes,hex_payload\n')
+            wsl_log.flush()
 
     udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp.bind(('127.0.0.1', args.listen))
@@ -65,8 +82,12 @@ def main():
                         for dest in (args.qgc, args.wsl):
                             try:
                                 udp.sendto(data, dest)
+                                if wsl_log and dest is args.wsl:
+                                    log_wsl_send(wsl_log, data)
                             except OSError as e:
                                 print(f'UDP send to {dest} failed: {e}', flush=True)
+                                if wsl_log and dest is args.wsl:
+                                    log_wsl_send(wsl_log, data, 'SEND_FAILED')
 
                 while True:
                     try:
@@ -104,6 +125,8 @@ def main():
         if serial_port is not None:
             serial_port.close()
         udp.close()
+        if wsl_log is not None:
+            wsl_log.close()
 
 
 if __name__ == '__main__':

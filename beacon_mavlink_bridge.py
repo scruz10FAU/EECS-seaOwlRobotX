@@ -76,8 +76,9 @@ class BeaconMavlinkBridge(Node):
         #blink_info = data.get("blink") or {}
         #is_blinking = blink_info.get("is_blinking")
         is_blinking = data.get("blink")
+        tracking_id = data.get("tracking_id", -1)
 
-        value = pack_value_array(gps["latitude"], gps["longitude"], color, is_blinking)
+        value = pack_value_array(gps["latitude"], gps["longitude"], color, is_blinking, tracking_id)
 
         with self._lock:
             self._mav.mav.memory_vect_send(
@@ -86,7 +87,8 @@ class BeaconMavlinkBridge(Node):
 
         self.get_logger().info(
             f"Relayed beacon via MAVLink: lat={gps['latitude']:.6f} "
-            f"lon={gps['longitude']:.6f} color={color} blinking={is_blinking}"
+            f"lon={gps['longitude']:.6f} color={color} blinking={is_blinking} "
+            f"tracking_id={tracking_id}"
         )
 
 

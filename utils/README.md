@@ -197,12 +197,12 @@ Pure encode/decode module — no ROS or `pymavlink` dependency, just `struct`. S
 ```python
 from utils.beacon_mavlink_protocol import pack_value_array, unpack_value_array
 
-value = pack_value_array(latitude, longitude, color, is_blinking)   # -> 32-entry signed-int8 list
+value = pack_value_array(latitude, longitude, color, is_blinking, tracking_id)   # -> 32-entry signed-int8 list
 # ... send `value` as a MAVLink MEMORY_VECT message ...
-beacon = unpack_value_array(value)   # -> BeaconMavlinkMessage(latitude, longitude, color, is_blinking)
+beacon = unpack_value_array(value)   # -> BeaconMavlinkMessage(latitude, longitude, color, is_blinking, tracking_id)
 ```
 
-Packs `latitude`/`longitude` as int32, ×1e7-scaled (same convention as MAVLink's own `GLOBAL_POSITION_INT`), plus `color` and `is_blinking` as `uint8` enums, into the first 10 bytes of the 32-byte `value` array MAVLink's `MEMORY_VECT` message carries — the remaining bytes are zero-padded. `BEACON_MAVLINK_ADDRESS` (`0xBEAC`) is used as `MEMORY_VECT.address`, a sentinel the ground-station decoder filters on to distinguish this traffic from any other real memory-vector use on the link. `BEACON_MAVLINK_VERSION` is carried in `MEMORY_VECT.ver` so a future payload-layout change can be detected and rejected cleanly instead of silently misdecoding.
+Packs `latitude`/`longitude` as int32, ×1e7-scaled (same convention as MAVLink's own `GLOBAL_POSITION_INT`), plus `color` and `is_blinking` as `uint8` enums and `tracking_id` as int32 (`-1`, the default, when there's no tracker), into the first 14 bytes of the 32-byte `value` array MAVLink's `MEMORY_VECT` message carries — the remaining bytes are zero-padded. `BEACON_MAVLINK_ADDRESS` (`0xBEAC`) is used as `MEMORY_VECT.address`, a sentinel the ground-station decoder filters on to distinguish this traffic from any other real memory-vector use on the link. `BEACON_MAVLINK_VERSION` is carried in `MEMORY_VECT.ver` so a future payload-layout change can be detected and rejected cleanly instead of silently misdecoding. The current version is 2 (v2 added `tracking_id`).
 
 | Enum | Values |
 |---|---|
