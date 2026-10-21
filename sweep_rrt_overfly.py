@@ -153,7 +153,7 @@ STATE_MEANING = {
 }
 
 # Survey the whole field, then report. The field has a known buoy count.
-EXPECTED_BUOY_COUNT = 1      # Task 1 has ten buoys
+EXPECTED_BUOY_COUNT = 2      # Task 1 has ten buoys
 BUOY_MERGE_DIST_M   = 2.0     # detections within this distance = same buoy
 
 # ── MAVSDK ────────────────────────────────────────────────────────────────────

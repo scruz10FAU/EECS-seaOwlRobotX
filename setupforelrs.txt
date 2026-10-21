@@ -1,0 +1,129 @@
+
+Step 
+
+Where to run 
+
+Command 
+
+Purpose 
+
+1 
+
+VOXL2 SSH 
+
+systemctl status voxl-px4 voxl-mavlink-server voxl-microdds-agent 
+
+Verify PX4 and MAVLink services are running 
+
+2 
+
+VOXL2 SSH 
+
+systemctl status elrs-mavlink 
+
+Verify the ELRS bridge is running 
+
+3 
+
+VOXL2 SSH 
+
+ip netns exec rfdns ss -ulnp | grep 14550 
+
+Verify the ELRS bridge listens on 10.200.0.2:14550 
+
+4 
+
+VOXL2 SSH 
+
+systemctl status voxl-mpa-ros2 
+
+Check whether the ROS 2 bridge is already running 
+
+5 
+
+VOXL2 SSH 
+
+cd /home/voxluser && sudo ./run_seabird.sh 
+
+Start your Seabird Docker container 
+
+6 
+
+VOXL2 Docker 
+
+python3 beacon_detector_config.py 
+
+ 
+
+Or 
+
+ 
+
+python3 mock_beacon_publisher.py 
+
+Start your beacon detection software using its configured settings 
+
+6a 
+
+VOXL2 SSH – new terminal 
+
+ros2 topic list 
+
+Verify beacon data is publishing – if not, try restarting voxl-mpa-ros2 
+
+7 
+
+VOXL2 SSH 
+
+cd /home/voxluser/seabirdDocker/EECS-seaOwlRobotX 
+
+Navigate to the beacon publisher 
+
+8 
+
+VOXL2 SSH 
+
+python3 beacon_mavlink_bridge.py --mavlink-endpoint udpout:10.200.0.2:14550 
+
+Send beacon detections directly to the ELRS bridge 
+
+9 
+
+Windows PowerShell 
+
+cd "C:\Users\Precision 3571\EECS-seaOwlRobotX" 
+
+Navigate to your Windows project directory 
+
+10 
+
+Windows PowerShell 
+
+py -3.10 .\elrs_windows_router.py --com COM6 
+
+Start the serial/UDP router for QGC and WSL 
+
+11 
+
+QGroundControl 
+
+Connect ModalELRS_UDP 
+
+Establish the ELRS MAVLink connection 
+
+12 
+
+Windows Powershell 
+
+wsl -d Ubuntu-22.04 
+
+Start wsl with ubuntu 22.04 
+
+13 
+
+WSL Ubuntu 
+
+cd EECS-seaOwlRobotX && python3 beacon_mavlink_ground.py --mavlink-endpoint udpin:0.0.0.0:14551 --publish-ros 
+
+Receive beacon messages; confirm this argument is supported by your script 
+
