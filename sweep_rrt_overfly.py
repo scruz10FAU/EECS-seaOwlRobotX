@@ -57,8 +57,9 @@ from geometry_msgs.msg import PoseStamped, Point
 from visualization_msgs.msg import Marker
 from std_msgs.msg import ColorRGBA
 
-# State (colour + blink) is read straight off /seabird/beacon_detections, so the
-# in-process downward classifier is no longer imported here.
+import beacon_detector_config as bdc
+from downward_beacon_classifier_node import classify_beacon_downward_once
+cfg = bdc.load_config("configs/modal_config.json")
 
 try:
     from mavsdk import System
@@ -426,54 +427,43 @@ async def hold_position(drone: System, north: float, east: float,
 
 # ── Detection helpers ─────────────────────────────────────────────────────────
 
-def state_from_detection(det: dict) -> str:
+async def classify_state(drone: System, hover_north: float, hover_east: float,
+                         hover_down: float) -> str:
     """
-    Map a topic detection's (color, is_blinking) to a Task-1 state, or "" if the
-    blink isn't resolved yet. Reads straight from the detector's JSON — the
-    'blink' field is the detector's blink_info dict {"is_blinking","blink_hz"}.
+    Fly-over state read: run the downward classifier (~8 s) while HOLDING
+    position — streaming offboard setpoints the whole time, so PX4 doesn't drop
+    offboard mode during the read. Maps (color, is_blinking) to a Task-1 state,
+    or "" if not definitive / on failure.
     """
-    color = (det.get("color") or "").lower()
-    blink = det.get("blink") or {}
-    is_blinking = blink.get("is_blinking") if isinstance(blink, dict) else blink
+    hold = PositionNedYaw(hover_north, hover_east, hover_down, 0.0)
+
+    # Blocking downward read runs in a thread; meanwhile keep sending setpoints
+    # — without this, offboard fails safe after ~1 s of silence.
+    task = asyncio.create_task(
+        asyncio.to_thread(classify_beacon_downward_once, cfg, duration=8.0, tracking_id=-1)
+    )
+    while not task.done():
+        await drone.offboard.set_position_ned(hold)
+        await asyncio.sleep(0.1)
+
+    try:
+        result = await task
+        color = result["color"]
+        raw = result["blink"]
+        # Accept either a bare bool/None or a dict {"is_blinking": ...}
+        is_blinking = raw["is_blinking"] if isinstance(raw, dict) else raw
+    except Exception as e:                      # camera error, missing keys, timeout…
+        log(f"[rrt] ⚠ downward classification failed: {e}")
+        return ""                               # same "not confirmed yet" behaviour
+
     if is_blinking is None:
         return ""
+
     if color == "red"   and is_blinking:     return STATE_STARBOARD
     if color == "green" and is_blinking:     return STATE_PORT
     if color == "blue"  and is_blinking:     return STATE_ENTRY
     if color == "blue"  and not is_blinking: return STATE_EXIT
     return STATE_OBSTACLE
-
-
-async def classify_from_topic(drone: System, color: str,
-                              hover_north: float, hover_east: float,
-                              hover_down: float) -> tuple:
-    """
-    Read colour+blink for `color` straight off /seabird/beacon_detections — no
-    downward-camera call. Hovers and streams offboard setpoints (so PX4 keeps
-    offboard mode) while the detector's blink estimate settles, up to
-    BLINK_VERIFY_TIMEOUT_S. Returns (state, det): state is "" if the blink never
-    resolves in time; det is the latest detection for `color` (for its
-    world_position / GPS), or None if none ever arrived while hovering.
-    """
-    yaw = _bearing_to_beacon(color)
-    target = PositionNedYaw(hover_north, hover_east, hover_down, yaw)
-    deadline = asyncio.get_event_loop().time() + BLINK_VERIFY_TIMEOUT_S
-    det = None
-    while asyncio.get_event_loop().time() < deadline:
-        await drone.offboard.set_position_ned(target)
-        await asyncio.sleep(BLINK_VERIFY_POLL_S)
-        with _lock:
-            det = _pending_beacon.get(color)
-        if det is None:
-            continue
-        blink = det.get("blink") or {}
-        is_blinking = blink.get("is_blinking") if isinstance(blink, dict) else blink
-        if is_blinking is not None:          # blink resolved — done hovering
-            break
-    if det is None:
-        return "", None
-    return state_from_detection(det), det
-
 
 def _same_buoy(n: float, e: float, buoy: dict) -> bool:
     dn = n - buoy["north"]; de = e - buoy["east"]
@@ -865,6 +855,40 @@ async def fly_over_beacon(drone: System, rrt: RRT,
     return False
 
 
+# ── Beacon verification ───────────────────────────────────────────────────────
+
+async def verify_beacon(drone: System,
+                        hover_north: float, hover_east: float,
+                        hover_down: float, color: str) -> Optional[dict]:
+    """
+    Hover at the current position and wait until the blink detector reports
+    a definitive blink_is_blinking value (True or False, not None) for `color`,
+    or until BLINK_VERIFY_TIMEOUT_S elapses.
+ 
+    Returns the latest detection dict (may have blink_is_blinking=None on
+    timeout), or None if no detection was ever received for this color.
+    """
+    log(f"[rrt] ◉ Settling {BLINK_SETTLE_S:.0f}s over '{color}' before the downward read")
+ 
+    # Face toward the beacon using its reported camera-frame offset.
+    yaw = _bearing_to_beacon(color)
+    target = PositionNedYaw(hover_north, hover_east, hover_down, yaw)
+ 
+    # Hold still so the beacon is stable in the downward camera. We no longer
+    # poll the TOPIC's blink here — the colour+blink STATE is read by
+    # classify_state() via the downward classifier. We just settle, stream
+    # setpoints (keeping offboard alive), then return the latest detection for
+    # this colour so the caller has its world_position / GPS.
+    settle_end = asyncio.get_event_loop().time() + BLINK_SETTLE_S
+    while asyncio.get_event_loop().time() < settle_end:
+        await drone.offboard.set_position_ned(target)
+        await asyncio.sleep(BLINK_VERIFY_POLL_S)
+ 
+    with _lock:
+        return _pending_beacon.get(color)
+
+
+
 def _bearing_to_beacon(color: str) -> float:
     """
     Rough yaw angle toward the beacon from the latest pos3d_x / pos3d_y reading.
@@ -893,10 +917,9 @@ async def process_detections_here(drone: System, at_n: float, at_e: float,
                                    down_m: float,
                                    require_no_world_fix: bool = False) -> None:
     """
-    For every beacon colour currently in view, hover at (at_n, at_e), read its
-    colour+blink state STRAIGHT OFF the detector topic, and record the buoy
-    (deduplicated by location). Used both after flying directly over a beacon
-    and at an ordinary RRT node.
+    For every beacon colour currently in view, hover at (at_n, at_e), confirm its
+    blink state, classify it, and record the buoy (deduplicated by location).
+    Used both after flying directly over a beacon and at an ordinary RRT node.
 
     require_no_world_fix: when True, SKIP any beacon that has a world position —
     those are left pending so the over-fly branch flies directly over them first,
@@ -911,26 +934,24 @@ async def process_detections_here(drone: System, at_n: float, at_e: float,
                 continue   # has a world fix — let the over-fly branch take it
 
         log(f"[rrt] ★ Beacon in view: '{color}' at N={at_n:+.2f} E={at_e:+.2f} "
-            f"— hovering to read state from the topic")
+            f"— hovering to confirm state")
 
-        # Read colour+blink from /seabird/beacon_detections (no downward camera).
-        state, det = await classify_from_topic(drone, color, at_n, at_e, down_m)
+        det = await verify_beacon(drone, at_n, at_e, down_m, color)
         if det is None:
-            log(f"[rrt]   … '{color}' no detection while hovering, skipping")
-            with _lock:
-                _pending_beacon.pop(color, None)
-            continue
-        if not state:
-            log(f"[rrt]   … '{color}' blink unresolved in "
-                f"{BLINK_VERIFY_TIMEOUT_S:.0f}s, will retry")
             with _lock:
                 _pending_beacon.pop(color, None)
             continue
 
-        # Prefer the detector's world position (frame-aware) else the drone's
-        # live NE (it's hovering at/over the beacon).
+        state = await classify_state(drone, at_n, at_e, down_m)
+        if not state:
+            log(f"[rrt]   … '{color}' state unconfirmed (is_blinking=None), will retry")
+            with _lock:
+                _pending_beacon.pop(color, None)
+            continue
+
+        # Prefer the detector's world position (frame-aware) else the hover NE.
         ne = beacon_ne(det.get("world_position"))
-        bn, be = ne if ne is not None else (_state.north_m, _state.east_m)
+        bn, be = ne if ne is not None else (at_n, at_e)
 
         is_new = record_buoy(state, bn, be, det)
         with _lock:
