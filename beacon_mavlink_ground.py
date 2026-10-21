@@ -41,6 +41,11 @@ from utils.beacon_mavlink_protocol import (
 
 DEFAULT_ROS_TOPIC = "/seabird/beacon_info"
 
+# A msg_id seen again within this window is a repeated copy from the bridge
+# (--repeat) and is dropped. Time-based rather than "ever seen" so a bridge
+# restart, which starts msg_id over at 0, isn't mistaken for duplicates.
+DEDUP_WINDOW_S = 10.0
+
 
 def _build_detection_json(beacon) -> dict:
     """
@@ -90,7 +95,7 @@ def main():
         log_writer = csv.writer(log_file)
         if log_file.tell() == 0:
             log_writer.writerow(["iso_time", "epoch_time", "latitude", "longitude",
-                                 "color", "is_blinking", "tracking_id"])
+                                 "color", "is_blinking", "tracking_id", "msg_id"])
             log_file.flush()
 
     ros_publisher = None
@@ -111,6 +116,8 @@ def main():
     print(f"[beacon-ground] Heartbeat received from system {mav.target_system} "
           f"— listening for beacon messages")
 
+    seen = {}  # msg_id -> time first received
+    unique = duplicates = 0
     try:
         while True:
             msg = mav.recv_match(type="MEMORY_VECT", blocking=True, timeout=5.0)
@@ -125,16 +132,25 @@ def main():
 
             beacon = unpack_value_array(msg.value)
             received = time.time()
+            if received - seen.get(beacon.msg_id, float("-inf")) < DEDUP_WINDOW_S:
+                duplicates += 1
+                continue
+            seen[beacon.msg_id] = received
+            if len(seen) > 1024:
+                seen = {k: t for k, t in seen.items() if received - t < DEDUP_WINDOW_S}
+            unique += 1
+
             ts = time.strftime("%H:%M:%S")
             blink_str = "unknown" if beacon.is_blinking is None else str(beacon.is_blinking)
             print(f"[{ts}] beacon: lat={beacon.latitude:.6f} lon={beacon.longitude:.6f} "
-                  f"color={beacon.color} blinking={blink_str} tracking_id={beacon.tracking_id}")
+                  f"color={beacon.color} blinking={blink_str} tracking_id={beacon.tracking_id} "
+                  f"msg_id={beacon.msg_id} (duplicates skipped: {duplicates})")
 
             if log_writer is not None:
                 log_writer.writerow([
                     datetime.fromtimestamp(received).isoformat(timespec="milliseconds"),
                     f"{received:.6f}", beacon.latitude, beacon.longitude,
-                    beacon.color, blink_str, beacon.tracking_id,
+                    beacon.color, blink_str, beacon.tracking_id, beacon.msg_id,
                 ])
                 log_file.flush()
 
@@ -145,6 +161,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        print(f"[beacon-ground] {unique} unique beacon messages, {duplicates} duplicates skipped")
         if log_file is not None:
             log_file.close()
         if ros_node is not None:
