@@ -20,6 +20,7 @@ Detection pipeline for colored, optionally blinking, beacon lights mounted on a 
 | `beacon_mavlink_bridge.py` | ROS2 node — relays `/seabird/beacon_detections` to the ground station as a binary MAVLink message over the existing flight-controller link. |
 | `beacon_mavlink_ground.py` | Ground-station counterpart to `beacon_mavlink_bridge.py` — decodes the MAVLink message back into GPS/color/blink status. Runs on a separate machine. |
 | `mock_beacon_publisher.py` | Publishes synthetic `/seabird/beacon_detections` messages for testing downstream consumers — no camera or detection pipeline required. |
+| `mock_beacon_map_publisher.py` | Publishes a synthetic `/seabird/beacon_map` (the fused map from `beacon_overlay.py`) from a simulated drone flying over known beacons — no camera, PX4 or GPS required. |
 | `downward_beacon_classifier_node.py` | One-shot color/blink/GPS classification of a beacon's circular top face from a downward-facing camera, assuming another script already hovers the drone above it. No trained model — classical CV, using the known beacon/circle dimensions. |
 | `start_seabird_beacon.sh` | Mission launcher. Starts the detector, sweep, and recorder as tagged, logged child processes. |
 | `utils/` | Shared helper modules (`BlinkDetector`, `BeaconCamera`, detector backends, camera interfaces, the MAVLink wire format) imported by the scripts above — see [utils/README.md](utils/README.md). |
@@ -457,6 +458,26 @@ python3 mock_beacon_publisher.py --log published.csv      # also record each mes
 ```
 
 `--log PATH` appends one CSV row per published message: `iso_time, epoch_time, topic, tracking_id, color, blink, blink_color, blink_hz, phase, latitude, longitude, altitude`. The time is the message's own `timestamp` field, so the log always matches what was sent. `tracking_id` counts up from 0 in cycling mode and is always 0 in single-sample mode.
+
+---
+
+## mock_beacon_map_publisher.py
+
+Publishes synthetic `/seabird/beacon_map` messages, the fused beacon map `beacon_overlay.py` publishes while localising (schema in `beacon_overlay.py`'s docstring), for testing `sweep_rrt_overfly_rework.py` or any other map consumer without a camera, model, PX4 or GPS fix.
+
+It simulates a drone flying over beacons at known positions (default: the same 5 positions as `mock_beacon_publisher.py`). Each frame, beacons within `--detect-range` produce noisy fixes, with the method set by range (`pnp` < 6 m, `box` < 15 m, `ray` beyond) and occasional outliers. The fixes are fused by the real `beacon_pose.BeaconMap` with `beacon_overlay.py`'s default settings, and serialised the same way `beacon_overlay.py` does it. Map ids, `n`, `outliers`, `sigma_m`, `age_s` and `seen` therefore behave like the real thing: a beacon appears only after `--min-fixes` fixes, sigma grows while it's out of view, and ids can skip numbers when entries merge.
+
+```bash
+python3 mock_beacon_map_publisher.py                        # sweep back and forth over the beacons, 5 Hz
+python3 mock_beacon_map_publisher.py --prime                # every beacon already mapped in the first message
+python3 mock_beacon_map_publisher.py --path orbit --orbit-radius 30
+python3 mock_beacon_map_publisher.py --path hover --hover-ned 0,0
+python3 mock_beacon_map_publisher.py --beacon-ned 10,5 --beacon-ned -8,12   # beacons in local NED metres
+python3 mock_beacon_map_publisher.py --no-gps               # lat/lon null, as without a global reference
+python3 mock_beacon_map_publisher.py --dry-run --count 20   # print the JSON to stdout, no ROS needed
+```
+
+Positions are PX4 local NED about `--ref-lat/--ref-lon/--ref-alt` (default origin just south-west of the beacons), with the water at `--water-z` and the drone `--alt` metres above it. `--seed` makes a run repeatable, and `--beacon-drift` makes the true beacons float. Imports `beacon_pose`, so it needs `numpy` and `opencv-python`.
 
 ---
 

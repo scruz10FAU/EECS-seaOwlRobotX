@@ -75,6 +75,7 @@ def main():
     ap.add_argument("--wsl-log", metavar="CSV", default=None,
                     help="CSV record of complete frames sent to WSL")
     ap.add_argument("--stats-period", type=float, default=5.0)
+    ap.add_argument("--heartbeat-period", type=float, default=1.0)
     args = ap.parse_args()
 
     log_file = None
@@ -107,13 +108,26 @@ def main():
     totals = Counter()
     recent = Counter()
     last_stats = time.monotonic()
+    gcs_mav = mavutil.mavlink.MAVLink(
+        None,
+        srcSystem=255,
+        srcComponent=190
+    )
+
+    last_heartbeat = 0.0
 
     try:
         while True:
             if port is None:
                 try:
-                    port = serial.Serial(args.com, args.baud, timeout=0,
-                                         write_timeout=0.5)
+                    #port = serial.Serial(args.com, args.baud, timeout=0,
+                    #                     write_timeout=0.5)
+                    port = serial.Serial(port=None, baudrate = args.baud, timeout=0, write_timeout=0.5)
+                    port.dtr = False
+                    port.rts = False
+                    port.port = args.com
+                    port.open()
+                    last_heartbeat = 0.0
                     parser = new_parser()  # don't carry partial frames across reconnects
                     print(f"Connected to {args.com}", flush=True)
                 except (SerialException, OSError) as exc:
@@ -122,6 +136,25 @@ def main():
                     continue
 
             try:
+                # Keep standalone ELRS transmitter activated using MAVLink
+                now = time.monotonic()
+
+                if now - last_heartbeat >= args.heartbeat_period:
+                    msg = gcs_mav.heartbeat_encode(
+                        mavutil.mavlink.MAV_TYPE_GCS,
+                        mavutil.mavlink.MAV_AUTOPILOT_INVALID,
+                        0,
+                        0,
+                        mavutil.mavlink.MAV_STATE_ACTIVE
+                    )
+
+                    packet = msg.pack(gcs_mav)
+                    write_full(port, packet)
+
+                    recent["gcs_heartbeat_tx"] += 1
+                    totals["gcs_heartbeat_tx"] += 1
+
+                    last_heartbeat = now
                 pending = port.in_waiting
                 if pending:
                     raw = port.read(min(pending, 4096))
@@ -198,7 +231,7 @@ def main():
                             break
                         raise
                     if incoming:
-                        write_full(port, incoming)
+                        #write_full(port, incoming)
                         recent["qgc_to_serial_bytes"] += len(incoming)
                         totals["qgc_to_serial_bytes"] += len(incoming)
 
