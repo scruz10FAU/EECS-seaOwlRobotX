@@ -108,7 +108,7 @@ def _analyse_burst(burst, crop_model, cfg, depth_source,
                     cfg["camera"]["cx"], cfg["camera"]["cy"],
                     b_dpos[2] if b_dpos is not None else 0.0,
                     det_cfg.get("beacon_z_m", 0.0),
-                    det_cfg.get("beacon_height_m", 0.3048),
+                    det_cfg.get("beacon_height_m", 0.2915),
                 )
 
             crop = b_rgb[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
@@ -356,6 +356,7 @@ def run_burst_ros(cfg: dict) -> None:
         backend=cfg["detection"].get("backend", "ultralytics"),
         conf_thresh=cfg["conf"],
         delegate_path=cfg["detection"].get("tflite_delegate_path"),
+        class_names=cfg["detection"].get("class_names"),
     ):
         print("[burst] Detection failed to start")
         cam.close()

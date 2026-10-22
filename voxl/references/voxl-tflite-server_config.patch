@@ -1,0 +1,460 @@
+diff --git a/voxl/voxl-tflite-server/include/config_file.h b/voxl/voxl-tflite-server/include/config_file.h
+index bf4373e..c38ece2 100644
+--- a/voxl/voxl-tflite-server/include/config_file.h
++++ b/voxl/voxl-tflite-server/include/config_file.h
+@@ -65,6 +65,14 @@
+  * output_pipe_prefix  - if allow_multiple is set, create output pipes using default\n\
+  *                         names (tflite, tflite_data) with added prefix.\n\
+  *                         ONLY USED IF allow_multiple is set to true.\n\
++ * resize_mode         - how camera frames are fit to the model input.\n\
++ *                         STRETCH: resize to the input dims, ignoring aspect ratio.\n\
++ *                         LETTERBOX: preserve aspect ratio and pad with grey (114),\n\
++ *                         matching how Ultralytics trains. YOLOV8/YOLOV11 only.\n\
++ * score_threshold     - minimum class score for a detection. YOLOV8/YOLOV11 only.\n\
++ * nms_threshold       - IoU above which overlapping detections are suppressed.\n\
++ *                         YOLOV8/YOLOV11 only.\n\
++ * num_threads         - CPU threads for the interpreter and the cpu delegate.\n\
+  */\n"
+ #endif
+ 
+@@ -88,6 +96,14 @@
+  *                         will silently fall back to base cpu delegate.\n\
+  * requires_labels     - whether this model requires a labels file (true/false).\n\
+  * labels              - path to labels.txt file. Only used if requires_labels is true.\n\
++ * resize_mode         - how camera frames are fit to the model input.\n\
++ *                         STRETCH: resize to the input dims, ignoring aspect ratio.\n\
++ *                         LETTERBOX: preserve aspect ratio and pad with grey (114),\n\
++ *                         matching how Ultralytics trains. YOLOV8/YOLOV11 only.\n\
++ * score_threshold     - minimum class score for a detection. YOLOV8/YOLOV11 only.\n\
++ * nms_threshold       - IoU above which overlapping detections are suppressed.\n\
++ *                         YOLOV8/YOLOV11 only.\n\
++ * num_threads         - CPU threads for the interpreter and the cpu delegate.\n\
+  */\n"
+ #endif
+ 
+@@ -100,6 +116,10 @@ extern char output_pipe_prefix[CHAR_BUF_SIZE];
+ extern char labels_in_use[CHAR_BUF_SIZE];
+ extern char model_architecture[CHAR_BUF_SIZE];
+ extern char norm_type[CHAR_BUF_SIZE];
++extern char resize_mode[CHAR_BUF_SIZE];
++extern float score_threshold;
++extern float nms_threshold;
++extern int num_threads;
+ extern bool en_debug;
+ extern bool en_timing;
+ extern char* CONFIG_FILE;
+diff --git a/voxl/voxl-tflite-server/include/model_helper/model_helper.h b/voxl/voxl-tflite-server/include/model_helper/model_helper.h
+index fa4ff6d..6566f41 100644
+--- a/voxl/voxl-tflite-server/include/model_helper/model_helper.h
++++ b/voxl/voxl-tflite-server/include/model_helper/model_helper.h
+@@ -35,6 +35,7 @@
+ #define QUEUE_SIZE 24 // max messages to be stored in queue
+ #define NORMALIZATION_CONST 255.0f
+ #define PIXEL_MEAN_GUESS 127.0f
++#define LETTERBOX_PAD_VALUE 114 // grey fill Ultralytics uses when letterboxing
+ 
+ enum DelegateOpt
+ {
+@@ -110,6 +111,15 @@ protected:
+     uint8_t *resize_output;
+     undistort_map_t map;
+ 
++    // camera frame -> model input geometry, set on the first frame.
++    // model_px = frame_px * scale + pad
++    bool letterbox;
++    float scale_x;
++    float scale_y;
++    int pad_x;
++    int pad_y;
++    uint8_t *letterbox_scratch; // resized frame before padding, letterbox only
++
+ public:
+     ModelHelper(char *model_file, char *labels_file,
+                 DelegateOpt delegate_choice, bool _en_debug,
+@@ -145,6 +155,14 @@ public:
+ protected:
+     // Function to setup the delegate based on selection
+     void setupDelegate(DelegateOpt delegate_choice);
++
++    // resize a full camera frame into the model input buffer, stretching or
++    // letterboxing according to resize_mode
++    cv::Mat resize_to_model_input(const uint8_t *frame, int channels);
++
++    // map a box given as normalized [0,1] model-input xywh back to camera
++    // frame pixels, undoing the stretch/letterbox and clipping to the frame
++    cv::Rect model_box_to_frame(float xc, float yc, float w, float h);
+ };
+ 
+ ModelHelper *create_model_helper(ModelName model_name,
+diff --git a/voxl/voxl-tflite-server/include/model_helper/yolov8_model_helper.h b/voxl/voxl-tflite-server/include/model_helper/yolov8_model_helper.h
+index 0dd63a6..090eda0 100644
+--- a/voxl/voxl-tflite-server/include/model_helper/yolov8_model_helper.h
++++ b/voxl/voxl-tflite-server/include/model_helper/yolov8_model_helper.h
+@@ -17,9 +17,13 @@ private:
+     size_t label_count;
+     std::vector<ai_detection_t> detections_vector;
+ 
+-    const float model_score_threshold = 0.45;
+-    const float model_confidence_threshold = 0.25;
+-    const float model_nms_threshold = 0.5;
++    float model_score_threshold;
++    float model_nms_threshold;
++
++    // capture metadata of the frame being postprocessed, so detections
++    // can be matched back to the camera frame they came from
++    int64_t frame_timestamp_ns;
++    int32_t frame_id;
+ };
+ 
+ #endif
+\ No newline at end of file
+diff --git a/voxl/voxl-tflite-server/src/config_file.cpp b/voxl/voxl-tflite-server/src/config_file.cpp
+index 2a27366..171c835 100644
+--- a/voxl/voxl-tflite-server/src/config_file.cpp
++++ b/voxl/voxl-tflite-server/src/config_file.cpp
+@@ -1,4 +1,5 @@
+ #include "config_file.h"
++#include <strings.h>
+ 
+ char* CONFIG_FILE = NULL;
+ char model[CHAR_BUF_SIZE];
+@@ -10,6 +11,10 @@ char output_pipe_prefix[CHAR_BUF_SIZE];
+ char labels_in_use[CHAR_BUF_SIZE];
+ char model_architecture[CHAR_BUF_SIZE];
+ char norm_type[CHAR_BUF_SIZE];
++char resize_mode[CHAR_BUF_SIZE];
++float score_threshold;
++float nms_threshold;
++int num_threads;
+ 
+ void config_file_print(void)
+ {
+@@ -26,6 +31,14 @@ void config_file_print(void)
+     printf("=================================================================\n");
+     printf("delegate:                         %s\n", delegate);
+     printf("=================================================================\n");
++    printf("resize_mode:                      %s\n", resize_mode);
++    printf("=================================================================\n");
++    printf("score_threshold:                  %.3f\n", score_threshold);
++    printf("=================================================================\n");
++    printf("nms_threshold:                    %.3f\n", nms_threshold);
++    printf("=================================================================\n");
++    printf("num_threads:                      %d\n", num_threads);
++    printf("=================================================================\n");
+ #ifdef BUILD_QRB5165
+     printf("allow_multiple:                   %s\n", allow_multiple ? "true" : "false");
+     printf("=================================================================\n");
+@@ -58,6 +71,30 @@ int config_file_read(void)
+     json_fetch_string_with_default(parent, "delegate", delegate, CHAR_BUF_SIZE, "gpu");
+ 	json_fetch_string_with_default(parent, "model_architecture", model_architecture, CHAR_BUF_SIZE, "MOBILE_NET");
+ 	json_fetch_string_with_default(parent, "norm_type", norm_type, CHAR_BUF_SIZE, "PIXEL_MEAN");
++    json_fetch_string_with_default(parent, "resize_mode", resize_mode, CHAR_BUF_SIZE, "STRETCH");
++    json_fetch_float_with_default(parent, "score_threshold", &score_threshold, 0.45f);
++    json_fetch_float_with_default(parent, "nms_threshold", &nms_threshold, 0.5f);
++    json_fetch_int_with_default(parent, "num_threads", &num_threads, 4);
++
++    if (strcasecmp(resize_mode, "STRETCH") && strcasecmp(resize_mode, "LETTERBOX"))
++    {
++        fprintf(stderr, "ERROR: Unknown resize_mode '%s'\nValid options: STRETCH, LETTERBOX\n", resize_mode);
++        cJSON_Delete(parent);
++        return -1;
++    }
++    if (score_threshold < 0.0f || score_threshold > 1.0f ||
++        nms_threshold < 0.0f || nms_threshold > 1.0f)
++    {
++        fprintf(stderr, "ERROR: score_threshold and nms_threshold must be within [0, 1]\n");
++        cJSON_Delete(parent);
++        return -1;
++    }
++    if (num_threads < 1)
++    {
++        fprintf(stderr, "ERROR: num_threads must be at least 1\n");
++        cJSON_Delete(parent);
++        return -1;
++    }
+ 
+     int requires_labels = 0;
+     json_fetch_bool_with_default(parent, "requires_labels", &requires_labels, 1);
+diff --git a/voxl/voxl-tflite-server/src/main.cpp b/voxl/voxl-tflite-server/src/main.cpp
+index 37c4396..45a2f91 100644
+--- a/voxl/voxl-tflite-server/src/main.cpp
++++ b/voxl/voxl-tflite-server/src/main.cpp
+@@ -108,6 +108,13 @@ int main(int argc, char *argv[])
+     get_model_type(model, &model_name, &model_category);
+     get_normalization_type(model, &do_normalize);
+ 
++    // only the YOLOv8/v11 postprocess knows how to undo the letterbox padding
++    if (!strcasecmp(resize_mode, "LETTERBOX") && model_name != YOLOV8 && model_name != YOLOV11)
++    {
++        fprintf(stderr, "ERROR: resize_mode LETTERBOX is only supported for YOLOV8 and YOLOV11\n");
++        return -1;
++    }
++
+     model_helper = create_model_helper(model_name, model_category, opt_, do_normalize);
+ 
+     // store cam name
+diff --git a/voxl/voxl-tflite-server/src/model_helper/model_helper.cpp b/voxl/voxl-tflite-server/src/model_helper/model_helper.cpp
+index 33f3248..d36b32e 100644
+--- a/voxl/voxl-tflite-server/src/model_helper/model_helper.cpp
++++ b/voxl/voxl-tflite-server/src/model_helper/model_helper.cpp
+@@ -7,6 +7,10 @@
+ #include "model_helper/generic_object_detection_model_helper.h"
+ #include "model_helper/deep_lab_model_helper.h"
+ 
++#include <algorithm>
++#include <cmath>
++#include <strings.h>
++
+ ModelHelper *create_model_helper(ModelName model_name,
+                                  ModelCategory model_category,
+                                  DelegateOpt opt_,
+@@ -144,6 +148,8 @@ ModelHelper::ModelHelper(char *model_file, char *labels_file,
+     do_normalize = _do_normalize;
+     hardware_selection = delegate_choice;
+     labels_location = labels_file;
++    letterbox = !strcasecmp(resize_mode, "LETTERBOX");
++    letterbox_scratch = nullptr;
+ 
+     // Load the model
+     model = tflite::FlatBufferModel::BuildFromFile(model_file);
+@@ -170,11 +176,7 @@ ModelHelper::ModelHelper(char *model_file, char *labels_file,
+     }
+ 
+     // Set multi-threading
+-#ifdef BUILD_QRB5165
+-    interpreter->SetNumThreads(8);
+-#else
+-    interpreter->SetNumThreads(4);
+-#endif
++    interpreter->SetNumThreads(num_threads);
+ 
+     // Allow FP16 precision loss
+     interpreter->SetAllowFp16PrecisionForFp32(true);
+@@ -208,20 +210,45 @@ bool ModelHelper::preprocess(camera_image_metadata_t &meta,
+     // initialize the resize map on first frame received only
+     if (num_frames_processed == 1)
+     {
+-        mcv_init_resize_map(meta.width, meta.height, model_width, model_height,
+-                            &map);
+         input_height = meta.height;
+         input_width = meta.width;
+ 
+-        if (meta.format == IMAGE_FORMAT_RAW8)
++        if (letterbox)
+         {
+-            resize_output =
+-                (uint8_t *)malloc(model_height * model_width * sizeof(uint8_t));
++            // same convention as Ultralytics: one scale for both axes, image
++            // centred, remainder padded
++            float scale = std::min((float)model_width / meta.width,
++                                   (float)model_height / meta.height);
++            int scaled_width = (int)std::round(meta.width * scale);
++            int scaled_height = (int)std::round(meta.height * scale);
++            scale_x = scale;
++            scale_y = scale;
++            pad_x = (model_width - scaled_width) / 2;
++            pad_y = (model_height - scaled_height) / 2;
++            mcv_init_resize_map(meta.width, meta.height, scaled_width, scaled_height,
++                                &map);
+         }
+         else
+         {
+-            resize_output = (uint8_t *)malloc(model_height * model_width *
+-                                              sizeof(uint8_t) * 3);
++            scale_x = (float)model_width / meta.width;
++            scale_y = (float)model_height / meta.height;
++            pad_x = 0;
++            pad_y = 0;
++            mcv_init_resize_map(meta.width, meta.height, model_width, model_height,
++                                &map);
++        }
++
++        size_t buf_size = model_height * model_width * sizeof(uint8_t);
++        if (meta.format != IMAGE_FORMAT_RAW8)
++            buf_size *= 3;
++        resize_output = (uint8_t *)malloc(buf_size);
++
++        if (letterbox)
++        {
++            // the padding never changes, so fill it once here and only the
++            // image region gets overwritten per frame
++            memset(resize_output, LETTERBOX_PAD_VALUE, buf_size);
++            letterbox_scratch = (uint8_t *)malloc(buf_size);
+         }
+         return false;
+     }
+@@ -235,11 +262,7 @@ bool ModelHelper::preprocess(camera_image_metadata_t &meta,
+         cv::Mat yuv(input_height + input_height / 2, input_width, CV_8UC1,
+                     (uchar *)frame);
+         cv::cvtColor(yuv, *output_image, CV_YUV2RGB_NV12);
+-        mcv_resize_8uc3_image(output_image->data, resize_output, &map);
+-        cv::Mat holder(model_height, model_width, CV_8UC3,
+-                       (uchar *)resize_output);
+-
+-        *preprocessed_image = holder;
++        *preprocessed_image = resize_to_model_input(output_image->data, 3);
+         meta.format = IMAGE_FORMAT_RGB;
+         meta.size_bytes = (meta.height * meta.width * 3);
+         meta.stride = (meta.width * 3);
+@@ -251,11 +274,7 @@ bool ModelHelper::preprocess(camera_image_metadata_t &meta,
+         cv::cvtColor(yuv, *output_image, CV_YUV2RGB_YUYV);
+ 
+         // Resize to model input dimensions
+-        mcv_resize_8uc3_image(output_image->data, resize_output, &map);
+-        cv::Mat holder(model_height, model_width, CV_8UC3, (uchar *)resize_output);
+-
+-        // Assign processed image and update meta data
+-        *preprocessed_image = holder;
++        *preprocessed_image = resize_to_model_input(output_image->data, 3);
+ 
+         meta.format = IMAGE_FORMAT_RGB;
+         meta.size_bytes = (meta.height * meta.width * 3);
+@@ -269,11 +288,7 @@ bool ModelHelper::preprocess(camera_image_metadata_t &meta,
+         cv::Mat yuv(input_height + input_height / 2, input_width, CV_8UC1,
+                     (uchar *)frame);
+         cv::cvtColor(yuv, *output_image, CV_YUV2RGB_NV21);
+-        mcv_resize_8uc3_image(output_image->data, resize_output, &map);
+-        cv::Mat holder(model_height, model_width, CV_8UC3,
+-                       (uchar *)resize_output);
+-
+-        *preprocessed_image = holder;
++        *preprocessed_image = resize_to_model_input(output_image->data, 3);
+ 
+         meta.format = IMAGE_FORMAT_RGB;
+         meta.size_bytes = (meta.height * meta.width * 3);
+@@ -289,11 +304,9 @@ bool ModelHelper::preprocess(camera_image_metadata_t &meta,
+             cv::Mat(input_height, input_width, CV_8UC1, (uchar *)frame);
+ 
+         // resize to model input dims
+-        mcv_resize_image(output_image->data, resize_output, &map);
++        cv::Mat holder = resize_to_model_input(output_image->data, 1);
+ 
+         // stack resized input to make "3 channel" grayscale input
+-        cv::Mat holder(model_height, model_width, CV_8UC1,
+-                       (uchar *)resize_output);
+         cv::Mat in[] = {holder, holder, holder};
+         cv::merge(in, 3, *preprocessed_image);
+     }
+@@ -313,6 +326,41 @@ bool ModelHelper::preprocess(camera_image_metadata_t &meta,
+     return true;
+ }
+ 
++cv::Mat ModelHelper::resize_to_model_input(const uint8_t *frame, int channels)
++{
++    int type = (channels == 3) ? CV_8UC3 : CV_8UC1;
++    uint8_t *dst = letterbox ? letterbox_scratch : resize_output;
++
++    if (channels == 3)
++        mcv_resize_8uc3_image(frame, dst, &map);
++    else
++        mcv_resize_image(frame, dst, &map);
++
++    cv::Mat model_input(model_height, model_width, type, (uchar *)resize_output);
++    if (letterbox)
++    {
++        cv::Mat scaled(map.h_out, map.w_out, type, (uchar *)letterbox_scratch);
++        scaled.copyTo(model_input(cv::Rect(pad_x, pad_y, map.w_out, map.h_out)));
++    }
++    return model_input;
++}
++
++cv::Rect ModelHelper::model_box_to_frame(float xc, float yc, float w, float h)
++{
++    float x1 = ((xc - 0.5f * w) * model_width - pad_x) / scale_x;
++    float y1 = ((yc - 0.5f * h) * model_height - pad_y) / scale_y;
++    float x2 = ((xc + 0.5f * w) * model_width - pad_x) / scale_x;
++    float y2 = ((yc + 0.5f * h) * model_height - pad_y) / scale_y;
++
++    // letterboxed boxes can reach into the padding, i.e. outside the frame
++    x1 = std::max(0.0f, std::min(x1, (float)(input_width - 1)));
++    y1 = std::max(0.0f, std::min(y1, (float)(input_height - 1)));
++    x2 = std::max(0.0f, std::min(x2, (float)(input_width - 1)));
++    y2 = std::max(0.0f, std::min(y2, (float)(input_height - 1)));
++
++    return cv::Rect(cv::Point((int)x1, (int)y1), cv::Point((int)x2, (int)y2));
++}
++
+ void ModelHelper::setupDelegate(DelegateOpt delegate_choice)
+ {
+     switch (delegate_choice)
+@@ -321,7 +369,7 @@ void ModelHelper::setupDelegate(DelegateOpt delegate_choice)
+ #ifdef BUILD_QRB5165
+     {
+         TfLiteXNNPackDelegateOptions xnnpack_options = TfLiteXNNPackDelegateOptionsDefault();
+-        xnnpack_options.num_threads = 8;
++        xnnpack_options.num_threads = num_threads;
+         xnnpack_delegate = TfLiteXNNPackDelegateCreate(&xnnpack_options);
+         if (interpreter->ModifyGraphWithDelegate(xnnpack_delegate) != kTfLiteOk)
+             fprintf(stderr, "Failed to apply XNNPACK delegate\n");
+diff --git a/voxl/voxl-tflite-server/src/model_helper/yolov8_model_helper.cpp b/voxl/voxl-tflite-server/src/model_helper/yolov8_model_helper.cpp
+index 6fa1722..7d21326 100644
+--- a/voxl/voxl-tflite-server/src/model_helper/yolov8_model_helper.cpp
++++ b/voxl/voxl-tflite-server/src/model_helper/yolov8_model_helper.cpp
+@@ -7,6 +7,8 @@ YoloV8ModelHelper::YoloV8ModelHelper(char *model_file, char *labels_file,
+                                      bool _en_timing, NormalizationType _do_normalize)
+     : ModelHelper(model_file, labels_file, delegate_choice, _en_debug, _en_timing, _do_normalize)
+ {
++    model_score_threshold = score_threshold;
++    model_nms_threshold = nms_threshold;
+ 
+     if (labels.empty())
+     {
+@@ -21,6 +23,9 @@ YoloV8ModelHelper::YoloV8ModelHelper(char *model_file, char *labels_file,
+ 
+ bool YoloV8ModelHelper::worker(cv::Mat &output_image, double last_inference_time, camera_image_metadata_t metadata, void *input_params)
+ {
++    frame_timestamp_ns = metadata.timestamp_ns;
++    frame_id = metadata.frame_id;
++
+     if (!postprocess(output_image, last_inference_time, input_params))
+         return false;
+ 
+@@ -30,7 +35,6 @@ bool YoloV8ModelHelper::worker(cv::Mat &output_image, double last_inference_time
+             (char *)detections_vector.data(),
+             sizeof(ai_detection_t) * detections_vector.size());
+     }
+-    metadata.timestamp_ns = rc_nanos_monotonic_time();
+     pipe_server_write_camera_frame(IMAGE_CH, metadata, (char *)output_image.data);
+ 
+     return true;
+@@ -98,24 +102,14 @@ bool YoloV8ModelHelper::postprocess(cv::Mat &output_image, double last_inference
+             confidences.push_back(maxClassScore);
+             class_ids.push_back(class_id.x);
+ 
+-            float xc = new_data[0];
+-            float yc = new_data[1];
+-            float w = new_data[2];
+-            float h = new_data[3];
+-
+-            int left = int((xc - 0.5 * w) * input_width);
+-            int top = int((yc - 0.5 * h) * input_height);
+-
+-            int width = int(w * input_width);
+-            int height = int(h * input_height);
+-
+-            boxes.push_back(cv::Rect(left, top, width, height));
++            boxes.push_back(model_box_to_frame(new_data[0], new_data[1],
++                                               new_data[2], new_data[3]));
+         }
+         new_data += dimensions;
+     }
+ 
+     std::vector<int> nms_result;
+-    cv::dnn::NMSBoxes(boxes, confidences, model_confidence_threshold, model_nms_threshold, nms_result);
++    cv::dnn::NMSBoxes(boxes, confidences, model_score_threshold, model_nms_threshold, nms_result);
+ 
+     for (unsigned long i = 0; i < nms_result.size(); ++i)
+     {
+@@ -132,10 +126,10 @@ bool YoloV8ModelHelper::postprocess(cv::Mat &output_image, double last_inference
+ 
+         ai_detection_t curr_detection;
+         curr_detection.magic_number = AI_DETECTION_MAGIC_NUMBER;
+-        curr_detection.timestamp_ns = rc_nanos_monotonic_time();
++        curr_detection.timestamp_ns = frame_timestamp_ns;
+         curr_detection.class_id = class_ids[idx];
+         curr_detection.class_confidence = confidences[idx];
+-        curr_detection.frame_id = num_frames_processed;
++        curr_detection.frame_id = frame_id;
+         curr_detection.detection_confidence = -1.0; // detection confidence is not a thing for yolov8
+ 
+         std::string class_holder = label_text.substr(

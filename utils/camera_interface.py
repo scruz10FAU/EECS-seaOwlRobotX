@@ -29,6 +29,7 @@ class Detection:
     bbox_2d: Tuple[int,int,int,int]  # (x_min, y_min, x_max, y_max) in pixels
     position_3d: Optional[Tuple[float,float,float]] = None  # (x, y, z) meters, camera frame
     velocity_3d: Optional[Tuple[float,float,float]] = None  # (vx, vy, vz) m/s, camera frame
+    keypoints: Optional[np.ndarray] = None  # pose models: (K, 3) x, y, conf — original-frame pixels
 
 
 # ─── Camera Intrinsics ────────────────────────────────────────────────

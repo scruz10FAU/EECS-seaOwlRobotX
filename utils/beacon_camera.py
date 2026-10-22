@@ -240,28 +240,60 @@ class BeaconCamera(Node):
         return False
 
     def enable_detection(self, model_path, imgsz=640, backend="ultralytics",
-                         conf_thresh=0.5, delegate_path=None):
+                         conf_thresh=0.5, delegate_path=None, class_names=None,
+                         track_iou_thresh=0.3, track_max_age=30, kpt_shape=None,
+                         iou_thresh=None):
         """
         backend: "ultralytics" (default, YOLO .pt via CPU/GPU) or
                  "tflite_hexagon" (int8 .tflite via ModalAI's Hexagon NPU
                  delegate — see tflite_hexagon_detector.py).
+
+        class_names: ordered list matching the model's training class indices.
+                 None (the default) lets each backend work it out — YoloDetector
+                 reads the checkpoint's own names, TFLiteHexagonDetector derives
+                 the count from its output tensor. Only set this to override.
+
+        track_iou_thresh / track_max_age: greedy-IoU tracker tuning, used by
+                 the tflite_hexagon backend only (ultralytics brings its own
+                 tracker). track_max_age is in FRAMES and must outlast a
+                 blinking beacon's off-phase, or the beacon returns with a new
+                 id and its blink history restarts.
+                 Note both detectors DROP detections whose class index exceeds
+                 this list, so it must never be shorter than the model's class
+                 count; the colour of a beacon is decided downstream by
+                 classify_beacon_color(), not by the label used here.
+
+        kpt_shape: pose models on the tflite_hexagon backend, e.g. [4, 3]
+                 (x, y, conf per keypoint). Ultralytics reads it from the .pt.
+                 Keypoints arrive on Detection.keypoints.
+
+        iou_thresh: NMS IoU threshold for either backend; None keeps each
+                 backend's own default.
         """
         if backend == "tflite_hexagon":
             self._detector = TFLiteHexagonDetector(
                 weights=model_path,
-                class_names=["beacon"],
+                class_names=class_names,
                 imgsz=imgsz,
                 conf_thresh=conf_thresh,
                 delegate_path=delegate_path,
+                track_iou_thresh=track_iou_thresh,
+                track_max_age=track_max_age,
+                kpt_shape=kpt_shape,
+                **({"iou_thresh": iou_thresh} if iou_thresh is not None else {}),
             )
         else:
             self._detector = YoloDetector(
                 weights=model_path,
-                class_names=["beacon"],
+                class_names=class_names,
                 imgsz=imgsz,
                 conf_thresh=conf_thresh,
+                **({"iou_thresh": iou_thresh} if iou_thresh is not None else {}),
             )
-        ok = self._detector.start(enable_tracking=(backend == "ultralytics"))
+        # Both backends track now: ultralytics via .track(persist=True),
+        # TFLite via its own greedy-IoU matcher. Downstream blink and colour
+        # state is keyed on tracking_id, so this must stay on for both.
+        ok = self._detector.start(enable_tracking=True)
         if not ok:
             self._detector = None
             self.get_logger().error(f"{backend} detector failed to start")

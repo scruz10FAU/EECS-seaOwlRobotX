@@ -103,7 +103,7 @@ def _publish_immediate(color, det_conf, bbox, frame_ts, drone_pos, drone_quat, c
             cfg["camera"]["cx"], cfg["camera"]["cy"],
             drone_pos[2] if drone_pos is not None else 0.0,
             det_cfg.get("beacon_z_m", 0.0),
-            det_cfg.get("beacon_height_m", 0.3048),
+            det_cfg.get("beacon_height_m", 0.2915),
         )
 
     world_pos  = None

@@ -123,6 +123,11 @@ _DEFAULT_GPS_GT = {
 _DEFAULT_DETECTION = {
     "backend":         "ultralytics",  # "ultralytics" (.pt, CPU/GPU) or "tflite_hexagon" (int8 .tflite via ModalAI's Hexagon NPU delegate)
     "tflite_delegate_path": None,      # path to the VOXL2-SDK Hexagon delegate .so; None/missing/failed load falls back to CPU
+    "class_names":     None,           # ordered class list; null = read from the model (.pt) or size it from the output tensor (.tflite). Must never be shorter than the model's class count — extra classes get dropped.
+    "track_iou_thresh": 0.3,           # tflite_hexagon backend only: min IoU to match a detection to the previous frame's track
+    "pose_config":     None,           # path to configs/beacon_pose.json (pose-pipeline tunables: nms_iou, kp_dedupe, ...); null = backend NMS defaults
+    "kpt_shape":       None,           # pose models on tflite_hexagon only, e.g. [4, 3] for the diamond model (x, y, conf per keypoint); null = detect model
+    "track_max_age":   30,             # tflite_hexagon backend only: frames a track survives undetected. MUST exceed a blinking beacon's off-phase (1Hz 50%% duty @27fps ≈ 14 frames) or blink history restarts on every blink.
     "confirm_frames":  3,
     "pub_cooldown_s":  1.0,
     "depth_min_m":     1.0,
@@ -130,7 +135,7 @@ _DEFAULT_DETECTION = {
     "min_area_frac":   0.001,
     "stage2_conf":     0.30,
     "depth_source":    "topic",   # "topic" = use depth ROS topic; "bbox" = estimate from bounding box
-    "beacon_height_m": 0.3048,    # physical beacon height in metres (12 in) — used for bbox estimation
+    "beacon_height_m": 0.2915,    # white-section vertical height in metres (CAD) — used for bbox estimation
     "beacon_z_m":      0.0,       # known beacon altitude in ENU frame (metres)
     "max_detections":  None,      # stop after this many published detections (null = unlimited)
     "imgsz":           640,       # YOLO inference size in pixels — match to model training size
@@ -1031,7 +1036,7 @@ def estimate_distance_from_bbox(
     fx: float, fy: float, cx: float, cy: float,
     drone_z_m: float = 0.0,
     beacon_z_m: float = 0.0,
-    beacon_height_m: float = 0.3048,
+    beacon_height_m: float = 0.2915,
 ) -> "list | None":
     """
     Estimate a camera-frame 3D point for a beacon detection using the pinhole
@@ -1556,7 +1561,7 @@ def run_video_ros(cfg: dict) -> None:
                             cfg["camera"]["cx"], cfg["camera"]["cy"],
                             drone_pos[2] if drone_pos is not None else 0.0,
                             det_cfg.get("beacon_z_m", 0.0),
-                            det_cfg.get("beacon_height_m", 0.3048),
+                            det_cfg.get("beacon_height_m", 0.2915),
                         )
 
                     cv2.rectangle(display_frame, (x1, y1), (x2, y2), draw_color, 2)
@@ -1706,6 +1711,15 @@ def main(cfg: dict) -> None:
         return
 
     
+    nms_iou = None
+    pose_config = cfg["detection"].get("pose_config")
+    if pose_config:
+        from beacon_pose import load_pose_config
+        if not os.path.isabs(pose_config) and not os.path.exists(pose_config):
+            pose_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), pose_config)
+        cfg["detection"]["_pose_params"], nms_iou = load_pose_config(pose_config)
+        print(f"[beacon] Pose config: {pose_config}  (nms_iou={nms_iou}, "
+              f"kp_dedupe={cfg['detection']['_pose_params'].kp_dedupe})")
     print(f"[beacon] Loading model: {model_path}  (backend={cfg['detection'].get('backend', 'ultralytics')})")
     print(f"[beacon] Loading crop model: {crop_model_path}")
     crop_model = YOLO(crop_model_path)
@@ -1715,6 +1729,11 @@ def main(cfg: dict) -> None:
         backend=cfg["detection"].get("backend", "ultralytics"),
         conf_thresh=cfg["conf"],
         delegate_path=cfg["detection"].get("tflite_delegate_path"),
+        class_names=cfg["detection"].get("class_names"),
+        track_iou_thresh=cfg["detection"].get("track_iou_thresh", 0.3),
+        track_max_age=cfg["detection"].get("track_max_age", 30),
+        kpt_shape=cfg["detection"].get("kpt_shape"),
+        iou_thresh=nms_iou,
     ):
         print("[beacon] Detection failed to start")
         cam.close()
@@ -1855,7 +1874,7 @@ def main(cfg: dict) -> None:
                         cfg["camera"]["cx"], cfg["camera"]["cy"],
                         drone_pos[2] if drone_pos is not None else 0.0,
                         det_cfg.get("beacon_z_m", 0.0),
-                        det_cfg.get("beacon_height_m", 0.3048),
+                        det_cfg.get("beacon_height_m", 0.2915),
                     )
 
                 crop = rgb_clean[max(y1, 0):max(y2, 1), max(x1, 0):max(x2, 1)]
