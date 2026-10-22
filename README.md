@@ -465,7 +465,7 @@ python3 mock_beacon_publisher.py --log published.csv      # also record each mes
 
 Publishes synthetic `/seabird/beacon_map` messages, the fused beacon map `beacon_overlay.py` publishes while localising (schema in `beacon_overlay.py`'s docstring), for testing `sweep_rrt_overfly_rework.py` or any other map consumer without a camera, model, PX4 or GPS fix.
 
-It simulates a drone flying over beacons at known positions (default: the same 5 positions as `mock_beacon_publisher.py`). Each frame, beacons within `--detect-range` produce noisy fixes, with the method set by range (`pnp` < 6 m, `box` < 15 m, `ray` beyond) and occasional outliers. The fixes are fused by the real `beacon_pose.BeaconMap` with `beacon_overlay.py`'s default settings, and serialised the same way `beacon_overlay.py` does it. Map ids, `n`, `outliers`, `sigma_m`, `age_s` and `seen` therefore behave like the real thing: a beacon appears only after `--min-fixes` fixes, sigma grows while it's out of view, and ids can skip numbers when entries merge.
+It simulates a drone flying over beacons at known positions (default: the same 5 positions as `mock_beacon_publisher.py`). Each frame, beacons within `--detect-range` produce noisy fixes, with the method set by range (`pnp` < 6 m, `box` < 15 m, `ray` beyond) and occasional outliers. Each beacon keeps a running estimate of its fixes, so map fields behave plausibly: a beacon appears only after `--min-fixes` fixes, `sigma_m` shrinks as fixes accumulate and grows while it's out of view, and injected bad fixes count as `outliers`. Ids are fixed per beacon (0, 1, 2, …). Unlike the real map, entries never split or merge.
 
 ```bash
 python3 mock_beacon_map_publisher.py                        # sweep back and forth over the beacons, 5 Hz
@@ -477,7 +477,7 @@ python3 mock_beacon_map_publisher.py --no-gps               # lat/lon null, as w
 python3 mock_beacon_map_publisher.py --dry-run --count 20   # print the JSON to stdout, no ROS needed
 ```
 
-Positions are PX4 local NED about `--ref-lat/--ref-lon/--ref-alt` (default origin just south-west of the beacons), with the water at `--water-z` and the drone `--alt` metres above it. `--seed` makes a run repeatable, and `--beacon-drift` makes the true beacons float. Imports `beacon_pose`, so it needs `numpy` and `opencv-python`.
+Positions are PX4 local NED about `--ref-lat/--ref-lon/--ref-alt` (default origin just south-west of the beacons), with the water at `--water-z` and the drone `--alt` metres above it. `--seed` makes a run repeatable, and `--beacon-drift` makes the true beacons float. Standard library only: publishing needs `rclpy`, `--dry-run` needs nothing.
 
 ---
 
