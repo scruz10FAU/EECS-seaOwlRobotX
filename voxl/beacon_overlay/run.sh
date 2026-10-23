@@ -75,8 +75,16 @@ case "$cmd" in
       "${MOUNTS[@]}" \
       "${GPU_ARGS[@]}" \
       "$IMAGE" \
-      python3 -u beacon_overlay.py --model "/models/$MODEL" --classes "$CLASSES" \
-        --port "$PORT" "${APP_ARGS[@]}" "$@"
+      /bin/bash -c '
+        source /opt/ros/humble/setup.bash
+        source /opt/px4_ws/install/setup.bash
+        exec python3 -u beacon_overlay.py "$@"
+      ' bash \
+      --model "/models/$MODEL" \
+      --classes "$CLASSES" \
+      --port "$PORT" \
+      "${APP_ARGS[@]}" "$@"
+
     echo "started $NAME: http://$(hostname -I | awk '{print $1}'):$PORT/"
     ;;
   stop)

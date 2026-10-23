@@ -46,6 +46,30 @@ FROM ${BASE}
 ARG TF_VERSION=2.19.0
 LABEL tflite.version="${TF_VERSION}"
 COPY --from=tflite /opt/beacon_gpu/build/libtflite_gpu_shim.so /opt/beacon_gpu/
+
+# Install tools for building PX4 ROS 2 messages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    python3-colcon-common-extensions \
+    ros-humble-rosidl-default-generators \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download PX4 1.14 message definitions
+RUN mkdir -p /opt/px4_ws/src \
+    && git clone --depth 1 --branch release/1.14 \
+       https://github.com/PX4/px4_msgs.git \
+       /opt/px4_ws/src/px4_msgs
+
+# Build the message package
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
+    cd /opt/px4_ws && \
+    colcon build --packages-select px4_msgs"
+
+# Expose PX4 message interfaces to ROS 2 and Python
+ENV AMENT_PREFIX_PATH=/opt/px4_ws/install/px4_msgs:${AMENT_PREFIX_PATH}
+ENV PYTHONPATH=/opt/px4_ws/install/px4_msgs/lib/python3.10/site-packages:${PYTHONPATH}
+ENV LD_LIBRARY_PATH=/opt/px4_ws/install/px4_msgs/lib:${LD_LIBRARY_PATH}
+
 RUN python3 -c "import numpy, cv2; print(numpy.__version__, cv2.__version__)"
 
 WORKDIR /workspace
