@@ -1,6 +1,6 @@
 
 # Start Seabird Ground Station
-$ProjectDir = "C:\Users\Precision 3571\EECS-seaOwlRobotX"
+$ProjectDir = "C:\Users\Precision 3571\EECS-seaOwlRobotX\elrs_windows_routing"
 $ComPort = "COM1"
 $WslDistro = "Ubuntu-22.04"
 

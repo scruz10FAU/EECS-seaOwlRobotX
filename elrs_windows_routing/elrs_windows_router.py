@@ -231,7 +231,7 @@ def main():
                             break
                         raise
                     if incoming:
-                        #write_full(port, incoming)
+                        write_full(port, incoming)
                         recent["qgc_to_serial_bytes"] += len(incoming)
                         totals["qgc_to_serial_bytes"] += len(incoming)
 
