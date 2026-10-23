@@ -103,7 +103,7 @@ def ll_to_ne(lat, lon, ref_lat, ref_lon):
 def _polyline_at(points, s):
     """(n, e) at arc length s along a closed polyline (wraps)."""
     segs = list(zip(points, points[1:] + points[:1]))
-    lengths = [math.dist(a, b) for a, b in segs]
+    lengths = [math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in segs]
     total = sum(lengths)
     if total == 0:
         return points[0]
