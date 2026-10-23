@@ -12,11 +12,13 @@
 # reach the /tracking_front and /fmu/out/* publishers. The repo is mounted
 # read-only; /run/mpa read-write so exposure commands reach voxl-camera-server's
 # control pipe. The container does not start on boot unless RESTART says so.
+# ROS_DOMAIN_ID must match the host's voxl_mpa_to_ros2 (default 8).
 set -euo pipefail
 
 REPO=${REPO:-/home/root/seaowl}
 PORT=${PORT:-8092}
 RESTART=${RESTART:-no}
+ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-8}
 IMAGE=voxl2-humble
 NAME=telemetry_stream
 
@@ -28,14 +30,14 @@ case "$cmd" in
     docker rm -f "$NAME" >/dev/null 2>&1 || true
     docker run -d --name "$NAME" \
       --network host --ipc host --restart "$RESTART" \
-      -e PYTHONDONTWRITEBYTECODE=1 \
+      -e PYTHONDONTWRITEBYTECODE=1 -e ROS_DOMAIN_ID="$ROS_DOMAIN_ID" \
       -v "$REPO":/workspace:ro \
       -v /run/mpa:/run/mpa \
       -w /workspace \
       "$IMAGE" \
       bash -c 'source /opt/ros/humble/setup.bash && source /root/ros2_ws/install/setup.bash && exec python3 -u telemetry_stream.py "$@"' \
       _ --port "$PORT" "$@"
-    echo "started $NAME: http://$(hostname -I | awk '{print $NF}'):$PORT/"
+    echo "started $NAME: http://$(hostname -I | awk '{print $1}'):$PORT/"
     ;;
   stop)
     docker rm -f "$NAME"

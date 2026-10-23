@@ -52,6 +52,11 @@ pip install pillow                      # tkinter ships with Python; ffmpeg need
 python3 telemetry_viewer.py --host 192.168.50.121 --out-dir ~/captures
 ```
 
+Depending on device, may need to modify python call and ip address. Sam's device is:
+```bash
+py -3.10 .\telemetry_viewer.py --host 192.168.1.168 --out-dir ~/captures
+```
+
 ## Collecting data
 
 The viewer window shows the live frame, the telemetry panels (red = no data, or
@@ -152,6 +157,7 @@ Environment variables read by `run.sh`:
 | `REPO` | `/home/root/seaowl` | repo on the drone; mounted read-only at `/workspace` |
 | `PORT` | `8092` | HTTP port |
 | `RESTART` | `no` | docker restart policy, e.g. `unless-stopped` to start on boot |
+| `ROS_DOMAIN_ID` | `8` | must match the host's `voxl_mpa_to_ros2` and PX4; e.g. `ROS_DOMAIN_ID=0 run.sh start` |
 
 ## Without the viewer
 
@@ -180,7 +186,7 @@ voxl/telemetry_stream/run.sh stop
 | symptom | cause / fix |
 |---|---|
 | Viewer says `disconnected ... retrying` | Container not running (`docker ps`), wrong `--host`, or laptop not on the drone's network. |
-| Log never shows `frames` lines; `/snapshot.jpg` gives 503 | No camera frames on `/tracking_front`. `run.sh` doesn't pass `ROS_DOMAIN_ID`, so the container uses domain 0: fine on the flight drone, but on the bench board (domain 8) it won't see the camera or PX4. |
+| Log never shows `frames` lines; `/snapshot.jpg` gives 503; viewer stays blank | No camera frames on `/tracking_front`: usually `ROS_DOMAIN_ID` doesn't match `voxl_mpa_to_ros2`. Find the host's with `tr '\0' '\n' < /proc/$(pgrep -f voxl_mpa_to_ros2_node \| head -1)/environ \| grep ROS_DOMAIN_ID` (nothing printed = 0) and restart with that value. Also check the camera itself with `voxl-inspect-cam tracking_front`. |
 | Telemetry panels say `no data` | PX4 topics aren't reaching the container (microDDS agent down, or domain mismatch as above). |
 | `ffmpeg not found on PATH` | Install ffmpeg on the laptop; single frames still work without it. |
 | Exposure `failed: ... /run/mpa/tracking_front/control` | `voxl-camera-server` isn't running, or the camera name differs (`--camera`). |
