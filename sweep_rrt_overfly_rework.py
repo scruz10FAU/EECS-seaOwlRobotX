@@ -1231,98 +1231,113 @@ async def run_mission() -> None:
     log("[rrt] ═══════════════════════════════════════════")
     log("")
 
-    while rrt.size < RRT_MAX_NODES:
+    try:
+        while rrt.size < RRT_MAX_NODES:
 
-        # ── Battery failsafe ──────────────────────────────────────────────
-        if _battery_low:
-            log("[rrt] ⚡ Battery low — stopping search and returning to launch")
-            break
+            # ── Battery failsafe ──────────────────────────────────────────────
+            if _battery_low:
+                log("[rrt] ⚡ Battery low — stopping search and returning to launch")
+                break
 
-        # ── Priority: fly directly over an unclassified beacon ────────────
-        # Positions come from /seabird/beacon_map (primary, fused) or
-        # /seabird/beacon_detections (fallback, for beacons the map hasn't got).
-        # Divert and fly right over the nearest one (inserting the legs + beacon
-        # as RRT nodes), then read its colour/blink from the downward camera
-        # directly overhead.
-        if BEACON_OVERFLY:
-            ov = next_overfly_target(_state.north_m, _state.east_m)
-            if ov is not None:
-                source, key, bn, be, _extra = ov
-                label = f"B{key}" if source == "map" else "det-beacon"
-                log(f"[rrt] ◎ {label} at N={bn:+.2f} E={be:+.2f} "
-                    f"— flying directly over it")
-                arrived = await fly_over_beacon(drone, rrt, bn, be, down_m)
-                _note_overfly_attempt(key)
-                if arrived:
-                    log("[rrt]   ✓ Overhead beacon — reading state")
-                    await classify_and_record(drone, ov, down_m)
-                else:
-                    log("[rrt]   ⚠ Could not reach the beacon overhead this pass")
-                if survey_complete():
-                    log(f"[rrt] ✓ Survey complete: all {EXPECTED_BUOY_COUNT} buoys "
-                        f"classified, entry & exit found — ending search to report.")
-                    break
-                await asyncio.sleep(0.3)
+            # ── Priority: fly directly over an unclassified beacon ────────────
+            # Positions come from /seabird/beacon_map (primary, fused) or
+            # /seabird/beacon_detections (fallback, for beacons the map hasn't got).
+            # Divert and fly right over the nearest one (inserting the legs + beacon
+            # as RRT nodes), then read its colour/blink from the downward camera
+            # directly overhead.
+            if BEACON_OVERFLY:
+                ov = next_overfly_target(_state.north_m, _state.east_m)
+                if ov is not None:
+                    source, key, bn, be, _extra = ov
+                    label = f"B{key}" if source == "map" else "det-beacon"
+                    log(f"[rrt] ◎ {label} at N={bn:+.2f} E={be:+.2f} "
+                        f"— flying directly over it")
+                    arrived = await fly_over_beacon(drone, rrt, bn, be, down_m)
+                    _note_overfly_attempt(key)
+                    if arrived:
+                        log("[rrt]   ✓ Overhead beacon — reading state")
+                        await classify_and_record(drone, ov, down_m)
+                    else:
+                        log("[rrt]   ⚠ Could not reach the beacon overhead this pass")
+                    if survey_complete():
+                        log(f"[rrt] ✓ Survey complete: all {EXPECTED_BUOY_COUNT} buoys "
+                            f"classified, entry & exit found — ending search to report.")
+                        break
+                    await asyncio.sleep(0.3)
+                    continue
+
+            # ── Extend the RRT ────────────────────────────────────────────────
+            new_n, new_e, parent_node = rrt.extend()
+
+            if not rrt.in_bounds(new_n, new_e):
                 continue
 
-        # ── Extend the RRT ────────────────────────────────────────────────
-        new_n, new_e, parent_node = rrt.extend()
+            # Yaw faces direction of travel
+            dn  = new_n - _state.north_m
+            de  = new_e - _state.east_m
+            yaw = math.degrees(math.atan2(de, dn)) % 360.0
 
-        if not rrt.in_bounds(new_n, new_e):
-            continue
+            log(f"[rrt] → node {rrt.size + 1:3d}  "
+                f"N={new_n:+.2f}  E={new_e:+.2f}  yaw={yaw:.0f}°  "
+                f"buoys={classified_count()}/{EXPECTED_BUOY_COUNT}")
 
-        # Yaw faces direction of travel
-        dn  = new_n - _state.north_m
-        de  = new_e - _state.east_m
-        yaw = math.degrees(math.atan2(de, dn)) % 360.0
+            reached = await fly_to(drone, new_n, new_e, down_m, yaw)
 
-        log(f"[rrt] → node {rrt.size + 1:3d}  "
-            f"N={new_n:+.2f}  E={new_e:+.2f}  yaw={yaw:.0f}°  "
-            f"buoys={classified_count()}/{EXPECTED_BUOY_COUNT}")
+            if not reached:
+                log("[rrt]   ⚠ Waypoint skipped (timeout)")
+                continue
 
-        reached = await fly_to(drone, new_n, new_e, down_m, yaw)
+            # Node accepted — add to tree and update RViz
+            new_node = rrt.add_node(new_n, new_e, parent_node)
+            publish_rrt_node(new_n, new_e, TAKEOFF_ALT_M)
+            publish_rrt_edge(parent_node.north, parent_node.east,
+                             new_n, new_e, TAKEOFF_ALT_M)
 
-        if not reached:
-            log("[rrt]   ⚠ Waypoint skipped (timeout)")
-            continue
+            # Beacons are classified only from directly overhead, by the over-fly
+            # branch at the top of the loop (positions come from /seabird/beacon_map).
+            # There is no in-place read at an ordinary node any more — colour/blink
+            # is a downward-camera read that is only valid over the beacon.
 
-        # Node accepted — add to tree and update RViz
-        new_node = rrt.add_node(new_n, new_e, parent_node)
-        publish_rrt_node(new_n, new_e, TAKEOFF_ALT_M)
-        publish_rrt_edge(parent_node.north, parent_node.east,
-                         new_n, new_e, TAKEOFF_ALT_M)
-
-        # Beacons are classified only from directly overhead, by the over-fly
-        # branch at the top of the loop (positions come from /seabird/beacon_map).
-        # There is no in-place read at an ordinary node any more — colour/blink
-        # is a downward-camera read that is only valid over the beacon.
-
-        # ── Stop early once the whole field is surveyed and entry+exit found ──
-        if survey_complete():
-            log(f"[rrt] ✓ Survey complete: all {EXPECTED_BUOY_COUNT} buoys classified, "
-                f"entry & exit found — ending search to report.")
-            break
+            # ── Stop early once the whole field is surveyed and entry+exit found ──
+            if survey_complete():
+                log(f"[rrt] ✓ Survey complete: all {EXPECTED_BUOY_COUNT} buoys classified, "
+                    f"entry & exit found — ending search to report.")
+                break
 
 
-        # Brief pause before next extension
-        await asyncio.sleep(0.3)
+            # Brief pause before next extension
+            await asyncio.sleep(0.3)
 
-    log(f"[rrt] Search complete — {rrt.size} nodes explored, "
-        f"{classified_count()} buoys classified")
+        log(f"[rrt] Search complete — {rrt.size} nodes explored, "
+            f"{classified_count()} buoys classified")
 
-    # ── Return to launch ──────────────────────────────────────────────────────
-    log("\n[rrt] Returning to launch...")
-    try:
-        await drone.offboard.stop()
     except Exception:
-        pass
-
-    try:
-        await drone.action.return_to_launch()
-    except Exception:
-        log("[rrt] ERROR: return_to_launch() failed")
+        # Any UNHANDLED error in the search loop lands here instead of killing
+        # the process mid-air. Log it, then fall through to `finally` so the
+        # drone still comes home on OUR command — not on PX4's offboard-loss
+        # failsafe (which, with COM_OBL_RC_ACT=0, would just hand it to a pilot).
+        log("[rrt] FATAL during search — forcing RTL")
         traceback.print_exc()
-        return
+
+    finally:
+        # Runs on EVERY way out of the search — normal finish, early break, OR a
+        # crash caught above — so return-to-launch is guaranteed to be attempted.
+        log("\n[rrt] Returning to launch...")
+        try:
+            await drone.offboard.stop()
+        except Exception:
+            pass
+        try:
+            await drone.action.return_to_launch()
+        except Exception:
+            # RTL itself failed (e.g. mode rejected) — fall back to a plain land
+            # so the drone doesn't just hang on its last setpoint.
+            log("[rrt] ERROR: return_to_launch() failed — trying land()")
+            traceback.print_exc()
+            try:
+                await drone.action.land()
+            except Exception:
+                pass
 
     log("[rrt] Waiting for landing...")
     try:
