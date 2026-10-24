@@ -94,7 +94,39 @@ WAYPOINT_TIMEOUT     = 60.0   # seconds before a waypoint is skipped
 HOVER_STABILIZE_S    = 8.0    # seconds to stabilise after takeoff
 
 # ── Search area ───────────────────────────────────────────────────────────────
-MAX_SEARCH_RADIUS_M  = 10.0   # maximum distance from takeoff point; hard boundary
+# The region the RRT is allowed to search. RobotX Task 1 courses are "on the
+# order of 25 m x 25 m" (final size varies), so the default is a 25 x 25 box.
+# Edit these for testing — e.g. shrink the box, or switch SEARCH_AREA_SHAPE to
+# "disc" for the old circular behaviour.
+SEARCH_AREA_SHAPE    = "disc"   # "rect" = W x L box (default), "disc" = circle
+SEARCH_WIDTH_M       = 25.0     # rect: east–west extent of the box (m)
+SEARCH_LENGTH_M      = 25.0     # rect: north–south extent of the box (m)
+SEARCH_ORIGIN        = "center" # where the takeoff point sits in the box:
+                                #   "center" = box centred on takeoff (±W/2, ±L/2)
+                                #   "corner" = takeoff at the SW corner (+N, +E)
+                                #   "edge"   = takeoff at the S-edge midpoint (+N, ±E/2)
+MAX_SEARCH_RADIUS_M  = 10     # disc: radius from takeoff (m); used ONLY when
+                                #       SEARCH_AREA_SHAPE == "disc"
+
+
+def _search_bounds(origin_n: float, origin_e: float):
+    """(n_min, n_max, e_min, e_max) of the rect box around a takeoff point."""
+    W, L = SEARCH_WIDTH_M, SEARCH_LENGTH_M
+    if SEARCH_ORIGIN == "corner":
+        return origin_n, origin_n + L, origin_e, origin_e + W
+    if SEARCH_ORIGIN == "edge":
+        return origin_n, origin_n + L, origin_e - W / 2, origin_e + W / 2
+    return origin_n - L / 2, origin_n + L / 2, origin_e - W / 2, origin_e + W / 2
+
+
+# Longest straight-line distance across the area, and its area — used to size the
+# node budget and the over-fly leg budget for either shape.
+if SEARCH_AREA_SHAPE == "rect":
+    _SEARCH_SPAN_M = math.hypot(SEARCH_WIDTH_M, SEARCH_LENGTH_M)
+    _SEARCH_AREA_M2 = SEARCH_WIDTH_M * SEARCH_LENGTH_M
+else:
+    _SEARCH_SPAN_M = 2.0 * MAX_SEARCH_RADIUS_M
+    _SEARCH_AREA_M2 = math.pi * MAX_SEARCH_RADIUS_M ** 2
 
 # ── RRT parameters ────────────────────────────────────────────────────────────
 RRT_STEP_M           = 1.5    # maximum edge length for each tree extension
@@ -118,7 +150,7 @@ BEACON_OVERFLY_OFFSET_M = 0.0    # standoff from the beacon along the approach
                                  # direction; 0.0 = dead overhead. Raise only if
                                  # a forward/angled camera loses the beacon when
                                  # directly above it.
-BEACON_MAX_LEGS         = max(8, int(2.0 * MAX_SEARCH_RADIUS_M / RRT_STEP_M) + 4)
+BEACON_MAX_LEGS         = max(8, int(2.0 * _SEARCH_SPAN_M / RRT_STEP_M) + 4)
 MAX_OVERFLY_ATTEMPTS    = 3       # give up flying over a spot after this many
                                   # passes that don't yield a confirmed state
                                   # (prevents thrashing on an unreadable beacon)
@@ -129,11 +161,10 @@ MAX_OVERFLY_ATTEMPTS    = 3       # give up flying over a spot after this many
 # the exact behaviour you've been testing in sim.
 BEACON_POS_FRAME        = "ned"
 
-# Derived: enough nodes to cover the search disc approximately twice over.
-# Formula: 2 × (area of disc) / (area per step cell).
-# Scaled up by 2× because RRT coverage is less efficient than a grid.
-# Clamped to a minimum of 20 so tiny radii still get a meaningful search.
-RRT_MAX_NODES = max(20, int(2.0 * math.pi * MAX_SEARCH_RADIUS_M ** 2 / RRT_STEP_M ** 2))
+# Derived: enough nodes to cover the search area approximately twice over.
+# Formula: 2 × (area) / (area per step cell). Scaled up by 2× because RRT
+# coverage is less efficient than a grid. Clamped to a minimum of 20.
+RRT_MAX_NODES = max(20, int(2.0 * _SEARCH_AREA_M2 / RRT_STEP_M ** 2))
 
 # ── Beacon verification ───────────────────────────────────────────────────────
 BLINK_VERIFY_TIMEOUT_S  = 20.0  # max hover time to confirm blink_is_blinking
@@ -195,8 +226,11 @@ _classified_buoys: list = []    # confirmed buoys (one per beacon-map id):
 _beacon_map: dict       = {}    # beacon-map id -> latest beacon entry from
                                 #   /seabird/beacon_map: {"id","ned","lat","lon",
                                 #   "sigma_m","n","outliers","age_s","seen"}
+_pending_det: dict      = {}    # FALLBACK source: color -> latest detection from
+                                #   /seabird/beacon_detections (beacon_detector_config),
+                                #   used only for beacons the fused map hasn't got yet
 _classified_ids: set    = set() # beacon-map ids already classified & recorded
-_overfly_attempts: dict = {}    # beacon-map id -> number of over-fly passes tried
+_overfly_attempts: dict = {}    # target key (map id, or ("det",n,e)) -> passes tried
 _lock = threading.Lock()
 _battery_low: bool    = False   # set True by monitor_battery() when threshold crossed
 _detector_alive       = threading.Event()  # set when first /seabird/beacon_map msg arrives
@@ -292,8 +326,29 @@ def _rclpy_thread_fn() -> None:
                     _beacon_map[bid] = b
 
         node.create_subscription(String, "/seabird/beacon_map", _cb, 10)
+
+        # ── Fallback detections (beacon_detector_config, Stage 1 alt) ─────────
+        # /seabird/beacon_detections is one detection per message, keyed by
+        # colour, carrying a world_position (NED). Used only as a fallback to
+        # surface a beacon the fused map hasn't registered yet. Colour here is
+        # NOT trusted for the state — that is read overhead by the downward
+        # classifier; we keep only the latest frame per colour for its position.
+        def _cb_det(msg: String) -> None:
+            try:
+                data = json.loads(msg.data)
+            except json.JSONDecodeError:
+                return
+            color = data.get("color", "")
+            if not color or color == "unknown":
+                return
+            if beacon_ne(data.get("world_position")) is None:
+                return   # no usable position — nothing to fly to
+            with _lock:
+                _pending_det[color] = data
+
+        node.create_subscription(String, "/seabird/beacon_detections", _cb_det, 10)
         node.get_logger().info(
-            "[rrt_listener] Subscribed /seabird/beacon_map  |  "
+            "[rrt_listener] Subscribed /seabird/beacon_map + /seabird/beacon_detections  |  "
             "Publishing /seabird/flight_path  /seabird/rrt_tree  /seabird/rrt_nodes"
         )
         rclpy.spin(node)
@@ -497,17 +552,23 @@ async def classify_state(drone: System, hover_north: float, hover_east: float,
     return state, color, is_blinking, blink_hz
 
 
-def record_buoy(bid, state: str, north: float, east: float, b: dict,
+def _near(n: float, e: float, buoy: dict) -> bool:
+    dn = n - buoy["north"]; de = e - buoy["east"]
+    return (dn * dn + de * de) <= (BUOY_MERGE_DIST_M * BUOY_MERGE_DIST_M)
+
+
+def record_buoy(key, state: str, north: float, east: float, b: dict,
                 color=None, is_blinking=None, blink_hz=None) -> bool:
     """
-    Add or update a classified buoy, keyed by beacon-map id `bid` (the map
-    already fuses each physical beacon to one stable id). Position/GPS come from
-    the beacon-map entry `b`; colour/blink come from the downward classifier.
-    Returns True if this was a NEW buoy.
+    Add or update a classified buoy. `key` is the target key (a beacon-map id, or
+    a ("det", n, e) tuple for a fallback detection). Deduplicates by matching key
+    OR by location (within BUOY_MERGE_DIST_M), so the map and the fallback
+    detector can't double-count the same physical beacon. Position/GPS come from
+    `b`; colour/blink come from the downward classifier. Returns True if NEW.
     """
     lat, lon = b.get("lat"), b.get("lon")
     entry = {
-        "id":          bid,
+        "id":          key,
         "state":       state,
         "north":       north,
         "east":        east,
@@ -522,8 +583,10 @@ def record_buoy(bid, state: str, north: float, east: float, b: dict,
     }
     with _lock:
         for existing in _classified_buoys:
-            if existing.get("id") == bid:
-                existing.update(entry)           # refine existing buoy
+            if existing.get("id") == key or _near(north, east, existing):
+                keep_id = existing.get("id")     # don't let a fallback overwrite a map id
+                existing.update(entry)
+                existing["id"] = keep_id
                 return False
         _classified_buoys.append(entry)
         return True
@@ -563,13 +626,25 @@ def beacon_ne(wp) -> Optional[tuple]:
         return None
 
 
-# ── Beacon-map target selection + attempt tracking ────────────────────────────
+# ── Target selection + attempt tracking ───────────────────────────────────────
+# Candidates come from two sources, both giving (north, east):
+#   PRIMARY  — /seabird/beacon_map (fused, stable id, lat/lon, uncertainty)
+#   FALLBACK — /seabird/beacon_detections, only for a beacon the map hasn't got
+# A candidate is ("map"|"det", key, north, east, entry). Colour is always read
+# overhead by the downward classifier, never taken from these.
 
-def _map_candidates():
-    """
-    Snapshot of mapped beacons still worth visiting: not already classified and
-    not over the over-fly attempt budget. Returns [(id, north, east, entry), ...].
-    """
+def _classified_points():
+    with _lock:
+        return [(b["north"], b["east"]) for b in _classified_buoys]
+
+
+def _near_any(n: float, e: float, points, dist: float) -> bool:
+    d2 = dist * dist
+    return any((n - pn) ** 2 + (e - pe) ** 2 <= d2 for pn, pe in points)
+
+
+def _map_candidates(classified_pts):
+    """Unclassified mapped beacons under the attempt budget."""
     out = []
     with _lock:
         items = list(_beacon_map.items())
@@ -580,44 +655,75 @@ def _map_candidates():
             continue
         if attempts.get(bid, 0) >= MAX_OVERFLY_ATTEMPTS:
             continue
-        ned = b.get("ned")
-        if not ned or len(ned) < 2:
-            continue
-        ne = beacon_ne(ned)
+        ne = beacon_ne(b.get("ned"))
         if ne is None:
             continue
-        out.append((bid, ne[0], ne[1], b))
+        if _near_any(ne[0], ne[1], classified_pts, BUOY_MERGE_DIST_M):
+            continue
+        out.append(("map", bid, ne[0], ne[1], b))
     return out
+
+
+def _det_candidates(map_pts, classified_pts):
+    """
+    Fallback detections not already covered by a mapped beacon (map is primary)
+    and not already classified. Keyed by rounded location.
+    """
+    out = []
+    with _lock:
+        dets = list(_pending_det.items())
+        attempts = dict(_overfly_attempts)
+    for _color, d in dets:
+        ne = beacon_ne(d.get("world_position"))
+        if ne is None:
+            continue
+        n, e = ne
+        if _near_any(n, e, map_pts, BUOY_MERGE_DIST_M):
+            continue                              # the map already has this one
+        if _near_any(n, e, classified_pts, BUOY_MERGE_DIST_M):
+            continue
+        key = ("det", round(n, 1), round(e, 1))
+        if attempts.get(key, 0) >= MAX_OVERFLY_ATTEMPTS:
+            continue
+        out.append(("det", key, n, e, d))
+    return out
+
+
+def _all_candidates():
+    classified_pts = _classified_points()
+    mapc = _map_candidates(classified_pts)
+    map_pts = [(c[2], c[3]) for c in mapc]
+    detc = _det_candidates(map_pts, classified_pts)
+    return mapc + detc
 
 
 def unconfirmed_beacon_location(near_n: float, near_e: float):
     """
-    (north, east) of the nearest mapped-but-unclassified beacon, for the RRT's
-    reactive attraction so the search drifts toward it. None if none pending.
+    (north, east) of the nearest unclassified beacon (map or fallback), for the
+    RRT's reactive attraction so the search drifts toward it. None if none.
     """
-    cands = _map_candidates()
+    cands = _all_candidates()
     if not cands:
         return None
-    _bid, bn, be, _b = min(cands, key=lambda c: (c[1] - near_n) ** 2 + (c[2] - near_e) ** 2)
-    return (bn, be)
+    c = min(cands, key=lambda c: (c[2] - near_n) ** 2 + (c[3] - near_e) ** 2)
+    return (c[2], c[3])
 
 
-def _note_overfly_attempt(bid) -> None:
-    """Record one more over-fly pass at beacon-map id `bid`."""
+def _note_overfly_attempt(key) -> None:
+    """Record one more over-fly pass at target `key` (map id or det tuple)."""
     with _lock:
-        _overfly_attempts[bid] = _overfly_attempts.get(bid, 0) + 1
+        _overfly_attempts[key] = _overfly_attempts.get(key, 0) + 1
 
 
 def next_overfly_target(near_n: float, near_e: float):
     """
-    Nearest mapped beacon not yet classified and not past MAX_OVERFLY_ATTEMPTS.
-    Returns (id, north, east) or None.
+    Nearest unclassified beacon from either source, under MAX_OVERFLY_ATTEMPTS.
+    Returns (source, key, north, east, entry) or None.
     """
-    cands = _map_candidates()
+    cands = _all_candidates()
     if not cands:
         return None
-    bid, bn, be, _b = min(cands, key=lambda c: (c[1] - near_n) ** 2 + (c[2] - near_e) ** 2)
-    return (bid, bn, be)
+    return min(cands, key=lambda c: (c[2] - near_n) ** 2 + (c[3] - near_e) ** 2)
 
 
 def beacon_map_entry(bid):
@@ -707,35 +813,55 @@ class RRTNode:
 
 class RRT:
     """
-    2-D Rapidly-exploring Random Tree constrained to a circle of
-    MAX_SEARCH_RADIUS_M metres centred on the takeoff position.
+    2-D Rapidly-exploring Random Tree constrained to the search area defined by
+    SEARCH_AREA_SHAPE (a W x L box, default, or a disc) anchored to the takeoff
+    position.
 
     Goal bias: with probability RRT_GOAL_BIAS the sample is nudged toward the
-    least-explored sector (opposite of the current node centroid) so the tree
+    least-explored direction (opposite of the current node centroid) so the tree
     spreads outward rather than clustering near the start.
     """
 
     def __init__(self, start_north: float, start_east: float) -> None:
         self._origin_north = start_north
         self._origin_east  = start_east
+        # Rect bounds (always computed; ignored in disc mode).
+        self._n_min, self._n_max, self._e_min, self._e_max = \
+            _search_bounds(start_north, start_east)
         self.root  = RRTNode(start_north, start_east)
         self.nodes = [self.root]
 
-    # ── Sampling ──────────────────────────────────────────────────────────────
+    # ── Area helpers ────────────────────────────────────────────────────────────
 
-    def _uniform_in_circle(self) -> tuple:
-        """Uniform distribution over the search disc."""
+    def _uniform_sample(self) -> tuple:
+        """Uniform distribution over the search area (box or disc)."""
+        if SEARCH_AREA_SHAPE == "rect":
+            return (random.uniform(self._n_min, self._n_max),
+                    random.uniform(self._e_min, self._e_max))
         angle = random.uniform(0.0, 2.0 * math.pi)
         r     = math.sqrt(random.random()) * MAX_SEARCH_RADIUS_M
-        return (
-            self._origin_north + r * math.cos(angle),
-            self._origin_east  + r * math.sin(angle),
-        )
+        return (self._origin_north + r * math.cos(angle),
+                self._origin_east  + r * math.sin(angle))
+
+    def clamp(self, north: float, east: float) -> tuple:
+        """Clamp a point into the search area (box clamp, or project onto disc)."""
+        if SEARCH_AREA_SHAPE == "rect":
+            return (min(max(north, self._n_min), self._n_max),
+                    min(max(east,  self._e_min), self._e_max))
+        dn = north - self._origin_north
+        de = east  - self._origin_east
+        d  = math.hypot(dn, de)
+        if d <= MAX_SEARCH_RADIUS_M or d == 0.0:
+            return north, east
+        s = MAX_SEARCH_RADIUS_M / d
+        return self._origin_north + dn * s, self._origin_east + de * s
+
+    # ── Sampling ──────────────────────────────────────────────────────────────
 
     def _biased_sample(self) -> tuple:
         """
-        Biased toward the sector opposite the current node centroid so the tree
-        fills the search area rather than staying near the start.
+        Biased toward the direction opposite the current node centroid so the
+        tree fills the search area rather than staying near the start.
         """
         # Option A — reactive beacon attraction:
         # if the detector has glimpsed an unconfirmed beacon, bias toward it so
@@ -758,13 +884,14 @@ class RRT:
             dn = self._origin_north - cn
             de = self._origin_east  - ce
             mag = math.sqrt(dn ** 2 + de ** 2) or 1.0
-            target_n = self._origin_north + (dn / mag) * MAX_SEARCH_RADIUS_M * 0.85
-            target_e = self._origin_east  + (de / mag) * MAX_SEARCH_RADIUS_M * 0.85
+            reach = 0.45 * _SEARCH_SPAN_M
+            target_n = self._origin_north + (dn / mag) * reach
+            target_e = self._origin_east  + (de / mag) * reach
             # Gaussian jitter so repeated biased samples aren't identical
-            target_n += random.gauss(0.0, MAX_SEARCH_RADIUS_M * 0.15)
-            target_e += random.gauss(0.0, MAX_SEARCH_RADIUS_M * 0.15)
-            return target_n, target_e
-        return self._uniform_in_circle()
+            target_n += random.gauss(0.0, 0.10 * _SEARCH_SPAN_M)
+            target_e += random.gauss(0.0, 0.10 * _SEARCH_SPAN_M)
+            return self.clamp(target_n, target_e)   # keep it inside the area
+        return self._uniform_sample()
 
     # ── Core RRT operations ───────────────────────────────────────────────────
 
@@ -790,7 +917,10 @@ class RRT:
         return from_node.north + dn * scale, from_node.east + de * scale
 
     def in_bounds(self, north: float, east: float) -> bool:
-        """True if (north, east) lies within MAX_SEARCH_RADIUS_M of origin."""
+        """True if (north, east) lies inside the search area."""
+        if SEARCH_AREA_SHAPE == "rect":
+            return (self._n_min <= north <= self._n_max and
+                    self._e_min <= east  <= self._e_max)
         dn = north - self._origin_north
         de = east  - self._origin_east
         return math.sqrt(dn ** 2 + de ** 2) <= MAX_SEARCH_RADIUS_M
@@ -819,15 +949,9 @@ class RRT:
 # ── Beacon over-fly flight ────────────────────────────────────────────────────
 
 def _clamp_to_bounds(rrt: "RRT", north: float, east: float) -> tuple:
-    """Project a point onto the search-disc boundary if it falls outside, so a
-    beacon just past the radius is still approached (up to the boundary)."""
-    dn = north - rrt._origin_north
-    de = east  - rrt._origin_east
-    d  = math.hypot(dn, de)
-    if d <= MAX_SEARCH_RADIUS_M or d == 0.0:
-        return north, east
-    s = MAX_SEARCH_RADIUS_M / d
-    return rrt._origin_north + dn * s, rrt._origin_east + de * s
+    """Clamp a point into the search area, so a beacon just past the boundary is
+    still approached up to the edge. Delegates to the area-aware RRT.clamp()."""
+    return rrt.clamp(north, east)
 
 
 async def fly_over_beacon(drone: System, rrt: RRT,
@@ -871,35 +995,49 @@ async def fly_over_beacon(drone: System, rrt: RRT,
 
 # ── Detection processing (called once overhead a mapped beacon) ───────────────
 
-async def classify_and_record(drone: System, bid, bn: float, be: float,
-                              down_m: float) -> None:
+async def classify_and_record(drone: System, target, down_m: float) -> None:
     """
-    The drone is directly over mapped beacon `bid`. Run the downward classifier
-    (Stage 2) for colour+blink, then record the buoy using the beacon-map's
-    NED + lat/lon for position and the classifier's colour/blink for the state.
-    The beacon's id is marked classified so the over-fly branch won't revisit it.
+    The drone is directly over the beacon named by `target`
+    (source, key, north, east, entry). Run the downward classifier (Stage 2) for
+    colour+blink, then record the buoy — position/GPS from that beacon's entry
+    (the beacon-map's NED+lat/lon, or the fallback detection's world_position +
+    gps_position), colour/blink from the classifier. Marks it classified so the
+    over-fly branch won't revisit it.
     """
-    log(f"[rrt] ★ Overhead beacon B{bid} at N={bn:+.2f} E={be:+.2f} "
+    source, key, bn, be, extra = target
+    label = f"B{key}" if source == "map" else "det-beacon"
+    log(f"[rrt] ★ Overhead {label} at N={bn:+.2f} E={be:+.2f} "
         f"— reading colour/blink from the downward camera")
 
     state, color, is_blinking, blink_hz = await classify_state(drone, bn, be, down_m)
     if not state:
-        log(f"[rrt]   … B{bid} state unconfirmed (blink unresolved), will retry")
+        log(f"[rrt]   … {label} state unconfirmed (blink unresolved), will retry")
         return   # not marked classified — a later pass can try again
 
-    b = beacon_map_entry(bid)
-    ned = b.get("ned")
-    rn, re = (float(ned[0]), float(ned[1])) if ned and len(ned) >= 2 else (bn, be)
+    # Position/GPS source: the fused map entry (by id) if this is a map beacon,
+    # else the fallback detection's own world_position + gps_position.
+    if source == "map":
+        b = beacon_map_entry(key)
+    else:
+        d = extra
+        gps = d.get("gps_position") or {}
+        b = {"ned": d.get("world_position"),
+             "lat": gps.get("latitude"), "lon": gps.get("longitude"),
+             "sigma_m": None}
 
-    is_new = record_buoy(bid, state, rn, re, b,
+    ne = beacon_ne(b.get("ned"))
+    rn, re = ne if ne is not None else (bn, be)
+
+    is_new = record_buoy(key, state, rn, re, b,
                          color=color, is_blinking=is_blinking, blink_hz=blink_hz)
-    with _lock:
-        _classified_ids.add(bid)
+    if source == "map":
+        with _lock:
+            _classified_ids.add(key)
 
     lat, lon = b.get("lat"), b.get("lon")
     gps_s = (f"lat={lat:.7f} lon={lon:.7f}" if lat is not None else "gps=n/a")
     tag = "NEW" if is_new else "upd"
-    log(f"[rrt]   [{tag}] B{bid} {STATE_MEANING[state]}  "
+    log(f"[rrt]   [{tag}] {label} {STATE_MEANING[state]}  "
         f"N={rn:+.2f} E={re:+.2f}  {gps_s}  "
         f"buoys={classified_count()}/{EXPECTED_BUOY_COUNT}")
 
@@ -1078,7 +1216,12 @@ async def run_mission() -> None:
     log("[rrt]   RRT BEACON SEARCH")
     log("[rrt] ───────────────────────────────────────────")
     log(f"[rrt]   Origin          N={origin_n:+.2f}  E={origin_e:+.2f}")
-    log(f"[rrt]   Max radius      {MAX_SEARCH_RADIUS_M:.1f} m")
+    if SEARCH_AREA_SHAPE == "rect":
+        log(f"[rrt]   Search area     {SEARCH_WIDTH_M:.0f} x {SEARCH_LENGTH_M:.0f} m "
+            f"box ({SEARCH_ORIGIN})  N[{rrt._n_min:+.1f},{rrt._n_max:+.1f}] "
+            f"E[{rrt._e_min:+.1f},{rrt._e_max:+.1f}]")
+    else:
+        log(f"[rrt]   Search area     disc, radius {MAX_SEARCH_RADIUS_M:.1f} m")
     log(f"[rrt]   Step length     {RRT_STEP_M:.1f} m")
     log(f"[rrt]   Max nodes       {RRT_MAX_NODES}")
     log(f"[rrt]   Verify timeout  {BLINK_VERIFY_TIMEOUT_S:.0f} s")
@@ -1095,22 +1238,24 @@ async def run_mission() -> None:
             log("[rrt] ⚡ Battery low — stopping search and returning to launch")
             break
 
-        # ── Priority: fly directly over a mapped, unclassified beacon ─────
-        # /seabird/beacon_map (beacon_overlay) gives each beacon a fused NED
-        # position. Divert and fly right over the nearest unclassified one
-        # (inserting the legs + beacon as RRT nodes), then read its colour/blink
-        # from the downward camera directly overhead.
+        # ── Priority: fly directly over an unclassified beacon ────────────
+        # Positions come from /seabird/beacon_map (primary, fused) or
+        # /seabird/beacon_detections (fallback, for beacons the map hasn't got).
+        # Divert and fly right over the nearest one (inserting the legs + beacon
+        # as RRT nodes), then read its colour/blink from the downward camera
+        # directly overhead.
         if BEACON_OVERFLY:
             ov = next_overfly_target(_state.north_m, _state.east_m)
             if ov is not None:
-                bid, bn, be = ov
-                log(f"[rrt] ◎ Mapped beacon B{bid} at N={bn:+.2f} E={be:+.2f} "
+                source, key, bn, be, _extra = ov
+                label = f"B{key}" if source == "map" else "det-beacon"
+                log(f"[rrt] ◎ {label} at N={bn:+.2f} E={be:+.2f} "
                     f"— flying directly over it")
                 arrived = await fly_over_beacon(drone, rrt, bn, be, down_m)
-                _note_overfly_attempt(bid)
+                _note_overfly_attempt(key)
                 if arrived:
                     log("[rrt]   ✓ Overhead beacon — reading state")
-                    await classify_and_record(drone, bid, bn, be, down_m)
+                    await classify_and_record(drone, ov, down_m)
                 else:
                     log("[rrt]   ⚠ Could not reach the beacon overhead this pass")
                 if survey_complete():
