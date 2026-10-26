@@ -20,6 +20,7 @@ from datetime import datetime
 import serial
 from serial import SerialException, SerialTimeoutException
 from pymavlink import mavutil
+from pymavlink.dialects.v20 import common as mavlink2
 
 # Optional, project-specific beacon decoding. The router still runs without it.
 try:
@@ -108,7 +109,7 @@ def main():
     totals = Counter()
     recent = Counter()
     last_stats = time.monotonic()
-    gcs_mav = mavutil.mavlink.MAVLink(
+    gcs_mav = mavlink2.MAVLink(
         None,
         srcSystem=255,
         srcComponent=190
@@ -149,6 +150,13 @@ def main():
                     )
 
                     packet = msg.pack(gcs_mav)
+                    """
+                    print(
+                        f"[TX] MAVLink header=0x{packet[0]:02X} "
+                        f"bytes={len(packet)}",
+                        flush=True
+                    )
+                    """
                     write_full(port, packet)
 
                     recent["gcs_heartbeat_tx"] += 1

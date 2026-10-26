@@ -21,7 +21,9 @@ from typing import NamedTuple, Optional
 BEACON_MAVLINK_ADDRESS = 0xBEAC   # MEMORY_VECT.address sentinel identifying our messages
 BEACON_MAVLINK_VERSION = 3        # MEMORY_VECT.ver — bump if the payload layout changes (v2: +tracking_id, v3: +msg_id)
 
-COLOR_CODES = {"unknown": 0, "red": 1, "green": 2, "blue": 3, "white": 4}
+# "off" = beacon housing seen, LED unlit (Task 1 BeaconState OFF). Appended,
+# so the payload layout is unchanged -- an older decoder reads it as "unknown".
+COLOR_CODES = {"unknown": 0, "red": 1, "green": 2, "blue": 3, "white": 4, "off": 5}
 COLOR_NAMES = {v: k for k, v in COLOR_CODES.items()}
 
 BLINK_CODES = {None: 0, False: 1, True: 2}

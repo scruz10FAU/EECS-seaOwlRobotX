@@ -51,7 +51,9 @@ _LOG_HEADER = [
 ]
 
 _FRAME_LOG_HEADER = [
-    "frame_idx", "timestamp", "source", "bx", "by", "color", "color_conf", "intensity",
+    "frame_idx", "timestamp", "source", "bx", "by",
+    "latitude", "longitude", "altitude", "gps_source",
+    "color", "color_conf", "intensity",
     "hue_median", "hue_mean", "hue_mode", "hue_variance", "hue_min", "hue_max", "hue_n",
     "vote_red", "vote_green", "vote_blue", "vote_other",
     "target_color", "target_blinking",
@@ -121,6 +123,8 @@ def _write_frame_log(log_path: str, frame_log: list, target_color, target_blinki
         for rec in frame_log:
             writer.writerow([
                 rec["frame_idx"], rec["timestamp"], rec["source"], rec["bx"], rec["by"],
+                *("" if rec[k] is None else rec[k] for k in ("latitude", "longitude", "altitude")),
+                rec["gps_source"],
                 rec["color"], rec["color_conf"], rec["intensity"],
                 rec["hue_median"], rec["hue_mean"], rec["hue_mode"], rec["hue_variance"],
                 rec["hue_min"], rec["hue_max"], rec["hue_n"],
@@ -185,11 +189,11 @@ class _DownwardImageGrabber(Node):
 
 
 def _wait_for_pose_data(pose_source, timeout_s: float) -> bool:
-    """Poll until get_gps_origin()/get_drone_height_agl() both have data, or timeout."""
+    """Poll until get_enu_origin()/get_drone_height_agl() both have data, or timeout."""
     t_end = time.time() + timeout_s
     while time.time() < t_end:
         rclpy.spin_once(pose_source, timeout_sec=0.1)
-        if pose_source.get_gps_origin() is not None and pose_source.get_drone_height_agl() is not None:
+        if pose_source.get_enu_origin() is not None and pose_source.get_drone_height_agl() is not None:
             return True
     return False
 
@@ -238,7 +242,9 @@ def classify_beacon_at_current_position(
 
     frames = image_grabber.drain_frames()
     drone_pos, drone_quat = pose_source.get_drone_pose()
-    gps_origin = pose_source.get_gps_origin()
+    # Origin of the frame drone_pos is in (EKF origin for PX4 odometry) --
+    # not necessarily the live GPS fix. See get_enu_origin().
+    gps_origin = pose_source.get_enu_origin()
     drone_height_agl = pose_source.get_drone_height_agl()
     beacon_height_m = cfg["downward_camera"]["beacon_height_m"]
 

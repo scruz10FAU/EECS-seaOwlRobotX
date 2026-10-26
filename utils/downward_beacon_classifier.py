@@ -4,7 +4,7 @@ import time
 from typing import Optional, Tuple
 import cv2
 import numpy as np
-from utils.blink_detector import BlinkDetector
+from utils.blink_detector import BlinkDetector, _BLINK_CC_ON_THRESHOLD
 def expected_pixel_radius(fx: float, fy: float, depth_m: float, diameter_m: float) -> float:
     """
     Expected circle radius in pixels for a known-diameter circle at a known
@@ -381,6 +381,26 @@ def classify_beacon_downward(
                    int(round(radius_px)), 255, thickness=-1)
         return classify_frame(frame, mask)
 
+    def _pixel_to_gps(px, py):
+        """Back-project pixel (px, py) at depth_m to (world_position, (lat, lon, alt)).
+        GPS is None without a gps_origin. Uses the single end-of-window pose."""
+        # Pinhole back-projection at the known depth (equivalent to
+        # camera_interface.Intrinsics.back_project(), inlined to avoid
+        # needing a CameraInterface instance just for this).
+        p_cam = np.array([
+            (px - cx) * depth_m / fx,
+            (py - cy) * depth_m / fy,
+            depth_m,
+        ])
+        world = bdc._camera_to_world(
+            p_cam, np.asarray(drone_pos, dtype=np.float64),
+            np.asarray(drone_quat_wxyz, dtype=np.float64),
+            downward_cam_cfg["_mount_offset"], downward_cam_cfg["_R_body_to_cam"],
+        )
+        if gps_origin is None:
+            return world, None
+        return world, bdc.local_enu_to_gps(world, gps_origin[0], gps_origin[1], gps_origin[2])
+
     for frame_idx, (ts, frame) in enumerate(frame_source):
         new_detection = None
         # Try initial acquisition on every frame, or local reacquisition
@@ -431,11 +451,19 @@ def classify_beacon_downward(
         last_color = color
         # Keep the last *verified* housing location for GPS back-projection;
         # an arbitrary center fallback must never produce coordinates.
-        last_circle = circle if disc_pos is not None else None
+        if disc_pos is not None:
+            last_circle = circle
         n_used += 1
+        # Per-frame GPS for the log: the housing when localized, otherwise
+        # the camera nadir (bx, by == cx, cy), tagged so the two aren't confused.
+        _, frame_gps = _pixel_to_gps(bx, by)
+        frame_lat, frame_lon, frame_alt = frame_gps if frame_gps is not None else (None, None, None)
         frame_log.append({
             "frame_idx": frame_idx, "timestamp": ts, "source": source,
-            "bx": bx, "by": by, "color": color, "color_conf": color_conf,
+            "bx": bx, "by": by,
+            "latitude": frame_lat, "longitude": frame_lon, "altitude": frame_alt,
+            "gps_source": "housing" if disc_pos is not None else "nadir",
+            "color": color, "color_conf": color_conf,
             "intensity": intensity, **{f"hue_{k}": v for k, v in hue_stats.items()},
             "vote_red": votes["red"], "vote_green": votes["green"],
             "vote_blue": votes["blue"], "vote_other": votes["other"],
@@ -450,24 +478,28 @@ def classify_beacon_downward(
     world_position = None
     if last_circle is not None:
         bx, by, _br = last_circle
-        # Pinhole back-projection at the known depth (equivalent to
-        # camera_interface.Intrinsics.back_project(), inlined to avoid
-        # needing a CameraInterface instance just for this).
-        p_cam = np.array([
-            (bx - cx) * depth_m / fx,
-            (by - cy) * depth_m / fy,
-            depth_m,
-        ])
-        world_position = bdc._camera_to_world(
-            p_cam, np.asarray(drone_pos, dtype=np.float64),
-            np.asarray(drone_quat_wxyz, dtype=np.float64),
-            downward_cam_cfg["_mount_offset"], downward_cam_cfg["_R_body_to_cam"],
-        )
-        lat, lon, alt = bdc.local_enu_to_gps(
-            world_position, gps_origin[0], gps_origin[1], gps_origin[2]
-        )
-        gps_position = {"latitude": lat, "longitude": lon, "altitude": alt}
+        world_position, gps = _pixel_to_gps(bx, by)
+        if gps is not None:
+            lat, lon, alt = gps
+            gps_position = {"latitude": lat, "longitude": lon, "altitude": alt}
         world_position = [float(v) for v in world_position]
+
+    # BlinkDetector defaults blink_color to "blue" whenever it sees no
+    # confident red/green -- so an unlit beacon, or no beacon at all, comes
+    # out as steady blue (the Task 1 EXIT state). Decide those cases here from
+    # the housing frames instead: never localized -> unknown (not reportable);
+    # localized but never lit -> "off".
+    housing_frames = [r for r in frame_log if r["source"] in ("detected", "locked")]
+    lit = any(r["color"] != "unknown" and r["color_conf"] >= _BLINK_CC_ON_THRESHOLD
+              for r in housing_frames)
+    if not housing_frames:
+        blink_result = {"is_blinking": None, "blink_color": "unknown",
+                        "blink_hz": None, "phase": "unknown"}
+        last_color = "unknown"
+    elif not lit:
+        blink_result = {"is_blinking": False, "blink_color": "off",
+                        "blink_hz": None, "phase": "off"}
+        last_color = "off"
     """
     return {
         "color": last_color,

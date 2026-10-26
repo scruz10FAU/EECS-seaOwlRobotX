@@ -285,9 +285,10 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
     _import_ros()) so all values are captured by closure — seabird_config.py
     is never imported.
     """
-    from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
+    from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy, qos_profile_sensor_data
     from sensor_msgs.msg import Image
     from geometry_msgs.msg import PoseStamped
+    from px4_msgs.msg import VehicleOdometry  # already a hard dep of utils/beacon_camera.py
     from geographic_msgs.msg import GeoPointStamped
     from utils.camera_interface import Intrinsics
     from cv_bridge import CvBridge as _CvBridge
@@ -348,6 +349,15 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
             drone_height_source = "vvhub_pose"
             px4_local_position_enabled = False
 
+    # PX4 odometry positions are relative to the EKF origin, which only
+    # VehicleLocalPosition carries (ref_lat/ref_lon/ref_alt) -- so subscribe to
+    # it for the origin even when height comes from elsewhere.
+    px4_odometry_pose = drone_pose_topic == "/fmu/out/vehicle_odometry"
+    if px4_odometry_pose and drone_height_source != "px4_local_position":
+        from px4_msgs.msg import VehicleLocalPosition
+    subscribe_local_position = px4_odometry_pose or (
+        drone_height_source == "px4_local_position" and px4_local_position_enabled)
+
     fx, fy   = cfg_camera["fx"],    cfg_camera["fy"]
     cx, cy   = cfg_camera["cx"],    cfg_camera["cy"]
     img_w    = cfg_camera["img_w"]
@@ -399,7 +409,12 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
             px4_msgs/msg/VehicleLocalPosition callback (topics.drone_height_source
             == "px4_local_position"). z is NED (down-positive), so height AGL is
             -z; z_valid gates against using an estimate that hasn't converged.
+            Also latches the EKF origin (ref_lat/ref_lon/ref_alt) once PX4 has
+            a global reference -- see get_enu_origin().
             """
+            if msg.xy_global and math.isfinite(msg.ref_lat) and math.isfinite(msg.ref_lon):
+                with self._gps_origin_lock:
+                    self._enu_origin = (float(msg.ref_lat), float(msg.ref_lon), float(msg.ref_alt))
             z_valid = getattr(msg, "z_valid", True)
             with self._pose_lock:
                 self._height_last_msg_ts   = time.time()
@@ -408,6 +423,20 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                 return
             with self._pose_lock:
                 self._drone_height_agl_px4 = -msg.z
+
+        def get_enu_origin(self):
+            """
+            (lat, lon, alt) of the local frame get_drone_pose() is expressed
+            in -- what local_enu_to_gps() needs for back-projection. For PX4
+            odometry that's the EKF origin (None until PX4 has a global
+            reference); otherwise the GPS origin topic, as before. Not the
+            same as get_gps_origin(), which with px4_sensor_gps is the drone's
+            live fix (still what ground-truth distance wants).
+            """
+            if px4_odometry_pose:
+                with self._gps_origin_lock:
+                    return getattr(self, "_enu_origin", None)
+            return self.get_gps_origin()
 
         def get_drone_height_agl(self):
             """
@@ -484,6 +513,26 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
             return {"state": state, "source": drone_height_source, "topic": topic,
                    "last_msg_ts": last_msg_ts, "height": height}
 
+        def _subscribe_configured_pose(self, qos):
+            """
+            Pose subscription for topics.drone_pose. The base class's
+            _subscribe_drone_pose() keys off its own module constant, not the
+            config, and open()/open_for_video() here override it anyway -- so
+            the type switch lives here. PX4's VehicleOdometry is
+            BEST_EFFORT sensor-data QoS; anything else is assumed PoseStamped.
+            """
+            if not drone_pose_topic:
+                return
+            if drone_pose_topic == "/fmu/out/vehicle_odometry":
+                self._pose_sub = self.create_subscription(
+                    VehicleOdometry, drone_pose_topic, self._on_px4_odometry,
+                    qos_profile_sensor_data
+                )
+            else:
+                self._pose_sub = self.create_subscription(
+                    PoseStamped, drone_pose_topic, self._on_drone_pose, qos
+                )
+
         def open(self):
             if self._is_open:
                 return True
@@ -516,11 +565,8 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
                 self._sync.registerCallback(self._on_synced_frame)
             self.detection_pub  = self.create_publisher(String, detections_topic, 10)
             self.aruco_gt_pub   = self.create_publisher(String, aruco_gt_topic,   10)
-            if drone_pose_topic:
-                self._pose_sub = self.create_subscription(
-                    PoseStamped, drone_pose_topic, self._on_drone_pose, qos
-                )
-            if drone_height_source == "px4_local_position" and px4_local_position_enabled:
+            self._subscribe_configured_pose(qos)
+            if subscribe_local_position:
                 self._local_pos_sub = self.create_subscription(
                     VehicleLocalPosition, local_position_topic,
                     self._on_local_position_px4, qos
@@ -562,11 +608,8 @@ def _make_beacon_camera(topics: dict, cfg_camera: dict, cfg_detection: dict):
             )
             self.detection_pub  = self.create_publisher(String, detections_topic, 10)
             self.aruco_gt_pub   = self.create_publisher(String, aruco_gt_topic,   10)
-            if drone_pose_topic:
-                self._pose_sub = self.create_subscription(
-                    PoseStamped, drone_pose_topic, self._on_drone_pose, qos
-                )
-            if drone_height_source == "px4_local_position" and px4_local_position_enabled:
+            self._subscribe_configured_pose(qos)
+            if subscribe_local_position:
                 self._local_pos_sub = self.create_subscription(
                     VehicleLocalPosition, local_position_topic,
                     self._on_local_position_px4, qos
@@ -1932,7 +1975,7 @@ def main(cfg: dict) -> None:
                         cfg["camera"]["_mount_offset"],
                         cfg["camera"]["_R_body_to_cam"],
                     )
-                    origin    = cam.get_gps_origin()
+                    origin    = cam.get_enu_origin()
                     if origin is not None:
                         lat, lon, alt = local_enu_to_gps(world_pos, *origin)
                         gps_coords    = {"latitude": lat, "longitude": lon, "altitude": alt}

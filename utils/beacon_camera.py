@@ -32,6 +32,10 @@ DEFAULT_TOPIC_PREFIX = "/zed/zed_node"
 DRONE_POSE_TOPIC     = "/mavros/local_position/pose"
 GPS_TOPIC            = "/mavros/global_position/gp_origin"
 
+# PX4 NED/FRD -> ROS ENU/FLU frame swaps (both are their own inverse).
+_R_NED_TO_ENU = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]], dtype=float)
+_R_FLU_TO_FRD = np.diag([1.0, -1.0, -1.0])
+
 
 class BeaconCamera(Node):
     """
@@ -160,9 +164,26 @@ class BeaconCamera(Node):
 
         quat /= norm
 
+        if msg.pose_frame != getattr(VehicleOdometry, "POSE_FRAME_NED", 1):
+            self.get_logger().warn(
+                f"VehicleOdometry pose_frame={msg.pose_frame} (not NED) -- "
+                f"world heading is arbitrary, ENU conversion will be rotated",
+                throttle_duration_sec=5.0,
+            )
+
+        # PX4 gives NED world / FRD body; the rest of the pipeline
+        # (_camera_to_world, local_enu_to_gps) expects ENU world / FLU body,
+        # same as MAVROS/VIO PoseStamped.
+        from scipy.spatial.transform import Rotation
+        pos_enu = np.array([pos[1], pos[0], -pos[2]])
+        w, x, y, z = quat
+        R_frd_to_ned = Rotation.from_quat([x, y, z, w]).as_matrix()
+        R_flu_to_enu = _R_NED_TO_ENU @ R_frd_to_ned @ _R_FLU_TO_FRD
+        qx, qy, qz, qw = Rotation.from_matrix(R_flu_to_enu).as_quat()
+
         with self._pose_lock:
-            self._drone_pos = pos.copy()
-            self._drone_quat_wxyz = quat.copy()
+            self._drone_pos = pos_enu
+            self._drone_quat_wxyz = np.array([qw, qx, qy, qz])
             self._pose_last_msg_ts = time.time()
 
     def _subscribe_drone_pose(self, qos):
