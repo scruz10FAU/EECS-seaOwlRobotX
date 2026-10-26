@@ -171,6 +171,8 @@ BLINK_VERIFY_TIMEOUT_S  = 20.0  # max hover time to confirm blink_is_blinking
 BLINK_VERIFY_POLL_S     = 0.25  # poll interval during verification hover
 BLINK_SETTLE_S          = 3.0   # stabilisation pause before polling — lets the drone
                                  # stop moving and the YOLO tracker lock a stable ID
+SETTLE_SPEED_MS         = 0.20  # start the camera read only once ground speed < this
+SETTLE_TIMEOUT_S        = 4.0   # ...but never wait longer than this to settle
 
 # ── Mission targets ───────────────────────────────────────────────────────────
 # RobotX 2026 Task 1 (Safe Passage): the UAV classifies each buoy's TOP beacon
@@ -198,6 +200,10 @@ STATE_MEANING = {
 # Survey the whole field, then report. The field has a known buoy count.
 EXPECTED_BUOY_COUNT = 1      # Task 1 has ten buoys
 BUOY_MERGE_DIST_M   = 2.0     # detections within this distance = same buoy
+REQUIRE_ENTRY_EXIT  = True    # real mission: don't stop until a flashing-blue ENTRY
+                              # *and* a solid-blue EXIT are classified. Set False for
+                              # testing / fields with no clean blue pair -> stop once
+                              # every mapped buoy has been classified.
 
 # ── MAVSDK ────────────────────────────────────────────────────────────────────
 MAVSDK_ADDRESS              = "udpin://0.0.0.0:14551"
@@ -370,6 +376,9 @@ class _DroneState:
     north_m: float = 0.0
     east_m:  float = 0.0
     down_m:  float = 0.0
+    vn_m_s:  float = 0.0
+    ve_m_s:  float = 0.0
+    yaw_deg: float = 0.0
 
 _state = _DroneState()
 
@@ -380,8 +389,19 @@ async def track_position(drone: System) -> None:
             _state.north_m = pv.position.north_m
             _state.east_m  = pv.position.east_m
             _state.down_m  = pv.position.down_m
+            _state.vn_m_s  = pv.velocity.north_m_s
+            _state.ve_m_s  = pv.velocity.east_m_s
     except Exception:
         log("[rrt] ERROR: track_position() failed")
+        traceback.print_exc()
+
+
+async def track_attitude(drone: System) -> None:
+    try:
+        async for att in drone.telemetry.attitude_euler():
+            _state.yaw_deg = att.yaw_deg
+    except Exception:
+        log("[rrt] ERROR: track_attitude() failed")
         traceback.print_exc()
 
 
@@ -505,6 +525,22 @@ async def hold_position(drone: System, north: float, east: float,
         await asyncio.sleep(0.1)
 
 
+async def settle(drone: System, north: float, east: float, down: float,
+                 yaw: float) -> None:
+    """Hold the setpoint until the drone has actually stopped (ground speed
+    < SETTLE_SPEED_MS and at least BLINK_SETTLE_S elapsed), capped at
+    SETTLE_TIMEOUT_S, so the downward read starts from a stable hover."""
+    target = PositionNedYaw(north, east, down, yaw)
+    t0 = asyncio.get_event_loop().time()
+    while True:
+        await drone.offboard.set_position_ned(target)
+        await asyncio.sleep(0.1)
+        elapsed = asyncio.get_event_loop().time() - t0
+        slow = math.hypot(_state.vn_m_s, _state.ve_m_s) < SETTLE_SPEED_MS
+        if elapsed >= SETTLE_TIMEOUT_S or (slow and elapsed >= BLINK_SETTLE_S):
+            return
+
+
 # ── Detection helpers ─────────────────────────────────────────────────────────
 
 def state_from_downward(result: dict) -> tuple:
@@ -534,7 +570,13 @@ async def classify_state(drone: System, hover_north: float, hover_east: float,
     (state, color, is_blinking, blink_hz); state is "" if not definitive / on
     failure.
     """
-    hold = PositionNedYaw(hover_north, hover_east, hover_down, 0.0)
+    yaw = _state.yaw_deg                     # hold the heading we arrived on, NOT North
+    hold = PositionNedYaw(hover_north, hover_east, hover_down, yaw)
+
+    # Stop moving before the camera read: a rotating/translating frame smears the
+    # beacon disc (only ~12-20 px at 5 m) and kills the Hough + blink votes.
+    await settle(drone, hover_north, hover_east, hover_down, yaw)
+
     task = asyncio.create_task(
         asyncio.to_thread(classify_beacon_downward_once, cfg, duration=8.0, tracking_id=-1)
     )
@@ -604,10 +646,20 @@ def have_entry_and_exit() -> bool:
 
 def survey_complete() -> bool:
     """
-    Field survey is 'done enough' to report when we have located all expected
-    buoys AND found both the entry and exit markers.
+    'Done enough' to report once all expected buoys are classified.
+    If REQUIRE_ENTRY_EXIT: also wait for both the entry and exit markers
+    (safe passage is defined by the gates). If not: stop as soon as every
+    beacon in the map has been flown over and classified.
     """
-    return classified_count() >= EXPECTED_BUOY_COUNT and have_entry_and_exit()
+    if classified_count() < EXPECTED_BUOY_COUNT:
+        return False
+    if REQUIRE_ENTRY_EXIT:
+        return have_entry_and_exit()
+    # Flag off: done when every mapped beacon has been classified.
+    with _lock:
+        map_ids = set(_beacon_map.keys())
+        done    = set(_classified_ids)
+    return bool(map_ids) and map_ids.issubset(done)
 
 def beacon_ne(wp) -> Optional[tuple]:
     """
@@ -1129,6 +1181,7 @@ async def run_mission() -> None:
     await wait_for_ready_position(drone)
 
     asyncio.ensure_future(track_position(drone))
+    asyncio.ensure_future(track_attitude(drone))
     #asyncio.ensure_future(monitor_battery(drone))
     await asyncio.sleep(0.5)
     log(f"[rrt] Start position: N={_state.north_m:.2f}  E={_state.east_m:.2f}  "
