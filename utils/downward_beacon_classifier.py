@@ -91,6 +91,10 @@ _MIN_COLOR_FRAC = 0.25
 _OFF_MIN_LIT_FRAMES = 3
 _OFF_MIN_LIT_FRAC = 0.15
 _OFF_MIN_HOUSING_FRAMES = 10   # fewer housing frames than this can't establish OFF
+# Depth from the measured disc size needs at least this many box-measured discs.
+_DISC_DEPTH_MIN_FRAMES = 3
+# Box mode with no usable height: depth used only to size the Hough fallback.
+_NOMINAL_DEPTH_M = 3.0
 
 
 def find_white_box(bgr_frame: np.ndarray, search_center=None, search_radius=None,
@@ -537,21 +541,29 @@ def classify_beacon_downward(
     cx, cy = downward_cam_cfg["cx"], downward_cam_cfg["cy"]
     beacon_height_m = downward_cam_cfg["beacon_height_m"]
     beacon_diam_m   = downward_cam_cfg["beacon_top_diameter_m"]
-    depth_m = drone_height_agl - beacon_height_m
-    if depth_m <= 0:
-        raise ValueError(
-            f"drone_height_agl ({drone_height_agl:.2f}m) must exceed the beacon "
-            f"height ({beacon_height_m:.2f}m) -- the drone must be above the beacon top"
-        )
-    radius_px = (
-        expected_radius_px_override if expected_radius_px_override is not None
-        else expected_pixel_radius(fx, fy, depth_m, beacon_diam_m)
-    )
     # Optional image-based scale: with beacon_box_width_m set, the disc radius
     # (and where to look for it) comes from the white box's pixel size each
     # search, so height/lens errors don't put the disc outside Hough's range.
     # An explicit expected_radius_px_override still wins for the radius.
     box_width_m = downward_cam_cfg.get("beacon_box_width_m")
+    K, D = downward_cam_cfg.get("_K"), downward_cam_cfg.get("_D")
+    fisheye = D is not None and downward_cam_cfg.get("_dist_model") == "fisheye"
+    depth_m = (drone_height_agl - beacon_height_m) if drone_height_agl is not None else None
+    depth_src = "height"
+    if depth_m is None or depth_m <= 0:
+        if not box_width_m:
+            raise ValueError(
+                f"drone_height_agl ({drone_height_agl}) must exceed the beacon "
+                f"height ({beacon_height_m:.2f}m) -- the drone must be above the beacon top"
+            )
+        # Box mode measures depth from the disc below; this only sizes the
+        # Hough fallback until then.
+        depth_m, depth_src = _NOMINAL_DEPTH_M, "nominal"
+    radius_px = (
+        expected_radius_px_override if expected_radius_px_override is not None
+        else expected_pixel_radius(fx, fy, depth_m, beacon_diam_m)
+    )
+    disc_measurements = []   # (x, y, r) px of every disc measured in the box
     # The downward view sees the LED itself, so the window's colour is the
     # majority of lit frames -- a few stray red/green samples don't flip blue.
     blink_detector = BlinkDetector(min_color_frac=_MIN_COLOR_FRAC)
@@ -584,17 +596,20 @@ def classify_beacon_downward(
                    max(1, int(round(r))), 255, thickness=-1)
         return classify_frame(frame, mask)
 
-    def _pixel_to_gps(px, py):
-        """Back-project pixel (px, py) at depth_m to (world_position, (lat, lon, alt)).
-        GPS is None without a gps_origin. Uses the single end-of-window pose."""
-        # Pinhole back-projection at the known depth (equivalent to
-        # camera_interface.Intrinsics.back_project(), inlined to avoid
-        # needing a CameraInterface instance just for this).
-        p_cam = np.array([
-            (px - cx) * depth_m / fx,
-            (py - cy) * depth_m / fy,
-            depth_m,
-        ])
+    def _normalized(px, py):
+        """Pixel -> normalized image coords (x/z, y/z): fisheye-undistorted with
+        the calibrated K/D when configured, else plain pinhole."""
+        if fisheye:
+            n = cv2.fisheye.undistortPoints(np.array([[[px, py]]], dtype=np.float64), K, D)
+            return float(n[0, 0, 0]), float(n[0, 0, 1])
+        return (px - cx) / fx, (py - cy) / fy
+
+    def _pixel_to_gps(px, py, depth):
+        """Back-project pixel (px, py) at depth (m along the optical axis) to
+        (world_position, (lat, lon, alt)). GPS is None without a gps_origin.
+        Uses the single end-of-window pose."""
+        xn, yn = _normalized(px, py)
+        p_cam = np.array([xn * depth, yn * depth, depth])
         world = bdc._camera_to_world(
             p_cam, np.asarray(drone_pos, dtype=np.float64),
             np.asarray(drone_quat_wxyz, dtype=np.float64),
@@ -631,6 +646,7 @@ def classify_beacon_downward(
                     if disc is not None:
                         box = cand
                         new_detection, disc_src = disc[0], "box_dark"
+                        disc_measurements.append((disc[0][0], disc[0][1], disc[1]))
                         if expected_radius_px_override is None:
                             radius_px, radius_src = disc[1], "disc"
                         center, search, tol = (box[0], box[1]), max(box[2], 25.0), _BOX_RADIUS_TOLERANCE
@@ -715,17 +731,17 @@ def classify_beacon_downward(
         if disc_pos is not None:
             last_circle = circle
         n_used += 1
-        # Per-frame GPS for the log: the housing when localized, otherwise
-        # the camera nadir (bx, by == cx, cy), tagged so the two aren't confused.
-        _, frame_gps = _pixel_to_gps(bx, by)
-        frame_lat, frame_lon, frame_alt = frame_gps if frame_gps is not None else (None, None, None)
+        # Per-frame GPS (latitude/longitude/altitude) is filled in after the
+        # loop, once the window's depth is known. The housing when localized,
+        # otherwise the camera nadir (bx, by == cx, cy), tagged so the two
+        # aren't confused.
         frame_log.append({
             "frame_idx": frame_idx, "timestamp": ts, "source": source,
             "bx": bx, "by": by,
             "radius_px": radius_px, "radius_src": radius_src,
             "box_side_px": box[2] if box is not None else None,
             "disc_src": disc_src if new_detection is not None else None,
-            "latitude": frame_lat, "longitude": frame_lon, "altitude": frame_alt,
+            "latitude": None, "longitude": None, "altitude": None,
             "gps_source": "housing" if disc_pos is not None else "nadir",
             "color": color, "color_conf": color_conf,
             "intensity": intensity, **{f"hue_{k}": v for k, v in hue_stats.items()},
@@ -738,11 +754,31 @@ def classify_beacon_downward(
             _save_housing_diagnostics(debug_image_dir, frame_idx, ts, frame,
                                       disc_pos, blob, sample_circle, source, search_info)
 
+    # Depth from the measured disc: a 0.254 m disc whose (undistorted)
+    # normalized radius is r_n sits at depth (D/2) / r_n along the optical
+    # axis -- independent of AGL telemetry. Median over the window.
+    if len(disc_measurements) >= _DISC_DEPTH_MIN_FRAMES:
+        r_norm = []
+        for (x, y, r) in disc_measurements:
+            c = np.array(_normalized(x, y))
+            edge = [np.array(_normalized(x + dx * r, y + dy * r))
+                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))]
+            r_norm.append(np.mean([np.linalg.norm(e - c) for e in edge]))
+        rn = float(np.median(r_norm))
+        if rn > 0:
+            depth_m, depth_src = (beacon_diam_m / 2.0) / rn, "disc"
+
+    for rec in frame_log:
+        _, g = _pixel_to_gps(rec["bx"], rec["by"], depth_m)
+        if g is not None:
+            rec["latitude"], rec["longitude"], rec["altitude"] = g
+        rec["depth_m"], rec["depth_src"] = depth_m, depth_src
+
     gps_position = None
     world_position = None
     if last_circle is not None:
         bx, by, _br = last_circle
-        world_position, gps = _pixel_to_gps(bx, by)
+        world_position, gps = _pixel_to_gps(bx, by, depth_m)
         if gps is not None:
             lat, lon, alt = gps
             gps_position = {"latitude": lat, "longitude": lon, "altitude": alt}
@@ -790,6 +826,8 @@ def classify_beacon_downward(
         "color": last_color,
         "tracking_id":  tracking_id,
         "timestamp": time.time(),
+        "depth_m": depth_m,          # camera->beacon top used for GPS
+        "depth_src": depth_src,      # "disc" (measured), "height" (AGL) or "nominal"
         "n_frames_used": n_used,
         "frame_log": frame_log,
     }

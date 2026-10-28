@@ -161,13 +161,30 @@ def _derive_camera_geometry(cam: dict) -> dict:
     pitch_deg fields. Shared by every camera profile in the config (the main
     forward camera and the downward-facing one) so this math lives in exactly
     one place.
+
+    An optional "intrinsics" block (calibrated fx/fy/cx/cy, distortion D and
+    model, e.g. from /data/modalai/opencv_<cam>_intrinsics.yml) replaces the
+    spec-sheet focal_length/aperture estimate; it also sets _K (3x3), _D and
+    _dist_model. Without it _D is None (plain pinhole, as before).
     """
-    fl, ha, va = cam["focal_length_mm"], cam["h_aperture_mm"], cam["v_aperture_mm"]
-    w,  h      = cam["img_w"], cam["img_h"]
-    cam["fx"] = fl * w / ha
-    cam["fy"] = fl * h / va
-    cam["cx"] = w / 2.0
-    cam["cy"] = h / 2.0
+    calib = cam.get("intrinsics")
+    if calib:
+        cam["fx"], cam["fy"] = float(calib["fx"]), float(calib["fy"])
+        cam["cx"], cam["cy"] = float(calib["cx"]), float(calib["cy"])
+        cam["_D"] = np.array(calib["D"], dtype=np.float64) if calib.get("D") else None
+        cam["_dist_model"] = calib.get("model", "pinhole")
+    else:
+        fl, ha, va = cam["focal_length_mm"], cam["h_aperture_mm"], cam["v_aperture_mm"]
+        w,  h      = cam["img_w"], cam["img_h"]
+        cam["fx"] = fl * w / ha
+        cam["fy"] = fl * h / va
+        cam["cx"] = w / 2.0
+        cam["cy"] = h / 2.0
+        cam["_D"] = None
+        cam["_dist_model"] = "pinhole"
+    cam["_K"] = np.array([[cam["fx"], 0.0, cam["cx"]],
+                          [0.0, cam["fy"], cam["cy"]],
+                          [0.0, 0.0, 1.0]], dtype=np.float64)
 
     cam["_mount_offset"] = np.array(cam["mount_offset_xyz"], dtype=np.float64)
 

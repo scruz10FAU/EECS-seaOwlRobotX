@@ -44,6 +44,9 @@ from utils.downward_beacon_classifier import classify_beacon_downward
 
 _bridge = CvBridge()
 
+# Where a bare --log-file name is written when no debug image dir is set.
+_DEFAULT_LOG_DIR = "debug_down"
+
 _LOG_HEADER = [
     "timestamp", "color", "blink", "blink_color", "blink_hz", "phase",
     "latitude", "longitude", "altitude", "tracking_id",
@@ -188,12 +191,19 @@ class _DownwardImageGrabber(Node):
         return out
 
 
-def _wait_for_pose_data(pose_source, timeout_s: float) -> bool:
-    """Poll until get_enu_origin()/get_drone_height_agl() both have data, or timeout."""
+def _box_mode(cfg: dict) -> bool:
+    """Box-based disc detection (downward_camera.beacon_box_width_m): disc size,
+    and the depth for GPS back-projection, come from the image -- AGL unused."""
+    return bool(cfg["downward_camera"].get("beacon_box_width_m"))
+
+
+def _wait_for_pose_data(pose_source, timeout_s: float, need_height: bool = True) -> bool:
+    """Poll until get_enu_origin() (and get_drone_height_agl() if need_height) have data, or timeout."""
     t_end = time.time() + timeout_s
     while time.time() < t_end:
         rclpy.spin_once(pose_source, timeout_sec=0.1)
-        if pose_source.get_enu_origin() is not None and pose_source.get_drone_height_agl() is not None:
+        if pose_source.get_enu_origin() is not None and (
+                not need_height or pose_source.get_drone_height_agl() is not None):
             return True
     return False
 
@@ -253,7 +263,13 @@ def classify_beacon_at_current_position(
               f"(gps_position in the result will be a placeholder, not a real fix)")
         gps_origin = fallback_gps_origin
 
-    if drone_height_agl is None:
+    if _box_mode(cfg):
+        # Disc size and depth are measured from the image; the raw AGL (even
+        # None or below the beacon) only matters if no disc is found, and the
+        # classifier handles that itself.
+        print(f"[downward] Box mode: AGL telemetry {drone_height_agl} (informational; "
+              f"depth comes from the measured disc)")
+    elif drone_height_agl is None:
         if fallback_height_agl is not None:
             print(f"[downward] WARNING: no AGL height -- using fallback {fallback_height_agl:.2f}m")
             drone_height_agl = fallback_height_agl
@@ -265,7 +281,8 @@ def classify_beacon_at_current_position(
         if fallback_height_agl is not None:
             drone_height_agl = fallback_height_agl
 
-    print(f"[downward] Drone height AGL used is {drone_height_agl} ")
+    if not _box_mode(cfg):
+        print(f"[downward] Drone height AGL used is {drone_height_agl} ")
 
     if drone_pos is None:
         # No pose at all (e.g. VIO not running). Fall back to a nominal
@@ -274,7 +291,8 @@ def classify_beacon_at_current_position(
         # gps_position in the result are then placeholders too.
         print("[downward] WARNING: no drone pose -- assuming identity "
               "position/orientation above the beacon")
-        drone_pos  = [0.0, 0.0, drone_height_agl if drone_height_agl is not None else 0.0]
+        drone_pos  = [0.0, 0.0, drone_height_agl if drone_height_agl is not None
+                      and drone_height_agl > beacon_height_m else 0.0]
         drone_quat = [1.0, 0.0, 0.0, 0.0]
 
     return classify_beacon_downward(
@@ -322,8 +340,10 @@ def setup_downward_classifier(cfg: dict, max_sample_hz: float = None, pose_wait_
     if max_sample_hz:
         print(f"[downward] Sampling downward camera frames at up to {max_sample_hz:.1f} Hz")
 
-    print(f"[downward] Waiting up to {pose_wait_timeout:.0f}s for GPS origin / AGL height...")
-    if not _wait_for_pose_data(pose_source, pose_wait_timeout):
+    need_height = not _box_mode(cfg)
+    print(f"[downward] Waiting up to {pose_wait_timeout:.0f}s for GPS origin"
+          + (" / AGL height..." if need_height else " (box mode: AGL not needed)..."))
+    if not _wait_for_pose_data(pose_source, pose_wait_timeout, need_height=need_height):
         print("[downward] GPS origin and/or AGL height didn't arrive in time -- "
               "continuing with fallback value(s) where needed")
         # Say WHY, not just that it didn't arrive -- "no publisher visible"
@@ -429,8 +449,16 @@ def classify_beacon_downward_once(
         frame_log = result.pop("frame_log", [])
 
         print(f"[downward] Result: {json.dumps(result, indent=2)}")
+        print(f"[downward] Depth used for GPS: {result.get('depth_m', float('nan')):.2f} m "
+              f"({result.get('depth_src', '?')})")
 
         if log_file:
+            # A bare file name goes in the debug folder (debug_down/ by
+            # default, even with debug images off) rather than the cwd; a
+            # path with a folder is used as given.
+            if not os.path.dirname(log_file):
+                log_file = os.path.join(save_debug_images or _DEFAULT_LOG_DIR, log_file)
+            os.makedirs(os.path.dirname(log_file), exist_ok=True)
             target_color, target_blinking = cfg.get("target_color"), cfg.get("target_blinking")
             ts_tag = time.strftime("%Y%m%d_%H%M%S")
             log_path = _build_log_path(log_file, target_color, target_blinking, ts_tag)
