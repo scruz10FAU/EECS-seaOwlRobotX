@@ -145,7 +145,7 @@ BEACON_ATTRACT_JITTER_M = 1.0 # Gaussian spread (m) around the beacon target
 # This is a stronger version of the attraction above: attraction only nudges the
 # random sampling, overfly commits to the beacon as a goal. The two cooperate.
 BEACON_OVERFLY          = True
-BEACON_OVERFLY_TOL_M    = 0.6    # how close "directly overhead" must be (m)
+BEACON_OVERFLY_TOL_M    = 0.3    # how close "directly overhead" must be (m)
 BEACON_OVERFLY_OFFSET_M = 0.0    # standoff from the beacon along the approach
                                  # direction; 0.0 = dead overhead. Raise only if
                                  # a forward/angled camera loses the beacon when
