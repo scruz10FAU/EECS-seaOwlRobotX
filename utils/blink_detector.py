@@ -47,10 +47,33 @@ class BlinkDetector:
     Returns a dict: {is_blinking, blink_color, blink_hz, phase}.
     """
 
-    def __init__(self, use_variance: bool = False):
+    def __init__(self, use_variance: bool = False, min_color_frac: float = 0.0):
+        """
+        min_color_frac: 0 (default) = any confident red/green sample makes the
+        beacon red/green (front-camera behaviour, where a red/green beacon's off
+        state reads as blue housing). > 0 = red/green must be at least this
+        fraction of the lit samples AND outnumber blue ones, else it's blue --
+        so a couple of stray samples (box edge tape, glare) can't flip a blue
+        beacon's colour. Used by the downward classifier, which sees the LED.
+        """
         self._samples: deque = deque()  # (timestamp, color, intensity, color_conf, hue_variance)
         self._finalised = False       # set by finalise() to skip warm-up guards (burst mode)
         self._use_variance = use_variance
+        self._min_color_frac = min_color_frac
+
+    def _signal_color(self, colors: list, color_confs: list):
+        """Dominant confident red/green colour, or None (= treat as blue)."""
+        confident = [(c, cc) for c, cc in zip(colors, color_confs)
+                     if c not in ("unknown", "_off_") and cc >= _BLINK_COLOR_CONF_MIN]
+        counts = Counter(c for c, _ in confident if c != "blue")
+        if not counts:
+            return None
+        color, n = counts.most_common(1)[0]
+        if self._min_color_frac > 0:
+            n_blue = sum(1 for c, _ in confident if c == "blue")
+            if n < self._min_color_frac * len(confident) or n <= n_blue:
+                return None
+        return color
 
     def finalise(self) -> None:
         """Signal that all data has been collected (burst mode).
@@ -119,11 +142,7 @@ class BlinkDetector:
         # Determine dominant non-blue color for labelling.
         colors      = [s[1] for s in self._samples]
         color_confs = [s[3] if len(s) > 3 else 1.0 for s in self._samples]
-        color_counts = Counter(
-            c for c, cc in zip(colors, color_confs)
-            if c not in ("blue", "unknown", "_off_") and cc >= _BLINK_COLOR_CONF_MIN
-        )
-        blink_color = color_counts.most_common(1)[0][0] if color_counts else "blue"
+        blink_color = self._signal_color(colors, color_confs) or "blue"
 
         lo, hi = _BLINK_HZ_RANGE
         is_blinking = lo <= best_hz <= hi and best_mag >= _BLINK_VAR_THRESHOLD
@@ -154,12 +173,9 @@ class BlinkDetector:
 
         # Determine signal type from dominant non-blue color in window.
         # Require minimum color_confidence to avoid red/green noise forcing the wrong mode.
-        color_counts = Counter(
-            c for c, cc in zip(colors, color_confs)
-            if c not in ("blue", "unknown", "_off_") and cc >= _BLINK_COLOR_CONF_MIN
-        )
-        if color_counts:
-            blink_color = color_counts.most_common(1)[0][0]
+        signal = self._signal_color(colors, color_confs)
+        if signal is not None:
+            blink_color = signal
             on_flags = [c == blink_color for c in colors]
         else:
             blink_color = "blue"

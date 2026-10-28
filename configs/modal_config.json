@@ -63,11 +63,18 @@
     "mount_offset_xyz": [0.0, 0.0, 0.0],
     "pitch_deg":        90.0,
     "beacon_height_m":        0.4382,
-    "beacon_top_diameter_m":  0.2540
+    "beacon_top_diameter_m":  0.2540,
+    "beacon_box_width_m":     0.4318,
+    "color_overrides": {
+      "green_hue_center": 63,
+      "green_hue_half":   28,
+      "blue_hue_center":  111,
+      "blue_hue_half":    19
+    }
   },
 
   "downward_test": {
-    "duration":            4.0,
+    "duration":            8.0,
     "max_sample_hz":       5.0,
     "pose_wait_timeout":   15.0,
     "fallback_latitude":   0.0,

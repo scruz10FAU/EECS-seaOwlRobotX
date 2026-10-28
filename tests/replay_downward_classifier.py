@@ -30,6 +30,7 @@ import glob
 import math
 import os
 import sys
+from datetime import datetime
 
 import cv2
 import numpy as np
@@ -173,9 +174,11 @@ def main():
     ap.add_argument("--expected-radius-px", type=float, default=None,
                     help="Override the height-derived disc radius")
     ap.add_argument("--debug-dir", default=None,
-                    help="Write the classifier's per-frame debug images under this folder")
-    ap.add_argument("--out", default="replay_results.csv",
-                    help="Summary CSV, one row per window (default: replay_results.csv)")
+                    help="Write the classifier's per-frame debug images under this folder "
+                         "(a relative name goes under <video folder>\\replay\\)")
+    ap.add_argument("--out", default=None,
+                    help="Summary CSV, one row per window (default: "
+                         "<video folder>\\replay\\replay_results_<YYYYmmdd_HHMMSS>.csv)")
     args = ap.parse_args()
 
     cfg = bdc.load_config(args.config)
@@ -194,6 +197,15 @@ def main():
         paths += sorted(glob.glob(os.path.join(p, "*.mkv"))) if os.path.isdir(p) else [p]
     if not paths:
         sys.exit(f"[replay] no .mkv files in {args.videos}")
+
+    # Keep results with the recordings, not in the repo / current directory.
+    replay_dir = os.path.join(os.path.dirname(os.path.abspath(paths[0])), "replay")
+    if args.out is None:
+        args.out = os.path.join(
+            replay_dir, f"replay_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+    if args.debug_dir and not os.path.isabs(args.debug_dir):
+        args.debug_dir = os.path.join(replay_dir, args.debug_dir)
+    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
 
     with open(args.out, "w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=_RESULT_FIELDS)

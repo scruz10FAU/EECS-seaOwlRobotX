@@ -670,8 +670,10 @@ def _apply_color_config(det_cfg: dict) -> None:
     _RED_THRESHOLD    = det_cfg.get("red_threshold",    _RED_THRESHOLD)
     _WINNER_THRESHOLD = det_cfg.get("winner_threshold", _WINNER_THRESHOLD)
 
-    blue_center = det_cfg.get("blue_hue_center", 120)
-    blue_half   = det_cfg.get("blue_hue_half",   15)
+    blue_center  = det_cfg.get("blue_hue_center",  120)
+    blue_half    = det_cfg.get("blue_hue_half",    15)
+    green_center = det_cfg.get("green_hue_center", 65)
+    green_half   = det_cfg.get("green_hue_half",   30)
     red_low     = det_cfg.get("red_hue_low",     None)
 
     half = det_cfg.get("red_hue_high", 5)
@@ -687,7 +689,7 @@ def _apply_color_config(det_cfg: dict) -> None:
     
     bands = [
         (  0, 20, "red"),
-        ( 65, 30, "green"),
+        (green_center, green_half, "green"),
         (blue_center, blue_half, "blue")
     ]
 
