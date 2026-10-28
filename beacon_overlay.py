@@ -195,6 +195,11 @@ def image_msg_to_array(msg) -> Optional[np.ndarray]:
     if msg.encoding in ("bgr8", "rgb8"):
         img = buf.reshape(msg.height, msg.step)[:, :msg.width * 3].reshape(msg.height, msg.width, 3)
         return img if msg.encoding == "bgr8" else img[:, :, ::-1]
+    # ROS "yuv422" is UYVY, "yuv422_yuy2" is YUYV; 2 bytes/pixel (VOXL hires_down_small_color).
+    if msg.encoding in ("yuv422", "yuv422_yuy2"):
+        yuv = buf.reshape(msg.height, msg.step)[:, :msg.width * 2].reshape(msg.height, msg.width, 2)
+        code = cv2.COLOR_YUV2BGR_UYVY if msg.encoding == "yuv422" else cv2.COLOR_YUV2BGR_YUYV
+        return cv2.cvtColor(yuv, code)
     return None
 
 
