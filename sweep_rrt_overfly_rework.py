@@ -200,7 +200,7 @@ STATE_MEANING = {
 # Survey the whole field, then report. The field has a known buoy count.
 EXPECTED_BUOY_COUNT = 2      # Task 1 has ten buoys
 BUOY_MERGE_DIST_M   = 2.0     # detections within this distance = same buoy
-REQUIRE_ENTRY_EXIT  = True    # real mission: don't stop until a flashing-blue ENTRY
+REQUIRE_ENTRY_EXIT  = False    # real mission: don't stop until a flashing-blue ENTRY
                               # *and* a solid-blue EXIT are classified. Set False for
                               # testing / fields with no clean blue pair -> stop once
                               # every mapped buoy has been classified.
