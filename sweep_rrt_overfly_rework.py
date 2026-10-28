@@ -240,6 +240,7 @@ _overfly_attempts: dict = {}    # target key (map id, or ("det",n,e)) -> passes 
 _lock = threading.Lock()
 _battery_low: bool    = False   # set True by monitor_battery() when threshold crossed
 _detector_alive       = threading.Event()  # set when first /seabird/beacon_map msg arrives
+_listener_ctx         = None    # dedicated rclpy context for the listener thread
 
 
 # ── ROS2 publishers (set in listener thread) ──────────────────────────────────
@@ -262,8 +263,15 @@ def _rclpy_thread_fn() -> None:
     global _rrt_edge_pub, _rrt_edge_msg, _rrt_node_pub, _rrt_node_msg, _rclpy_node
 
     try:
-        rclpy.init()
-        node = rclpy.create_node("rrt_listener")
+        # Give the listener its OWN rclpy context. The downward classifier spins
+        # rclpy's DEFAULT context from another thread; if the listener spun the
+        # same one, both threads would drive the executor's internal generator at
+        # once -> RuntimeError: "generator already executing", and every colour
+        # read fails. Separate contexts keep them from colliding.
+        global _listener_ctx
+        _listener_ctx = rclpy.Context()
+        rclpy.init(context=_listener_ctx)
+        node = rclpy.create_node("rrt_listener", context=_listener_ctx)
         _rclpy_node = node
 
         # ── Flight path (same topics as sweep_lawnmower) ──────────────────
@@ -357,7 +365,19 @@ def _rclpy_thread_fn() -> None:
             "[rrt_listener] Subscribed /seabird/beacon_map + /seabird/beacon_detections  |  "
             "Publishing /seabird/flight_path  /seabird/rrt_tree  /seabird/rrt_nodes"
         )
-        rclpy.spin(node)
+
+        from rclpy.executors import SingleThreadedExecutor
+        _listener_exec = SingleThreadedExecutor(context=_listener_ctx)
+        _listener_exec.add_node(node)
+        # Spin our OWN executor instance (not rclpy's global one, which the
+        # downward classifier drives) -> no "generator already executing". The
+        # try/except keeps the listener alive through any transient rclpy hiccup
+        # so the frozen beacon map isn't lost mid-flight.
+        while rclpy.ok(context=_listener_ctx):
+            try:
+                _listener_exec.spin_once(timeout_sec=0.1)
+            except Exception:
+                pass
 
     except Exception:
         log("[rrt_listener] FATAL: unhandled exception")
@@ -365,6 +385,11 @@ def _rclpy_thread_fn() -> None:
 
 
 def start_rclpy_listener() -> threading.Thread:
+    # The downward classifier spins rclpy's DEFAULT context; initialise it here
+    # so it's ready. The listener thread below runs on its OWN separate context,
+    # so the two never spin the same context at the same time.
+    if not rclpy.ok():
+        rclpy.init()
     t = threading.Thread(target=_rclpy_thread_fn, daemon=True, name="rclpy_listener")
     t.start()
     return t
@@ -552,6 +577,12 @@ def state_from_downward(result: dict) -> tuple:
     color = (result.get("color") or "").lower()
     raw = result.get("blink")
     is_blinking = raw.get("is_blinking") if isinstance(raw, dict) else raw
+    # The classifier's "color" is the LAST-frame colour, so a flasher whose 8 s
+    # sample happens to end on an off-frame comes back "unknown" even though the
+    # whole-window "blink_color" was detected. We don't touch the classifier, so
+    # reconcile it here: when it's blinking, trust the blink colour.
+    if is_blinking and color in ("", "unknown", "black", "none"):
+        color = (result.get("blink_color") or color).lower()
     if is_blinking is None:
         return "", color, is_blinking
     if color == "red"   and is_blinking:     return STATE_STARBOARD, color, is_blinking
@@ -1228,7 +1259,7 @@ async def run_mission() -> None:
             await drone.offboard.set_position_ned(hold)
             await asyncio.sleep(0.1)
 
-    
+
         await drone.offboard.set_position_ned(hold)
         log("[rrt] Switching to offboard mode...")
         try:
