@@ -88,7 +88,7 @@ except ImportError:
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Takeoff and flight
-TAKEOFF_ALT_M        = 5.0    # altitude in metres
+TAKEOFF_ALT_M        = 2.0    # altitude in metres
 WAYPOINT_TOL_M       = 0.5    # arrival tolerance
 WAYPOINT_TIMEOUT     = 60.0   # seconds before a waypoint is skipped
 HOVER_STABILIZE_S    = 8.0    # seconds to stabilise after takeoff
