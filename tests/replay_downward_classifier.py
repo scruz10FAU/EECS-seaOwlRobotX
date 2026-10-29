@@ -245,11 +245,22 @@ def main():
         args.debug_dir = os.path.join(replay_dir, args.debug_dir)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
 
-    # "x": never overwrite an earlier results file (e.g. a reused --out).
-    if os.path.exists(args.out):
-        sys.exit(f"[replay] {args.out} already exists -- not overwriting it; pick another --out")
+    # Never overwrite an earlier results file (e.g. a reused --out): take the
+    # first free <name>_N.csv, opened "x" so a file that appears meanwhile is
+    # skipped too.
+    root, ext = os.path.splitext(args.out)
+    n = 0
+    while True:
+        try:
+            fh = open(args.out, "x", newline="")
+            break
+        except FileExistsError:
+            n += 1
+            args.out = f"{root}_{n}{ext}"
+    if n:
+        print(f"[replay] {root}{ext} exists -- writing {args.out} instead")
     scores = []
-    with open(args.out, "x", newline="") as fh:
+    with fh:
         writer = csv.DictWriter(fh, fieldnames=_RESULT_FIELDS)
         writer.writeheader()
         for path in paths:
