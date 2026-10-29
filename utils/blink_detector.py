@@ -47,7 +47,9 @@ class BlinkDetector:
     Returns a dict: {is_blinking, blink_color, blink_hz, phase}.
     """
 
-    def __init__(self, use_variance: bool = False, min_color_frac: float = 0.0):
+    def __init__(self, use_variance: bool = False, min_color_frac: float = 0.0,
+                 min_off_sec: float = 0.0, max_ioi_ratio: float = _BLINK_MAX_IOI_RATIO,
+                 intensity_fallback: bool = True):
         """
         min_color_frac: 0 (default) = any confident red/green sample makes the
         beacon red/green (front-camera behaviour, where a red/green beacon's off
@@ -55,11 +57,44 @@ class BlinkDetector:
         fraction of the lit samples AND outnumber blue ones, else it's blue --
         so a couple of stray samples (box edge tape, glare) can't flip a blue
         beacon's colour. Used by the downward classifier, which sees the LED.
+        min_off_sec: off runs between on samples shorter than this are sampling
+        dropouts, not an off phase, and are treated as on (0 = disabled).
+        max_ioi_ratio: reject a blue blink whose rising-edge intervals vary by
+        more than this max/min ratio (None = disabled).
+        intensity_fallback: blue with every sample lit -> look for blinking in
+        intensity swings (front camera: housing always visible). False = steady;
+        the downward camera sees the LED itself, so an off LED reads as unlit,
+        and its intensity swings track the sample size, not the LED.
         """
         self._samples: deque = deque()  # (timestamp, color, intensity, color_conf, hue_variance)
         self._finalised = False       # set by finalise() to skip warm-up guards (burst mode)
         self._use_variance = use_variance
         self._min_color_frac = min_color_frac
+        self._min_off_sec = min_off_sec
+        self._max_ioi_ratio = max_ioi_ratio
+        self._intensity_fallback = intensity_fallback
+
+    def _fill_short_off_runs(self, timestamps: list, on_flags: list) -> list:
+        """Mark interior off runs shorter than min_off_sec as on. A run's length
+        is its span plus one median sample interval (1 frame ~ 1 interval)."""
+        if self._min_off_sec <= 0 or len(timestamps) < 2:
+            return on_flags
+        dts = sorted(b - a for a, b in zip(timestamps, timestamps[1:]))
+        dt = dts[len(dts) // 2]
+        flags = list(on_flags)
+        i = 0
+        while i < len(flags):
+            if flags[i]:
+                i += 1
+                continue
+            j = i
+            while j < len(flags) and not flags[j]:
+                j += 1
+            interior = i > 0 and j < len(flags)
+            if interior and timestamps[j - 1] - timestamps[i] + dt < self._min_off_sec:
+                flags[i:j] = [True] * (j - i)
+            i = j
+        return flags
 
     def _signal_color(self, colors: list, color_confs: list):
         """Dominant confident red/green colour, or None (= treat as blue)."""
@@ -190,6 +225,9 @@ class BlinkDetector:
             # Fallback: if every sample passes the confidence threshold, no off-states
             # exist via color_conf. Try intensity oscillation as a secondary signal.
             if all(on_flags):
+                if not self._intensity_fallback:
+                    return {"is_blinking": False, "blink_color": "blue",
+                            "blink_hz": None, "phase": "on"}
                 live_intensities = [i for c, i in zip(colors, intensities)
                                     if c not in ("_off_", "unknown")]
                 if not live_intensities:
@@ -203,6 +241,7 @@ class BlinkDetector:
                 on_flags = [i >= mean_intensity if c not in ("_off_", "unknown") else False
                             for c, i in zip(colors, intensities)]
 
+        on_flags = self._fill_short_off_runs(timestamps, on_flags)
         phase = "on" if on_flags[-1] else "off"
 
         # Rising edges (off→on), debounced to suppress threshold chatter.
@@ -239,8 +278,8 @@ class BlinkDetector:
 
         iois = [rising_edges[i + 1] - rising_edges[i] for i in range(len(rising_edges) - 1)]
         mean_ioi = sum(iois) / len(iois)
-        if blink_color == "blue" and _BLINK_MAX_IOI_RATIO is not None and len(iois) >= 2:
-            if max(iois) / min(iois) > _BLINK_MAX_IOI_RATIO:
+        if blink_color == "blue" and self._max_ioi_ratio is not None and len(iois) >= 2:
+            if max(iois) / min(iois) > self._max_ioi_ratio:
                 return {"is_blinking": False, "blink_color": blink_color, "blink_hz": None, "phase": phase}
         if mean_ioi <= 0:
             return {"is_blinking": False, "blink_color": blink_color, "blink_hz": None, "phase": phase}

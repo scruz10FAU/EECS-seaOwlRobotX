@@ -49,7 +49,18 @@ _R_FLU_TO_FRD = np.diag([1.0, -1.0, -1.0])
 _RESULT_FIELDS = ["video", "window", "start_frame", "end_frame", "start_stamp", "end_stamp",
                   "n_frames", "n_housing", "height_agl_m", "color", "blink", "blink_color",
                   "blink_hz", "phase", "latitude", "longitude", "altitude",
-                  "drone_lat", "drone_lon"]
+                  "drone_lat", "drone_lon",
+                  "GT color", "GT status", "Color val", "status val", "Overall"]
+_GT_COLORS = ("red", "green", "blue")
+_GT_STATUS = {"blink": True, "solid": False}
+
+
+def _ground_truth(name):
+    """(color, is_blinking) from a <color>_<blink|solid>.mkv name, else (None, None)."""
+    parts = os.path.splitext(name)[0].lower().split("_")
+    if len(parts) >= 2 and parts[0] in _GT_COLORS and parts[1] in _GT_STATUS:
+        return parts[0], _GT_STATUS[parts[1]]
+    return None, None
 
 
 def _f(row, key):
@@ -115,6 +126,8 @@ def replay_video(mkv_path, cfg, args, writer):
     name = os.path.basename(mkv_path)
     print(f"[replay] {name}: {len(rows)} telemetry rows")
 
+    gt_color, gt_blink = _ground_truth(name)
+    scores = []   # (video, color_ok, status_ok) per window with ground truth
     frames = _read_frames(mkv_path, rows, args.max_sample_hz)
     for w, win in enumerate(_windows(frames, args.window, args.step)):
         last = rows[win[-1][0]]
@@ -139,7 +152,16 @@ def replay_video(mkv_path, cfg, args, writer):
         )
         n_housing = sum(1 for r in result["frame_log"] if r["source"] in ("detected", "locked"))
         gps = result["gps_position"] or {}
+        gt = {}
+        if gt_color is not None:
+            # Unknown (None) blink never matches.
+            color_ok = result["blink_color"] == gt_color
+            status_ok = result["blink"] is gt_blink
+            gt = {"GT color": gt_color, "GT status": gt_blink, "Color val": color_ok,
+                  "status val": status_ok, "Overall": color_ok and status_ok}
+            scores.append((name, color_ok, status_ok))
         writer.writerow({
+            **gt,
             "video": name, "window": w, "start_frame": win[0][0], "end_frame": win[-1][0],
             "start_stamp": f"{win[0][1]:.3f}", "end_stamp": f"{win[-1][1]:.3f}",
             "n_frames": len(win), "n_housing": n_housing, "height_agl_m": f"{h:.2f}",
@@ -154,6 +176,22 @@ def replay_video(mkv_path, cfg, args, writer):
         print(f"  win {w:3d} frames {win[0][0]:5d}-{win[-1][0]:5d}  h={h:5.2f}m  "
               f"housing {n_housing:2d}/{len(win):2d}  color={result['color']:7s} "
               f"blink={str(result['blink']):5s} blink_color={result['blink_color']:7s} {where}")
+    return scores
+
+
+def _print_scores(scores):
+    """Color / status / overall accuracy, total and per video."""
+    if not scores:
+        return
+    def line(rows):
+        n = len(rows)
+        c = sum(1 for _, ok, _s in rows if ok)
+        s = sum(1 for _, _c, ok in rows if ok)
+        o = sum(1 for _, cok, sok in rows if cok and sok)
+        return f"color {c}/{n}  status {s}/{n}  overall {o}/{n}"
+    print(f"[replay] score: {line(scores)}")
+    for video in dict.fromkeys(v for v, _, _ in scores):
+        print(f"  {video:20s} {line([r for r in scores if r[0] == video])}")
 
 
 def main():
@@ -207,13 +245,18 @@ def main():
         args.debug_dir = os.path.join(replay_dir, args.debug_dir)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
 
-    with open(args.out, "w", newline="") as fh:
+    # "x": never overwrite an earlier results file (e.g. a reused --out).
+    if os.path.exists(args.out):
+        sys.exit(f"[replay] {args.out} already exists -- not overwriting it; pick another --out")
+    scores = []
+    with open(args.out, "x", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=_RESULT_FIELDS)
         writer.writeheader()
         for path in paths:
-            replay_video(path, cfg, args, writer)
+            scores += replay_video(path, cfg, args, writer) or []
             fh.flush()
     print(f"[replay] results -> {args.out}")
+    _print_scores(scores)
 
 
 if __name__ == "__main__":

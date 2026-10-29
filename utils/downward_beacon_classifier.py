@@ -87,6 +87,12 @@ _LED_RADIUS_FRAC = 0.4
 # Window colour: red/green must be at least this share of the lit frames (and
 # outnumber blue) -- see BlinkDetector(min_color_frac).
 _MIN_COLOR_FRAC = 0.25
+# Blink: off runs shorter than this are sampling dropouts (a 0.5 Hz blink is
+# off ~1 s), and a blink's rising-edge intervals must agree within this
+# max/min ratio -- a solid blue read as 0.75 Hz "blinking" from dropouts
+# with intervals of 0.5-2.8 s.
+_MIN_OFF_SEC = 0.5
+_MAX_IOI_RATIO = 2.0
 # OFF: fewer lit housing frames than this count or fraction = beacon off.
 _OFF_MIN_LIT_FRAMES = 3
 _OFF_MIN_LIT_FRAC = 0.15
@@ -95,6 +101,27 @@ _OFF_MIN_HOUSING_FRAMES = 10   # fewer housing frames than this can't establish 
 _DISC_DEPTH_MIN_FRAMES = 3
 # Box mode with no usable height: depth used only to size the Hough fallback.
 _NOMINAL_DEPTH_M = 3.0
+# Box candidate selection (box mode). Disc diameter / box side as measured by
+# find_white_box + find_disc_in_box on flight footage (~0.44-0.50; the real
+# 10 in / 17 in = 0.59, but the box blob includes side faces).
+_DISC_BOX_RATIO = 0.47
+# Once locked, a candidate's box side can't be more than this fraction smaller
+# than the lock's recent boxes -- rejects the small white puck/spool on the
+# tether (13-18 px against a 35-44 px box). Larger is allowed: the look-alikes
+# near the beacon are all smaller than it, so a larger disc-bearing box takes
+# over a lock that landed on one of them (and _SIZE_WEIGHT prefers it).
+_BOX_SIDE_TOLERANCE = 0.35
+_LOCK_SIDE_HISTORY = 5
+_SIZE_WEIGHT = 0.5
+# Ignore candidates further than this fraction of the half-diagonal from the
+# optical centre: the fisheye edge holds the floats, buildings and fences.
+_EDGE_RADIUS_FRAC = 0.75
+# White threshold passes: normal, then a lower one -- only for dark exposures
+# (median V of the frame's central half below _DARK_FRAME_MEDIAN_V, ~23 on the
+# dark flight vs 50-60 normally): on normal frames V>130 passes sun glitter
+# on grass as dozens of disc-bearing "boxes".
+_WHITE_VAL_MINS = (170, 130)
+_DARK_FRAME_MEDIAN_V = 30
 
 
 def find_white_box(bgr_frame: np.ndarray, search_center=None, search_radius=None,
@@ -154,8 +181,8 @@ def find_white_box(bgr_frame: np.ndarray, search_center=None, search_radius=None
 
 def find_disc_in_box(bgr_frame: np.ndarray, box, dark_val_max: int = 90,
                      min_area_px: float = 8.0,
-                     min_diam_frac: float = 0.25, max_diam_frac: float = 0.9,
-                     max_center_offset_frac: float = 0.35):
+                     min_diam_frac: float = 0.35, max_diam_frac: float = 0.9,
+                     max_center_offset_frac: float = 0.35, val_min: int = 170):
     """
     The disc is a dark circle on the box's white top, always at its centre --
     far easier to measure there than with Hough over grass at 5-10 px. Within
@@ -180,7 +207,7 @@ def find_disc_in_box(bgr_frame: np.ndarray, box, dark_val_max: int = 90,
     v = hsv[:, :, 2]
     # Only dark pixels within the white face's convex hull: grass (V ~80)
     # is "dark" too and would otherwise merge with the disc.
-    white = ((hsv[:, :, 1] < 60) & (v > 170)).astype(np.uint8) * 255
+    white = ((hsv[:, :, 1] < 60) & (v > val_min)).astype(np.uint8) * 255
     white = cv2.morphologyEx(white, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
     n, labels, stats, _ = cv2.connectedComponentsWithStats(white)
     if n < 2:
@@ -383,9 +410,13 @@ def _save_debug_images(debug_image_dir: str, frame_idx: int, ts: float, frame: n
       frame_NNNN_<ts>_<color>_<source>_mask.png     -- the binary mask
                                (within that crop) marking which pixels were
                                counted as "lit"
+      frame_NNNN_<ts>_<color>_<source>_raw.png      -- the unmodified camera
+                               frame, for re-running detection offline
+                               without the drawn markers in the way
     """
     os.makedirs(debug_image_dir, exist_ok=True)
     tag = f"frame_{frame_idx:04d}_{ts:.3f}_{color}_{source}"
+    cv2.imwrite(os.path.join(debug_image_dir, f"{tag}_raw.png"), frame)
     bx, by, br = circle
     outline_color = _SOURCE_COLORS.get(source, (255, 255, 255))
     overlay = frame.copy()
@@ -566,7 +597,8 @@ def classify_beacon_downward(
     disc_measurements = []   # (x, y, r) px of every disc measured in the box
     # The downward view sees the LED itself, so the window's colour is the
     # majority of lit frames -- a few stray red/green samples don't flip blue.
-    blink_detector = BlinkDetector(min_color_frac=_MIN_COLOR_FRAC)
+    blink_detector = BlinkDetector(min_color_frac=_MIN_COLOR_FRAC, min_off_sec=_MIN_OFF_SEC,
+                                   max_ioi_ratio=_MAX_IOI_RATIO, intensity_fallback=False)
     blink_result = {"is_blinking": None, "blink_color": "unknown", "blink_hz": None, "phase": "unknown"}
     last_color  = "unknown"
     last_circle = None   # (bx, by, br) px, from the most recent sampled position
@@ -588,6 +620,7 @@ def classify_beacon_downward(
     max_stale_frames = 10
     box = None          # latest (x, y, side_px) white box
     lock_src = None     # disc_src of the detection the current lock came from
+    lock_sides = []     # box sides (px) of the current lock's recent detections
     radius_src = "override" if expected_radius_px_override is not None else "height"
 
     def _classify_at(frame, bx, by, r):
@@ -635,25 +668,58 @@ def classify_beacon_downward(
                 search = max(25.0, radius_px * 0.75)
             tol = 0.3
             if box_width_m:
-                # Whole frame until locked, then near the lock. Accept the
-                # largest white-box candidate that has a real disc inside;
-                # a "box" without one (sun glitter) doesn't count.
-                boxes = (find_white_box(frame, return_all=True) if disc_pos is None else
-                         find_white_box(frame, disc_pos, max(60.0, 3.0 * radius_px), return_all=True))
-                box = None
-                for cand in boxes:
-                    disc = find_disc_in_box(frame, cand)
-                    if disc is not None:
-                        box = cand
-                        new_detection, disc_src = disc[0], "box_dark"
-                        disc_measurements.append((disc[0][0], disc[0][1], disc[1]))
-                        if expected_radius_px_override is None:
-                            radius_px, radius_src = disc[1], "disc"
-                        center, search, tol = (box[0], box[1]), max(box[2], 25.0), _BOX_RADIUS_TOLERANCE
-                        if debug_image_dir:
-                            search_info = (center, search, radius_px, [], tol, box,
-                                           (new_detection, radius_px, disc_src))
+                # Whole frame every search: the drone moves up to ~90 px
+                # between samples, and a window around the last lock let a
+                # nearby look-alike (the white puck on the tether) take the
+                # lock and keep it. Every candidate with a disc is scored
+                # instead: disc/box ratio near the beacon's, larger boxes
+                # preferred (none much smaller than this lock's recent boxes),
+                # then nearness to the last position (image centre when
+                # unlocked). A "box" without a disc (sun glitter) doesn't
+                # count. A second pass with a lower white threshold handles
+                # dark exposures.
+                h_f, w_f = frame.shape[:2]
+                edge_r = _EDGE_RADIUS_FRAC * 0.5 * np.hypot(w_f, h_f)
+                ref = disc_pos if disc_pos is not None else (cx, cy)
+                ref_side = float(np.median(lock_sides)) if lock_sides else None
+                centre_v = frame[h_f // 4:3 * h_f // 4, w_f // 4:3 * w_f // 4].max(axis=2)
+                dark_frame = np.median(centre_v) < _DARK_FRAME_MEDIAN_V
+                best, boxes = None, []
+                for val_min in (_WHITE_VAL_MINS if dark_frame else _WHITE_VAL_MINS[:1]):
+                    found = find_white_box(frame, val_min=val_min, return_all=True)
+                    boxes = boxes or found
+                    with_disc = []
+                    for cand in found:
+                        if np.hypot(cand[0] - cx, cand[1] - cy) > edge_r:
+                            continue
+                        if ref_side is not None and cand[2] < (1.0 - _BOX_SIDE_TOLERANCE) * ref_side:
+                            continue
+                        disc = find_disc_in_box(frame, cand, val_min=val_min)
+                        if disc is not None:
+                            with_disc.append((cand, disc))
+                    if with_disc:
+                        max_side = max(c[2] for c, _ in with_disc)
+                        best = min(
+                            ((abs(2.0 * d[1] / c[2] - _DISC_BOX_RATIO) / _DISC_BOX_RATIO
+                              + np.hypot(d[0][0] - ref[0], d[0][1] - ref[1]) / edge_r
+                              + _SIZE_WEIGHT * (1.0 - c[2] / max_side)), c, d)
+                            for c, d in with_disc)
                         break
+                box = None
+                if best is not None:
+                    _score, box, disc = best
+                    if ref_side is not None and box[2] > (1.0 + _BOX_SIDE_TOLERANCE) * ref_side:
+                        lock_sides.clear()   # took over from a smaller look-alike
+                    lock_sides.append(box[2])
+                    del lock_sides[:-_LOCK_SIDE_HISTORY]
+                    new_detection, disc_src = disc[0], "box_dark"
+                    disc_measurements.append((disc[0][0], disc[0][1], disc[1]))
+                    if expected_radius_px_override is None:
+                        radius_px, radius_src = disc[1], "disc"
+                    center, search, tol = (box[0], box[1]), max(box[2], 25.0), _BOX_RADIUS_TOLERANCE
+                    if debug_image_dir:
+                        search_info = (center, search, radius_px, [], tol, box,
+                                       (new_detection, radius_px, disc_src))
                 if box is None and boxes and expected_radius_px_override is None:
                     # No disc confirmed: still size Hough from the biggest box.
                     radius_px = (beacon_diam_m / 2.0) * boxes[0][2] / box_width_m
@@ -688,6 +754,7 @@ def classify_beacon_downward(
         if (last_verified_frame is not None and
                 frame_idx - last_verified_frame > max_stale_frames):
             disc_pos = None
+            lock_sides.clear()
 
         # Never use arbitrary bright blobs to establish housing localization.
         # Color can still be sampled at the geometric center, but if no
@@ -724,7 +791,12 @@ def classify_beacon_downward(
 
         circle = (bx, by, sample_r if disc_pos is not None else radius_px)   # housing (GPS)
         sample_circle = (sx, sy, sample_r) if disc_pos is not None else circle   # what colour came from
-        blink_result = blink_detector.update(ts, color, intensity, color_conf)
+        # Box mode: a "locked" frame (box not found this frame) samples a stale
+        # position the drone has since moved off, so its "no LED" isn't an off
+        # observation -- it doesn't vote. Off comes from frames where the disc
+        # was found and the LED isn't lit.
+        if not (box_width_m and source == "locked"):
+            blink_result = blink_detector.update(ts, color, intensity, color_conf)
         last_color = color
         # Keep the last *verified* housing location for GPS back-projection;
         # an arbitrary center fallback must never produce coordinates.
