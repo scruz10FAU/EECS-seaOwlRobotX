@@ -161,6 +161,11 @@ MAX_OVERFLY_ATTEMPTS    = 3       # give up flying over a spot after this many
 # the exact behaviour you've been testing in sim.
 BEACON_POS_FRAME        = "ned"
 
+# Re-center on the freshest beacon-map position just before each overhead read.
+RECENTER_BEFORE_READ    = True   # re-fetch beacon-map pos + correct before the read
+RECENTER_TOL_M          = 0.4    # only correct if the beacon moved more than this (m)
+RECENTER_MAX_LEGS       = 3      # cap correction legs so we don't chase GPS jitter
+
 # Derived: enough nodes to cover the search area approximately twice over.
 # Formula: 2 × (area) / (area per step cell). Scaled up by 2× because RRT
 # coverage is less efficient than a grid. Clamped to a minimum of 20.
@@ -200,7 +205,7 @@ STATE_MEANING = {
 # Survey the whole field, then report. The field has a known buoy count.
 EXPECTED_BUOY_COUNT = 2      # Task 1 has ten buoys
 BUOY_MERGE_DIST_M   = 2.0     # detections within this distance = same buoy
-REQUIRE_ENTRY_EXIT  = False    # real mission: don't stop until a flashing-blue ENTRY
+REQUIRE_ENTRY_EXIT  = True    # real mission: don't stop until a flashing-blue ENTRY
                               # *and* a solid-blue EXIT are classified. Set False for
                               # testing / fields with no clean blue pair -> stop once
                               # every mapped buoy has been classified.
@@ -1091,6 +1096,24 @@ async def classify_and_record(drone: System, target, down_m: float) -> None:
     label = f"B{key}" if source == "map" else "det-beacon"
     log(f"[rrt] ★ Overhead {label} at N={bn:+.2f} E={be:+.2f} "
         f"— reading colour/blink from the downward camera")
+
+    # Re-center on the freshest beacon-map position before reading. The map
+    # estimate can drift 1-2 m while we flew the overfly, so without this we
+    # read from a stale coordinate and the beacon can sit off-frame. Fly a
+    # short correction leg if it moved; capped so we don't chase GPS jitter.
+    if RECENTER_BEFORE_READ and source == "map":
+        for _ in range(RECENTER_MAX_LEGS):
+            latest = beacon_ne(beacon_map_entry(key).get("ned"))
+            if latest is None:
+                break
+            drift = math.hypot(latest[0] - bn, latest[1] - be)
+            if drift <= RECENTER_TOL_M:
+                break
+            bn, be = latest
+            log(f"[rrt]   re-centering on updated map pos N={bn:+.2f} E={be:+.2f} "
+                f"(moved {drift:.2f} m)")
+            if not await fly_to(drone, bn, be, down_m, _state.yaw_deg):
+                break
 
     state, color, is_blinking, blink_hz = await classify_state(drone, bn, be, down_m)
     if not state:
