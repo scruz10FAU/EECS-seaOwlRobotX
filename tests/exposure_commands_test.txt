@@ -131,3 +131,6 @@ voxl-send-command hires_front_small_color start_ae
 
 # record and log command
 ros2 bag record -o "downward_$(date +%Y%m%d_%H%M%S)" /seabird/beacon_detections_downward < /dev/null & python3 downward_beacon_classifier_node.py --config configs/modal_config.json
+
+#start robocommand server
+python3 vendor/robocommand/RobotX_2026/rc_test/test_server.py

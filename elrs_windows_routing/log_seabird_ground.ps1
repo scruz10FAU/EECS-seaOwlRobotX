@@ -13,7 +13,7 @@ $RosSetup = 'source /opt/ros/humble/setup.bash && source /mnt/c/Users/Precision\
 Start-Process powershell.exe -ArgumentList @(
     "-NoExit"
     "-Command"
-    "Set-Location '$ProjectDir'; py -3.10 .\elrs_windows_router.py --com $ComPort --wsl-log 'C:\Users\Precision 3571\EECS-seaOwlRobotX\tests\elrs_testing\flight_test1\uav_mavlink_relay.csv'"
+    "Set-Location '$ProjectDir'; py -3.10 .\elrs_windows_router.py --com $ComPort --wsl-log 'C:\Users\Precision 3571\EECS-seaOwlRobotX\tests\elrs_testing\flight_test2\uav_mavlink_relay.csv'"
 )
 
 # Start RoboCommand OCS (needs the MQTT broker at ROBOCOMMAND_HOST, default localhost:1883)
