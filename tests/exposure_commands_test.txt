@@ -127,3 +127,7 @@ voxl-inspect-cam hires_front_small_color
   
 
 voxl-send-command hires_front_small_color start_ae 
+
+
+# record and log command
+ros2 bag record -o "downward_$(date +%Y%m%d_%H%M%S)" /seabird/beacon_detections_downward < /dev/null & python3 downward_beacon_classifier_node.py --config configs/modal_config.json

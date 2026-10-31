@@ -426,7 +426,15 @@ def classify_beacon_downward_once(
             f"the drone must be above the beacon top"
         )
 
+    # One folder per run for its debug images and (bare-named) logs, so runs
+    # never mix and each run's images sit next to its CSVs.
+    target_color, target_blinking = cfg.get("target_color"), cfg.get("target_blinking")
+    ts_tag = time.strftime("%Y%m%d_%H%M%S")
+    tb_tag = "blink" if target_blinking is True else "steady" if target_blinking is False else "unk"
+    run_dir = os.path.join(save_debug_images or _DEFAULT_LOG_DIR,
+                           f"run_{ts_tag}_gt-{target_color or 'unk'}-{tb_tag}")
     if save_debug_images:
+        save_debug_images = run_dir
         print(f"[downward] Saving debug images to {save_debug_images}/")
     if expected_radius_px is not None:
         print(f"[downward] Using expected-radius-px override: {expected_radius_px:.1f}px "
@@ -453,14 +461,12 @@ def classify_beacon_downward_once(
               f"({result.get('depth_src', '?')})")
 
         if log_file:
-            # A bare file name goes in the debug folder (debug_down/ by
+            # A bare file name goes in this run's folder (under debug_down/ by
             # default, even with debug images off) rather than the cwd; a
             # path with a folder is used as given.
             if not os.path.dirname(log_file):
-                log_file = os.path.join(save_debug_images or _DEFAULT_LOG_DIR, log_file)
+                log_file = os.path.join(run_dir, log_file)
             os.makedirs(os.path.dirname(log_file), exist_ok=True)
-            target_color, target_blinking = cfg.get("target_color"), cfg.get("target_blinking")
-            ts_tag = time.strftime("%Y%m%d_%H%M%S")
             log_path = _build_log_path(log_file, target_color, target_blinking, ts_tag)
             _write_log_row(log_path, result, target_color, target_blinking)
             frames_path = _build_log_path(log_file, target_color, target_blinking, ts_tag, suffix="_frames")
