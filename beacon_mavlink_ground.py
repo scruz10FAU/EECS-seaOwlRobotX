@@ -19,8 +19,14 @@ With --publish-ros, also requires a ROS2 environment (rclpy) on this
 machine -- otherwise no ROS dependency at all, matching the rest of this
 script's design (nothing here needs ROS by default). --publish-ros also
 publishes the UAV's status (seaowls_interfaces/msg/VehicleStatus, built from
-HEARTBEAT + cached GLOBAL_POSITION_INT/GPS_RAW_INT/VFR_HUD/ATTITUDE) on
---status-topic, so seaowls_interfaces must be sourced too.
+HEARTBEAT + cached GLOBAL_POSITION_INT/GPS_RAW_INT/VFR_HUD/ATTITUDE/
+EXTENDED_SYS_STATE) on --status-topic, so seaowls_interfaces must be sourced
+too. current_task follows the drone's "SEABIRD_TASK <n>" STATUSTEXT (RxTask
+value, sent by beacon_mavlink_bridge.py) and is TASK_NONE until one arrives.
+--publish-ros also uploads seaowls_ocs's course geofence
+(seaowls_interfaces/msg/UavGeofence on --geofence-topic) to PX4 as its fence
+and GF_MAX_VER_DIST ceiling (see utils/px4_fence.py), back over this same
+connection.
 
 Usage:
 IN WSL:
@@ -42,10 +48,12 @@ from pymavlink import mavutil
 from utils.beacon_mavlink_protocol import (
     unpack_value_array, BEACON_MAVLINK_ADDRESS, BEACON_MAVLINK_VERSION,
 )
+from utils.px4_fence import FenceUploader, open_polygon
 
 DEFAULT_ROS_TOPIC = "/seabird/beacon_info"
 DEFAULT_STATUS_TOPIC = "/seaowls/uav1/status"
 DEFAULT_SAFE_PASSAGE_TOPIC = "/seaowls/uav1/report/safe_passage"
+DEFAULT_GEOFENCE_TOPIC = "/seaowls/uav1/mission/geofence"
 
 # No UAV heartbeat for this long -> publish STATE_UNKNOWN.
 HEARTBEAT_STALE_S = 3.0
@@ -59,6 +67,14 @@ _AUTO_MODES = {"OFFBOARD", "MISSION", "RTL", "LAND", "TAKEOFF", "LOITER",
                "FOLLOWME", "RTGS", "PRECLAND"}
 _KILLED_SYSTEM_STATUS = {mavutil.mavlink.MAV_STATE_EMERGENCY,
                          mavutil.mavlink.MAV_STATE_FLIGHT_TERMINATION}
+
+# robotx rx_common.proto FlightPhase.
+_FLIGHT_PHASE_UNKNOWN, _FLIGHT_PHASE_GROUNDED, _FLIGHT_PHASE_AIRBORNE = 0, 1, 2
+
+# STATUSTEXT "SEABIRD_TASK <n>" from the drone sets current_task to RxTask n.
+# TASK_UNKNOWN (0) is never accepted -- RoboCommand mustn't see it as a change.
+TASK_STATUSTEXT_PREFIX = "SEABIRD_TASK"
+_VALID_TASKS = {1, 2, 3, 4, 5}
 
 # A msg_id seen again within this window is a repeated copy from the bridge
 # (--repeat) and is dropped. Time-based rather than "ever seen" so a bridge
@@ -88,7 +104,32 @@ def _is_uav_heartbeat(msg) -> bool:
             and msg.get_srcComponent() == mavutil.mavlink.MAV_COMP_ID_AUTOPILOT1)
 
 
-def _build_vehicle_status(VehicleStatus, stamp, vehicle_id, heartbeat, cache):
+def _parse_task_statustext(text):
+    """RxTask value from a "SEABIRD_TASK <n>" STATUSTEXT, else None."""
+    parts = text.strip("\x00 ").split()
+    if len(parts) == 2 and parts[0] == TASK_STATUSTEXT_PREFIX and parts[1].isdigit():
+        task = int(parts[1])
+        if task in _VALID_TASKS:
+            return task
+    return None
+
+
+def _flight_phase(heartbeat, ext_state):
+    """FlightPhase from EXTENDED_SYS_STATE.landed_state, falling back to the
+    armed flag when PX4 hasn't reported one. Stale link -> UNKNOWN."""
+    if heartbeat is None:
+        return _FLIGHT_PHASE_UNKNOWN
+    if (ext_state is not None
+            and ext_state.landed_state != mavutil.mavlink.MAV_LANDED_STATE_UNDEFINED):
+        if ext_state.landed_state == mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND:
+            return _FLIGHT_PHASE_GROUNDED
+        return _FLIGHT_PHASE_AIRBORNE  # IN_AIR, TAKEOFF, LANDING
+    if heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
+        return _FLIGHT_PHASE_AIRBORNE
+    return _FLIGHT_PHASE_GROUNDED
+
+
+def _build_vehicle_status(VehicleStatus, stamp, vehicle_id, heartbeat, cache, current_task):
     """
     VehicleStatus from the latest UAV HEARTBEAT (None = link stale ->
     STATE_UNKNOWN) plus the most recent cached position/attitude messages.
@@ -100,8 +141,8 @@ def _build_vehicle_status(VehicleStatus, stamp, vehicle_id, heartbeat, cache):
     out.header.stamp = stamp
     out.vehicle_id = vehicle_id
     out.vehicle_type = VehicleStatus.TYPE_UAV
-    out.current_task = VehicleStatus.TASK_NONE
-    out.flight_phase = 0
+    out.current_task = current_task
+    out.flight_phase = _flight_phase(heartbeat, cache.get("EXTENDED_SYS_STATE"))
     out.depth_m = 0.0
 
     if heartbeat is None:
@@ -284,6 +325,16 @@ def main():
              "update it instead of adding a new one (default: 3.0)",
     )
     ap.add_argument(
+        "--geofence-topic", default=DEFAULT_GEOFENCE_TOPIC,
+        help="UavGeofence topic (from seaowls_ocs) uploaded to PX4 as its fence when "
+             f"--publish-ros is set (default: {DEFAULT_GEOFENCE_TOPIC})",
+    )
+    ap.add_argument(
+        "--fence-include-transit", action="store_true",
+        help="Also upload the UAV transit area as a second inclusion polygon (default: "
+             "course boundary only -- what seaowls_ocs declares to RoboCommand)",
+    )
+    ap.add_argument(
         "--log", metavar="PATH", default=None,
         help="Append each decoded beacon and its receive time to PATH as CSV",
     )
@@ -303,11 +354,14 @@ def main():
     safe_passage_publisher = None
     ros_node = None
     buoy_field = _BuoyField(args.buoy_merge_m)
+    pending_fence = None   # latest UavGeofence not yet handed to the uploader
     if args.publish_ros:
         import rclpy
         from rclpy.node import Node
         from std_msgs.msg import String
-        from seaowls_interfaces.msg import VehicleStatus, SafePassage, BuoyDetection
+        from seaowls_interfaces.msg import (
+            VehicleStatus, SafePassage, BuoyDetection, UavGeofence,
+        )
 
         rclpy.init()
         ros_node = Node("beacon_mavlink_ground")
@@ -318,12 +372,22 @@ def main():
         print(f"[beacon-ground] Publishing UAV status to ROS2 topic {args.status_topic}")
         print(f"[beacon-ground] Publishing SafePassage to ROS2 topic {args.safe_passage_topic}")
 
+        def on_geofence(msg):
+            nonlocal pending_fence
+            pending_fence = msg
+
+        ros_node.create_subscription(UavGeofence, args.geofence_topic, on_geofence, 10)
+        print(f"[beacon-ground] Uploading geofence from ROS2 topic {args.geofence_topic} to PX4"
+              + (" (with transit area)" if args.fence_include_transit else ""))
+
+    current_task = 1  # TASK_NONE until the drone reports a task
+
     def publish_status(heartbeat):
         if status_publisher is None:
             return
         status_publisher.publish(_build_vehicle_status(
             VehicleStatus, ros_node.get_clock().now().to_msg(),
-            args.vehicle_id, heartbeat, cache,
+            args.vehicle_id, heartbeat, cache, current_task,
         ))
 
     print(f"[beacon-ground] Connecting to {args.mavlink_endpoint} ...")
@@ -331,20 +395,41 @@ def main():
     mav.wait_heartbeat()
     print(f"[beacon-ground] Heartbeat received from system {mav.target_system} "
           f"— listening for beacon messages")
+    fence = FenceUploader(mav, log=lambda s: print(f"[beacon-ground] {s}"))
+    last_fence_key = None  # skip re-uploading an unchanged course
 
     seen = {}  # msg_id -> time first received
     unique = duplicates = 0
-    cache = {}  # latest GLOBAL_POSITION_INT / ATTITUDE / GPS_RAW_INT
+    cache = {}  # latest GLOBAL_POSITION_INT / ATTITUDE / GPS_RAW_INT / VFR_HUD / EXTENDED_SYS_STATE
     last_heartbeat_t = time.monotonic()  # wait_heartbeat() just saw one
     last_heartbeat = None  # latest UAV HEARTBEAT, reused for position-driven updates
     last_unknown_t = 0.0
     last_status_t = 0.0
     try:
         while True:
+            if ros_node is not None:
+                rclpy.spin_once(ros_node, timeout_sec=0)
+            if pending_fence is not None and last_heartbeat is not None:
+                polygons = [open_polygon(pending_fence.boundary_latitude,
+                                         pending_fence.boundary_longitude)]
+                if args.fence_include_transit:
+                    polygons.append(open_polygon(pending_fence.transit_area_latitude,
+                                                 pending_fence.transit_area_longitude))
+                key = (tuple(map(tuple, polygons)), pending_fence.max_altitude_hae_m)
+                if key != last_fence_key or fence.state == "failed":
+                    print(f"[beacon-ground] Geofence for course {pending_fence.course_id!r}")
+                    fence.start(last_heartbeat.get_srcSystem(), polygons,
+                                pending_fence.max_altitude_hae_m)
+                    last_fence_key = key
+                pending_fence = None
+            fence.tick(time.monotonic())
+
             msg = mav.recv_match(
                 type=["MEMORY_VECT", "HEARTBEAT", "GLOBAL_POSITION_INT",
-                      "ATTITUDE", "GPS_RAW_INT", "VFR_HUD"],
-                blocking=True, timeout=1.0,
+                      "ATTITUDE", "GPS_RAW_INT", "VFR_HUD", "EXTENDED_SYS_STATE",
+                      "STATUSTEXT", "MISSION_REQUEST_INT", "MISSION_REQUEST",
+                      "MISSION_ACK", "PARAM_VALUE", "HOME_POSITION"],
+                blocking=True, timeout=0.1 if ros_node is not None else 1.0,
             )
             now = time.monotonic()
             # Link stale: keep publishing STATE_UNKNOWN at ~1 Hz.
@@ -355,12 +440,26 @@ def main():
             if msg is None:
                 continue
             msg_type = msg.get_type()
+            fence.handle(msg)
+            if msg_type in ("MISSION_REQUEST_INT", "MISSION_REQUEST", "MISSION_ACK",
+                            "PARAM_VALUE", "HOME_POSITION"):
+                continue  # fence uploader only
             if msg_type == "HEARTBEAT":
                 if _is_uav_heartbeat(msg):
                     last_heartbeat_t = now
                     last_heartbeat = msg
                     publish_status(msg)
                     last_status_t = now
+                continue
+            if msg_type == "STATUSTEXT":
+                task = _parse_task_statustext(msg.text)
+                if task is not None and task != current_task:
+                    print(f"[beacon-ground] current_task {current_task} -> {task}")
+                    current_task = task
+                    # Report the start/stand-down right away, not on the next heartbeat.
+                    if last_heartbeat is not None and now - last_heartbeat_t < HEARTBEAT_STALE_S:
+                        publish_status(last_heartbeat)
+                        last_status_t = now
                 continue
             if msg_type != "MEMORY_VECT":
                 cache[msg_type] = msg

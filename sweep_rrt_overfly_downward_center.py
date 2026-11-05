@@ -56,7 +56,7 @@ from typing import Optional
 
 
 import rclpy
-from std_msgs.msg import String
+from std_msgs.msg import String, UInt8
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Point
 from visualization_msgs.msg import Marker
@@ -169,7 +169,7 @@ MAX_OVERFLY_ATTEMPTS    = 3       # give up flying over a spot after this many
 BEACON_POS_FRAME        = "ned"
 
 # Re-center on the freshest beacon-map position just before each overhead read.
-RECENTER_BEFORE_READ    = True   # re-fetch beacon-map pos + correct before the read
+RECENTER_BEFORE_READ    = False   # re-fetch beacon-map pos + correct before the read
 RECENTER_TOL_M          = 0.4    # only correct if the beacon moved more than this (m)
 RECENTER_MAX_LEGS       = 3      # cap correction legs so we don't chase GPS jitter
 
@@ -275,6 +275,14 @@ _rrt_edge_msg   = None
 _rrt_node_pub   = None
 _rrt_node_msg   = None
 _rclpy_node     = None
+_task_pub       = None
+
+# RobotX RxTask (rx_common.proto) this mission is attempting, republished on
+# /seabird/current_task for beacon_mavlink_bridge.py -> ground VehicleStatus.
+TASK_NONE         = 1
+TASK_SAFE_PASSAGE = 2
+TASK_REPUBLISH_S  = 1.0
+_current_task     = TASK_NONE
 
 
 # ── ROS2 listener thread ──────────────────────────────────────────────────────
@@ -282,6 +290,7 @@ _rclpy_node     = None
 def _rclpy_thread_fn() -> None:
     global _path_pub, _path_msg, _marker_pub, _marker_msg
     global _rrt_edge_pub, _rrt_edge_msg, _rrt_node_pub, _rrt_node_msg, _rclpy_node
+    global _task_pub
 
     try:
         # Give the listener its OWN rclpy context. The downward classifier spins
@@ -336,6 +345,10 @@ def _rclpy_thread_fn() -> None:
         _rrt_node_msg.scale.z = 0.25
         _rrt_node_msg.color = ColorRGBA(r=1.0, g=0.5, b=0.0, a=0.90)
         _rrt_node_msg.pose.orientation.w = 1.0
+
+        # ── Current RobotX task — republished so a late-starting bridge hears it ──
+        _task_pub = node.create_publisher(UInt8, "/seabird/current_task", 10)
+        node.create_timer(TASK_REPUBLISH_S, lambda: _task_pub.publish(UInt8(data=_current_task)))
 
         # ── Beacon-map subscription (positions from beacon_overlay, Stage 1) ──
         # /seabird/beacon_map carries the full fused map each message:
@@ -481,6 +494,16 @@ def publish_rrt_edge(pn: float, pe: float, cn: float, ce: float, alt: float) -> 
     _rrt_edge_msg.points.append(Point(x=pn, y=pe, z=alt))
     _rrt_edge_msg.points.append(Point(x=cn, y=ce, z=alt))
     _rrt_edge_pub.publish(_rrt_edge_msg)
+
+
+def set_current_task(task: int) -> None:
+    """Set the RxTask reported to the ground; published now and every TASK_REPUBLISH_S."""
+    global _current_task
+    if task != _current_task:
+        log(f"[rrt] current_task {_current_task} -> {task}")
+    _current_task = task
+    if _task_pub is not None:
+        _task_pub.publish(UInt8(data=task))
 
 
 def publish_rrt_node(north: float, east: float, alt: float) -> None:
@@ -1418,6 +1441,7 @@ async def run_mission() -> None:
             pass
         return
     log("[rrt] ✓ Offboard active")
+    set_current_task(TASK_SAFE_PASSAGE)   # RoboCommand: Task 1 attempt starts
 
     # ── RRT search ────────────────────────────────────────────────────────────
     origin_n = _state.north_m
@@ -1565,6 +1589,7 @@ async def run_mission() -> None:
     except Exception:
         log("[rrt] ERROR: exception while waiting for landing")
         traceback.print_exc()
+    set_current_task(TASK_NONE)   # RoboCommand: Task 1 attempt stands down
 
     # ── Build and emit the Safe-Passage report ──────────────────────────────
     report = build_passage_report(rrt.size)
@@ -1621,6 +1646,11 @@ def main() -> None:
         traceback.print_exc()
         raise
     finally:
+        # Never leave the ground reporting Task 1 after a crash or Ctrl-C.
+        try:
+            set_current_task(TASK_NONE)
+        except Exception:
+            pass
         try:
             if rclpy.ok():
                 rclpy.shutdown()

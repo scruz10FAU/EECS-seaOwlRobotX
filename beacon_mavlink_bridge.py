@@ -28,6 +28,12 @@ Usage:
 Each detection is sent --repeat times (default 2) with the same msg_id, so
 beacon_mavlink_ground.py can drop the extra copies. --repeat-gap spaces the
 copies out (default 0.5 s), since radio losses tend to come in bursts.
+
+It also relays the RobotX task the mission is attempting: each RxTask value
+on --task-topic (std_msgs/UInt8, published by the sweep script) goes out as a
+STATUSTEXT "SEABIRD_TASK <n>" right away and is resent every
+TASK_RESEND_S, so a dropped packet or a restarted ground station still
+learns it. beacon_mavlink_ground.py turns it into VehicleStatus.current_task.
 """
 
 import argparse
@@ -39,7 +45,7 @@ from datetime import datetime
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
+from std_msgs.msg import String, UInt8
 
 from pymavlink import mavutil
 
@@ -51,6 +57,10 @@ DEFAULT_MAVLINK_ENDPOINT = "udp://:14540"   # matches sweep_lawnmower.py's sim M
 DEFAULT_DETECTIONS_TOPIC = "/seabird/beacon_detections_downward"
 DEFAULT_REPEAT = 2
 DEFAULT_REPEAT_GAP = 0.5
+DEFAULT_TASK_TOPIC = "/seabird/current_task"
+# Must match beacon_mavlink_ground.py's TASK_STATUSTEXT_PREFIX.
+TASK_STATUSTEXT_PREFIX = "SEABIRD_TASK"
+TASK_RESEND_S = 2.0
 
 _LOG_FIELDS = ["iso_time", "epoch_time", "copy", "msg_id", "tracking_id",
                "latitude", "longitude", "color", "is_blinking"]
@@ -59,12 +69,13 @@ _LOG_FIELDS = ["iso_time", "epoch_time", "copy", "msg_id", "tracking_id",
 class BeaconMavlinkBridge(Node):
     def __init__(self, mavlink_endpoint: str, detections_topic: str,
                  repeat: int = DEFAULT_REPEAT, repeat_gap: float = DEFAULT_REPEAT_GAP,
-                 log_path: str = None):
+                 log_path: str = None, task_topic: str = DEFAULT_TASK_TOPIC):
         super().__init__("beacon_mavlink_bridge")
         self._lock = threading.Lock()
         self._repeat = max(1, repeat)
         self._repeat_gap = max(0.0, repeat_gap)
         self._next_msg_id = 0
+        self._current_task = None  # nothing sent until the mission reports a task
 
         self._log_file = self._log_writer = None
         if log_path:
@@ -85,6 +96,25 @@ class BeaconMavlinkBridge(Node):
         self.create_subscription(String, detections_topic, self._on_detection, 10)
         self.get_logger().info(f"Subscribed to {detections_topic} — relaying to MAVLink "
                                f"({self._repeat}x, {self._repeat_gap:.2f} s apart)")
+
+        self.create_subscription(UInt8, task_topic, self._on_task, 10)
+        self.create_timer(TASK_RESEND_S, self._send_task)
+        self.get_logger().info(f"Subscribed to {task_topic} — relaying as STATUSTEXT "
+                               f"'{TASK_STATUSTEXT_PREFIX} <n>' every {TASK_RESEND_S:.0f} s")
+
+    def _on_task(self, msg: UInt8) -> None:
+        if msg.data == self._current_task:
+            return
+        self.get_logger().info(f"current_task {self._current_task} -> {msg.data}")
+        self._current_task = msg.data
+        self._send_task()
+
+    def _send_task(self) -> None:
+        if self._current_task is None:
+            return
+        text = f"{TASK_STATUSTEXT_PREFIX} {self._current_task}".encode()
+        with self._lock:
+            self._mav.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO, text)
 
     def _send(self, value: list, copy: int, log_fields: list) -> None:
         with self._lock:
@@ -177,11 +207,15 @@ def main():
         "--log", metavar="PATH", default=None,
         help="Append a CSV row (send time, copy number, msg_id, beacon fields) for every copy sent",
     )
+    ap.add_argument(
+        "--task-topic", default=DEFAULT_TASK_TOPIC,
+        help=f"RxTask topic (std_msgs/UInt8) relayed as STATUSTEXT (default: {DEFAULT_TASK_TOPIC})",
+    )
     args = ap.parse_args()
 
     rclpy.init()
     node = BeaconMavlinkBridge(args.mavlink_endpoint, args.topic, args.repeat, args.repeat_gap,
-                               args.log)
+                               args.log, args.task_topic)
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

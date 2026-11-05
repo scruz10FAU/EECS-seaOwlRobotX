@@ -25,6 +25,9 @@ For every test it reports
     stability        - latency jitter and drift, outages, loss streaks, link health
 
 Results go to <out>/: summary_metrics.csv, per_message.csv, report.md and PNG charts.
+<out> defaults to a new <root>/results/run_<timestamp>_<tests>/ folder per run;
+an --out folder that already exists gets a _1, _2, ... suffix instead of being
+overwritten.
 
 Latencies subtract timestamps taken on different machines (UAV, Windows, WSL),
 so they include any clock offset between them. Sync the clocks (NTP/chrony)
@@ -34,11 +37,13 @@ still meaningful if the offset stayed put.
 Usage:
     python elrs_testing/evaluate_beacon_tests.py
     python elrs_testing/evaluate_beacon_tests.py --root elrs_testing --out elrs_testing/results
+    python elrs_testing/evaluate_beacon_tests.py --tests 8 9      # only test8/ and test9/
 """
 
 import argparse
 import re
 import struct
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -955,15 +960,40 @@ def main():
     here = Path(__file__).resolve().parent
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--root", type=Path, default=here, help="folder holding NOTES.md and testN/ (default: script folder)")
-    ap.add_argument("--out", type=Path, default=None, help="output folder (default: <root>/results)")
+    ap.add_argument("--out", type=Path, default=None,
+                    help="output folder (default: new <root>/results/run_<timestamp>_<tests>/)")
+    ap.add_argument("--tests", nargs="+", default=None, metavar="TEST",
+                    help="only these tests, e.g. --tests 8 9 or --tests test8 test9 (default: all)")
     args = ap.parse_args()
-    out = args.out or args.root / "results"
-    out.mkdir(parents=True, exist_ok=True)
 
     notes = parse_notes(args.root / "NOTES.md")
     configs = configs_from_notes(notes)
     test_dirs = sorted((d for d in args.root.iterdir() if d.is_dir() and re.fullmatch(r"test\d+", d.name)),
                        key=lambda d: test_number(d.name))
+    if args.tests:
+        wanted = {test_number(t) for t in args.tests}
+        missing = sorted(wanted - {test_number(d.name) for d in test_dirs})
+        if missing:
+            raise SystemExit(f"No test folder for: {', '.join(f'test{n}' for n in missing)}")
+        test_dirs = [d for d in test_dirs if test_number(d.name) in wanted]
+
+    # Never overwrite an earlier run's results: a new folder per run, and an
+    # existing --out gets the first free _N suffix.
+    if args.out is None:
+        tag = "_".join(f"t{test_number(d.name)}" for d in test_dirs) if args.tests else "all"
+        out = args.root / "results" / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{tag}"
+    else:
+        out = args.out
+    base, n = out, 0
+    while True:
+        try:
+            out.mkdir(parents=True)
+            break
+        except FileExistsError:
+            n += 1
+            out = base.with_name(f"{base.name}_{n}")
+    if n:
+        print(f"{base} exists -- writing to {out} instead")
 
     rows, all_msgs, extras = [], [], {}
     for d in test_dirs:

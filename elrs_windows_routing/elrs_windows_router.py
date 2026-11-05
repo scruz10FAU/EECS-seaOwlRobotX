@@ -5,14 +5,14 @@ Only this program should open the radio COM port.  Radio data is parsed as
 complete MAVLink frames, validated by pymavlink, then forwarded as the
 original, unmodified frame bytes (including MAVLink 2 signatures).
 
-NOT flight-qualified. Test QGC commands and telemetry on the bench first.
+NOT flight-qualified. Bench-test with propellers removed before flight.
 """
 
 import argparse
 import csv
 import os
-import select
 import socket
+import sys
 import time
 from collections import Counter
 from datetime import datetime
@@ -23,6 +23,9 @@ from pymavlink import mavutil
 from pymavlink.dialects.v20 import common as mavlink2
 
 # Optional, project-specific beacon decoding. The router still runs without it.
+# utils/ lives at the repo root, one level up -- not on sys.path when run
+# from elrs_windows_routing/ (as start_seabird_ground.ps1 does).
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
     from utils.beacon_mavlink_protocol import (
         BEACON_MAVLINK_ADDRESS,
@@ -55,6 +58,25 @@ def new_parser():
     return parser
 
 
+def bad_reason_key(reason):
+    """Group pymavlink's BAD_DATA reason strings into a few categories."""
+    r = (reason or "").lower()
+    if "prefix" in r:
+        return "bad_prefix"        # byte outside any frame
+    if "crc" in r:
+        return "crc"               # frame corrupted on the link
+    if "unknown" in r:
+        return "unknown_msgid"     # message not in the parser's dialect
+    if "signature" in r:
+        return "signature"
+    if "length" in r or "invalid" in r:
+        return "length"            # truncated / wrong-length frame
+    return "other"
+
+
+BAD_KEYS = ("bad_prefix", "crc", "unknown_msgid", "length", "signature", "other")
+
+
 def write_full(port, data):
     """Avoid silently discarding partial serial writes."""
     offset = 0
@@ -75,6 +97,10 @@ def main():
                     help="Local port for QGC-to-radio datagrams")
     ap.add_argument("--wsl-log", metavar="CSV", default=None,
                     help="CSV record of complete frames sent to WSL")
+    ap.add_argument("--raw-rx-log", metavar="BIN", default=None,
+                    help="Optional binary recording of raw bytes received from radio (may grow rapidly)")
+    ap.add_argument("--top-messages", type=int, default=8,
+                    help="Number of most frequent MAVLink message types to print per interval")
     ap.add_argument("--stats-period", type=float, default=5.0)
     ap.add_argument("--heartbeat-period", type=float, default=1.0)
     args = ap.parse_args()
@@ -104,6 +130,7 @@ def main():
               "MEMORY_VECT counted, but beacon tracking IDs unavailable.", flush=True)
     print("Bench-test mode. Only this router should open COM port. Ctrl+C to stop.", flush=True)
 
+    raw_log = open(args.raw_rx_log, "ab", buffering=0) if args.raw_rx_log else None
     port = None
     parser = new_parser()
     totals = Counter()
@@ -116,6 +143,59 @@ def main():
     )
 
     last_heartbeat = 0.0
+    # BAD_DATA diagnostics: consecutive BAD_DATA with the same reason form one
+    # junk run (one row in --wsl-log, one sample per reason per interval);
+    # MAVLink sequence gaps per sender count frames that never arrived.
+    junk, junk_key, junk_reason = bytearray(), None, ""
+    samples = {}
+    last_seq = {}
+    rx_types = Counter()
+    tx_types = Counter()
+
+    def count_qgc_datagram(data):
+        """Inspect QGC traffic without altering, dropping, or repacking it.
+
+        A UDP datagram may contain multiple MAVLink frames. This is only a
+        diagnostic parser; original bytes are always written unchanged.
+        """
+        probe = new_parser()
+        found = 0
+        invalid = 0
+        for b in data:
+            try:
+                message = probe.parse_char(bytes((b,)))
+            except Exception:
+                invalid += 1
+                probe = new_parser()
+                continue
+            if message is None:
+                continue
+            if message.get_type() == "BAD_DATA":
+                invalid += 1
+            else:
+                tx_types[message.get_type()] += 1
+                found += 1
+        recent["qgc_rx_frames"] += found
+        totals["qgc_rx_frames"] += found
+        recent["qgc_rx_bad_data"] += invalid
+        totals["qgc_rx_bad_data"] += invalid
+
+
+    def flush_junk():
+        nonlocal junk, junk_key, junk_reason
+        if junk_key is None:
+            return
+        recent[f"runs_{junk_key}"] += 1
+        totals[f"runs_{junk_key}"] += 1
+        samples.setdefault(junk_key, (junk_reason, bytes(junk[:48]), len(junk)))
+        if log_writer is not None:
+            stamp = time.time()
+            log_writer.writerow([
+                datetime.fromtimestamp(stamp).isoformat(timespec="milliseconds"),
+                f"{stamp:.6f}", "BAD_DATA", len(junk), junk_key, "", "", "", "",
+                bytes(junk).hex(),
+            ])
+        junk, junk_key, junk_reason = bytearray(), None, ""
 
     try:
         while True:
@@ -130,6 +210,8 @@ def main():
                     port.open()
                     last_heartbeat = 0.0
                     parser = new_parser()  # don't carry partial frames across reconnects
+                    last_seq.clear()  # sender sequence counters may reset on reconnect
+                    flush_junk()
                     print(f"Connected to {args.com}", flush=True)
                 except (SerialException, OSError) as exc:
                     print(f"Unable to open {args.com}: {exc}; retrying in 3s", flush=True)
@@ -168,6 +250,8 @@ def main():
                     raw = port.read(min(pending, 4096))
                     recent["serial_bytes"] += len(raw)
                     totals["serial_bytes"] += len(raw)
+                    if raw_log is not None:
+                        raw_log.write(raw)
 
                     # Feed one byte at a time to avoid dropping frames when a
                     # single serial read contains multiple MAVLink packets.
@@ -186,11 +270,39 @@ def main():
                         if msg_type == "BAD_DATA":
                             recent["bad_data"] += 1
                             totals["bad_data"] += 1
+                            key = bad_reason_key(getattr(msg, "reason", ""))
+                            recent[f"bad_{key}"] += 1
+                            totals[f"bad_{key}"] += 1
+                            if key != junk_key:
+                                flush_junk()
+                                junk_key, junk_reason = key, getattr(msg, "reason", "")
+                            junk.extend(bytes(getattr(msg, "data", b"") or b""))
                             continue
+                        flush_junk()
 
                         frame = bytes(msg.get_msgbuf())
+                        rx_types[msg_type] += 1
                         recent["valid_frames"] += 1
                         totals["valid_frames"] += 1
+                        src = (msg.get_srcSystem(), msg.get_srcComponent())
+                        seq = msg.get_seq()
+                        if src in last_seq:
+                            delta = (seq - last_seq[src]) % 256
+                            if delta == 0:
+                                recent["duplicate_frames"] += 1
+                                totals["duplicate_frames"] += 1
+                            elif delta <= 127:
+                                gap = delta - 1
+                                recent["lost_frames_estimate"] += gap
+                                totals["lost_frames_estimate"] += gap
+                                last_seq[src] = seq
+                            else:
+                                # Backward sequence, source restart, or gap >=128:
+                                # ambiguous without further protocol context.
+                                recent["out_of_order_frames"] += 1
+                                totals["out_of_order_frames"] += 1
+                        else:
+                            last_seq[src] = seq
                         tracking_id = ""
                         if msg_type == "MEMORY_VECT":
                             recent["memory_vect"] += 1
@@ -239,16 +351,39 @@ def main():
                             break
                         raise
                     if incoming:
+                        count_qgc_datagram(incoming)
+                        # Deliberately preserve the complete original datagram:
+                        # this may include multiple frames or MAVLink signatures.
                         write_full(port, incoming)
                         recent["qgc_to_serial_bytes"] += len(incoming)
                         totals["qgc_to_serial_bytes"] += len(incoming)
 
                 if time.monotonic() - last_stats >= args.stats_period:
-                    fields = ("serial_bytes", "valid_frames", "memory_vect", "beacons",
-                              "bad_data", "parser_errors", "wsl_sent", "wsl_failed",
-                              "qgc_sent", "qgc_failed", "qgc_to_serial_bytes")
+                    flush_junk()  # include the final bad-data run in this interval
+                    fields = ("serial_bytes", "valid_frames", "lost_frames_estimate",
+                              "duplicate_frames", "out_of_order_frames", "memory_vect",
+                              "beacons", "bad_data", "parser_errors", "wsl_sent", "wsl_failed",
+                              "qgc_sent", "qgc_failed", "qgc_to_serial_bytes",
+                              "qgc_rx_frames", "qgc_rx_bad_data")
                     print("Last interval: " + " ".join(f"{k}={recent[k]}" for k in fields),
                           flush=True)
+                    if recent["bad_data"]:
+                        # bad_<reason> = BAD_DATA count; runs = consecutive groups.
+                        print("  bad_data by reason: " + " ".join(
+                            f"{k}={recent[f'bad_{k}']}(runs {recent[f'runs_{k}']})"
+                            for k in BAD_KEYS if recent[f"bad_{k}"]), flush=True)
+                        for k, (reason, data, n) in samples.items():
+                            print(f"    e.g. {k} ({n} bytes, '{reason}'): {data.hex(' ')}"
+                                  + (" ..." if n > len(data) else ""), flush=True)
+                    if rx_types:
+                        print("  radio RX messages: " + ", ".join(
+                            f"{name}={n}" for name, n in rx_types.most_common(args.top_messages)), flush=True)
+                    if tx_types:
+                        print("  QGC TX messages: " + ", ".join(
+                            f"{name}={n}" for name, n in tx_types.most_common(args.top_messages)), flush=True)
+                    rx_types.clear()
+                    tx_types.clear()
+                    samples.clear()
                     if log_file is not None:
                         log_file.flush()
                     recent.clear()
@@ -266,13 +401,18 @@ def main():
     except KeyboardInterrupt:
         print("Stopping.", flush=True)
     finally:
+        flush_junk()
         print("Totals: " + ", ".join(f"{k}={v}" for k, v in sorted(totals.items())), flush=True)
         if port is not None:
             port.close()
         udp.close()
         if log_file is not None:
             log_file.close()
+        if raw_log is not None:
+            raw_log.close()
 
 
 if __name__ == "__main__":
     main()
+
+
