@@ -105,7 +105,11 @@ HOVER_STABILIZE_S    = 8.0    # seconds to stabilise after takeoff
 # order of 25 m x 25 m" (final size varies), so the default is a 25 x 25 box.
 # Edit these for testing — e.g. shrink the box, or switch SEARCH_AREA_SHAPE to
 # "disc" for the old circular behaviour.
-SEARCH_AREA_SHAPE    = "disc"   # "rect" = W x L box (default), "disc" = circle
+SEARCH_AREA_SHAPE    = "disc"   # "rect" = W x L box (default), "disc" = circle,
+                                #   "fence" = PX4's geofence polygon(s), read back
+                                #   before arming (uploaded by beacon_mavlink_ground.py
+                                #   from the RoboCommand course); won't arm without it
+FENCE_MARGIN_M       = 2.0      # fence: keep the search this far inside its edges (m)
 SEARCH_WIDTH_M       = 25.0     # rect: east–west extent of the box (m)
 SEARCH_LENGTH_M      = 25.0     # rect: north–south extent of the box (m)
 SEARCH_ORIGIN        = "center" # where the takeoff point sits in the box:
@@ -127,7 +131,8 @@ def _search_bounds(origin_n: float, origin_e: float):
 
 
 # Longest straight-line distance across the area, and its area — used to size the
-# node budget and the over-fly leg budget for either shape.
+# node budget and the over-fly leg budget for either shape. "fence" starts from the
+# disc values and is resized by load_fence() once the polygon is known.
 if SEARCH_AREA_SHAPE == "rect":
     _SEARCH_SPAN_M = math.hypot(SEARCH_WIDTH_M, SEARCH_LENGTH_M)
     _SEARCH_AREA_M2 = SEARCH_WIDTH_M * SEARCH_LENGTH_M
@@ -693,6 +698,91 @@ def _gps_to_ne(lat: float, lon: float, origin: tuple) -> tuple:
     return north, east
 
 
+# ── PX4 geofence as the search area (SEARCH_AREA_SHAPE == "fence") ───────────
+
+_fence_ne: list = []   # inclusion polygons, each [(north, east), ...] in PX4 local NED
+
+
+def _point_in_polygon(n: float, e: float, poly: list) -> bool:
+    """Ray casting; poly is open (last vertex != first)."""
+    inside = False
+    j = len(poly) - 1
+    for i in range(len(poly)):
+        (ni, ei), (nj, ej) = poly[i], poly[j]
+        if (ei > e) != (ej > e) and n < (nj - ni) * (e - ei) / (ej - ei) + ni:
+            inside = not inside
+        j = i
+    return inside
+
+
+def _dist_to_edges(n: float, e: float, poly: list) -> float:
+    """Shortest distance (m) from (n, e) to the polygon's edges."""
+    best = float("inf")
+    for i in range(len(poly)):
+        (an, ae), (bn, be) = poly[i - 1], poly[i]
+        dn, de = bn - an, be - ae
+        seg2 = dn * dn + de * de
+        t = 0.0 if seg2 == 0 else max(0.0, min(1.0, ((n - an) * dn + (e - ae) * de) / seg2))
+        best = min(best, math.hypot(n - (an + t * dn), e - (ae + t * de)))
+    return best
+
+
+def in_fence(n: float, e: float, margin_m: float = FENCE_MARGIN_M) -> bool:
+    """Inside an inclusion polygon and at least margin_m from its edges."""
+    return any(_point_in_polygon(n, e, p) and _dist_to_edges(n, e, p) >= margin_m
+               for p in _fence_ne)
+
+
+async def load_fence(drone: System) -> bool:
+    """
+    Download PX4's geofence, keep its inclusion polygons as _fence_ne, and size
+    the RRT budgets to them. False (caller must not arm) if there's nothing
+    usable.
+    """
+    global _SEARCH_SPAN_M, _SEARCH_AREA_M2, BEACON_MAX_LEGS, RRT_MAX_NODES
+    if not hasattr(drone.mission_raw, "download_geofence"):
+        log("[rrt] ERROR: this MAVSDK has no mission_raw.download_geofence() -- "
+            "upgrade mavsdk or use SEARCH_AREA_SHAPE = 'disc'")
+        return False
+    try:
+        items = await asyncio.wait_for(drone.mission_raw.download_geofence(), 30.0)
+    except Exception as e:
+        log(f"[rrt] ERROR: geofence download failed: {e}")
+        return False
+    origin = await _ekf_origin(drone)
+    if origin is None:
+        return False
+
+    inclusion = 5001   # MAV_CMD_NAV_FENCE_POLYGON_VERTEX_INCLUSION
+    polygons, current, skipped = [], [], 0
+    for item in sorted(items, key=lambda it: it.seq):
+        if item.command != inclusion:
+            skipped += 1   # exclusion polygons, circles, return point
+            continue
+        current.append(_gps_to_ne(item.x * 1e-7, item.y * 1e-7, origin))
+        if len(current) >= int(item.param1):   # param1 = vertices in this polygon
+            if len(current) >= 3:
+                polygons.append(current)
+            current = []
+    if skipped:
+        log(f"[rrt] ⚠ ignoring {skipped} geofence item(s) that aren't inclusion-polygon vertices")
+    if not polygons:
+        log(f"[rrt] ERROR: PX4 geofence has no inclusion polygon ({len(items)} items)")
+        return False
+
+    _fence_ne[:] = polygons
+    ns = [n for p in polygons for n, _ in p]
+    es = [e for p in polygons for _, e in p]
+    _SEARCH_SPAN_M = math.hypot(max(ns) - min(ns), max(es) - min(es))
+    _SEARCH_AREA_M2 = sum(abs(sum(p[i - 1][0] * p[i][1] - p[i][0] * p[i - 1][1]
+                                  for i in range(len(p)))) / 2.0 for p in polygons)
+    BEACON_MAX_LEGS = max(8, int(2.0 * _SEARCH_SPAN_M / RRT_STEP_M) + 4)
+    RRT_MAX_NODES = max(20, int(2.0 * _SEARCH_AREA_M2 / RRT_STEP_M ** 2))
+    log(f"[rrt] ✓ PX4 geofence: {len(polygons)} inclusion polygon(s), "
+        f"{_SEARCH_AREA_M2:.0f} m², span {_SEARCH_SPAN_M:.1f} m, margin {FENCE_MARGIN_M:.1f} m")
+    return True
+
+
 async def locate_downward(drone: System, hold_n: float, hold_e: float,
                           hold_down: float, yaw: float) -> Optional[tuple]:
     """Short downward-classifier run while holding (hold_n, hold_e); returns
@@ -1047,7 +1137,15 @@ class RRT:
     # ── Area helpers ────────────────────────────────────────────────────────────
 
     def _uniform_sample(self) -> tuple:
-        """Uniform distribution over the search area (box or disc)."""
+        """Uniform distribution over the search area (box, disc or fence)."""
+        if SEARCH_AREA_SHAPE == "fence":
+            ns = [n for p in _fence_ne for n, _ in p]
+            es = [e for p in _fence_ne for _, e in p]
+            for _ in range(1000):   # rejection sampling over the bounding box
+                n, e = random.uniform(min(ns), max(ns)), random.uniform(min(es), max(es))
+                if in_fence(n, e):
+                    return n, e
+            return self._origin_north, self._origin_east
         if SEARCH_AREA_SHAPE == "rect":
             return (random.uniform(self._n_min, self._n_max),
                     random.uniform(self._e_min, self._e_max))
@@ -1057,7 +1155,10 @@ class RRT:
                 self._origin_east  + r * math.sin(angle))
 
     def clamp(self, north: float, east: float) -> tuple:
-        """Clamp a point into the search area (box clamp, or project onto disc)."""
+        """Clamp a point into the search area (box clamp, or project onto disc).
+        Fence: a point outside is replaced by a fresh sample inside."""
+        if SEARCH_AREA_SHAPE == "fence":
+            return (north, east) if in_fence(north, east) else self._uniform_sample()
         if SEARCH_AREA_SHAPE == "rect":
             return (min(max(north, self._n_min), self._n_max),
                     min(max(east,  self._e_min), self._e_max))
@@ -1131,6 +1232,8 @@ class RRT:
 
     def in_bounds(self, north: float, east: float) -> bool:
         """True if (north, east) lies inside the search area."""
+        if SEARCH_AREA_SHAPE == "fence":
+            return in_fence(north, east)
         if SEARCH_AREA_SHAPE == "rect":
             return (self._n_min <= north <= self._n_max and
                     self._e_min <= east  <= self._e_max)
@@ -1373,6 +1476,17 @@ async def run_mission() -> None:
     log(f"[rrt] Start position: N={_state.north_m:.2f}  E={_state.east_m:.2f}  "
         f"D={_state.down_m:.2f}")
 
+    # ── PX4 geofence as the search area ──────────────────────────────────────
+    if SEARCH_AREA_SHAPE == "fence":
+        if not await load_fence(drone):
+            log("[rrt] ABORT: no usable PX4 geofence — not arming")
+            return
+        # The tree grows from takeoff in RRT_STEP_M steps; outside the fence it
+        # could never add a node and the search loop would spin forever.
+        if not in_fence(_state.north_m, _state.east_m, margin_m=0.0):
+            log("[rrt] ABORT: takeoff position is outside the PX4 geofence — not arming")
+            return
+
     # ── Detector pre-flight check ─────────────────────────────────────────────
     #if not await wait_for_detector():
         #log("[rrt] ABORT: beacon detector not detected — not arming")
@@ -1460,6 +1574,9 @@ async def run_mission() -> None:
         log(f"[rrt]   Search area     {SEARCH_WIDTH_M:.0f} x {SEARCH_LENGTH_M:.0f} m "
             f"box ({SEARCH_ORIGIN})  N[{rrt._n_min:+.1f},{rrt._n_max:+.1f}] "
             f"E[{rrt._e_min:+.1f},{rrt._e_max:+.1f}]")
+    elif SEARCH_AREA_SHAPE == "fence":
+        log(f"[rrt]   Search area     PX4 geofence, {len(_fence_ne)} polygon(s), "
+            f"{_SEARCH_AREA_M2:.0f} m², margin {FENCE_MARGIN_M:.1f} m")
     else:
         log(f"[rrt]   Search area     disc, radius {MAX_SEARCH_RADIUS_M:.1f} m")
     log(f"[rrt]   Step length     {RRT_STEP_M:.1f} m")

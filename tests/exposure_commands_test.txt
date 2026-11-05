@@ -138,3 +138,9 @@ python3 vendor/robocommand/RobotX_2026/rc_test/test_server.py
 
 #100 beacon mock publisher with logs
 python3 mock_beacon_publisher.py --log /workspace/elrs_testing/test10/elrs_uav.csv --count 100
+
+verify before updated code is sent:
+
+check that drone's MAVSDK has mission_raw.download_geofence
+python3 -c "import mavsdk.mission_raw as m, mavsdk.geofence as g; print('mission_raw.download_geofence:', hasattr(m.MissionRaw, 'download_geofence')); print('geofence.download_geofence:', hasattr(g.Geofence, 'download_geofence'))"
+pip3 show mavsdk | head -2
