@@ -88,6 +88,7 @@ DEFAULTS = {
     "Competition": {"adapter": "", "robocommand_host": ""},
     "Test": {
         "robocommand_host": "localhost",
+        "mock_use_gps": "1",
         "mock_center": "",
         "mock_size": "25,25",
         "mock_invalid": "(valid)",
@@ -250,6 +251,8 @@ class GroundGui(tk.Tk):
         self.status = {}
         self.last_heartbeat = None
         self._pending_preflight = None   # results handed over by the preflight worker
+        self.drone_fix = None            # (lat, lon, sats, monotonic time) from Ground's '[pos]' lines
+        self.drone_fix_lost = False
 
         self.procs = {
             "Router": Managed(self, "Router"),
@@ -352,23 +355,31 @@ class GroundGui(tk.Tk):
 
         # Test settings
         self.test_frame = ttk.LabelFrame(left, text="Test (local broker + mock course)", padding=6)
-        ttk.Label(self.test_frame, text="Course centre LAT,LON (drone's position)").grid(row=0, column=0, sticky="w")
-        ttk.Entry(self.test_frame, textvariable=self._var("Test", "mock_center")).grid(row=0, column=1, sticky="ew")
-        ttk.Label(self.test_frame, text="Course size W,L (m)").grid(row=1, column=0, sticky="w")
-        ttk.Entry(self.test_frame, textvariable=self._var("Test", "mock_size")).grid(row=1, column=1, sticky="ew")
-        ttk.Label(self.test_frame, text="Course kind (INVALID demo)").grid(row=2, column=0, sticky="w")
+        ttk.Checkbutton(self.test_frame, text="Centre the course on the drone's GPS position",
+                        variable=self._var("Test", "mock_use_gps"), onvalue="1", offvalue="0",
+                        command=self._on_use_gps).grid(row=0, column=0, columnspan=2, sticky="w")
+        ttk.Label(self.test_frame, text="Drone position").grid(row=1, column=0, sticky="w")
+        self.drone_pos_label = tk.Label(self.test_frame, text="—", anchor="w")
+        self.drone_pos_label.grid(row=1, column=1, sticky="w")
+        ttk.Label(self.test_frame, text="Manual centre LAT,LON").grid(row=2, column=0, sticky="w")
+        self.manual_center = ttk.Entry(self.test_frame, textvariable=self._var("Test", "mock_center"))
+        self.manual_center.grid(row=2, column=1, sticky="ew")
+        ttk.Label(self.test_frame, text="Course size W,L (m)").grid(row=3, column=0, sticky="w")
+        ttk.Entry(self.test_frame, textvariable=self._var("Test", "mock_size")).grid(row=3, column=1, sticky="ew")
+        ttk.Label(self.test_frame, text="Course kind (INVALID demo)").grid(row=4, column=0, sticky="w")
         ttk.Combobox(self.test_frame, textvariable=self._var("Test", "mock_invalid"),
-                     values=INVALID_KINDS, state="readonly").grid(row=2, column=1, sticky="ew")
+                     values=INVALID_KINDS, state="readonly").grid(row=4, column=1, sticky="ew")
         ttk.Label(self.test_frame, text="Bench: assume home HAE (m)\n(blank = wait for a GPS fix)").grid(
-            row=3, column=0, sticky="w")
+            row=5, column=0, sticky="w")
         ttk.Entry(self.test_frame, textvariable=self._var("Test", "bench_home_hae_m")).grid(
-            row=3, column=1, sticky="ew")
+            row=5, column=1, sticky="ew")
         b = ttk.Frame(self.test_frame)
-        b.grid(row=4, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        b.grid(row=6, column=0, columnspan=2, sticky="w", pady=(4, 0))
         ttk.Button(b, text="Publish mock course", command=self.publish_mock).pack(side="left")
         ttk.Button(b, text="Clear mock course", command=self.clear_mock).pack(side="left", padx=6)
         self.test_frame.columnconfigure(1, weight=1)
         self._var("Test", "robocommand_host")
+        self._on_use_gps()
 
         # status
         st = ttk.LabelFrame(right, text="Status", padding=6)
@@ -423,6 +434,20 @@ class GroundGui(tk.Tk):
         if comp and not self.adapter_box["values"]:
             self._refresh_adapters()
         self.status["Broker"].config(text="not used in Competition" if comp else "—", fg="#555")
+
+    def _on_use_gps(self):
+        use_gps = self.vars[("Test", "mock_use_gps")].get() == "1"
+        self.manual_center.config(state="disabled" if use_gps else "normal")
+
+    # A fix older than this isn't used to centre the course.
+    FIX_MAX_AGE_S = 30.0
+
+    def drone_position(self):
+        """(lat, lon) of a 3D fix seen in the last FIX_MAX_AGE_S, else None."""
+        if self.drone_fix is None or self.drone_fix_lost:
+            return None
+        lat, lon, _, t = self.drone_fix
+        return (lat, lon) if time.monotonic() - t <= self.FIX_MAX_AGE_S else None
 
     def _refresh_adapters(self):
         self.adapter_box["values"] = list_adapters()
@@ -484,6 +509,12 @@ class GroundGui(tk.Tk):
                     text=self.status["Geofence"].cget("text") + "  [ASSUMED home HAE: bench only]")
             elif "Heartbeat received from system" in line:
                 self._set("Ground", "receiving UAV MAVLink", "#1b7f1b")
+            m = re.search(r"\[pos\] 3D fix lat=(-?[\d.]+) lon=(-?[\d.]+) sats=(\d+)", line)
+            if m:
+                self.drone_fix = (float(m.group(1)), float(m.group(2)), int(m.group(3)), time.monotonic())
+                self.drone_fix_lost = False
+            elif "[pos] no GPS fix" in line:
+                self.drone_fix_lost = True
         elif name == "OCS":
             if re.search(r"UAV1 heartbeat seq=\d+", line):
                 self.last_heartbeat = time.monotonic()
@@ -514,6 +545,19 @@ class GroundGui(tk.Tk):
                     self._set(key, "running", "#a86b00")
             elif text not in ("—", "stopped") and not text.startswith("already running"):
                 self._set(key, "stopped", "#555")
+        if self.drone_fix is None:
+            pos_text, pos_color = ("no position yet (needs Ground running and a GPS fix)"
+                                   if not self.drone_fix_lost else "no GPS fix"), "#a86b00"
+        else:
+            lat, lon, sats, t = self.drone_fix
+            age = time.monotonic() - t
+            if self.drone_fix_lost:
+                pos_text, pos_color = f"GPS fix lost (last {lat:.7f}, {lon:.7f})", "#c0182b"
+            elif age > self.FIX_MAX_AGE_S:
+                pos_text, pos_color = f"{lat:.7f}, {lon:.7f} — stale ({age:.0f} s old)", "#c0182b"
+            else:
+                pos_text, pos_color = f"{lat:.7f}, {lon:.7f}  (3D fix, {sats} sats, {age:.0f} s ago)", "#1b7f1b"
+        self.drone_pos_label.config(text=pos_text, fg=pos_color)
         if self.last_heartbeat is not None:
             age = time.monotonic() - self.last_heartbeat
             if age < 2.0:
@@ -535,6 +579,8 @@ class GroundGui(tk.Tk):
                     adapter=self.vars[("Competition", "adapter")].get(),
                     rc_host=self.vars[("Competition", "robocommand_host")].get().strip(),
                     mock_center=self.vars[("Test", "mock_center")].get().strip(),
+                    mock_use_gps=self.vars[("Test", "mock_use_gps")].get() == "1",
+                    drone_position=self.drone_position(),
                     bench_home=self.vars[("Test", "bench_home_hae_m")].get().strip())
         threading.Thread(target=self._preflight_worker, args=(snap,), daemon=True).start()
 
@@ -663,8 +709,13 @@ class GroundGui(tk.Tk):
             add("Local broker", "ok" if tcp_reachable("127.0.0.1", 1883) else "warn",
                 "localhost:1883 listening" if tcp_reachable("127.0.0.1", 1883)
                 else "not running yet — Start all starts Mosquitto in WSL")
-            if not c["mock_center"]:
-                add("Mock course centre", "warn", "set LAT,LON to the drone's position (QGC) before publishing")
+            if c["mock_use_gps"]:
+                p = c["drone_position"]
+                add("Mock course centre", "ok" if p else "warn",
+                    f"drone GPS {p[0]:.7f}, {p[1]:.7f}" if p else
+                    "no recent 3D GPS fix yet (start Ground; go outside, or untick and enter a centre)")
+            elif not c["mock_center"]:
+                add("Mock course centre", "warn", "enter a manual centre LAT,LON before publishing")
             if c["bench_home"]:
                 try:
                     add("Bench home HAE", "warn", f"assuming home {float(c['bench_home']):g} m HAE while "
@@ -798,12 +849,24 @@ class GroundGui(tk.Tk):
 
     def publish_mock(self):
         self._save_settings()
-        center = self.vars[("Test", "mock_center")].get().replace(" ", "")
         size = self.vars[("Test", "mock_size")].get().replace(" ", "") or "25,25"
         kind = self.vars[("Test", "mock_invalid")].get()
-        if not re.match(r"^-?\d+(\.\d+)?,-?\d+(\.\d+)?$", center):
-            messagebox.showerror("Mock course", "Set the course centre as LAT,LON (the drone's position).")
-            return
+        if self.vars[("Test", "mock_use_gps")].get() == "1":
+            pos = self.drone_position()
+            if pos is None:
+                messagebox.showerror(
+                    "Mock course",
+                    "No recent 3D GPS fix from the drone.\n\nStart Ground and wait for a fix "
+                    "(outdoors), or untick 'Centre the course on the drone's GPS position' "
+                    "and enter a manual centre.")
+                return
+            center = f"{pos[0]:.7f},{pos[1]:.7f}"
+            self.log("Mock", f"centring the course on the drone's GPS position {center}\n")
+        else:
+            center = self.vars[("Test", "mock_center")].get().replace(" ", "")
+            if not re.match(r"^-?\d+(\.\d+)?,-?\d+(\.\d+)?$", center):
+                messagebox.showerror("Mock course", "Enter the manual centre as LAT,LON.")
+                return
         extra = f"--center {center} --size {size}"
         if kind and kind != "(valid)":
             extra += f" --invalid {kind}"

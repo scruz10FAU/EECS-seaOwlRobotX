@@ -22,8 +22,10 @@
   },
   "Test": {
     "robocommand_host": "localhost",
+    "mock_use_gps": "0",
     "mock_center": "-27.4622914, 153.0212834",
     "mock_size": "25,25",
-    "mock_invalid": "(valid)"
+    "mock_invalid": "(valid)",
+    "bench_home_hae_m": ""
   }
 }
