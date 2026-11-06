@@ -18,6 +18,13 @@ Usage:
     python3 mock_beacon_publisher.py --field                  # realistic 10-buoy Task 1 field
     python3 mock_beacon_publisher.py --field --seed 3 --lat 26.3712 --lon -80.1034
                                                                # different red/green mix, centred here
+    python3 mock_beacon_publisher.py --field --no-task        # sweep is running and owns current_task
+
+Like the sweep, it also reports the Task 1 attempt on --task-topic
+(std_msgs/UInt8, the RobotX RxTask that beacon_mavlink_bridge.py relays to the
+ground's VehicleStatus.current_task): TASK_SAFE_PASSAGE (2) from start,
+republished ~1 Hz, and TASK_NONE (1) on exit -- end of --count, Ctrl-C or an
+error. --no-task turns this off.
 """
 
 import argparse
@@ -31,9 +38,15 @@ from datetime import datetime
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
+from rclpy.signals import SignalHandlerOptions
+from std_msgs.msg import String, UInt8
 
 DEFAULT_TOPIC = "/seabird/beacon_detections_downward"
+DEFAULT_TASK_TOPIC = "/seabird/current_task"   # same as the sweep script
+TASK_NONE, TASK_SAFE_PASSAGE = 1, 2            # robotx rx_common.proto RxTask
+TASK_REPUBLISH_S = 1.0                         # the bridge only hears it once discovered
+TASK_END_REPEATS = 3
+TASK_SUBSCRIBER_WAIT_S = 3.0                   # so a short run's opening 2 isn't lost
 
 _LOG_FIELDS = ["iso_time", "epoch_time", "topic", "tracking_id", "color", "blink",
                "blink_color", "blink_hz", "phase", "latitude", "longitude", "altitude"]
@@ -141,10 +154,42 @@ def _cycle_fixtures():
 
 
 class MockBeaconPublisher(Node):
-    def __init__(self, topic: str):
+    def __init__(self, topic: str, task_topic: str = None):
         super().__init__("mock_beacon_publisher")
         self.publisher = self.create_publisher(String, topic, 10)
         self.get_logger().info(f"Publishing synthetic beacon detections on {topic}")
+        self.task_publisher = None
+        self._task_t = 0.0
+        if task_topic:
+            self.task_publisher = self.create_publisher(UInt8, task_topic, 10)
+            self.get_logger().info(f"Reporting the Task 1 attempt on {task_topic}")
+
+    def wait_for_task_subscriber(self, timeout_s: float = TASK_SUBSCRIBER_WAIT_S) -> None:
+        """Give the bridge up to timeout_s to discover us before the first publish."""
+        if self.task_publisher is None:
+            return
+        end = time.monotonic() + timeout_s
+        while self.task_publisher.get_subscription_count() == 0:
+            if time.monotonic() >= end:
+                self.get_logger().warn(
+                    f"no subscriber on {self.task_publisher.topic_name} yet -- "
+                    f"is beacon_mavlink_bridge.py running? (republishing ~1 Hz anyway)")
+                return
+            time.sleep(0.05)
+
+    def publish_task(self, task: int, log: bool = False) -> None:
+        if self.task_publisher is None:
+            return
+        self.task_publisher.publish(UInt8(data=task))
+        self._task_t = time.monotonic()
+        if log:
+            name = "TASK_SAFE_PASSAGE" if task == TASK_SAFE_PASSAGE else "TASK_NONE"
+            self.get_logger().info(f"current_task -> {task} ({name})")
+
+    def keep_task_alive(self) -> None:
+        """Republish TASK_SAFE_PASSAGE at most every TASK_REPUBLISH_S."""
+        if time.monotonic() - self._task_t >= TASK_REPUBLISH_S:
+            self.publish_task(TASK_SAFE_PASSAGE)
 
 
 def _run(node: MockBeaconPublisher, message_source, rate_hz: float, count: int,
@@ -155,6 +200,7 @@ def _run(node: MockBeaconPublisher, message_source, rate_hz: float, count: int,
     for msg_dict in message_source:
         if count and sent >= count:
             break
+        node.keep_task_alive()
         msg_dict = {**msg_dict, "timestamp": time.time()}  # refresh even for a repeated fixed sample
 
         out = String()
@@ -227,6 +273,11 @@ def main():
     ap.add_argument("--off-count", type=int, default=2,
                     help="Number of the 8 non-blue --field buoys that are OFF; the rest "
                          "split evenly flashing red/green (default: 2, max 8)")
+    ap.add_argument("--task-topic", default=DEFAULT_TASK_TOPIC,
+                    help=f"RxTask topic (std_msgs/UInt8) for the Task 1 start/end "
+                         f"(default: {DEFAULT_TASK_TOPIC})")
+    ap.add_argument("--no-task", action="store_true",
+                    help="Don't publish current_task (use when the sweep is running)")
     args = ap.parse_args()
 
     log_file = None
@@ -235,9 +286,13 @@ def main():
         if log_file.tell() == 0:
             csv.writer(log_file).writerow(_LOG_FIELDS)
             log_file.flush()
-    rclpy.init()
-    node = MockBeaconPublisher(args.topic)
+    # No rclpy signal handler: its SIGINT handler invalidates the context before
+    # `finally` runs, which would make the TASK_NONE stand-down unpublishable.
+    rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
+    node = MockBeaconPublisher(args.topic, None if args.no_task else args.task_topic)
     try:
+        node.wait_for_task_subscriber()
+        node.publish_task(TASK_SAFE_PASSAGE, log=True)
         if args.field:
             if args.color is not None:
                 print("[mock] --field set -- ignoring --color/--blinking/--blink-hz")
@@ -262,6 +317,13 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        # Stand down. Repeated so the bridge doesn't keep resending 2.
+        try:
+            for i in range(TASK_END_REPEATS):
+                node.publish_task(TASK_NONE, log=(i == 0))
+                time.sleep(0.2)
+        except KeyboardInterrupt:
+            node.publish_task(TASK_NONE)
         if log_file is not None:
             log_file.close()
         node.destroy_node()
