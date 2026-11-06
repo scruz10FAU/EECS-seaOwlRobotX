@@ -4,8 +4,6 @@
 Only this program should open the radio COM port.  Radio data is parsed as
 complete MAVLink frames, validated by pymavlink, then forwarded as the
 original, unmodified frame bytes (including MAVLink 2 signatures).
-
-NOT flight-qualified. Bench-test with propellers removed before flight.
 """
 
 import argparse
@@ -128,7 +126,7 @@ def main():
     if BEACON_MAVLINK_ADDRESS is None:
         print("NOTE: utils.beacon_mavlink_protocol not importable; "
               "MEMORY_VECT counted, but beacon tracking IDs unavailable.", flush=True)
-    print("Bench-test mode. Only this router should open COM port. Ctrl+C to stop.", flush=True)
+    print("Only this router should open COM port. Ctrl+C to stop.", flush=True)
 
     raw_log = open(args.raw_rx_log, "ab", buffering=0) if args.raw_rx_log else None
     port = None

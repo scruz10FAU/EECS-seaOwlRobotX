@@ -40,9 +40,14 @@ import argparse
 import csv
 import json
 import math
+import os
 import time
 from datetime import datetime
 
+# MAVLink 2 before pymavlink picks its dialect at import: fence upload needs
+# mission_type and the HAE ceiling needs GPS_RAW_INT.alt_ellipsoid, both
+# MAVLink 2 fields that pymavlink's default (MAVLink 1) drops.
+os.environ.setdefault("MAVLINK20", "1")
 from pymavlink import mavutil
 
 from utils.beacon_mavlink_protocol import (

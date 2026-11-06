@@ -22,6 +22,7 @@ Usage (caller owns the connection and the receive loop):
     ... every loop iteration:       fence.tick(time.monotonic())
 """
 
+import sys
 import time
 
 from pymavlink import mavutil
@@ -54,9 +55,17 @@ class FenceUploader:
         self._home_amsl_m = None
         self._geoid_sep_m = None
 
-    def start(self, target_system, polygons, max_alt_hae_m):
+    def start(self, target_system, polygons, max_alt_hae_m=None, ceiling_above_home_m=None):
         """Upload `polygons` (lists of (lat, lon), >= 3 points each) as
-        inclusion polygons, then set the ceiling from `max_alt_hae_m`."""
+        inclusion polygons, then set the ceiling: from `max_alt_hae_m`
+        (converted to above-home), or `ceiling_above_home_m` as is (e.g. SITL,
+        whose GPS may not report alt_ellipsoid). Neither = fence only."""
+        # mission_type (fence vs mission) is a MAVLink 2 field: over a MAVLink 1
+        # dialect PX4 would take this as a plain mission upload.
+        dialect = sys.modules[type(self.mav.mav).__module__]
+        if getattr(dialect, "WIRE_PROTOCOL_VERSION", "1.0") != "2.0":
+            self._fail("MAVLink 1 connection — set MAVLINK20=1 before importing pymavlink")
+            return
         polygons = [p for p in polygons if len(p) >= 3]
         if not polygons:
             self._fail("no polygon with at least 3 vertices")
@@ -64,6 +73,7 @@ class FenceUploader:
         self._target = target_system
         self._items = [(lat, lon, len(p)) for p in polygons for lat, lon in p]
         self._max_alt_hae_m = max_alt_hae_m
+        self._ceiling_above_home_m = ceiling_above_home_m
         self._last_seq = None
         self._waiting_logged = False
         self.state = "fence"
@@ -89,6 +99,9 @@ class FenceUploader:
             elif msg_type == "MISSION_ACK" and msg.mission_type == _FENCE:
                 if msg.type == mavutil.mavlink.MAV_MISSION_ACCEPTED:
                     self.log("[fence] ✓ Fence accepted by PX4")
+                    if self._max_alt_hae_m is None and self._ceiling_above_home_m is None:
+                        self.state = "done"
+                        return
                     self.state = "ceiling"
                     self._sent_ceiling = None
                     self._retries = 0
@@ -100,8 +113,9 @@ class FenceUploader:
               and msg.get_srcSystem() == self._target
               and msg.param_id == CEILING_PARAM and self._sent_ceiling is not None):
             if abs(msg.param_value - self._sent_ceiling) < 0.01:
-                self.log(f"[fence] ✓ {CEILING_PARAM} = {msg.param_value:.1f} m above home "
-                         f"({self._max_alt_hae_m:.1f} m HAE)")
+                hae = ("" if self._max_alt_hae_m is None
+                       else f" ({self._max_alt_hae_m:.1f} m HAE)")
+                self.log(f"[fence] ✓ {CEILING_PARAM} = {msg.param_value:.1f} m above home{hae}")
                 self.state = "done"
 
     def _for_us(self, msg):
@@ -113,6 +127,13 @@ class FenceUploader:
 
     def tick(self, now):
         if self.state == "ceiling" and self._sent_ceiling is None:
+            if self._ceiling_above_home_m is not None:
+                if self._ceiling_above_home_m <= 0:
+                    self._fail(f"ceiling {self._ceiling_above_home_m:.1f} m above home must be > 0")
+                    return
+                self._sent_ceiling = round(self._ceiling_above_home_m, 2)
+                self._send_ceiling()
+                return
             if self._home_amsl_m is None or self._geoid_sep_m is None:
                 if not self._waiting_logged:
                     self.log("[fence] Waiting for HOME_POSITION and a GPS_RAW_INT "
