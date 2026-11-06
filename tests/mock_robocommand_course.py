@@ -109,7 +109,10 @@ INVALID_KINDS = ("open", "two-points", "self-intersecting", "bad-coords", "too-s
 
 def make_invalid(kind, ring):
     """Break a valid closed ring the way --invalid KIND says, to rehearse the
-    INVALID demonstration (the ground station must refuse every one)."""
+    VALID / INVALID demonstration. The ground station REFUSES open, two-points,
+    bad-coords and too-small (the 1 m inset collapses it); it ACCEPTS
+    self-intersecting (reordered into a non-crossing polygon) and too-large
+    (with a warning)."""
     pts = ring[:-1]
     if kind == "open":
         return pts                                       # last point != first
@@ -186,8 +189,10 @@ def main():
     g.add_argument("--transit-corner", type=_pair, action="append", metavar="LAT,LON",
                    help="UAV transit area vertex, in order (repeatable, >= 3; default: none)")
     g.add_argument("--invalid", choices=INVALID_KINDS,
-                   help="Publish a deliberately INVALID course boundary (rehearses the "
-                        "VALID/INVALID demonstration; the ground station must REFUSE it). "
+                   help="Publish a deliberately broken course boundary (rehearses the "
+                        "VALID/INVALID demonstration): open, two-points, bad-coords and "
+                        "too-small are REFUSED; self-intersecting is reordered and accepted; "
+                        "too-large is accepted with a warning. "
                         "An invalid altitude limit is set on the OCS side "
                         "(UAV_GEOFENCE_MAX_ALTITUDE_HAE_M), not in RxCourse.")
     args = ap.parse_args()

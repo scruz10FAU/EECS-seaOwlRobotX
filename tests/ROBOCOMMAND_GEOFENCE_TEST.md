@@ -32,14 +32,26 @@ RoboCommand ──RxCourse (MQTT, retained)──► seaowls_ocs (WSL)
 - **The OCS never declares the raw course corners**, only what the UAV
   actually holds. Without the drone link there is no RunDeclaration and no
   RunStart.
-- **VALID / INVALID:**
-  - The course must be a closed ring, with at least 3 distinct corners, no
-    crossing edges, valid coordinates, and 5 m–1 km across.
-  - The altitude limit must be above 0, at most the competition maximum
-    (50 m HAE by default), and above home.
-  - The readback must lie within the course (1 m tolerance, the same rule as
-    RoboCommand's own checker).
-  - Anything else is **REFUSED with the reason**: not uploaded, not declared.
+- **INVALID (REFUSED with the reason, not uploaded, not declared):**
+  - the course isn't a closed ring, has fewer than 3 distinct corners, has
+    all corners on a line, or has invalid coordinates;
+  - it's too small for the 1 m inset (under ~2.5 m across);
+  - the altitude limit is 0 or less, above the competition maximum (50 m HAE
+    by default), or not above home;
+  - the readback leaves the course + transit area by more than 1 m (the same
+    rule as RoboCommand's own checker).
+- **Not invalid:**
+  - **Corner order.** If the corners arrive in an order whose edges cross,
+    they're reordered into a non-crossing polygon through the same corners
+    (by angle around their centre), and that is what's inset, uploaded and
+    checked. A course whose edges don't cross is used exactly as received.
+  - **Size.** Under 5 m or over 1 km across is a **warning** ("check the
+    coordinates"), not a refusal.
+  - Warnings show under the GUI's Geofence status and in the Ground log as
+    `[fence] WARNING …`.
+  - RoboCommand checks the declared fence against its *own* published
+    course. If RoboCommand itself publishes crossing corners, its checker may
+    still refuse the declaration; that's on their side.
 - The fence is inset **1 m** inside the published boundary (RoboNation's
   advice), and PX4's ceiling is set **1 m** under the altitude limit.
 
@@ -152,14 +164,22 @@ py -3.10 seabird_ground_gui.py
   `uav_registration` that will be sent.
 - **Competition box:** the RoboCommand-facing adapter (↻ refreshes the list),
   and the RoboCommand host. Leave the host blank to use the DHCP gateway.
-- **Test box:** the mock course centre (`LAT,LON`, the drone's position from
-  QGC), its size, and its kind: `(valid)` or one of the INVALID kinds.
-  **Publish mock course** and **Clear mock course** are here.
-- **Bench: assume home HAE (m)** (Test box): leave blank outdoors. Indoors the
+- **Test box:**
+  - **Centre the course on the drone's GPS position** (ticked by default).
+    The course is centred on the drone's latest 3D GPS fix, which the Ground
+    process reports every 5 s and the "Drone position" row shows with its
+    age.
+  - **Manual centre `LAT,LON`:** used automatically whenever there's no fix
+    in the last 30 s (indoors), or always if the box above is unticked.
+  - The course size, and its kind. Each entry names its expected outcome: `VALID course`, `VALID after repair: corners in crossing order`, `VALID + warning: too large (> 1 km)`, or one of the `INVALID: …` entries.
+  - **Publish mock course** and **Clear mock course**.
+- **Home HAE when there's no GPS fix (m)** (Test box, default `0`): indoors the
   drone has no 3D GPS fix or home, so the ceiling can't be converted to PX4's
-  above-home value and the round trip waits. Enter a guess (e.g. `10` near
-  sea level) to let it finish. The Geofence row then shows
-  `[ASSUMED home HAE: bench only]`. The GUI never passes this in Competition.
+  above-home value. This height is used instead, so the round trip (ceiling,
+  readback, declaration) still finishes. A real fix that arrives first takes
+  priority. When it's used, the Geofence row shows
+  `[ASSUMED home HAE: bench only]`. Blank means 0. The GUI never passes this
+  in Competition.
 - **Run preflight:** a table of ✓ OK / ⚠ WARN / ✗ FAIL checks:
   - the protobuf is the latest RoboCommand version (needs Internet; on a
     course network it warns instead);
@@ -206,9 +226,10 @@ python3 beacon_mavlink_bridge.py --mavlink-endpoint udpout:10.200.0.2:14550
 ### 5.2 GUI
 
 1. Select **Test**, fill in the settings, then **Run preflight**.
-2. Read the drone's latitude/longitude in QGC and put them in **Course
-   centre**. Leave the kind at `(valid)`.
-3. **Start all.** Wait for:
+2. Leave **Centre the course on the drone's GPS position** ticked and the kind
+   at `VALID course`. For indoors, also fill in **Manual centre** (used when
+   there's no fix). **Home HAE when there's no GPS fix** defaults to `0`.
+3. **Start all.** Wait for the **Drone position** row to show a 3D fix, and for:
    - Router: radio bytes > 0;
    - OCS: connected;
    - Ground: receiving UAV MAVLink.
@@ -227,9 +248,11 @@ course is fixed in Singapore) sends it.
 
 | Demonstration | How (Test profile) | Expect |
 |---|---|---|
-| INVALID boundary | Course kind → `open`, `two-points`, `self-intersecting`, `bad-coords`, `too-small` or `too-large`, then **Publish mock course** | **Geofence: REFUSED** + reason (e.g. "course boundary edges cross each other"). Nothing uploaded to the UAV, no new declaration. |
-| INVALID altitude | Stop all → set altitude limit to `0` or `60` → Start all (confirm the prompt) → Publish a `(valid)` course | **Geofence: REFUSED**, e.g. "altitude limit 60 m HAE is above the maximum 50 m HAE" |
-| VALID again | Kind `(valid)`, altitude `40`, Publish | **VALID**, new declaration seq |
+| INVALID boundary | Course kind → one of the `INVALID: …` entries (open ring, only two corners, bad coordinates, too small for the inset), then **Publish mock course** | **Geofence: REFUSED** + reason (e.g. "course boundary not closed…"). Nothing uploaded to the UAV, no new declaration. |
+| Crossing corner order | Course kind → `VALID after repair: corners in crossing order` | **VALID**, with `⚠ … reordered into a non-crossing polygon…` under it |
+| Implausible size | Course kind → `VALID + warning: too large (> 1 km)` | **VALID**, with `⚠ … 3532 m across … check the coordinates` |
+| INVALID altitude | Stop all → set altitude limit to `0` or `60` → Start all (confirm the prompt) → Publish a `VALID course` | **Geofence: REFUSED**, e.g. "altitude limit 60 m HAE is above the maximum 50 m HAE" |
+| VALID again | Kind `VALID course`, altitude `40`, Publish | **VALID**, new declaration seq |
 
 ### 5.4 Task 1 reporting check
 

@@ -91,12 +91,29 @@ DEFAULTS = {
         "mock_use_gps": "1",
         "mock_center": "",
         "mock_size": "25,25",
-        "mock_invalid": "(valid)",
+        "mock_invalid": "VALID course",
         "bench_home_hae_m": "0",
     },
 }
-INVALID_KINDS = ["(valid)", "open", "two-points", "self-intersecting", "bad-coords",
-                 "too-small", "too-large"]
+# Mock course kinds: GUI label (with the expected outcome) -> the
+# mock_robocommand_course.py --invalid value (None = a proper course).
+COURSE_KINDS = {
+    "VALID course": None,
+    "VALID after repair: corners in crossing order": "self-intersecting",
+    "VALID + warning: too large (> 1 km)": "too-large",
+    "INVALID: open ring (not closed)": "open",
+    "INVALID: only two corners": "two-points",
+    "INVALID: bad coordinates": "bad-coords",
+    "INVALID: too small (1 m inset collapses it)": "too-small",
+}
+# Labels saved by earlier versions of this window -> current label.
+_OLD_KIND_LABELS = {
+    "(valid)": "VALID course",
+    **{v: k for k, v in COURSE_KINDS.items() if v},
+    "INVALID: self-intersecting (edges cross)": "VALID after repair: corners in crossing order",
+    "INVALID: too small (< 5 m)": "INVALID: too small (1 m inset collapses it)",
+    "INVALID: too large (> 1 km)": "VALID + warning: too large (> 1 km)",
+}
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────
@@ -252,6 +269,7 @@ class GroundGui(tk.Tk):
         self.last_heartbeat = None
         self._pending_preflight = None   # results handed over by the preflight worker
         self.drone_fix = None            # (lat, lon, sats, monotonic time) from Ground's '[pos]' lines
+        self.fence_warnings = []         # Ground's '[fence] WARNING' lines for the current course
         self.drone_fix_lost = False
 
         self.procs = {
@@ -367,9 +385,13 @@ class GroundGui(tk.Tk):
         self.manual_center.grid(row=2, column=1, sticky="ew")
         ttk.Label(self.test_frame, text="Course size W,L (m)").grid(row=3, column=0, sticky="w")
         ttk.Entry(self.test_frame, textvariable=self._var("Test", "mock_size")).grid(row=3, column=1, sticky="ew")
-        ttk.Label(self.test_frame, text="Course kind (INVALID demo)").grid(row=4, column=0, sticky="w")
-        ttk.Combobox(self.test_frame, textvariable=self._var("Test", "mock_invalid"),
-                     values=INVALID_KINDS, state="readonly").grid(row=4, column=1, sticky="ew")
+        ttk.Label(self.test_frame, text="Course kind (VALID / INVALID demo)").grid(row=4, column=0, sticky="w")
+        kind_var = self._var("Test", "mock_invalid")
+        kind_var.set(_OLD_KIND_LABELS.get(kind_var.get(), kind_var.get()))
+        if kind_var.get() not in COURSE_KINDS:
+            kind_var.set("VALID course")
+        ttk.Combobox(self.test_frame, textvariable=kind_var, values=list(COURSE_KINDS),
+                     state="readonly", width=36).grid(row=4, column=1, sticky="ew")
         ttk.Label(self.test_frame, text="Home HAE when there's no GPS fix (m)\n(blank = 0)").grid(
             row=5, column=0, sticky="w")
         ttk.Entry(self.test_frame, textvariable=self._var("Test", "bench_home_hae_m")).grid(
@@ -505,14 +527,20 @@ class GroundGui(tk.Tk):
                           + ("" if ok else "  — nothing from the radio: wrong COM port?"),
                           "#1b7f1b" if ok else "#c0182b")
         elif name == "Ground":
+            w = re.search(r"\[fence\] WARNING course '([^']*)': (.*)", line)
             m = re.search(r"\[fence\] (UPLOADING|WAITING|VALID|REFUSED|FAILED) course '([^']*)'(?:: (.*))?",
                           line)
-            if m:
+            if w:
+                self.fence_warnings.append(w.group(2))
+            elif m:
                 state, course, why = m.groups()
                 color = {"VALID": "#1b7f1b", "UPLOADING": "#a86b00", "WAITING": "#a86b00"}.get(state, "#c0182b")
                 label = "WAITING for GPS" if state == "WAITING" else state
+                notes = "".join(f"\n⚠ {x}" for x in self.fence_warnings)
                 self._set("Geofence", f"{label} — course {course}" + (f": {why}" if why else "")
-                          + ("  (on the UAV, read back)" if state == "VALID" else ""), color)
+                          + ("  (on the UAV, read back)" if state == "VALID" else "") + notes, color)
+                if state in ("VALID", "REFUSED", "FAILED"):
+                    self.fence_warnings = []   # the next course starts fresh
             elif "ceiling HAE uses the ASSUMED home" in line:
                 self.status["Geofence"].config(
                     text=self.status["Geofence"].cget("text") + "  [ASSUMED home HAE: bench only]")
@@ -880,8 +908,10 @@ class GroundGui(tk.Tk):
             return
         # '=' form: argparse would read a negative "-27.4,153.0" as an option, not a value.
         extra = f"--center={center} --size={size}"
-        if kind and kind != "(valid)":
-            extra += f" --invalid {kind}"
+        invalid = COURSE_KINDS.get(_OLD_KIND_LABELS.get(kind, kind))
+        if invalid:
+            extra += f" --invalid {invalid}"
+        self.log("Mock", f"publishing: {kind}\n")
         self._mock(extra)
 
     def clear_mock(self):

@@ -1,0 +1,80 @@
+[WARN] [1793954413.499463466] [seaowls_ocs]: [SEAOWLS OCS] UAV_REGISTRATION not set; heartbeats go without uav_registration
+[INFO] [1793954414.956751011] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954414.959342721] [seaowls_ocs]: [SEAOWLS OCS] MQTT connected
+[INFO] [1793954415.126581497] [seaowls_ocs]: [SEAOWLS OCS] Published UAV geofence course=MOCK boundary_points=5 transit_points=0 altitude=40.0m
+[WARN] [1793954415.298935631] [seaowls_ocs]: [SEAOWLS OCS] RunDeclaration waiting for UAV1's read-back geofence for course MOCK on /seaowls/uav1/mission/geofence_onboard
+[INFO] [1793954415.335429115] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954415.581630009] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954415.881582347] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954416.122835325] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=2 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954416.382706938] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=3 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954416.499409224] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954416.833160693] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954417.016409510] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=4 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954417.841021553] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=5 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954418.410151910] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=6 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954418.672501688] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954422.255665175] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=7 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954422.613064851] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954422.922615949] [seaowls_ocs]: [SEAOWLS OCS] UAV1 onboard geofence course=MOCK points=5 altitude=39.0m HAE
+[INFO] [1793954423.336452974] [seaowls_ocs]: [SEAOWLS OCS] RunDeclaration seq=1 vehicles=('UAV1',) course=MOCK uav_geofence=5 points (read back from UAV1) altitude=39.0m HAE callsign=Samantha
+[INFO] [1793954423.792056849] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=8 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954424.197564738] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954424.725244145] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=9 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954425.131743818] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954425.454335215] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=10 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954425.761195464] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954426.157380379] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=11 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954426.465561475] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954426.911010206] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=12 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954427.342772259] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954427.714974914] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=13 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954427.909238510] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954428.023472272] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=14 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954428.423898711] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954428.669412272] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=15 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954429.327010674] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954430.229056752] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=16 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954430.649318874] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954431.279820713] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=17 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954432.205794575] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954432.727191920] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=18 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954432.967548580] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954433.214102550] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=19 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954433.600113947] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954434.279821453] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=20 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954435.226128410] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954435.638287762] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=21 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954435.802927417] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954436.194410362] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=22 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954436.638540669] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954437.015568471] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=23 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954437.222461878] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954437.585023363] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=24 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954437.883834033] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954438.023194297] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=25 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954438.109677794] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954438.210956213] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954438.376639055] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954438.492036293] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=26 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954438.658111018] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954438.747400005] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/install/seaowls_robocommand/lib/seaowls_robocommand/seaowls_ocs", line 33, in <module>
+    sys.exit(load_entry_point('seaowls-robocommand', 'console_scripts', 'seaowls_ocs')())
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/build/seaowls_robocommand/seaowls_robocommand/ocs_node.py", line 463, in main
+    n.m.disconnect()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 1892, in disconnect
+    return self._send_disconnect(reasoncode, properties)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3610, in _send_disconnect
+    return self._packet_queue(command, packet, 0, 0)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3791, in _packet_queue
+    return self.loop_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 2121, in loop_write
+    rc = self._packet_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3226, in _packet_write
+    self._do_on_disconnect(
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 4383, in _do_on_disconnect
+    on_disconnect(
+TypeError: Ocs.disconnected() takes from 4 to 5 positional arguments but 6 were given
+[ros2run]: Process exited with failure 1

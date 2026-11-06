@@ -42,6 +42,8 @@ CEILING_PARAM = "GF_MAX_VER_DIST"
 
 _FENCE = mavutil.mavlink.MAV_MISSION_TYPE_FENCE
 _INCLUSION_VERTEX = mavutil.mavlink.MAV_CMD_NAV_FENCE_POLYGON_VERTEX_INCLUSION
+# MAV_CMD_NAV_FENCE_RETURN_POINT .. MAV_CMD_NAV_FENCE_CIRCLE_EXCLUSION
+_FENCE_COMMANDS = range(5000, 5005)
 
 
 def open_polygon(lats, lons):
@@ -167,11 +169,57 @@ class FenceUploader:
         self._rb_step = "list"
         self._rb_count = None
         self._rb_items = {}
+        self._rb_rejected = 0
+        self._rb_type0_logged = False
         self._retries = 0
         self.log("[fence] Reading the fence back from PX4")
         self._send_readback()
 
+    def _log_rejected(self, msg, msg_type, why):
+        """Diagnostics: a readback reply that arrived but wasn't used (max 10 per readback)."""
+        if self._rb_rejected < 10:
+            self._rb_rejected += 1
+            fields = {k: getattr(msg, k, None) for k in
+                      ("seq", "count", "mission_type", "target_system", "target_component")}
+            self.log(f"[fence] readback ignored {msg_type} from {msg.get_srcSystem()}/"
+                     f"{msg.get_srcComponent()} ({why}): "
+                     + " ".join(f"{k}={v}" for k, v in fields.items() if v is not None)
+                     + f" | step={self._rb_step} expecting seq={len(self._rb_items)} "
+                     f"we_are={self.mav.source_system}/{self.mav.source_component}")
+
+    def _is_fence_item(self, msg, msg_type):
+        """A fence item of OUR download. Some PX4 builds (seen on the VOXL) send
+        the fence items back with mission_type=0 even in a fence download, so
+        a type-0 item is accepted when its command is a fence command."""
+        if msg_type != "MISSION_ITEM_INT":
+            return getattr(msg, "mission_type", None) == _FENCE
+        if msg.mission_type == _FENCE:
+            return True
+        if msg.mission_type == 0 and msg.command in _FENCE_COMMANDS:
+            if not self._rb_type0_logged:
+                self.log("[fence] note: PX4 returns the fence items with mission_type=0; "
+                         "accepting them (fence commands, our download)")
+                self._rb_type0_logged = True
+            return True
+        return False
+
     def _handle_readback(self, msg, msg_type):
+        if msg_type in ("MISSION_COUNT", "MISSION_ITEM_INT", "MISSION_ITEM", "MISSION_ACK") \
+                and self._rb_step in ("list", "items") and not self._for_us(msg):
+            self._log_rejected(msg, msg_type, "not addressed to us")
+            return
+        if self._rb_step in ("list", "items") and msg_type in ("MISSION_ITEM_INT", "MISSION_COUNT") \
+                and (not self._is_fence_item(msg, msg_type)
+                     or (msg_type == "MISSION_ITEM_INT" and (self._rb_step != "items"
+                                                             or msg.seq != len(self._rb_items)))
+                     or (msg_type == "MISSION_COUNT" and self._rb_step != "list")):
+            self._log_rejected(msg, msg_type, "wrong type / step / seq")
+            return
+        if msg_type == "MISSION_ACK" and self._rb_step in ("list", "items") \
+                and getattr(msg, "mission_type", None) == _FENCE:
+            name = mavutil.mavlink.enums["MAV_MISSION_RESULT"][msg.type].name
+            self._log_rejected(msg, msg_type, f"PX4 ended the download: {name}")
+            return
         if self._rb_step in ("list", "items") and self._for_us(msg):
             if msg_type == "MISSION_COUNT" and msg.mission_type == _FENCE and self._rb_step == "list":
                 self._rb_count = msg.count
@@ -181,7 +229,7 @@ class FenceUploader:
                 else:
                     self._rb_step = "items"
                     self._send_readback()
-            elif (msg_type == "MISSION_ITEM_INT" and msg.mission_type == _FENCE
+            elif (msg_type == "MISSION_ITEM_INT" and self._is_fence_item(msg, msg_type)
                   and self._rb_step == "items" and msg.seq == len(self._rb_items)):
                 self._rb_items[msg.seq] = msg
                 self._retries = 0

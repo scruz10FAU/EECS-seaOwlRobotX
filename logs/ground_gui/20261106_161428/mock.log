@@ -1,0 +1,10 @@
+usage: mock_robocommand_course.py [-h] [--host HOST] [--port PORT] [--clear]
+                                  [--dry-run] [--period PERIOD]
+                                  [--course-id COURSE_ID]
+                                  [--pinger-freq-hz PINGER_FREQ_HZ]
+                                  [--center LAT,LON] [--size W,L]
+                                  [--rotation-deg ROTATION_DEG]
+                                  [--corner LAT,LON]
+                                  [--transit-corner LAT,LON]
+                                  [--invalid {open,two-points,self-intersecting,bad-coords,too-small,too-large}]
+mock_robocommand_course.py: error: argument --center: expected one argument

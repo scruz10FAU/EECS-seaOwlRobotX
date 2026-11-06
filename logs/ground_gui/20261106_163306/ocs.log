@@ -1,0 +1,1495 @@
+[WARN] [1793954036.011863619] [seaowls_ocs]: [SEAOWLS OCS] UAV_REGISTRATION not set; heartbeats go without uav_registration
+[INFO] [1793954036.862692489] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954036.911092578] [seaowls_ocs]: [SEAOWLS OCS] MQTT connected
+[INFO] [1793954037.024538749] [seaowls_ocs]: [SEAOWLS OCS] Published UAV geofence course=MOCK boundary_points=5 transit_points=0 altitude=40.0m
+[INFO] [1793954037.062378670] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[WARN] [1793954037.134388594] [seaowls_ocs]: [SEAOWLS OCS] RunDeclaration waiting for UAV1's read-back geofence for course MOCK on /seaowls/uav1/mission/geofence_onboard
+[INFO] [1793954037.169159979] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954037.477864832] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954037.717254738] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954038.006797871] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=2 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954038.142549328] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954038.369638720] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=3 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954038.568521606] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954038.792550574] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954038.988687825] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=4 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954039.227816653] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954039.367363909] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=5 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954039.659587164] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954039.810401494] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=6 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954040.026725746] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954040.177061703] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954040.299410300] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=7 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954040.468693067] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954040.638966651] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954040.845701941] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=8 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954041.028037487] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954041.175418340] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954041.321930109] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=9 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954041.559939500] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954041.719458609] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954041.838756476] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=10 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954041.879172352] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954042.152671747] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954042.290072670] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=11 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954042.598745168] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954042.704082737] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954042.847681810] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=12 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954043.098335983] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954043.279457207] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=13 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954043.575976829] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954043.712637995] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954043.850033721] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=14 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954043.986424787] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954044.274149707] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=15 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954044.431264680] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954044.549082141] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954044.735660566] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=16 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954044.938365636] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954045.266556405] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=17 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954045.371245541] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954045.504555197] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954045.756480098] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=18 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954045.892849764] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954046.269874674] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=19 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954046.399697990] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954046.522404587] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954046.740859140] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=20 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954046.840771533] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954047.240946303] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954047.347501744] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=21 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954047.487057248] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954047.708037175] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954047.843267222] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=22 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954048.168745158] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954048.288887275] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=23 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954048.438166996] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954048.630520779] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954048.749433664] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=24 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954049.091791864] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954049.211600747] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954049.337625268] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=25 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954049.547279241] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954049.783386180] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=26 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954049.964511468] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954050.101619811] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954050.281023904] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=27 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954050.466184940] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954050.789742528] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=28 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954050.898752390] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954050.945900583] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954051.283244163] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=29 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954051.408043447] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954051.674270304] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=30 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954051.748697366] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954051.784699043] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954052.280377364] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=31 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954052.405475905] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954052.710936020] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954052.801160197] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=32 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954052.889879075] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954053.227567228] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954053.288269622] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=33 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954053.678194851] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954053.771063935] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=34 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954053.886314393] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954054.141510436] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954054.286985612] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=35 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954054.599214021] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954054.707596233] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954054.837883321] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=36 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954055.056246665] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954055.223237758] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=37 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954055.521917855] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954055.657575976] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954055.801606083] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=38 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954056.008573979] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954056.260725549] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=39 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954056.459186887] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954056.551501107] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954056.771021539] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=40 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954056.931388788] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954057.218808352] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=41 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954057.348210718] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954057.460762224] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954057.768186980] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=42 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954057.901156725] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954058.202153031] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=43 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954058.245097224] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954058.281540536] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954058.712119081] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954058.756677745] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=44 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954059.146073336] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954059.186980553] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=45 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954059.217827773] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954059.595982437] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954059.687099905] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=46 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954060.116898110] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954060.218742706] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954060.283143562] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=47 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954060.569539834] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954060.752218679] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=48 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954061.081243614] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954061.215825090] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954061.305807073] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=49 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954061.505826794] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954061.769632531] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=50 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954061.969368044] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954062.084906223] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954062.245712135] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=51 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954062.456961347] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954062.762068858] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=52 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954062.895092706] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954063.007791742] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954063.273727841] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=53 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954063.345850268] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954063.767779545] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=54 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954063.910237232] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954064.054942205] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954064.287150542] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=55 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954064.431554945] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954064.741149344] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954064.882551800] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=56 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954065.003750019] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954065.214358636] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954065.350080488] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=57 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954065.631493817] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954068.690774039] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954068.837454791] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=58 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954069.041314906] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954069.278640543] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=59 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954069.500624903] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954069.642561161] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954069.783053218] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=60 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954069.960959817] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954070.278234510] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=61 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954070.401433661] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954070.499987895] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954070.777030666] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=62 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954070.899294180] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954071.280914831] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=63 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954071.411479863] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954071.527548877] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954071.784001146] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=64 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954071.929929196] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954072.250003439] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954072.385618641] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=65 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954072.498868483] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954072.702637975] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954072.841662689] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=66 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954073.185995635] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954073.325488656] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=67 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954073.464474068] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954073.649519516] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954073.794655566] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=68 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954074.120127915] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954074.223796638] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954074.351053792] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=69 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954074.566785050] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954074.725146179] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=70 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954075.030719840] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954075.278395281] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=71 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954075.501864087] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954075.762082865] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=72 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954075.933770237] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954076.288069391] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=73 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954076.434861477] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954076.746501574] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=74 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954076.800253662] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954077.280527425] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=75 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954077.408032934] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954077.769810253] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=76 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954077.906769757] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954078.236944106] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954078.330862454] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=77 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954078.619231518] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954078.714450717] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=78 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954079.157462122] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954079.253552451] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=79 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954079.604401493] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954079.789334468] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=80 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954080.101532339] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954080.283322944] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=81 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954080.518997438] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954080.785452115] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=82 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954081.001310591] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954081.282488157] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=83 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954081.435142545] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954081.775226706] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=84 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954081.937760638] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954082.272653942] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=85 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954082.411022913] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954082.778799701] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=86 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954082.909676918] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954083.265266448] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=87 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954083.335188482] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954083.777504408] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=88 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954083.914663483] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954084.171633347] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954084.276561512] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=89 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954084.689865028] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954084.812303296] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=90 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954085.105179761] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954085.227810245] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=91 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954085.626297696] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954085.765986728] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=92 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954086.010480063] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954086.268265795] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=93 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954086.543403053] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954086.782051246] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=94 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954086.946757853] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954087.247015403] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=95 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954087.423106071] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954087.746400155] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=96 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954087.869552171] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954088.244768971] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=97 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954088.297445474] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954088.766169013] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=98 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954088.901392196] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954089.194732203] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=99 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954089.281705788] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954089.721356274] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954089.864575609] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=100 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954090.226226716] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954090.369405624] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=101 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954090.625674154] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954090.781805574] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=102 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954091.187336870] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954091.306844833] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=103 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954091.473836144] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954091.770352310] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=104 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954092.056378587] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954092.271900271] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=105 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954092.440924480] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954092.733287456] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=106 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954093.025916794] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954093.277032950] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=107 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954093.417607514] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954093.781060403] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=108 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954093.915768285] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954094.198716693] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=109 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954094.254489366] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954094.816024264] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=110 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954094.887777045] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954095.181578442] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954095.272247549] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=111 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954095.691453556] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954095.753691471] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=112 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954096.146712421] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954096.290453808] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=113 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954096.698021339] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954096.836252872] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=114 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954096.992478251] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954097.231212511] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=115 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954097.562925901] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954097.729596345] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=116 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954098.137862872] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954098.273477663] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=117 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954098.617664187] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954098.696315699] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=118 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954098.853617832] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954099.127769704] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954099.261461836] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=119 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954099.654461363] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954099.764295782] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=120 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954099.867840726] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954100.186096543] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954100.323590476] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=121 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954100.514382482] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954100.723776122] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954100.863853945] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=122 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954104.009622266] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954104.154064758] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=123 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954104.282181257] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=124 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954104.513976773] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954104.653114336] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954104.789743411] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=125 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954104.897704599] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954105.266900622] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=126 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954105.392052694] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954105.587439263] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954105.780598990] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=127 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954105.930874462] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954106.262648842] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=128 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954106.310528083] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954106.488317301] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954106.751194769] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954106.877980128] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=129 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954107.219058275] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954107.353934539] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=130 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954107.480232281] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954107.688492445] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954107.831169737] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=131 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954108.157502740] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954108.296178216] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=132 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954108.420424184] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954108.608375921] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954108.780621235] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=133 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954109.055948990] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954109.173707737] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954109.228584019] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=134 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954109.529200830] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954109.767753138] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=135 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954110.013526897] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954110.187653952] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954110.335148645] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=136 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954110.490757017] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954110.783957943] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=137 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954110.915163647] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954111.087498938] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954111.216093524] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=138 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954111.281789975] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954111.772982512] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=139 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954111.914947345] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954112.054974059] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954112.265110332] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=140 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954112.405168790] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954112.770675480] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954112.905503992] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=141 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954113.029544352] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954113.160861065] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954113.267991478] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=142 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954113.685263743] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954113.819138380] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=143 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954113.957347264] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954114.147357398] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954114.247261448] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=144 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954114.559533518] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954114.750891008] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954114.887714559] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=145 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954115.062277360] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954115.275668405] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=146 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954115.476196320] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954115.655624079] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954115.790978689] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=147 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954115.990717129] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954116.279300076] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=148 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954116.394280777] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954116.530273680] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954116.733274033] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=149 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954116.850618286] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954117.220358879] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=150 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954117.325836533] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954117.462912213] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954117.775431019] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=151 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954117.922328052] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954118.285351942] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954118.415975360] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=152 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954118.557590987] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954118.681868690] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954118.773056394] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=153 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954119.199188574] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954119.328907390] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=154 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954119.462563874] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954119.605210124] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954119.763409753] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=155 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954120.124638853] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954120.261609432] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=156 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954120.403956055] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954120.590699468] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954120.786146588] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=157 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954121.038753153] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954121.201490616] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954121.321471960] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=158 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954121.496516805] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954121.723605716] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=159 speed=0.00 heading=52.0 altitude=89.5
+[INFO] [1793954121.977285538] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954122.119160935] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954122.269081585] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=160 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954122.355029504] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954122.774714879] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=161 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954122.921855507] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954123.062872810] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954123.283819741] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=162 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954123.417743368] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954123.760349654] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=163 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954123.858860631] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954123.973412728] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954124.272979020] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954124.417591362] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=164 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954124.728039311] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954124.826408792] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=165 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954124.969094150] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954125.197074888] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954125.344025297] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=166 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954125.644415035] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954125.786602589] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=167 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954125.900162071] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954126.096113024] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954126.267253573] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=168 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954126.554291407] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954126.667557973] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954126.812411168] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=169 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954127.022109469] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954127.278998918] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=170 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954127.453526502] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954127.647284834] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954127.789724875] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=171 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954127.921827993] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954128.268110227] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=172 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954128.362282293] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954128.556050408] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954128.778081630] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=173 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954128.896920506] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954129.265158166] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=174 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954129.385077383] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954129.508508515] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954129.779340772] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=175 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954129.927669464] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954130.226580322] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954130.370569543] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=176 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954130.504525200] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954130.703954669] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954130.851069719] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=177 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954131.162387195] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954131.297594721] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=178 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954131.437854717] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954131.613415340] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954131.785640651] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=179 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954132.111799992] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954132.225306806] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954132.357283270] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=180 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954132.555918045] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954132.749670495] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=181 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954133.018616058] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954133.169883583] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954133.309219879] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=182 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954133.467949037] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954133.759867280] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=183 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954133.944948171] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954134.088778688] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954134.266282302] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=184 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954134.364853400] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954134.773302448] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=185 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954134.906026869] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954135.035690181] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954135.281980028] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=186 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954135.398206618] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954135.783122357] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=187 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954135.928169386] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954136.070030816] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954136.247985276] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954139.250702479] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=188 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954139.357824859] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=189 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954139.605891727] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954139.744166172] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954139.871559803] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=190 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954140.048464006] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954140.277799718] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=191 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954140.520910052] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954140.658187116] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954140.798914171] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=192 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954140.946820360] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954141.265424118] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=193 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954141.389723320] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954141.553033553] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954141.774874488] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=194 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954141.910827316] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954142.280777089] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=195 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954142.421142779] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954142.562168295] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954142.788102230] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=196 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954142.929226892] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954143.277956710] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=197 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954143.409141436] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954143.511858636] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954143.703657174] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954143.849495408] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=198 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954144.192674467] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954144.336319030] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=199 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954144.466831064] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954144.637791857] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954144.772026959] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=200 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954145.115635360] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954145.241192173] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954145.382625091] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=201 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954145.550448010] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954145.775460711] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=202 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954146.028704932] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954146.167583737] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954146.283470545] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=203 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954146.502464799] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954146.766707361] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=204 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954146.950116321] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954147.097865469] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954147.273830191] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=205 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954147.395267952] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954147.725067670] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=206 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954147.850043922] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954147.987559691] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954148.277647815] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=207 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954148.417144798] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954148.775692400] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=208 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954148.906465326] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954149.028723751] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954149.251553118] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954149.387949256] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=209 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954149.708227099] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954149.795555751] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=210 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954149.844101054] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954150.182052908] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954150.324692694] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=211 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954150.637813549] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954150.787375960] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=212 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954150.933049447] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954151.096903303] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954151.280630656] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=213 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954151.543064703] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954151.600340875] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954151.780049437] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=214 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954151.995401786] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954152.281810563] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=215 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954152.484997254] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954152.626298240] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954152.777602269] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=216 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954152.957519964] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954153.276904328] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=217 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954153.381179746] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954153.513805959] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954153.782834867] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=218 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954153.901393707] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954154.214719363] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=219 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954154.256488837] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954154.410623700] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954154.772191588] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=220 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954154.894028963] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954155.238140778] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954155.377705317] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=221 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954155.518798596] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954155.712852320] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954155.845864928] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=222 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954156.117793879] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954156.266929598] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=223 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954156.402686519] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954156.623343997] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954156.762370827] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=224 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954157.079535935] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954157.216577572] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954157.358974769] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=225 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954157.584338333] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954157.772217860] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=226 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954157.990261346] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954158.098651933] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954158.194861586] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=227 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954158.468520999] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954158.731538705] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=228 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954158.907052418] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954159.034529652] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954159.283486539] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=229 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954159.409729617] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954159.776364226] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=230 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954159.914071964] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954160.043973393] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954160.256522277] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=231 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954160.317768537] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954160.764661385] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=232 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954160.899489876] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954161.039682959] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954161.222246207] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954161.278029795] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=233 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954161.681557709] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954161.815118804] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=234 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954161.926883883] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954162.132364570] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954162.206263484] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=235 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954162.605759031] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954162.725841503] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954162.852441595] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=236 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954163.084047160] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954163.269782034] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=237 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954163.524446077] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.6
+[INFO] [1793954163.653512986] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.6
+[INFO] [1793954163.782641741] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=238 speed=0.00 heading=53.0 altitude=89.6
+[INFO] [1793954163.992024303] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.6
+[INFO] [1793954164.274119961] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=239 speed=0.00 heading=53.0 altitude=89.6
+[INFO] [1793954164.427532828] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954164.496900501] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954164.772990332] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=240 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954164.851734794] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954165.272473786] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=241 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954165.409010296] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954165.530158627] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954165.772647692] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=242 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954165.893821114] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954166.240191812] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=243 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954166.359923365] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954166.476281721] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954166.777971904] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=244 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954166.913555267] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954167.202381954] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954167.320650649] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=245 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954167.446292612] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954167.659953957] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954167.778114510] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=246 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954168.140901305] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954168.272409385] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=247 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954168.404457438] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954168.593822574] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954168.716237901] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=248 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954169.069278240] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.6
+[INFO] [1793954169.201627300] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.6
+[INFO] [1793954169.340128070] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=249 speed=0.00 heading=53.0 altitude=89.6
+[INFO] [1793954169.534871656] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.6
+[INFO] [1793954169.776694008] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=250 speed=0.00 heading=53.0 altitude=89.6
+[INFO] [1793954169.985548048] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954170.113332838] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954170.270722567] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=251 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954170.440995117] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954170.750291114] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=252 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954170.854825611] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954170.985132797] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954171.273761826] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=253 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954171.405846578] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954174.740930144] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=254 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954174.876349328] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=255 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954175.010535364] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954175.144639896] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954175.271258025] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=256 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954175.394904543] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954175.714749692] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954175.789962865] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=257 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954175.856737980] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954176.179910858] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954176.310429223] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=258 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954176.644369497] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954176.771929629] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=259 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954176.908495481] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954177.090656143] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954177.274912461] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=260 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954177.569242522] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954177.709426871] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954177.802700075] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=261 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954177.988753195] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954178.275749676] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=262 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954178.394213057] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954178.546693472] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954178.770604241] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=263 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954178.948639675] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954179.266941022] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=264 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954179.413086761] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954179.534108743] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954179.774249854] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=265 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954179.881904442] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954180.278690993] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=266 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954180.408679222] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954180.553676000] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954180.775418359] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=267 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954180.912085517] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954181.261189077] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=268 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954181.394131920] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954181.525530659] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954181.706203702] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954181.841178610] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=269 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954182.183455977] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954182.317571726] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=270 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954182.445638697] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954182.626844899] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954182.764881614] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=271 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954183.087441121] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954183.201853447] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954183.322355037] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=272 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954183.546694156] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954183.687887620] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=273 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954184.047563879] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954184.154402704] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954184.262262797] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=274 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954184.481770361] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954184.757763525] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=275 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954184.972840787] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954185.100389129] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954185.270870579] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=276 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954185.402226924] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954185.760067947] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=277 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954185.888524579] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954185.998595495] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954186.234233046] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=278 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954186.317512676] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954186.783184469] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=279 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954186.916041411] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954186.985367913] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954187.279795579] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=280 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954187.403238865] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954187.724754933] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954187.860052730] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=281 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954187.992257902] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954188.217169374] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954188.274330924] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=282 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954188.636902365] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954188.770082978] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=283 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954188.900909981] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954189.119754850] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954189.264813633] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=284 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954189.559868817] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954189.685506341] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954189.822633069] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=285 speed=0.00 heading=53.0 altitude=89.7
+[INFO] [1793954190.053249849] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954190.252292018] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=286 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954190.434709826] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954190.464180317] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954190.783234629] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=287 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954190.958117414] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954191.278438063] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=288 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954191.427726529] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954191.563769160] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954191.772843395] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=289 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954191.907906498] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954192.273823111] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=290 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954192.409525804] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954192.509309809] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954192.789123042] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=291 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954192.929042709] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954193.254105426] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954193.392582475] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=292 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954193.535520385] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954193.731788149] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954193.859774961] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=293 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954194.175795810] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954194.295709291] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=294 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954194.339490386] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954194.602604751] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954194.762383851] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=295 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954195.100592616] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954195.233124078] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954195.331074879] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=296 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954195.559176873] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954195.749380213] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=297 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954196.015334666] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954196.146150691] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954196.284812321] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=298 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954196.474744863] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954196.726581091] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=299 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954196.939481182] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954197.272175146] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=300 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954197.400710398] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954197.778370044] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=301 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954197.912672294] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954198.276146849] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=302 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954198.404368725] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954198.737154960] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=303 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954198.821190091] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954199.223024712] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954199.357416042] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=304 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954199.656453356] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954199.751778259] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=305 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954200.182785473] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954200.311865729] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=306 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954200.604797385] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954200.766415937] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=307 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954201.111180947] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954201.262940891] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=308 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954201.512433284] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954201.761013601] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=309 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954202.011336897] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954202.253229727] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=310 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954202.429594908] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954202.786744338] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=311 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954202.904432100] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954203.272154512] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=312 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954203.373216743] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954203.781415140] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=313 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954203.904201312] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954204.269697075] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954204.400481355] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=314 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954204.775263539] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=315 speed=0.00 heading=52.0 altitude=89.6
+[INFO] [1793954204.864687050] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954205.140302538] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954205.254967541] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=316 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954205.687588562] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954205.820613588] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=317 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954206.105854951] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954206.269232528] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=318 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954206.610848719] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954206.773936034] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=319 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954207.024557120] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954210.174197796] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=320 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954210.285964188] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=321 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954210.457417254] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954210.777912002] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=322 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954210.916437496] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954211.266978529] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=323 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954211.400103676] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954211.773537256] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=324 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954211.895601158] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954212.217422439] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=325 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954212.253720431] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954212.743296892] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954212.878556969] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=326 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954213.264224719] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954213.376070798] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=327 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954213.659242399] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954213.780255383] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=328 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954214.211060191] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954214.265437019] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=329 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954214.586852167] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954214.775275070] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=330 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954215.099127278] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954215.269381426] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=331 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954215.507383544] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954215.757121432] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=332 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954216.063499680] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954216.274232930] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=333 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954216.385813616] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954216.779836868] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=334 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954216.943659017] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954217.272384192] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=335 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954217.397101184] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954217.772776545] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=336 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954217.910208605] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954218.262964437] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954218.369219488] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=337 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954218.779882566] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=338 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954218.900668020] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954219.192059100] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954219.326698835] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=339 speed=0.00 heading=52.0 altitude=89.7
+[INFO] [1793954219.731284601] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954219.839127377] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=340 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954220.097927537] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954220.265526477] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=341 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954220.572284656] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954220.774004990] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=342 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954221.029768489] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954221.273710251] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=343 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954221.563085910] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954221.766879728] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=344 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954221.939311081] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954222.272155918] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=345 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954222.471785375] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954222.724354450] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=346 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954222.857856898] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954223.274813598] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=347 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954223.409736029] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954223.711632200] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954223.744166060] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=348 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954224.273995631] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=349 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954224.399824121] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954224.669638761] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954224.727694576] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=350 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954225.247291160] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954225.385820994] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=351 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954225.605330354] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954225.767317155] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=352 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954226.148818423] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954226.283300106] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=353 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954226.517602248] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954226.738714455] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=354 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954227.076145337] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954227.266463688] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=355 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954227.443798660] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954227.772833907] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=356 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954227.995656995] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954228.248061131] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=357 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954228.385664788] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954228.770028972] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=358 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954228.887677782] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954229.266535773] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=359 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954229.396491766] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954229.772530542] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=360 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954229.904971491] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954230.212090095] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954230.339081483] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=361 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954230.762171188] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954230.885442067] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=362 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954231.074402997] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954231.259277968] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=363 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954231.640955379] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954231.678567005] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=364 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954232.054005990] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954232.267754377] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=365 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954232.598456396] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954232.727333754] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=366 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954232.900788576] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954233.216593963] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=367 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954233.433525655] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954233.719851532] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=368 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954233.816425472] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954234.182238039] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=369 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954234.361739353] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954234.733985107] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=370 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954234.824296479] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954235.223436143] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=371 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954235.414369939] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954235.771091596] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954235.954443077] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=372 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954236.266906827] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=373 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954236.328759451] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954236.588705848] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954236.708096107] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=374 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954237.142407611] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954237.182451850] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=375 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954237.573081898] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954237.762664116] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=376 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954238.123659663] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954238.276199142] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=377 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954238.485259521] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954238.772812894] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=378 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954239.032914406] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954239.247906846] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=379 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954239.325619989] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954239.770023885] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=380 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954239.961366260] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954240.277779999] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=381 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954240.408699888] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954240.775467336] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=382 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954240.910950974] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954241.225017392] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954241.331544242] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=383 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954241.771328557] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=384 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954241.908172140] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954242.148355830] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954242.215512896] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=385 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954245.631841542] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=386 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954245.764077802] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954245.873951903] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=387 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954246.008746499] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954246.251514314] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=388 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954246.490808359] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954246.772760638] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=389 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954246.893800958] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954247.266415366] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=390 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954247.454364707] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954247.703946985] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=391 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954247.756478836] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954248.268823913] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=392 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954248.535151652] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954248.682312923] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954248.769803620] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=393 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954249.274236162] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=394 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954249.361260550] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954249.587539975] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954249.702458092] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=395 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954250.215657333] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=396 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954250.364435097] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954250.501092056] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954250.733707842] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=397 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954251.189410883] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954251.301156198] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=398 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954251.464601103] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954251.720455390] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=399 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954252.090558280] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954252.273989991] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=400 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954252.390266024] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954252.720403144] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=401 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954253.048927848] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954253.284776156] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=402 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954253.430586974] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954253.741787948] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=403 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954253.895075040] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954254.158022865] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954254.216166530] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=404 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954254.691128169] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=405 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954254.796529756] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954255.126692325] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954255.233050222] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=406 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954255.747517608] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=407 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954255.874374395] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954256.018326220] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954256.228867946] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=408 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954256.717480614] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954256.790411914] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=409 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954256.925451346] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954257.192787136] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=410 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954257.576434044] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954257.725235297] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=411 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954257.890336661] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954258.259847363] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=412 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954258.513894833] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954258.770682669] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=413 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954258.846795481] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954259.275564674] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=414 speed=0.00 heading=53.0 altitude=89.9
+[INFO] [1793954259.451202387] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954259.664440056] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954259.711836775] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=415 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954260.226234410] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=416 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954260.325929109] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954260.646795844] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954260.725978703] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=417 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954261.203559461] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=418 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954261.248704960] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954261.563136010] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954261.735005936] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=419 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954262.189382519] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954262.305959236] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=420 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954262.509203752] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954262.918266000] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=421 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954263.184456321] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954263.340027421] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=422 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954263.514857110] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954263.692855292] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=423 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954263.955836272] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954264.210579136] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=424 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954264.264101168] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954264.767137504] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=425 speed=0.00 heading=53.0 altitude=89.8
+[INFO] [1793954264.980754155] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.01 heading=52.0 altitude=89.8
+[INFO] [1793954265.161190348] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.01 heading=52.0 altitude=89.8
+[INFO] [1793954265.214325907] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=426 speed=0.01 heading=52.0 altitude=89.8
+[INFO] [1793954265.760983253] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=427 speed=0.01 heading=52.0 altitude=89.8
+[INFO] [1793954265.839269085] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954266.165129746] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954266.252451895] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=428 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954266.678375916] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=429 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954266.808379474] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954267.017312951] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954267.193826133] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=430 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954267.302136949] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954267.675054936] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954267.721574559] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=431 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954267.925333839] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954268.224669967] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=432 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954268.577624929] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954268.709922057] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=433 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954268.846694091] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954269.187044406] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=434 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954269.578755634] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954269.754080292] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=435 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954269.861744589] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954270.355642767] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=436 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954270.465653809] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954270.771230178] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954270.920266624] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=437 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954271.234665585] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=438 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954271.487584011] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954271.756370423] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954272.286903760] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=439 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954272.438265973] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954272.556168100] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=440 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954272.746462188] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954272.942668503] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=441 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954273.133762435] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954273.348938938] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954273.487086659] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=442 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954273.682595780] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954273.896248548] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=443 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954274.054289574] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954274.257575734] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954274.384943931] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=444 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954274.528840697] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954274.733415601] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954274.930202801] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=445 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954275.236870353] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954275.472488034] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=446 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954275.671920351] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954275.975390452] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=447 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954276.114682306] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954276.184396201] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954276.286053418] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=448 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954276.423200252] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954276.638749365] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954276.686289547] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=449 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954277.058883218] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954277.255362843] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954280.770885827] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=450 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954280.948995594] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=451 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954281.080570468] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954281.131682476] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954281.362207766] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954281.590467613] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=452 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954281.817239675] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954281.923628127] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=453 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954281.995961770] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954282.100497557] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954282.413016111] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=454 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954282.594723398] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954282.732729521] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954282.936588692] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=455 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954283.220804839] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954283.401256058] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=456 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954283.606646631] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954283.777916837] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954283.913409899] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=457 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954284.159693403] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954284.354549507] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=458 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954284.525694414] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954284.713782457] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954284.834963949] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=459 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954284.998712483] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954285.173325063] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954285.323768586] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=460 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954285.562123236] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954285.733178312] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954286.027283494] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=461 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954286.185328469] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954286.450780849] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=462 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954286.632331646] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954286.807623604] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954286.924325536] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=463 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954287.077916835] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954287.344059260] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=464 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954287.478418082] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954287.648246652] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954287.911187515] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=465 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954288.148380443] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954288.332247533] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=466 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954288.709758125] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954288.900263306] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=467 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954289.051955196] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954289.362391460] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954289.578955366] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=468 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954289.708614032] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954289.847033197] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=469 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954290.007933257] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954290.255149354] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954290.517074516] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=470 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954290.710644674] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954290.867071327] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=471 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954290.969709127] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954291.112010314] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954291.254023595] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954291.433686483] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=472 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954291.585468619] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954291.733784514] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954291.888233913] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=473 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954292.058922568] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954292.198398389] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954292.515694858] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=474 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954292.654481593] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954292.695692493] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=475 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954292.924268017] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954293.051076154] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954293.197079827] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=476 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954293.284188668] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954293.772573940] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=477 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954293.917267940] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954294.026077914] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954294.277665881] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=478 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954294.419936853] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954294.735423739] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954294.868071464] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=479 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954294.993834388] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954295.126984756] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954295.214740792] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=480 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954295.670630036] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954295.807185558] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=481 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954295.950516053] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954296.083307763] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954296.276575837] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=482 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954296.588013505] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954296.783077503] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954296.915732883] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=483 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954297.049675304] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954297.237388488] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=484 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954297.513095135] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954297.684267948] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954297.815091863] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=485 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954297.964943322] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954298.256773876] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=486 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954298.418330146] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954298.608302744] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954299.005079046] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=487 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954299.186424321] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954299.299447346] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=488 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954299.375986175] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954299.530507733] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954299.752834836] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=489 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954299.860220368] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954300.259665643] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954300.383387519] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=490 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954300.496844285] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954300.743001600] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954300.851517210] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=491 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954301.173569210] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954301.312699375] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=492 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954301.362946444] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954301.633728279] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954301.772693609] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=493 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954302.116307319] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954302.283740185] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=494 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954302.359524395] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954302.565109755] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954302.764420043] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=495 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954303.029287410] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954303.254543424] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954303.379615014] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=496 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954303.422643175] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954303.768248704] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=497 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954303.926866698] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954304.092124035] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954304.281150947] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=498 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954304.427504628] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954304.698942159] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=499 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954304.816964519] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954305.004947594] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954305.236595844] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=500 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954305.321182903] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954305.752644235] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=501 speed=0.00 heading=52.0 altitude=90.1
+[INFO] [1793954305.899006900] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954306.029528861] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954306.252544267] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954306.393327376] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=502 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954306.719365656] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954306.815462230] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=503 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954306.958183460] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954307.203336654] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954307.330306406] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=504 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954307.610201248] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954307.731528191] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=505 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954307.862428077] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954308.118023102] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954308.270031017] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=506 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954308.581480191] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954308.722893351] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954308.828742201] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=507 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954309.001615210] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954309.271225528] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=508 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954309.482830855] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954309.617632624] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954309.670324138] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=509 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954309.923874323] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954310.282869877] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=510 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954310.363107784] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954310.588922338] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954310.744447781] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=511 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954310.812632433] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954311.258755267] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=512 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954311.386273508] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954311.503462438] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954311.702949245] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=513 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954311.755537956] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954312.216894501] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954312.332380019] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=514 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954312.467798954] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954312.701015732] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954312.765168415] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=515 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954316.091708256] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=516 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954316.205623256] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954316.290228892] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=517 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954316.370265976] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954316.505452415] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954316.733216941] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=518 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954316.994901331] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954317.195602943] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954317.307288524] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=519 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954317.459600835] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954317.705847848] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=520 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954317.921308366] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954318.052966399] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954318.225519968] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=521 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954318.369568093] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954318.746553200] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=522 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954318.824809060] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954319.006940155] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954319.224514942] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=523 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954319.280339338] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954319.754882319] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=524 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954319.882499516] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954320.016811701] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954320.216218946] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954320.323845811] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=525 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954320.690493663] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954320.810467952] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=526 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954320.871277905] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954321.140701055] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954321.235434169] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=527 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954321.622136494] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954321.758545205] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954321.892829389] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=528 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954322.079186099] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954322.283624468] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=529 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954322.540043807] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954322.682419101] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954322.828261174] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=530 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954322.957258959] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954323.250904487] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=531 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954323.452646620] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954323.541045683] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954323.763814212] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=532 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954323.917337730] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954324.264652988] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=533 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954324.383692057] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954324.542703314] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954324.773144142] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=534 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954324.903805669] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954325.224694359] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=535 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954325.343194194] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954325.462870820] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954325.751377313] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=536 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954325.893507073] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954326.182013077] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954326.267201001] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=537 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954326.349334386] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954326.639820178] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954326.728731079] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=538 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954327.054322848] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954327.197075274] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954327.281118760] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=539 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954327.677853370] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954327.814846996] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=540 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954328.080294087] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954328.212387122] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954328.314614858] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=541 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954328.544203936] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954328.780932695] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=542 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954328.990618266] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954329.122342190] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954329.249378893] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=543 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954329.406970663] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954329.730658328] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=544 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954329.884123108] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954330.042027309] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954330.243683312] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=545 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954330.385841232] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954330.790234645] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=546 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954330.949941760] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954331.058005590] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954331.395845925] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=547 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954331.617009441] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954332.207782834] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954332.474313587] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=548 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954332.631088466] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954332.761720284] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954332.926920036] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=549 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954333.103880529] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954333.321319978] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954333.467148685] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=550 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954333.686851022] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954333.876949188] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=551 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954334.200375864] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954334.386490488] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=552 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954334.582718537] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954334.827684687] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954335.083225242] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=553 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954335.265499201] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954335.530695090] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=554 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954335.708239498] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954335.888250940] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=555 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954336.073024500] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954336.255511600] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954336.387327532] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=556 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954336.604746153] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954336.730306848] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954337.072869799] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=557 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954337.228667451] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954337.431450826] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=558 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954337.583772295] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954337.760806943] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954337.957954125] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=559 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954338.141618856] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954338.305451487] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=560 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954338.446365640] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954338.722577607] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954338.898235295] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=561 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954338.991529674] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954339.021405191] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954339.190804828] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954339.435397670] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=562 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954339.679228360] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954339.864584237] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=563 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954340.078196222] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954340.258937656] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954340.438325931] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=564 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954340.662936955] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954340.911673691] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=565 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954341.101981698] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954341.293419170] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954341.517736407] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=566 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954341.680521163] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954341.865768751] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=567 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954342.039674145] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954342.209993143] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954342.383876847] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=568 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954342.526362407] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954342.658560698] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954342.792014133] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=569 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954342.942007232] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954343.074821248] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954343.184298040] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954343.321830970] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=570 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954343.488578991] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=90.0
+[INFO] [1793954343.728102320] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954343.854407472] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=571 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954343.975869341] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954344.189704231] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954344.309237419] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=572 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954344.703719602] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954344.824705164] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=573 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954344.932363480] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954345.093914474] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954345.263050854] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=574 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954345.545343611] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954345.687886688] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954345.813995554] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=575 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954346.007329360] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954346.258481311] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=576 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954346.524465268] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954346.671670075] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954346.819466518] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=577 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954346.924557501] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954347.312156133] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=578 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954347.490517257] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954347.592347122] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954347.745315532] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=579 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954347.859167627] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954351.139647185] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=580 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954351.219039259] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=581 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954351.300390241] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954351.381201521] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954351.639571048] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954351.735810139] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=582 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954352.101835826] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954352.185626246] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954352.302381205] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=583 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954352.618218793] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954352.740057785] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=584 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954353.093016510] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954353.195957981] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954353.301417444] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=585 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954353.544182340] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954353.757034562] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=586 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954354.098979536] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954354.238030111] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954354.434240220] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=587 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954354.694650123] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954354.899767376] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=588 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954355.084852914] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954355.264109525] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954355.516998676] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=589 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954355.656082218] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954355.866250612] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=590 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954356.050693648] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954356.216624203] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954356.373924743] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=591 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954356.499263016] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954356.867584053] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=592 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954357.055731706] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954357.268848552] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954357.406839563] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=593 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954357.563732215] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954357.715489654] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954357.871431679] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=594 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954358.060762176] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954358.214383085] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954358.328874692] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=595 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954358.712976005] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954358.855964838] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=596 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954359.054706213] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954359.211324356] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954359.305274346] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=597 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954359.494768510] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954359.554762274] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954359.733341979] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=598 speed=0.00 heading=52.0 altitude=89.8
+[INFO] [1793954359.944745439] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954360.179465866] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=599 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954360.388952964] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954360.430419793] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954360.721751223] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=600 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954360.855853245] [seaowls_ocs]: [SEAOWLS ROS2] UAV1 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954361.242815902] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=601 speed=0.00 heading=52.0 altitude=89.9
+[INFO] [1793954361.777660899] [seaowls_ocs]: [SEAOWLS OCS] UAV1 heartbeat seq=602 speed=0.00 heading=52.0 altitude=89.9
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/install/seaowls_robocommand/lib/seaowls_robocommand/seaowls_ocs", line 33, in <module>
+    sys.exit(load_entry_point('seaowls-robocommand', 'console_scripts', 'seaowls_ocs')())
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/build/seaowls_robocommand/seaowls_robocommand/ocs_node.py", line 463, in main
+    n.m.disconnect()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 1892, in disconnect
+    return self._send_disconnect(reasoncode, properties)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3610, in _send_disconnect
+    return self._packet_queue(command, packet, 0, 0)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3791, in _packet_queue
+    return self.loop_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 2121, in loop_write
+    rc = self._packet_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3226, in _packet_write
+    self._do_on_disconnect(
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 4383, in _do_on_disconnect
+    on_disconnect(
+TypeError: Ocs.disconnected() takes from 4 to 5 positional arguments but 6 were given
+[ros2run]: Process exited with failure 1

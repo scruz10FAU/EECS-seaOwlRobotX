@@ -1,0 +1,20 @@
+usage: mock_robocommand_course.py [-h] [--host HOST] [--port PORT] [--clear]
+                                  [--dry-run] [--period PERIOD]
+                                  [--course-id COURSE_ID]
+                                  [--pinger-freq-hz PINGER_FREQ_HZ]
+                                  [--center LAT,LON] [--size W,L]
+                                  [--rotation-deg ROTATION_DEG]
+                                  [--corner LAT,LON]
+                                  [--transit-corner LAT,LON]
+                                  [--invalid {open,two-points,self-intersecting,bad-coords,too-small,too-large}]
+mock_robocommand_course.py: error: argument --center: expected one argument
+Cleared the retained course on robocommand/robotx/course (localhost:1883)
+Published RxCourse (retained) -> robocommand/robotx/course on localhost:1883
+RxCourse course_id='MOCK' pinger_freq_hz=25000
+  corners: 5 points
+    1.28286771, 103.84651768
+    1.28286771, 103.84674232
+    1.28309229, 103.84674232
+    1.28309229, 103.84651768
+    1.28286771, 103.84651768
+  uav_transit_area: 0 points (empty)

@@ -1,0 +1,99 @@
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4, inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 1 — listening for beacon messages
+[beacon-ground] [pos] no GPS fix (fix_type=0)
+[beacon-ground] current_task 1 -> 2
+[18:21:19] beacon: lat=26.371200 lon=-80.103400 color=red blinking=False tracking_id=0 msg_id=0 (duplicates skipped: 0)
+[18:21:20] beacon: lat=26.371350 lon=-80.103250 color=green blinking=True tracking_id=1 msg_id=1 (duplicates skipped: 1)
+[beacon-ground] SafePassage published: 1 buoys
+[18:21:21] beacon: lat=26.371500 lon=-80.103100 color=blue blinking=True tracking_id=2 msg_id=2 (duplicates skipped: 2)
+[beacon-ground] SafePassage published: 2 buoys
+[18:21:22] beacon: lat=26.371650 lon=-80.102950 color=red blinking=True tracking_id=3 msg_id=3 (duplicates skipped: 3)
+[beacon-ground] SafePassage published: 3 buoys
+[18:21:23] beacon: lat=26.371800 lon=-80.102800 color=unknown blinking=unknown tracking_id=4 msg_id=4 (duplicates skipped: 4)
+[18:21:24] beacon: lat=26.371200 lon=-80.103400 color=red blinking=False tracking_id=5 msg_id=5 (duplicates skipped: 5)
+[18:21:25] beacon: lat=26.371350 lon=-80.103250 color=green blinking=True tracking_id=6 msg_id=6 (duplicates skipped: 6)
+[18:21:26] beacon: lat=26.371500 lon=-80.103100 color=blue blinking=True tracking_id=7 msg_id=7 (duplicates skipped: 7)
+[18:21:27] beacon: lat=26.371650 lon=-80.102950 color=red blinking=True tracking_id=8 msg_id=8 (duplicates skipped: 8)
+[18:21:28] beacon: lat=26.371800 lon=-80.102800 color=unknown blinking=unknown tracking_id=9 msg_id=9 (duplicates skipped: 9)
+[18:21:28] beacon: lat=26.371200 lon=-80.103400 color=red blinking=False tracking_id=10 msg_id=10 (duplicates skipped: 10)
+[18:21:32] beacon: lat=26.371350 lon=-80.103250 color=green blinking=True tracking_id=11 msg_id=11 (duplicates skipped: 11)
+[18:21:33] beacon: lat=26.371500 lon=-80.103100 color=blue blinking=True tracking_id=12 msg_id=12 (duplicates skipped: 12)
+[18:21:34] beacon: lat=26.371650 lon=-80.102950 color=red blinking=True tracking_id=13 msg_id=13 (duplicates skipped: 13)
+[18:21:35] beacon: lat=26.371800 lon=-80.102800 color=unknown blinking=unknown tracking_id=14 msg_id=14 (duplicates skipped: 14)
+[18:21:36] beacon: lat=26.371200 lon=-80.103400 color=red blinking=False tracking_id=15 msg_id=15 (duplicates skipped: 15)
+[18:21:37] beacon: lat=26.371350 lon=-80.103250 color=green blinking=True tracking_id=16 msg_id=16 (duplicates skipped: 16)
+[18:21:38] beacon: lat=26.371500 lon=-80.103100 color=blue blinking=True tracking_id=17 msg_id=17 (duplicates skipped: 17)
+[18:21:39] beacon: lat=26.371650 lon=-80.102950 color=red blinking=True tracking_id=18 msg_id=18 (duplicates skipped: 18)
+[18:21:40] beacon: lat=26.371800 lon=-80.102800 color=unknown blinking=unknown tracking_id=19 msg_id=19 (duplicates skipped: 19)
+[18:21:41] beacon: lat=26.371200 lon=-80.103400 color=red blinking=False tracking_id=20 msg_id=20 (duplicates skipped: 20)
+[18:21:42] beacon: lat=26.371350 lon=-80.103250 color=green blinking=True tracking_id=21 msg_id=21 (duplicates skipped: 21)
+[18:21:42] beacon: lat=26.371500 lon=-80.103100 color=blue blinking=True tracking_id=22 msg_id=22 (duplicates skipped: 22)
+[18:21:43] beacon: lat=26.371650 lon=-80.102950 color=red blinking=True tracking_id=23 msg_id=23 (duplicates skipped: 23)
+[18:21:44] beacon: lat=26.371800 lon=-80.102800 color=unknown blinking=unknown tracking_id=24 msg_id=24 (duplicates skipped: 24)
+[18:21:45] beacon: lat=26.371200 lon=-80.103400 color=red blinking=False tracking_id=25 msg_id=25 (duplicates skipped: 25)
+[18:21:46] beacon: lat=26.371350 lon=-80.103250 color=green blinking=True tracking_id=26 msg_id=26 (duplicates skipped: 26)
+[18:21:47] beacon: lat=26.371500 lon=-80.103100 color=blue blinking=True tracking_id=27 msg_id=27 (duplicates skipped: 27)
+[18:21:48] beacon: lat=26.371650 lon=-80.102950 color=red blinking=True tracking_id=28 msg_id=28 (duplicates skipped: 28)
+[18:21:49] beacon: lat=26.371800 lon=-80.102800 color=unknown blinking=unknown tracking_id=29 msg_id=29 (duplicates skipped: 29)
+[18:21:50] beacon: lat=26.371200 lon=-80.103400 color=red blinking=False tracking_id=30 msg_id=30 (duplicates skipped: 30)
+[18:21:51] beacon: lat=26.371350 lon=-80.103250 color=green blinking=True tracking_id=31 msg_id=31 (duplicates skipped: 31)
+[18:21:52] beacon: lat=26.371500 lon=-80.103100 color=blue blinking=True tracking_id=32 msg_id=32 (duplicates skipped: 32)
+[18:21:53] beacon: lat=26.371650 lon=-80.102950 color=red blinking=True tracking_id=33 msg_id=33 (duplicates skipped: 33)
+[18:21:54] beacon: lat=26.371800 lon=-80.102800 color=unknown blinking=unknown tracking_id=34 msg_id=34 (duplicates skipped: 34)
+[18:21:55] beacon: lat=26.371200 lon=-80.103400 color=red blinking=False tracking_id=35 msg_id=35 (duplicates skipped: 35)
+[18:21:55] beacon: lat=26.371350 lon=-80.103250 color=green blinking=True tracking_id=36 msg_id=36 (duplicates skipped: 36)
+[18:21:56] beacon: lat=26.371500 lon=-80.103100 color=blue blinking=True tracking_id=37 msg_id=37 (duplicates skipped: 37)
+[18:21:57] beacon: lat=26.371650 lon=-80.102950 color=red blinking=True tracking_id=38 msg_id=38 (duplicates skipped: 38)
+[18:21:58] beacon: lat=26.371800 lon=-80.102800 color=unknown blinking=unknown tracking_id=39 msg_id=39 (duplicates skipped: 39)
+[18:21:59] beacon: lat=26.371200 lon=-80.103400 color=red blinking=False tracking_id=40 msg_id=40 (duplicates skipped: 40)
+[18:22:00] beacon: lat=26.371350 lon=-80.103250 color=green blinking=True tracking_id=41 msg_id=41 (duplicates skipped: 41)
+[18:22:01] beacon: lat=26.371500 lon=-80.103100 color=blue blinking=True tracking_id=42 msg_id=42 (duplicates skipped: 42)
+[18:22:02] beacon: lat=26.371650 lon=-80.102950 color=red blinking=True tracking_id=43 msg_id=43 (duplicates skipped: 43)
+[18:22:03] beacon: lat=26.371800 lon=-80.102800 color=unknown blinking=unknown tracking_id=44 msg_id=44 (duplicates skipped: 44)
+[18:22:04] beacon: lat=26.371200 lon=-80.103400 color=red blinking=False tracking_id=45 msg_id=45 (duplicates skipped: 45)
+[18:22:07] beacon: lat=26.371350 lon=-80.103250 color=green blinking=True tracking_id=46 msg_id=46 (duplicates skipped: 46)
+[18:22:08] beacon: lat=26.371500 lon=-80.103100 color=blue blinking=True tracking_id=47 msg_id=47 (duplicates skipped: 47)
+[18:22:09] beacon: lat=26.371650 lon=-80.102950 color=red blinking=True tracking_id=48 msg_id=48 (duplicates skipped: 48)
+[beacon-ground] current_task 2 -> 1
+[beacon-ground] 49 unique beacon messages, 49 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 700, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 696, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4, inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 0 — listening for beacon messages
+[beacon-ground] [pos] no GPS fix (fix_type=0)
+[beacon-ground] [fence] UPLOADING course 'MOCK'
+[beacon-ground] [fence] Uploading 1 inclusion polygon(s), 4 vertices, to system 1
+[beacon-ground] [fence] ✓ Fence accepted by PX4
+[beacon-ground] [fence] Waiting: no home position (HOME_POSITION) and no 3D GPS fix with ellipsoid height (GPS_RAW_INT) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] [fence] WAITING course 'MOCK': no home position (HOME_POSITION) and no 3D GPS fix with ellipsoid height (GPS_RAW_INT) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 700, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 696, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241

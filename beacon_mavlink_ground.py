@@ -65,7 +65,7 @@ from utils.beacon_mavlink_protocol import (
 from utils.px4_fence import FenceUploader
 from utils.geofence_check import (
     MAX_UAV_ALTITUDE_HAE_M, fence_problems, inset_polygon, min_clearance_m,
-    validate_altitude, validate_course,
+    validate_altitude, validate_course, course_warnings, simple_ring,
 )
 
 DEFAULT_ROS_TOPIC = "/seabird/beacon_info"
@@ -79,6 +79,11 @@ DEFAULT_FENCE_STATUS_TOPIC = "/seaowls/uav1/mission/geofence_status"
 HEARTBEAT_STALE_S = 3.0
 # Upper bound on VehicleStatus publish rate (heartbeat + position-driven).
 STATUS_MAX_HZ = 5.0
+# '[pos]' line interval while the UAV has a 3D GPS fix.
+POSITION_PRINT_S = 5.0
+# This script's MAVLink system ID -- not 255, which QGC (and the ELRS
+# router's GCS heartbeat) use.
+GROUND_MAVLINK_SYSID = 246
 
 # PX4 modes (mavutil.mode_string_v10 names) reported as STATE_AUTO; any other
 # mode is STATE_MANUAL. Arming doesn't affect the state -- only
@@ -427,7 +432,9 @@ def main():
             nonlocal pending_fence
             pending_fence = msg
 
-        ros_node.create_subscription(UavGeofence, args.geofence_topic, on_geofence, 10)
+        # Latched (seaowls_ocs publishes it TRANSIENT_LOCAL): starting after the
+        # OCS got the retained course still delivers it.
+        ros_node.create_subscription(UavGeofence, args.geofence_topic, on_geofence, latched)
         onboard_publisher = ros_node.create_publisher(UavGeofence, args.onboard_topic, latched)
         fence_status_publisher = ros_node.create_publisher(String, args.fence_status_topic, latched)
         print(f"[beacon-ground] Uploading geofence from ROS2 topic {args.geofence_topic} to PX4"
@@ -435,14 +442,19 @@ def main():
               + f", inset {args.fence_inset_m:g} m, ceiling {args.ceiling_margin_m:g} m under the limit;"
               f" readback on {args.onboard_topic}")
 
-    def publish_fence_status(course_id, state, reasons=(), **extra):
-        """Log a geofence round-trip step and publish it as JSON."""
-        reasons = list(reasons)
+    def publish_fence_status(course_id, state, reasons=(), warnings=(), **extra):
+        """Log a geofence round-trip step and publish it as JSON. Warnings
+        (e.g. corners reordered, implausible size) don't block."""
+        reasons, warnings = list(reasons), list(warnings)
+        if state in ("uploading", "refused"):   # printed once; VALID carries them in the JSON
+            for w in warnings:
+                print(f"[beacon-ground] [fence] WARNING course {course_id!r}: {w}")
         line = f"[beacon-ground] [fence] {state.upper()} course {course_id!r}"
         print(line + (": " + "; ".join(reasons) if reasons else ""))
         if fence_status_publisher is not None:
             fence_status_publisher.publish(String(data=json.dumps(dict(
-                course_id=course_id, state=state, reasons=reasons, time=time.time(), **extra))))
+                course_id=course_id, state=state, reasons=reasons, warnings=warnings,
+                time=time.time(), **extra))))
 
     def ring(lats, lons):
         return [(float(a), float(b)) for a, b in zip(lats, lons)]
@@ -458,7 +470,10 @@ def main():
         ))
 
     print(f"[beacon-ground] Connecting to {args.mavlink_endpoint} ...")
-    mav = mavutil.mavlink_connection(args.mavlink_endpoint, baud=args.baud)
+    # Own MAVLink system ID: QGC is also 255, and PX4 addresses mission
+    # replies by system ID -- sharing it let QGC take our fence readback.
+    mav = mavutil.mavlink_connection(args.mavlink_endpoint, baud=args.baud,
+                                     source_system=GROUND_MAVLINK_SYSID)
     mav.wait_heartbeat()
     print(f"[beacon-ground] Heartbeat received from system {mav.target_system} "
           f"— listening for beacon messages")
@@ -469,6 +484,27 @@ def main():
               f"until the UAV reports a GPS fix / home")
     last_fence_key = None  # skip re-checking/re-uploading an unchanged course
     fence_job = None       # the upload in progress: course, transit, course_id
+
+    last_pos_print = 0.0
+    had_fix = None
+
+    def report_position(now):
+        """'[pos]' line every POSITION_PRINT_S while there's a 3D GPS fix, and
+        once when the fix is lost -- the GUI centres the mock course on it."""
+        nonlocal last_pos_print, had_fix
+        gps = cache.get("GPS_RAW_INT")
+        fix = gps is not None and gps.fix_type >= 3
+        if fix:
+            gpos = cache.get("GLOBAL_POSITION_INT")
+            lat, lon = (gpos.lat, gpos.lon) if gpos and (gpos.lat or gpos.lon) else (gps.lat, gps.lon)
+            if not had_fix or now - last_pos_print >= POSITION_PRINT_S:
+                print(f"[beacon-ground] [pos] 3D fix lat={lat * 1e-7:.7f} lon={lon * 1e-7:.7f} "
+                      f"sats={gps.satellites_visible}", flush=True)
+                last_pos_print = now
+        elif had_fix is not False:
+            print(f"[beacon-ground] [pos] no GPS fix (fix_type={gps.fix_type if gps else 'none'})",
+                  flush=True)
+        had_fix = fix
 
     seen = {}  # msg_id -> time first received
     unique = duplicates = 0
@@ -501,7 +537,21 @@ def main():
                     if not problems and ceiling <= 0:
                         problems.append(f"altitude limit {limit:g} m HAE minus the "
                                         f"{args.ceiling_margin_m:g} m margin is not above 0")
-                    # 2. Inset (refused if it collapses the polygon).
+                    # 2. Corner order and size don't make a course INVALID: crossing
+                    #    corners become a non-crossing polygon through the same
+                    #    corners, and an implausible size is only a warning.
+                    warnings = []
+                    if not problems:
+                        warnings += [f"course boundary {w}" for w in course_warnings(course)]
+                        course, how = simple_ring(course)
+                        if how == "convex hull":
+                            warnings.append("course boundary: corners with equal bearings -- "
+                                            "used their convex hull")
+                        if transit and not validate_course(transit):
+                            transit, _ = simple_ring(transit)
+                            if args.fence_include_transit:
+                                warnings += [f"transit area {w}" for w in course_warnings(transit)]
+                    # 3. Inset (refused if it collapses the polygon).
                     polygons = []
                     if not problems:
                         try:
@@ -511,13 +561,15 @@ def main():
                         except ValueError as e:
                             problems.append(str(e))
                     if problems:
-                        publish_fence_status(course_id, "refused", problems)
+                        publish_fence_status(course_id, "refused", problems, warnings)
                     else:
-                        # 3. Upload, then read back (FenceUploader).
-                        publish_fence_status(course_id, "uploading", inset_m=args.fence_inset_m,
-                                             ceiling_hae_m=ceiling)
+                        # 4. Upload, then read back (FenceUploader).
+                        publish_fence_status(course_id, "uploading", warnings=warnings,
+                                             inset_m=args.fence_inset_m, ceiling_hae_m=ceiling)
                         fence.start(last_heartbeat.get_srcSystem(), polygons, ceiling)
-                        fence_job = dict(course_id=course_id, course=course, transit=transit)
+                        # The readback is checked against the (repaired) course.
+                        fence_job = dict(course_id=course_id, course=course, transit=transit,
+                                         warnings=warnings)
             fence.tick(time.monotonic())
             if (fence_job is not None and fence.waiting_reason
                     and fence_job.get("waiting") != fence.waiting_reason):
@@ -528,7 +580,7 @@ def main():
                 if fence.state == "failed":
                     publish_fence_status(job["course_id"], "failed", [fence.failure_reason])
                 else:
-                    # 4. Check what PX4 actually holds, then hand it to the OCS.
+                    # 5. Check what PX4 actually holds, then hand it to the OCS.
                     rb = fence.readback_polygons or []
                     hae = fence.readback_ceiling_hae_m
                     problems = []
@@ -558,7 +610,8 @@ def main():
                         out.transit_area_longitude = [p[1] for p in job["transit"] or []]
                         onboard_publisher.publish(out)
                         publish_fence_status(
-                            job["course_id"], "valid", inset_m=args.fence_inset_m,
+                            job["course_id"], "valid", warnings=job["warnings"],
+                            inset_m=args.fence_inset_m,
                             clearance_m=round(min_clearance_m(onboard, job["course"]), 2),
                             ceiling_hae_m=round(hae, 2), vertices=len(onboard) - 1,
                             home_hae_assumed=fence.home_hae_assumed)
@@ -607,6 +660,8 @@ def main():
                 continue
             if msg_type != "MEMORY_VECT":
                 cache[msg_type] = msg
+                if msg_type == "GPS_RAW_INT":
+                    report_position(now)
                 # 1 Hz heartbeats alone can trip seaowls_ocs's 2 s stale check
                 # after one dropped packet -- also publish on ATTITUDE (the
                 # fastest stream over ELRS), capped at STATUS_MAX_HZ, while the

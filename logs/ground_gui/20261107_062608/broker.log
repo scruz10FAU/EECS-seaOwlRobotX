@@ -1,0 +1,9 @@
+1794003988: mosquitto version 2.0.11 starting
+1794003988: Using default config.
+1794003988: Starting in local only mode. Connections will only be possible from clients running on this machine.
+1794003988: Create a configuration file which defines a listener to allow remote access.
+1794003988: For more details see https://mosquitto.org/documentation/authentication-methods/
+1794003988: Opening ipv4 listen socket on port 1883.
+1794003988: Error: Address already in use
+1794003988: Opening ipv6 listen socket on port 1883.
+1794003988: Error: Address already in use

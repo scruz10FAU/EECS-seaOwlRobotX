@@ -8,6 +8,11 @@ last point); validate_course() requires that, the other functions accept
 either and return closed rings.
 
 Every check returns a list of human-readable problems -- empty means VALID.
+INVALID is what RoboCommand refuses (fence outside the course + transit area,
+not closed / too few points, bad ceiling) plus coordinates that can't be a
+course at all. Corner order and size are NOT invalid: simple_ring() turns
+crossing corners into a non-crossing polygon, and course_warnings() flags an
+implausible size without blocking.
 
 The fence-vs-course check mirrors RoboCommand's official test server
 (rc_test/test_server.py geofence_problems): every point along the fence's
@@ -23,6 +28,7 @@ FENCE_TOLERANCE_M = 1.0      # as the official test server's GEOFENCE_TOLERANCE_
 MAX_UAV_ALTITUDE_HAE_M = 50.0  # official test server default; set to the competition's limit
 MIN_SPAN_M = 5.0             # a course smaller than this across is not a real course
 MAX_SPAN_M = 1000.0          # nor one larger than this
+MIN_FENCE_AREA_M2 = 0.25     # an inset fence smaller than this has collapsed to ~nothing
 
 
 # ── Geometry helpers (local east/north metres around an origin) ──────────────
@@ -119,9 +125,24 @@ def _outside_by(p, pts):
 
 # ── Checks ──────────────────────────────────────────────────────────────────
 
-def validate_course(ring, min_span_m=MIN_SPAN_M, max_span_m=MAX_SPAN_M):
-    """Problems with a course boundary (or transit area) ring as received."""
-    problems = []
+def _unique(pts):
+    """Distinct corners, first occurrence order."""
+    seen, out = set(), []
+    for p in pts:
+        if p not in seen:
+            seen.add(p)
+            out.append(p)
+    return out
+
+
+def validate_course(ring):
+    """
+    INVALID problems with a course boundary (or transit area) ring as
+    received: not number pairs, invalid coordinates, not closed, or fewer than
+    3 distinct corners that span an area. Corner ORDER is not a problem --
+    simple_ring() repairs crossing edges -- and size is only a warning
+    (course_warnings()).
+    """
     try:
         ring = [(float(lat), float(lon)) for lat, lon in ring]
     except (TypeError, ValueError):
@@ -133,29 +154,78 @@ def validate_course(ring, min_span_m=MIN_SPAN_M, max_span_m=MAX_SPAN_M):
            if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180)]
     if bad:
         return [f"invalid latitude/longitude at point(s) {bad}"]
+    problems = []
     if ring[0] != ring[-1]:
         problems.append("not closed: the first and last points must be the same")
-    pts = _open(ring)
-    if len(set(pts)) < 3:
-        problems.append(f"only {len(set(pts))} distinct corner(s); needs at least 3")
-        return problems
-    if len(set(pts)) != len(pts):
-        problems.append("repeats a corner (other than closing the ring)")
-    xy = [_xy(p, pts[0]) for p in pts]
-    # Crossing edges first: a symmetric bow-tie also has zero signed area, and
-    # "edges cross" is the reason a person can act on.
-    if _self_intersects(xy) and not _collinear(xy):
-        problems.append("edges cross each other (self-intersecting polygon)")
-        return problems
-    if abs(_signed_area(xy)) < 1e-6:
+    pts = _unique(_open(ring))
+    if len(pts) < 3:
+        problems.append(f"only {len(pts)} distinct corner(s); needs at least 3")
+    elif _collinear([_xy(p, pts[0]) for p in pts]):
         problems.append("has zero area (all corners on a line)")
-        return problems
+    return problems
+
+
+def course_warnings(ring, min_span_m=MIN_SPAN_M, max_span_m=MAX_SPAN_M):
+    """Non-blocking notes on a ring that passed validate_course()."""
+    pts = [(float(a), float(b)) for a, b in _open(ring)]
+    uniq = _unique(pts)
+    warnings = []
+    if len(uniq) != len(pts):
+        warnings.append("repeats a corner: the duplicate was dropped")
+    xy = [_xy(p, uniq[0]) for p in uniq]
+    if _self_intersects(xy):
+        warnings.append("corners are in an order whose edges cross: reordered into a "
+                        "non-crossing polygon through the same corners")
     span = max(math.dist(a, b) for a in xy for b in xy)
     if span < min_span_m:
-        problems.append(f"is only {span:.1f} m across (minimum {min_span_m:g} m)")
+        warnings.append(f"is only {span:.1f} m across (a real course is >= {min_span_m:g} m: "
+                        f"check the coordinates)")
     elif span > max_span_m:
-        problems.append(f"is {span:.0f} m across (maximum {max_span_m:g} m)")
-    return problems
+        warnings.append(f"is {span:.0f} m across (a real course is <= {max_span_m:g} m: "
+                        f"check the coordinates)")
+    return warnings
+
+
+def _convex_hull(pts):
+    """Andrew's monotone chain, counter-clockwise, on (x, y) points."""
+    pts = sorted(set(pts))
+    lower, upper = [], []
+    for p in pts:
+        while len(lower) >= 2 and _cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+    for p in reversed(pts):
+        while len(upper) >= 2 and _cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+    return lower[:-1] + upper[:-1]
+
+
+def simple_ring(ring):
+    """
+    (closed ring, how) -- the course as a NON-CROSSING polygon, whatever
+    order its corners arrived in. A ring that doesn't cross (and repeats no
+    corner) is returned exactly as given, so concave courses keep their
+    shape: how = None. Otherwise its distinct corners are ordered by angle
+    around their centre (how = "reordered"), which passes through every
+    corner without crossing; if equal angles still leave a crossing, the
+    convex hull is used (how = "convex hull"). Coordinates are never changed.
+    """
+    pts = [(float(a), float(b)) for a, b in _open(ring)]
+    uniq = _unique(pts)
+    origin = uniq[0]
+    xy = {p: _xy(p, origin) for p in uniq}
+    if len(uniq) == len(pts) and not _self_intersects([xy[p] for p in uniq]):
+        return _closed(uniq), None
+    cx = sum(q[0] for q in xy.values()) / len(uniq)
+    cy = sum(q[1] for q in xy.values()) / len(uniq)
+    ordered = sorted(uniq, key=lambda p: (math.atan2(xy[p][1] - cy, xy[p][0] - cx),
+                                          math.hypot(xy[p][0] - cx, xy[p][1] - cy)))
+    if not _self_intersects([xy[p] for p in ordered]):
+        return _closed(ordered), "reordered"
+    by_xy = {v: k for k, v in xy.items()}
+    hull = [by_xy[q] for q in _convex_hull(list(xy.values()))]
+    return _closed(hull), "convex hull"
 
 
 def validate_altitude(max_alt_hae_m, limit_hae_m=MAX_UAV_ALTITUDE_HAE_M,
@@ -216,9 +286,14 @@ def inset_polygon(ring, meters):
         out.append((p1[0] + d1[0] * t, p1[1] + d1[1] * t))
 
     new_area = _signed_area(out)
-    if new_area * area <= 0 or abs(new_area) >= abs(area) or _self_intersects(out) \
-            or any(not _inside(q, xy) for q in out):
-        raise ValueError(f"a {meters:g} m inset collapses this polygon")
+    # An inset larger than the polygon allows can turn it inside out into a
+    # smaller copy with the SAME orientation (a square mirrors through its
+    # centre), so also require every corner to be ~`meters` from the edges.
+    if new_area * area <= 0 or abs(new_area) >= abs(area) or abs(new_area) < MIN_FENCE_AREA_M2 \
+            or _self_intersects(out) \
+            or any(not _inside(q, xy) for q in out) \
+            or any(_dist_to_edges(q, xy) < 0.99 * meters for q in out):
+        raise ValueError(f"a {meters:g} m inset collapses this polygon (too small for it)")
     return _closed([_latlon(q, origin) for q in out])
 
 
