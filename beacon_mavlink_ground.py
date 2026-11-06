@@ -372,6 +372,12 @@ def main():
         help="Set PX4's ceiling this far under the altitude limit (default: 1.0)",
     )
     ap.add_argument(
+        "--assume-home-hae-m", type=float, default=None,
+        help="BENCH ONLY: home height above the ellipsoid (m) to assume while the UAV has no "
+             "3D GPS fix / home position (indoors), so the round trip can finish. Never at "
+             "the competition: the declared ceiling is only as right as this guess.",
+    )
+    ap.add_argument(
         "--max-alt-limit-hae-m", type=float, default=MAX_UAV_ALTITUDE_HAE_M,
         help="Competition maximum UAV altitude, m HAE: a higher limit is REFUSED "
              f"(default: {MAX_UAV_ALTITUDE_HAE_M:g})",
@@ -456,7 +462,11 @@ def main():
     mav.wait_heartbeat()
     print(f"[beacon-ground] Heartbeat received from system {mav.target_system} "
           f"— listening for beacon messages")
-    fence = FenceUploader(mav, log=lambda s: print(f"[beacon-ground] {s}"))
+    fence = FenceUploader(mav, log=lambda s: print(f"[beacon-ground] {s}"),
+                          assume_home_hae_m=args.assume_home_hae_m)
+    if args.assume_home_hae_m is not None:
+        print(f"[beacon-ground] BENCH: assuming home {args.assume_home_hae_m:g} m HAE "
+              f"until the UAV reports a GPS fix / home")
     last_fence_key = None  # skip re-checking/re-uploading an unchanged course
     fence_job = None       # the upload in progress: course, transit, course_id
 
@@ -509,6 +519,10 @@ def main():
                         fence.start(last_heartbeat.get_srcSystem(), polygons, ceiling)
                         fence_job = dict(course_id=course_id, course=course, transit=transit)
             fence.tick(time.monotonic())
+            if (fence_job is not None and fence.waiting_reason
+                    and fence_job.get("waiting") != fence.waiting_reason):
+                fence_job["waiting"] = fence.waiting_reason
+                publish_fence_status(fence_job["course_id"], "waiting", [fence.waiting_reason])
             if fence_job is not None and fence.state in ("done", "failed"):
                 job, fence_job = fence_job, None
                 if fence.state == "failed":
@@ -546,7 +560,11 @@ def main():
                         publish_fence_status(
                             job["course_id"], "valid", inset_m=args.fence_inset_m,
                             clearance_m=round(min_clearance_m(onboard, job["course"]), 2),
-                            ceiling_hae_m=round(hae, 2), vertices=len(onboard) - 1)
+                            ceiling_hae_m=round(hae, 2), vertices=len(onboard) - 1,
+                            home_hae_assumed=fence.home_hae_assumed)
+                        if fence.home_hae_assumed:
+                            print("[beacon-ground] [fence] NOTE: ceiling HAE uses the ASSUMED "
+                                  "home height (bench) -- not valid for the competition")
 
             msg = mav.recv_match(
                 type=["MEMORY_VECT", "HEARTBEAT", "GLOBAL_POSITION_INT",

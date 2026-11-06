@@ -56,14 +56,30 @@ def open_polygon(lats, lons):
 class FenceUploader:
     """One fence + ceiling upload at a time; start() again to replace it."""
 
-    def __init__(self, mav, log=print):
+    def __init__(self, mav, log=print, assume_home_hae_m=None):
+        """assume_home_hae_m: BENCH ONLY -- home height above the ellipsoid to
+        use while PX4 has no HOME_POSITION / 3D GPS fix (indoors), so the HAE
+        ceiling can still be converted. Real values always win once they arrive."""
         self.mav = mav
         self.log = log
         self.state = "idle"   # idle | fence | ceiling | readback | done | failed
         self._home_amsl_m = None
         self._geoid_sep_m = None
+        self.assume_home_hae_m = assume_home_hae_m
         self.failure_reason = None
+        self.waiting_reason = None   # set while the ceiling step waits for GPS / home
+        self.home_hae_assumed = False
         self._clear_readback()
+
+    def _home_hae(self):
+        """Home height above the ellipsoid: measured, else the bench assumption, else None."""
+        if self._home_amsl_m is not None and self._geoid_sep_m is not None:
+            self.home_hae_assumed = False
+            return self._home_amsl_m + self._geoid_sep_m
+        if self.assume_home_hae_m is not None:
+            self.home_hae_assumed = True
+            return self.assume_home_hae_m
+        return None
 
     def _clear_readback(self):
         self.readback_polygons = None            # [[(lat, lon), ...], ...] as PX4 holds them
@@ -81,6 +97,7 @@ class FenceUploader:
         self._readback = readback
         self._clear_readback()
         self.failure_reason = None
+        self.waiting_reason = None
         # mission_type (fence vs mission) is a MAVLink 2 field: over a MAVLink 1
         # dialect PX4 would take this as a plain mission upload.
         dialect = sys.modules[type(self.mav.mav).__module__]
@@ -179,10 +196,11 @@ class FenceUploader:
               and msg.get_srcSystem() == self._target and msg.param_id == CEILING_PARAM):
             self.readback_ceiling_above_home_m = float(msg.param_value)
             hae = ""
-            if self._home_amsl_m is not None and self._geoid_sep_m is not None:
-                self.readback_ceiling_hae_m = (self.readback_ceiling_above_home_m
-                                               + self._home_amsl_m + self._geoid_sep_m)
-                hae = f" ({self.readback_ceiling_hae_m:.1f} m HAE)"
+            home_hae = self._home_hae()
+            if home_hae is not None:
+                self.readback_ceiling_hae_m = self.readback_ceiling_above_home_m + home_hae
+                hae = (f" ({self.readback_ceiling_hae_m:.1f} m HAE"
+                       + (", ASSUMED home" if self.home_hae_assumed else "") + ")")
             self.log(f"[fence] ✓ Read back {CEILING_PARAM} = "
                      f"{self.readback_ceiling_above_home_m:.1f} m above home{hae}")
             self.state = "done"
@@ -226,16 +244,25 @@ class FenceUploader:
                 self._sent_ceiling = round(self._ceiling_above_home_m, 2)
                 self._send_ceiling()
                 return
-            if self._home_amsl_m is None or self._geoid_sep_m is None:
+            home_hae = self._home_hae()
+            if home_hae is None:
+                missing = [what for what, have in (
+                    ("home position (HOME_POSITION)", self._home_amsl_m is not None),
+                    ("3D GPS fix with ellipsoid height (GPS_RAW_INT)", self._geoid_sep_m is not None),
+                ) if not have]
+                self.waiting_reason = ("no " + " and no ".join(missing)
+                                       + " from the UAV yet -- needed to convert the HAE ceiling")
                 if not self._waiting_logged:
-                    self.log("[fence] Waiting for HOME_POSITION and a GPS_RAW_INT "
-                             "alt_ellipsoid to convert the HAE ceiling")
+                    self.log(f"[fence] Waiting: {self.waiting_reason}")
                     self._waiting_logged = True
                 return
-            ceiling = self._max_alt_hae_m - (self._home_amsl_m + self._geoid_sep_m)
+            self.waiting_reason = None
+            if self.home_hae_assumed:
+                self.log(f"[fence] Using ASSUMED home {home_hae:.1f} m HAE (bench, no GPS fix)")
+            ceiling = self._max_alt_hae_m - home_hae
             if ceiling <= 0:
                 self._fail(f"ceiling {self._max_alt_hae_m:.1f} m HAE is not above home "
-                           f"({self._home_amsl_m + self._geoid_sep_m:.1f} m HAE)")
+                           f"({home_hae:.1f} m HAE)")
                 return
             self._sent_ceiling = round(ceiling, 2)
             self._send_ceiling()

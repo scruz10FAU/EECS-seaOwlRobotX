@@ -91,6 +91,7 @@ DEFAULTS = {
         "mock_center": "",
         "mock_size": "25,25",
         "mock_invalid": "(valid)",
+        "bench_home_hae_m": "",
     },
 }
 INVALID_KINDS = ["(valid)", "open", "two-points", "self-intersecting", "bad-coords",
@@ -358,8 +359,12 @@ class GroundGui(tk.Tk):
         ttk.Label(self.test_frame, text="Course kind (INVALID demo)").grid(row=2, column=0, sticky="w")
         ttk.Combobox(self.test_frame, textvariable=self._var("Test", "mock_invalid"),
                      values=INVALID_KINDS, state="readonly").grid(row=2, column=1, sticky="ew")
+        ttk.Label(self.test_frame, text="Bench: assume home HAE (m)\n(blank = wait for a GPS fix)").grid(
+            row=3, column=0, sticky="w")
+        ttk.Entry(self.test_frame, textvariable=self._var("Test", "bench_home_hae_m")).grid(
+            row=3, column=1, sticky="ew")
         b = ttk.Frame(self.test_frame)
-        b.grid(row=3, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        b.grid(row=4, column=0, columnspan=2, sticky="w", pady=(4, 0))
         ttk.Button(b, text="Publish mock course", command=self.publish_mock).pack(side="left")
         ttk.Button(b, text="Clear mock course", command=self.clear_mock).pack(side="left", padx=6)
         self.test_frame.columnconfigure(1, weight=1)
@@ -466,12 +471,17 @@ class GroundGui(tk.Tk):
                           + ("" if ok else "  — nothing from the radio: wrong COM port?"),
                           "#1b7f1b" if ok else "#c0182b")
         elif name == "Ground":
-            m = re.search(r"\[fence\] (UPLOADING|VALID|REFUSED|FAILED) course '([^']*)'(?:: (.*))?", line)
+            m = re.search(r"\[fence\] (UPLOADING|WAITING|VALID|REFUSED|FAILED) course '([^']*)'(?:: (.*))?",
+                          line)
             if m:
                 state, course, why = m.groups()
-                color = {"VALID": "#1b7f1b", "UPLOADING": "#a86b00"}.get(state, "#c0182b")
-                self._set("Geofence", f"{state} — course {course}" + (f": {why}" if why else "")
+                color = {"VALID": "#1b7f1b", "UPLOADING": "#a86b00", "WAITING": "#a86b00"}.get(state, "#c0182b")
+                label = "WAITING for GPS" if state == "WAITING" else state
+                self._set("Geofence", f"{label} — course {course}" + (f": {why}" if why else "")
                           + ("  (on the UAV, read back)" if state == "VALID" else ""), color)
+            elif "ceiling HAE uses the ASSUMED home" in line:
+                self.status["Geofence"].config(
+                    text=self.status["Geofence"].cget("text") + "  [ASSUMED home HAE: bench only]")
             elif "Heartbeat received from system" in line:
                 self._set("Ground", "receiving UAV MAVLink", "#1b7f1b")
         elif name == "OCS":
@@ -524,7 +534,8 @@ class GroundGui(tk.Tk):
         snap.update(profile=self.profile.get(),
                     adapter=self.vars[("Competition", "adapter")].get(),
                     rc_host=self.vars[("Competition", "robocommand_host")].get().strip(),
-                    mock_center=self.vars[("Test", "mock_center")].get().strip())
+                    mock_center=self.vars[("Test", "mock_center")].get().strip(),
+                    bench_home=self.vars[("Test", "bench_home_hae_m")].get().strip())
         threading.Thread(target=self._preflight_worker, args=(snap,), daemon=True).start()
 
     def _preflight_worker(self, c):
@@ -654,6 +665,12 @@ class GroundGui(tk.Tk):
                 else "not running yet — Start all starts Mosquitto in WSL")
             if not c["mock_center"]:
                 add("Mock course centre", "warn", "set LAT,LON to the drone's position (QGC) before publishing")
+            if c["bench_home"]:
+                try:
+                    add("Bench home HAE", "warn", f"assuming home {float(c['bench_home']):g} m HAE while "
+                        f"the UAV has no GPS fix — declared ceiling is only as right as this guess")
+                except ValueError:
+                    add("Bench home HAE", "bad", f"{c['bench_home']!r} is not a number")
 
         self._pending_preflight = results   # picked up by _drain() on the GUI thread
 
@@ -736,8 +753,11 @@ class GroundGui(tk.Tk):
                    f"exec python3 -u beacon_mavlink_ground.py --mavlink-endpoint udpin:0.0.0.0:14551 "
                    f"--publish-ros --fence-inset-m {float(c['fence_inset_m']):g} "
                    f"--ceiling-margin-m {float(c['ceiling_margin_m']):g} "
-                   f"--max-alt-limit-hae-m {float(c['competition_max_hae_m']):g}\n")
-            self.procs["Ground"].start(self._wsl("ground", self._ros_prelude() + cmd))
+                   f"--max-alt-limit-hae-m {float(c['competition_max_hae_m']):g}")
+            bench = self.vars[("Test", "bench_home_hae_m")].get().strip()
+            if self.profile.get() == "Test" and bench:   # never in Competition
+                cmd += f" --assume-home-hae-m {float(bench):g}"
+            self.procs["Ground"].start(self._wsl("ground", self._ros_prelude() + cmd + "\n"))
 
     def start_all(self):
         self._save_settings()

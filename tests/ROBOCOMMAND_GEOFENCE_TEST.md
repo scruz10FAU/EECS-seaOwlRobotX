@@ -155,6 +155,11 @@ py -3.10 seabird_ground_gui.py
 - **Test box:** the mock course centre (`LAT,LON`, the drone's position from
   QGC), its size, and its kind: `(valid)` or one of the INVALID kinds.
   **Publish mock course** and **Clear mock course** are here.
+- **Bench: assume home HAE (m)** (Test box): leave blank outdoors. Indoors the
+  drone has no 3D GPS fix or home, so the ceiling can't be converted to PX4's
+  above-home value and the round trip waits. Enter a guess (e.g. `10` near
+  sea level) to let it finish. The Geofence row then shows
+  `[ASSUMED home HAE: bench only]`. The GUI never passes this in Competition.
 - **Run preflight:** a table of ✓ OK / ⚠ WARN / ✗ FAIL checks:
   - the protobuf is the latest RoboCommand version (needs Internet; on a
     course network it warns instead);
@@ -331,7 +336,8 @@ On Windows: `py -3.10 elrs_windows_router.py --com COM6`.
 | Declaration: `RunDeclaration NOT sent: UAV_PILOT_CALLSIGN …` | Fix the callsign / registration fields, then restart the OCS |
 | Geofence: `FAILED: no reply from PX4 …` | Uplink from WSL to the radio not working (router, mirrored networking), or QGC busy with its own mission transfer |
 | Geofence: `FAILED … ceiling … is not above home` | Altitude limit below the drone's home height above the ellipsoid |
-| Geofence stuck `UPLOADING` / `Waiting for HOME_POSITION …` | No 3D GPS fix or home yet. It continues by itself. |
+| Geofence: `WAITING for GPS — … no home position … no 3D GPS fix …` | The fence is already on PX4, and the ceiling step needs a GPS fix and home. Go outside until QGC shows a 3D lock and it continues by itself, or set **Bench: assume home HAE** (Test only). |
+| Fence "not in QGC" | QGC doesn't refresh a fence another program uploaded: Plan → Fence → **Download**. Also check where the course is: RoboNation's `test_server.py` course ALPHA is in **Singapore**, so use the GUI's mock course (centred on the drone) for bench tests. A fence far away also blocks arming: clear it (Plan → Fence → Clear → Upload). |
 | Heartbeats red: `none for N s` | Drone link stale: the OCS suppresses stale telemetry rather than send bad heartbeats |
 | `ros2` commands hang | Run `ros2 daemon start` (can take ~20 s) or use `--no-daemon` |
 | `current_task` stuck at 2 | Publish `ros2 topic pub --once /seabird/current_task std_msgs/msg/UInt8 "{data: 1}"` on the VOXL, or restart `beacon_mavlink_bridge.py` |

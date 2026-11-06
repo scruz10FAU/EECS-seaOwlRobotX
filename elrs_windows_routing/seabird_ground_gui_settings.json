@@ -1,0 +1,29 @@
+{
+  "profile": "Test",
+  "common": {
+    "wsl_distro": "Ubuntu-22.04",
+    "robocommand_repo": "C:\\Users\\Precision 3571\\seaowls-robotx-robocommand",
+    "com_port": "COM1",
+    "baud": "460800",
+    "team_id": "FLAU",
+    "vehicles": "UAV1",
+    "pilot_first_name": "Samantha",
+    "uapl_id": "",
+    "team_code": "FLAU",
+    "caas_sticker": "",
+    "altitude_limit_hae_m": "40",
+    "competition_max_hae_m": "50",
+    "fence_inset_m": "1.0",
+    "ceiling_margin_m": "1.0"
+  },
+  "Competition": {
+    "adapter": "Ethernet  [Disconnected]  Intel(R) Ethernet Connection (16) I219-LM",
+    "robocommand_host": ""
+  },
+  "Test": {
+    "robocommand_host": "localhost",
+    "mock_center": "-27.4622914, 153.0212834",
+    "mock_size": "25,25",
+    "mock_invalid": "(valid)"
+  }
+}
