@@ -23,10 +23,19 @@ HEARTBEAT + cached GLOBAL_POSITION_INT/GPS_RAW_INT/VFR_HUD/ATTITUDE/
 EXTENDED_SYS_STATE) on --status-topic, so seaowls_interfaces must be sourced
 too. current_task follows the drone's "SEABIRD_TASK <n>" STATUSTEXT (RxTask
 value, sent by beacon_mavlink_bridge.py) and is TASK_NONE until one arrives.
---publish-ros also uploads seaowls_ocs's course geofence
-(seaowls_interfaces/msg/UavGeofence on --geofence-topic) to PX4 as its fence
-and GF_MAX_VER_DIST ceiling (see utils/px4_fence.py), back over this same
-connection.
+--publish-ros also runs the RoboCommand geofence round trip for seaowls_ocs's
+course (seaowls_interfaces/msg/UavGeofence on --geofence-topic), back over
+this same connection:
+  1. VALID/INVALID check of the course and altitude limit
+     (utils/geofence_check.py); an invalid one is REFUSED and never uploaded;
+  2. the boundary is inset --fence-inset-m (default 1 m) and the ceiling set
+     --ceiling-margin-m (default 1 m) under the limit;
+  3. both are uploaded to PX4 and READ BACK from it (utils/px4_fence.py);
+  4. the readback is checked against the course as RoboCommand checks a
+     RunDeclaration, and published -- what the UAV actually holds -- on
+     --onboard-topic for seaowls_ocs to declare.
+Progress / VALID / REFUSED with reasons goes to --fence-status-topic (JSON).
+Both topics are latched (TRANSIENT_LOCAL) so late subscribers get the latest.
 
 Usage:
 IN WSL:
@@ -53,12 +62,18 @@ from pymavlink import mavutil
 from utils.beacon_mavlink_protocol import (
     unpack_value_array, BEACON_MAVLINK_ADDRESS, BEACON_MAVLINK_VERSION,
 )
-from utils.px4_fence import FenceUploader, open_polygon
+from utils.px4_fence import FenceUploader
+from utils.geofence_check import (
+    MAX_UAV_ALTITUDE_HAE_M, fence_problems, inset_polygon, min_clearance_m,
+    validate_altitude, validate_course,
+)
 
 DEFAULT_ROS_TOPIC = "/seabird/beacon_info"
 DEFAULT_STATUS_TOPIC = "/seaowls/uav1/status"
 DEFAULT_SAFE_PASSAGE_TOPIC = "/seaowls/uav1/report/safe_passage"
 DEFAULT_GEOFENCE_TOPIC = "/seaowls/uav1/mission/geofence"
+DEFAULT_ONBOARD_TOPIC = "/seaowls/uav1/mission/geofence_onboard"
+DEFAULT_FENCE_STATUS_TOPIC = "/seaowls/uav1/mission/geofence_status"
 
 # No UAV heartbeat for this long -> publish STATE_UNKNOWN.
 HEARTBEAT_STALE_S = 3.0
@@ -340,6 +355,28 @@ def main():
              "course boundary only -- what seaowls_ocs declares to RoboCommand)",
     )
     ap.add_argument(
+        "--onboard-topic", default=DEFAULT_ONBOARD_TOPIC,
+        help="UavGeofence topic for the fence + ceiling READ BACK from PX4, for "
+             f"seaowls_ocs to declare (default: {DEFAULT_ONBOARD_TOPIC})",
+    )
+    ap.add_argument(
+        "--fence-status-topic", default=DEFAULT_FENCE_STATUS_TOPIC,
+        help=f"Geofence round-trip status, std_msgs/String JSON (default: {DEFAULT_FENCE_STATUS_TOPIC})",
+    )
+    ap.add_argument(
+        "--fence-inset-m", type=float, default=1.0,
+        help="Upload the course boundary this far inside the published one (default: 1.0)",
+    )
+    ap.add_argument(
+        "--ceiling-margin-m", type=float, default=1.0,
+        help="Set PX4's ceiling this far under the altitude limit (default: 1.0)",
+    )
+    ap.add_argument(
+        "--max-alt-limit-hae-m", type=float, default=MAX_UAV_ALTITUDE_HAE_M,
+        help="Competition maximum UAV altitude, m HAE: a higher limit is REFUSED "
+             f"(default: {MAX_UAV_ALTITUDE_HAE_M:g})",
+    )
+    ap.add_argument(
         "--log", metavar="PATH", default=None,
         help="Append each decoded beacon and its receive time to PATH as CSV",
     )
@@ -360,13 +397,16 @@ def main():
     ros_node = None
     buoy_field = _BuoyField(args.buoy_merge_m)
     pending_fence = None   # latest UavGeofence not yet handed to the uploader
+    onboard_publisher = fence_status_publisher = None
     if args.publish_ros:
         import rclpy
         from rclpy.node import Node
+        from rclpy.qos import DurabilityPolicy, QoSProfile
         from std_msgs.msg import String
         from seaowls_interfaces.msg import (
             VehicleStatus, SafePassage, BuoyDetection, UavGeofence,
         )
+        latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
 
         rclpy.init()
         ros_node = Node("beacon_mavlink_ground")
@@ -382,8 +422,24 @@ def main():
             pending_fence = msg
 
         ros_node.create_subscription(UavGeofence, args.geofence_topic, on_geofence, 10)
+        onboard_publisher = ros_node.create_publisher(UavGeofence, args.onboard_topic, latched)
+        fence_status_publisher = ros_node.create_publisher(String, args.fence_status_topic, latched)
         print(f"[beacon-ground] Uploading geofence from ROS2 topic {args.geofence_topic} to PX4"
-              + (" (with transit area)" if args.fence_include_transit else ""))
+              + (" (with transit area)" if args.fence_include_transit else "")
+              + f", inset {args.fence_inset_m:g} m, ceiling {args.ceiling_margin_m:g} m under the limit;"
+              f" readback on {args.onboard_topic}")
+
+    def publish_fence_status(course_id, state, reasons=(), **extra):
+        """Log a geofence round-trip step and publish it as JSON."""
+        reasons = list(reasons)
+        line = f"[beacon-ground] [fence] {state.upper()} course {course_id!r}"
+        print(line + (": " + "; ".join(reasons) if reasons else ""))
+        if fence_status_publisher is not None:
+            fence_status_publisher.publish(String(data=json.dumps(dict(
+                course_id=course_id, state=state, reasons=reasons, time=time.time(), **extra))))
+
+    def ring(lats, lons):
+        return [(float(a), float(b)) for a, b in zip(lats, lons)]
 
     current_task = 1  # TASK_NONE until the drone reports a task
 
@@ -401,7 +457,8 @@ def main():
     print(f"[beacon-ground] Heartbeat received from system {mav.target_system} "
           f"— listening for beacon messages")
     fence = FenceUploader(mav, log=lambda s: print(f"[beacon-ground] {s}"))
-    last_fence_key = None  # skip re-uploading an unchanged course
+    last_fence_key = None  # skip re-checking/re-uploading an unchanged course
+    fence_job = None       # the upload in progress: course, transit, course_id
 
     seen = {}  # msg_id -> time first received
     unique = duplicates = 0
@@ -415,25 +472,88 @@ def main():
             if ros_node is not None:
                 rclpy.spin_once(ros_node, timeout_sec=0)
             if pending_fence is not None and last_heartbeat is not None:
-                polygons = [open_polygon(pending_fence.boundary_latitude,
-                                         pending_fence.boundary_longitude)]
-                if args.fence_include_transit:
-                    polygons.append(open_polygon(pending_fence.transit_area_latitude,
-                                                 pending_fence.transit_area_longitude))
-                key = (tuple(map(tuple, polygons)), pending_fence.max_altitude_hae_m)
-                if key != last_fence_key or fence.state == "failed":
-                    print(f"[beacon-ground] Geofence for course {pending_fence.course_id!r}")
-                    fence.start(last_heartbeat.get_srcSystem(), polygons,
-                                pending_fence.max_altitude_hae_m)
-                    last_fence_key = key
+                course_id = pending_fence.course_id
+                course = ring(pending_fence.boundary_latitude, pending_fence.boundary_longitude)
+                transit = ring(pending_fence.transit_area_latitude,
+                               pending_fence.transit_area_longitude) or None
+                limit = pending_fence.max_altitude_hae_m
                 pending_fence = None
+                key = (tuple(course), tuple(transit or ()), limit)
+                if key != last_fence_key or fence.state == "failed":
+                    last_fence_key = key
+                    fence_job = None
+                    # 1. VALID / INVALID: the course and the altitude limit as received.
+                    problems = [f"course boundary {p}" for p in validate_course(course)]
+                    if args.fence_include_transit and transit:
+                        problems += [f"transit area {p}" for p in validate_course(transit)]
+                    problems += validate_altitude(limit, args.max_alt_limit_hae_m)
+                    ceiling = limit - args.ceiling_margin_m
+                    if not problems and ceiling <= 0:
+                        problems.append(f"altitude limit {limit:g} m HAE minus the "
+                                        f"{args.ceiling_margin_m:g} m margin is not above 0")
+                    # 2. Inset (refused if it collapses the polygon).
+                    polygons = []
+                    if not problems:
+                        try:
+                            polygons.append(inset_polygon(course, args.fence_inset_m)[:-1])
+                            if args.fence_include_transit and transit:
+                                polygons.append(inset_polygon(transit, args.fence_inset_m)[:-1])
+                        except ValueError as e:
+                            problems.append(str(e))
+                    if problems:
+                        publish_fence_status(course_id, "refused", problems)
+                    else:
+                        # 3. Upload, then read back (FenceUploader).
+                        publish_fence_status(course_id, "uploading", inset_m=args.fence_inset_m,
+                                             ceiling_hae_m=ceiling)
+                        fence.start(last_heartbeat.get_srcSystem(), polygons, ceiling)
+                        fence_job = dict(course_id=course_id, course=course, transit=transit)
             fence.tick(time.monotonic())
+            if fence_job is not None and fence.state in ("done", "failed"):
+                job, fence_job = fence_job, None
+                if fence.state == "failed":
+                    publish_fence_status(job["course_id"], "failed", [fence.failure_reason])
+                else:
+                    # 4. Check what PX4 actually holds, then hand it to the OCS.
+                    rb = fence.readback_polygons or []
+                    hae = fence.readback_ceiling_hae_m
+                    problems = []
+                    if not rb:
+                        problems.append("PX4 returned no inclusion polygon")
+                    else:
+                        onboard = rb[0] + rb[0][:1]
+                        problems += [f"UAV readback: {p}" for p in
+                                     fence_problems(onboard, job["course"], job["transit"])]
+                    if hae is None:
+                        problems.append("UAV readback: ceiling HAE unknown (no HOME_POSITION / "
+                                        "GPS alt_ellipsoid)")
+                    else:
+                        problems += [f"UAV readback: {p}" for p in
+                                     validate_altitude(hae, args.max_alt_limit_hae_m)]
+                    if problems:
+                        publish_fence_status(job["course_id"], "refused", problems)
+                    else:
+                        out = UavGeofence()
+                        out.header.stamp = ros_node.get_clock().now().to_msg()
+                        out.header.frame_id = "wgs84"
+                        out.course_id = job["course_id"]
+                        out.max_altitude_hae_m = hae
+                        out.boundary_latitude = [p[0] for p in onboard]
+                        out.boundary_longitude = [p[1] for p in onboard]
+                        out.transit_area_latitude = [p[0] for p in job["transit"] or []]
+                        out.transit_area_longitude = [p[1] for p in job["transit"] or []]
+                        onboard_publisher.publish(out)
+                        publish_fence_status(
+                            job["course_id"], "valid", inset_m=args.fence_inset_m,
+                            clearance_m=round(min_clearance_m(onboard, job["course"]), 2),
+                            ceiling_hae_m=round(hae, 2), vertices=len(onboard) - 1)
 
             msg = mav.recv_match(
                 type=["MEMORY_VECT", "HEARTBEAT", "GLOBAL_POSITION_INT",
                       "ATTITUDE", "GPS_RAW_INT", "VFR_HUD", "EXTENDED_SYS_STATE",
                       "STATUSTEXT", "MISSION_REQUEST_INT", "MISSION_REQUEST",
-                      "MISSION_ACK", "PARAM_VALUE", "HOME_POSITION"],
+                      "MISSION_ACK", "MISSION_COUNT", "MISSION_ITEM_INT",
+                      "PARAM_VALUE", "HOME_POSITION"],
                 blocking=True, timeout=0.1 if ros_node is not None else 1.0,
             )
             now = time.monotonic()
@@ -447,7 +567,8 @@ def main():
             msg_type = msg.get_type()
             fence.handle(msg)
             if msg_type in ("MISSION_REQUEST_INT", "MISSION_REQUEST", "MISSION_ACK",
-                            "PARAM_VALUE", "HOME_POSITION"):
+                            "MISSION_COUNT", "MISSION_ITEM_INT", "PARAM_VALUE",
+                            "HOME_POSITION"):
                 continue  # fence uploader only
             if msg_type == "HEARTBEAT":
                 if _is_uav_heartbeat(msg):

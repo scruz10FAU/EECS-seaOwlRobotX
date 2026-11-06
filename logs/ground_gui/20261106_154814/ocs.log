@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py", line 175, in __init__
+    self.__node = _rclpy.Node(
+rclpy._rclpy_pybind11.RCLError: error creating node: the given context is not valid, either rcl_init() was not called or rcl_shutdown() was called., at ./src/rcl/guard_condition.c:67
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/install/seaowls_robocommand/lib/seaowls_robocommand/seaowls_ocs", line 33, in <module>
+    sys.exit(load_entry_point('seaowls-robocommand', 'console_scripts', 'seaowls_ocs')())
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/build/seaowls_robocommand/seaowls_robocommand/ocs_node.py", line 456, in main
+    n = Ocs()
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/build/seaowls_robocommand/seaowls_robocommand/ocs_node.py", line 93, in __init__
+    super().__init__("seaowls_ocs")
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py", line 175, in __init__
+    self.__node = _rclpy.Node(
+KeyboardInterrupt
+[ros2run]: Interrupt

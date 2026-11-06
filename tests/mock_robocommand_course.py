@@ -32,6 +32,10 @@ Usage (in WSL, with an MQTT broker on localhost:1883):
     python3 tests/mock_robocommand_course.py --center 26.37140,-80.10320 --period 30   # republish
     python3 tests/mock_robocommand_course.py --center 26.37140,-80.10320 --dry-run
     python3 tests/mock_robocommand_course.py --clear     # remove the retained course from the broker
+    python3 tests/mock_robocommand_course.py --center 26.37140,-80.10320 --invalid self-intersecting
+                                                          # INVALID demo: open, two-points,
+                                                          # self-intersecting, bad-coords,
+                                                          # too-small, too-large
 
 Put --center where the drone actually is: PX4 won't arm outside its fence.
 """
@@ -100,11 +104,36 @@ def closed(points):
     return points if not points or points[0] == points[-1] else points + points[:1]
 
 
+INVALID_KINDS = ("open", "two-points", "self-intersecting", "bad-coords", "too-small", "too-large")
+
+
+def make_invalid(kind, ring):
+    """Break a valid closed ring the way --invalid KIND says, to rehearse the
+    INVALID demonstration (the ground station must refuse every one)."""
+    pts = ring[:-1]
+    if kind == "open":
+        return pts                                       # last point != first
+    if kind == "two-points":
+        return [pts[0], pts[1], pts[0]]
+    if kind == "self-intersecting":
+        return [pts[0], pts[2], pts[1], pts[3], pts[0]]  # bow-tie
+    if kind == "bad-coords":
+        return [(91.0, pts[0][1])] + pts[1:] + [(91.0, pts[0][1])]
+    lat0 = ring[0][0]
+    scale = {"too-small": 0.05, "too-large": 100.0}[kind]   # 25 m -> ~1.2 m / ~2.5 km
+    clat = sum(p[0] for p in pts) / len(pts)
+    clon = sum(p[1] for p in pts) / len(pts)
+    out = [(clat + (a - clat) * scale, clon + (b - clon) * scale) for a, b in pts]
+    return out + out[:1]
+
+
 def build_course(args, common_pb2, rx_course_pb2, Timestamp):
     if args.corner:
         corners = closed(args.corner)
     else:
         corners = rectangle(args.center, *args.size, args.rotation_deg)
+    if args.invalid:
+        corners = make_invalid(args.invalid, corners)
     transit = closed(args.transit_corner or [])
     sent_at = Timestamp()
     sent_at.GetCurrentTime()
@@ -156,6 +185,11 @@ def main():
                    help="Course boundary vertex, in order (repeatable, >= 3; overrides --center)")
     g.add_argument("--transit-corner", type=_pair, action="append", metavar="LAT,LON",
                    help="UAV transit area vertex, in order (repeatable, >= 3; default: none)")
+    g.add_argument("--invalid", choices=INVALID_KINDS,
+                   help="Publish a deliberately INVALID course boundary (rehearses the "
+                        "VALID/INVALID demonstration; the ground station must REFUSE it). "
+                        "An invalid altitude limit is set on the OCS side "
+                        "(UAV_GEOFENCE_MAX_ALTITUDE_HAE_M), not in RxCourse.")
     args = ap.parse_args()
 
     if not args.clear:
