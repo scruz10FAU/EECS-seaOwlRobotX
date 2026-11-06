@@ -92,7 +92,7 @@ DEFAULTS = {
         "mock_center": "",
         "mock_size": "25,25",
         "mock_invalid": "(valid)",
-        "bench_home_hae_m": "",
+        "bench_home_hae_m": "0",
     },
 }
 INVALID_KINDS = ["(valid)", "open", "two-points", "self-intersecting", "bad-coords",
@@ -361,7 +361,8 @@ class GroundGui(tk.Tk):
         ttk.Label(self.test_frame, text="Drone position").grid(row=1, column=0, sticky="w")
         self.drone_pos_label = tk.Label(self.test_frame, text="—", anchor="w")
         self.drone_pos_label.grid(row=1, column=1, sticky="w")
-        ttk.Label(self.test_frame, text="Manual centre LAT,LON").grid(row=2, column=0, sticky="w")
+        ttk.Label(self.test_frame, text="Manual centre LAT,LON\n(used when there's no GPS fix)").grid(
+            row=2, column=0, sticky="w")
         self.manual_center = ttk.Entry(self.test_frame, textvariable=self._var("Test", "mock_center"))
         self.manual_center.grid(row=2, column=1, sticky="ew")
         ttk.Label(self.test_frame, text="Course size W,L (m)").grid(row=3, column=0, sticky="w")
@@ -369,7 +370,7 @@ class GroundGui(tk.Tk):
         ttk.Label(self.test_frame, text="Course kind (INVALID demo)").grid(row=4, column=0, sticky="w")
         ttk.Combobox(self.test_frame, textvariable=self._var("Test", "mock_invalid"),
                      values=INVALID_KINDS, state="readonly").grid(row=4, column=1, sticky="ew")
-        ttk.Label(self.test_frame, text="Bench: assume home HAE (m)\n(blank = wait for a GPS fix)").grid(
+        ttk.Label(self.test_frame, text="Home HAE when there's no GPS fix (m)\n(blank = 0)").grid(
             row=5, column=0, sticky="w")
         ttk.Entry(self.test_frame, textvariable=self._var("Test", "bench_home_hae_m")).grid(
             row=5, column=1, sticky="ew")
@@ -436,11 +437,19 @@ class GroundGui(tk.Tk):
         self.status["Broker"].config(text="not used in Competition" if comp else "—", fg="#555")
 
     def _on_use_gps(self):
-        use_gps = self.vars[("Test", "mock_use_gps")].get() == "1"
-        self.manual_center.config(state="disabled" if use_gps else "normal")
+        # The manual centre stays editable either way: it's the no-fix fallback.
+        self.manual_center.config(state="normal")
 
     # A fix older than this isn't used to centre the course.
     FIX_MAX_AGE_S = 30.0
+
+    def no_fix_home_hae(self) -> float:
+        """Test profile: home height (m HAE) the round trip uses until the UAV
+        has a GPS fix. Blank or not a number -> 0, so it never stalls indoors."""
+        try:
+            return float(self.vars[("Test", "bench_home_hae_m")].get().strip() or 0)
+        except ValueError:
+            return 0.0
 
     def drone_position(self):
         """(lat, lon) of a 3D fix seen in the last FIX_MAX_AGE_S, else None."""
@@ -709,19 +718,20 @@ class GroundGui(tk.Tk):
             add("Local broker", "ok" if tcp_reachable("127.0.0.1", 1883) else "warn",
                 "localhost:1883 listening" if tcp_reachable("127.0.0.1", 1883)
                 else "not running yet — Start all starts Mosquitto in WSL")
-            if c["mock_use_gps"]:
-                p = c["drone_position"]
-                add("Mock course centre", "ok" if p else "warn",
-                    f"drone GPS {p[0]:.7f}, {p[1]:.7f}" if p else
-                    "no recent 3D GPS fix yet (start Ground; go outside, or untick and enter a centre)")
-            elif not c["mock_center"]:
-                add("Mock course centre", "warn", "enter a manual centre LAT,LON before publishing")
-            if c["bench_home"]:
-                try:
-                    add("Bench home HAE", "warn", f"assuming home {float(c['bench_home']):g} m HAE while "
-                        f"the UAV has no GPS fix — declared ceiling is only as right as this guess")
-                except ValueError:
-                    add("Bench home HAE", "bad", f"{c['bench_home']!r} is not a number")
+            p = c["drone_position"] if c["mock_use_gps"] else None
+            if p:
+                add("Mock course centre", "ok", f"drone GPS {p[0]:.7f}, {p[1]:.7f}")
+            elif c["mock_center"]:
+                add("Mock course centre", "warn", f"no GPS fix: using the manual centre {c['mock_center']}")
+            else:
+                add("Mock course centre", "bad", "no GPS fix and no manual centre LAT,LON")
+            try:
+                home = float(c["bench_home"] or 0)
+                add("No-fix home HAE", "ok" if p else "warn",
+                    f"{home:g} m HAE{' (blank = 0)' if not c['bench_home'] else ''}, used until the UAV "
+                    f"reports a fix" + ("" if p else " — the declared ceiling is only as right as this value"))
+            except ValueError:
+                add("No-fix home HAE", "bad", f"{c['bench_home']!r} is not a number (0 will be used)")
 
         self._pending_preflight = results   # picked up by _drain() on the GUI thread
 
@@ -805,9 +815,8 @@ class GroundGui(tk.Tk):
                    f"--publish-ros --fence-inset-m {float(c['fence_inset_m']):g} "
                    f"--ceiling-margin-m {float(c['ceiling_margin_m']):g} "
                    f"--max-alt-limit-hae-m {float(c['competition_max_hae_m']):g}")
-            bench = self.vars[("Test", "bench_home_hae_m")].get().strip()
-            if self.profile.get() == "Test" and bench:   # never in Competition
-                cmd += f" --assume-home-hae-m {float(bench):g}"
+            if self.profile.get() == "Test":   # never in Competition
+                cmd += f" --assume-home-hae-m {self.no_fix_home_hae():g}"
             self.procs["Ground"].start(self._wsl("ground", self._ros_prelude() + cmd + "\n"))
 
     def start_all(self):
@@ -851,23 +860,26 @@ class GroundGui(tk.Tk):
         self._save_settings()
         size = self.vars[("Test", "mock_size")].get().replace(" ", "") or "25,25"
         kind = self.vars[("Test", "mock_invalid")].get()
-        if self.vars[("Test", "mock_use_gps")].get() == "1":
-            pos = self.drone_position()
-            if pos is None:
-                messagebox.showerror(
-                    "Mock course",
-                    "No recent 3D GPS fix from the drone.\n\nStart Ground and wait for a fix "
-                    "(outdoors), or untick 'Centre the course on the drone's GPS position' "
-                    "and enter a manual centre.")
-                return
+        manual = self.vars[("Test", "mock_center")].get().replace(" ", "")
+        manual_ok = re.match(r"^-?\d+(\.\d+)?,-?\d+(\.\d+)?$", manual)
+        pos = self.drone_position() if self.vars[("Test", "mock_use_gps")].get() == "1" else None
+        if pos is not None:
             center = f"{pos[0]:.7f},{pos[1]:.7f}"
             self.log("Mock", f"centring the course on the drone's GPS position {center}\n")
+        elif manual_ok:
+            center = manual
+            if self.vars[("Test", "mock_use_gps")].get() == "1":
+                self.log("Mock", f"no recent GPS fix from the drone -- using the manual centre {center}\n")
+            if not self.procs["Ground"].running:
+                self.log("Mock", "note: Ground isn't running -- start it to upload this course\n")
         else:
-            center = self.vars[("Test", "mock_center")].get().replace(" ", "")
-            if not re.match(r"^-?\d+(\.\d+)?,-?\d+(\.\d+)?$", center):
-                messagebox.showerror("Mock course", "Enter the manual centre as LAT,LON.")
-                return
-        extra = f"--center {center} --size {size}"
+            messagebox.showerror(
+                "Mock course",
+                "No recent 3D GPS fix from the drone and no manual centre.\n\n"
+                "Enter the manual centre as LAT,LON (used whenever there's no fix).")
+            return
+        # '=' form: argparse would read a negative "-27.4,153.0" as an option, not a value.
+        extra = f"--center={center} --size={size}"
         if kind and kind != "(valid)":
             extra += f" --invalid {kind}"
         self._mock(extra)
