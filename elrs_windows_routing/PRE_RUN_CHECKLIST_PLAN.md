@@ -112,3 +112,23 @@ Files:
   combination.
 - GUI: drive `_parse()` with recorded OCS/Ground log lines, and run the
   preflight checks with good and bad team/vehicle IDs.
+
+---
+
+# Handbook 3.4.12 compliance plan (approved 2026-11-07, in progress)
+
+Tasks and tiers attempted aren't decided yet, so every task and tier is built
+and chosen per run in the GUI. Done in phases, reviewed after each.
+
+| Phase | Work | Status |
+|---|---|---|
+| 1 | Per-task tier selector (GUI → OCS `TASK1_TIER`…`TASK4_TIER`, never `TIER_UNKNOWN`). RunStart gate: OCS publishes the verified RunStart, which goes ground → ELRS → drone, and the sweep holds in OFFBOARD until it arrives (switchable for bench/sim). GUI "Commands" row; report sequence numbers in logs. | **done** (2026-11-07): tiers, RunStart gate via the drone ELRS bridge's onboard copy (option A), Commands/Reports rows, report seqs in logs. Needs the drone ELRS bridge redeployed. |
+| 2 | Task 4, all tiers. New `seaowls_interfaces` messages. Core: AssistanceRequest → IncidentAck → ReadinessReport → ReadinessConfirm. Advanced: KeepOutZone → IncidentAck → AllClear → IncidentAck. Disruptive: forward MovingObjectAlert. Vehicle behaviour stays with the vehicle autonomy code. | **done** (2026-11-07): Task4Command message, OCS routing + IncidentAck (auto or vehicle) + ReadinessReport/Confirm, GUI Task 4 row + Send ReadinessReport + Rehearse Task 4, tests/mock_robocommand_task4.py. |
+| 3 | Task 2 PipelineSurveyReport (UUV1); the UAV's ResourceDeliveryRequest echo (Tasks 2/3, Advanced/Disruptive). | **done** (2026-11-07): PipelineSurvey message + OCS PipelineSurveyReport as UUV1; UAV ResourceDelivery echo topic + GUI 'Echo delivery request (UAV)'. |
+| 4 | SafePassage rate limit (~1/s, 3.4.5). README: sync the laptop clock before the course; never restart the OCS mid-run. | **done** (2026-11-07): SafePassage merged to <= 1/s (latest field always sent); GUI preflight WSL/Windows clock checks; GUI confirms before stopping the OCS after RunStart; README procedure notes. |
+
+Gaps this closes (audit of 3.4.12 + 3.4.8/3.4.10/3.4.13): no RunStart gate on
+the vehicle; Task 4 chain absent; command receipt/response not shown;
+PipelineSurveyReport and the UAV ResourceDelivery echo absent; no SafePassage
+rate limit; sequence counters reset if the OCS restarts mid-run; OCS clock
+can't sync on course networks.

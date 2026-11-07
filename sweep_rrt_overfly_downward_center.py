@@ -234,6 +234,11 @@ REQUIRE_ENTRY_EXIT  = True    # real mission: don't stop until a flashing-blue E
 # ── MAVSDK ────────────────────────────────────────────────────────────────────
 MAVSDK_ADDRESS              = "udpin://0.0.0.0:14551"
 BENCH_TEST                  = False
+# Handbook 3.4.10: hold position in OFFBOARD until RoboCommand's RunStart
+# (verified by the OCS, relayed ground -> ELRS -> beacon_mavlink_bridge.py on
+# /seabird/run_start) before beginning the run. False for bench/sim tests.
+RUNSTART_GATE               = True
+RUNSTART_WAIT_MAX_S         = 600.0   # no RunStart by then -> return to launch
 MAVSDK_CONNECT_TIMEOUT_S    = 10.0
 PX4_HEARTBEAT_TIMEOUT_S     = 20.0
 
@@ -265,6 +270,8 @@ _classified_ids: set    = set() # beacon-map ids already classified & recorded
 _overfly_attempts: dict = {}    # target key (map id, or ("det",n,e)) -> passes tried
 _lock = threading.Lock()
 _battery_low: bool    = False   # set True by monitor_battery() when threshold crossed
+_run_start_event      = threading.Event()  # set when /seabird/run_start arrives
+_run_start_id         = None
 _detector_alive       = threading.Event()  # set when first /seabird/beacon_map msg arrives
 _listener_ctx         = None    # dedicated rclpy context for the listener thread
 
@@ -354,6 +361,19 @@ def _rclpy_thread_fn() -> None:
         # ── Current RobotX task — republished so a late-starting bridge hears it ──
         _task_pub = node.create_publisher(UInt8, "/seabird/current_task", 10)
         node.create_timer(TASK_REPUBLISH_S, lambda: _task_pub.publish(UInt8(data=_current_task)))
+
+        # ── RoboCommand RunStart (latched: one that arrived before us still counts) ──
+        def _on_run_start(msg: String) -> None:
+            global _run_start_id
+            try:
+                _run_start_id = json.loads(msg.data).get("run_id")
+            except (json.JSONDecodeError, AttributeError):
+                _run_start_id = None
+            _run_start_event.set()
+
+        from rclpy.qos import DurabilityPolicy, QoSProfile
+        node.create_subscription(String, "/seabird/run_start", _on_run_start,
+                                 QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
 
         # ── Beacon-map subscription (positions from beacon_overlay, Stage 1) ──
         # /seabird/beacon_map carries the full fused map each message:
@@ -1555,7 +1575,27 @@ async def run_mission() -> None:
             pass
         return
     log("[rrt] ✓ Offboard active")
-    set_current_task(TASK_SAFE_PASSAGE)   # RoboCommand: Task 1 attempt starts
+
+    # ── Wait for RoboCommand's RunStart (Handbook 3.4.10) ──────────────────
+    run_started = True
+    if RUNSTART_GATE and not _run_start_event.is_set():
+        log(f"[rrt] Holding position in OFFBOARD until RoboCommand's RunStart arrives "
+            f"(up to {RUNSTART_WAIT_MAX_S:.0f} s)...")
+        t0 = time.monotonic()
+        while not _run_start_event.is_set():
+            if time.monotonic() - t0 > RUNSTART_WAIT_MAX_S:
+                run_started = False
+                break
+            await drone.offboard.set_position_ned(hold)
+            await asyncio.sleep(0.1)
+    if not run_started:
+        log(f"[rrt] No RunStart after {RUNSTART_WAIT_MAX_S:.0f} s — not starting the run")
+    else:
+        if RUNSTART_GATE:
+            log(f"[rrt] ✓ RunStart received (run_id={_run_start_id}) — beginning the run")
+        else:
+            log("[rrt] RUNSTART_GATE off — beginning without RoboCommand's RunStart")
+        set_current_task(TASK_SAFE_PASSAGE)   # RoboCommand: Task 1 attempt starts
 
     # ── RRT search ────────────────────────────────────────────────────────────
     origin_n = _state.north_m
@@ -1589,7 +1629,7 @@ async def run_mission() -> None:
     log("")
 
     try:
-        while rrt.size < RRT_MAX_NODES:
+        while run_started and rrt.size < RRT_MAX_NODES:
 
             # ── Battery failsafe ──────────────────────────────────────────────
             if _battery_low:

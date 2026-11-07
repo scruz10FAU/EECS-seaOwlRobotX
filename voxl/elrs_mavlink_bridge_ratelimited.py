@@ -272,9 +272,17 @@ class DownlinkLimiter:
         return line
 
 
+# Ground -> onboard: STATUSTEXT whose text starts with this is ALSO copied to
+# --onboard-port, where beacon_mavlink_bridge.py listens (e.g. the
+# "SEABIRD_RUNSTART <run_id>" relay). Everything still goes to PX4 as before.
+ONBOARD_STATUSTEXT_PREFIX = "SEABIRD_"
+
+
 def filter_gcs_to_px4(parser, data):
-    """Return allowed MAVLink frames and filtering statistics."""
+    """Return allowed MAVLink frames, the frames to copy onboard, and
+    filtering statistics."""
     forwarded = bytearray()
+    onboard = bytearray()
     blocked_messages = 0
     malformed_bytes = 0
 
@@ -291,8 +299,11 @@ def filter_gcs_to_px4(parser, data):
             continue
 
         forwarded.extend(frame)
+        if (message.get_type() == "STATUSTEXT"
+                and str(message.text).startswith(ONBOARD_STATUSTEXT_PREFIX)):
+            onboard.extend(frame)
 
-    return bytes(forwarded), blocked_messages, malformed_bytes
+    return bytes(forwarded), bytes(onboard), blocked_messages, malformed_bytes
 
 
 def main():
@@ -322,6 +333,15 @@ def main():
     parser.add_argument(
         "--server-port", type=int, default=14550,
         help="VOXL MAVLink server port",
+    )
+    parser.add_argument(
+        "--onboard-ip", default="127.0.0.1",
+        help="Where ground STATUSTEXT starting with 'SEABIRD_' is also copied "
+             "(beacon_mavlink_bridge.py's onboard listener)",
+    )
+    parser.add_argument(
+        "--onboard-port", type=int, default=14570,
+        help="UDP port for those copies (0 = don't copy)",
     )
     parser.add_argument(
         "--max-bps", type=float, default=800.0,
@@ -424,6 +444,13 @@ def main():
         ),
         flush=True,
     )
+    print(
+        "Ground STATUSTEXT '{}*' also copied onboard to {}".format(
+            ONBOARD_STATUSTEXT_PREFIX,
+            "{}:{}".format(args.onboard_ip, args.onboard_port) if args.onboard_port else "(disabled)"
+        ),
+        flush=True,
+    )
     if limiter is None:
         print("Downlink: NOT rate-limited (--no-limit)", flush=True)
     else:
@@ -458,9 +485,14 @@ def main():
                     data = serial_port.read(read_size)
 
                     if data:
-                        filtered, blocked, malformed = filter_gcs_to_px4(
+                        filtered, onboard, blocked, malformed = filter_gcs_to_px4(
                             gcs_to_px4_parser, data
                         )
+                        if onboard and args.onboard_port:
+                            try:
+                                udp_socket.sendto(onboard, (args.onboard_ip, args.onboard_port))
+                            except OSError:
+                                pass   # nothing listening onboard: PX4 still gets it below
                         blocked_gcs_to_px4_messages += blocked
                         malformed_gcs_to_px4_bytes += malformed
 

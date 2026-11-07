@@ -99,6 +99,14 @@ _FLIGHT_PHASE_UNKNOWN, _FLIGHT_PHASE_GROUNDED, _FLIGHT_PHASE_AIRBORNE = 0, 1, 2
 # STATUSTEXT "SEABIRD_TASK <n>" from the drone sets current_task to RxTask n.
 # TASK_UNKNOWN (0) is never accepted -- RoboCommand mustn't see it as a change.
 TASK_STATUSTEXT_PREFIX = "SEABIRD_TASK"
+# RunStart relay to the UAV (Handbook 3.4.10: vehicles begin the run only after
+# the OCS verifies RunStart). seaowls_ocs publishes the verified RunStart on
+# RUN_START_TOPIC; it goes up ELRS as STATUSTEXT "SEABIRD_RUNSTART <run_id>",
+# resent every RUNSTART_RESEND_S until the drone answers "SEABIRD_RUNSTART_ACK <run_id>".
+RUN_START_TOPIC = "/seaowls/run_start"
+RUNSTART_PREFIX = "SEABIRD_RUNSTART"
+RUNSTART_ACK_PREFIX = "SEABIRD_RUNSTART_ACK"
+RUNSTART_RESEND_S = 2.0
 _VALID_TASKS = {1, 2, 3, 4, 5}
 
 # A msg_id seen again within this window is a repeated copy from the bridge
@@ -408,6 +416,7 @@ def main():
     ros_node = None
     buoy_field = _BuoyField(args.buoy_merge_m)
     pending_fence = None   # latest UavGeofence not yet handed to the uploader
+    run_start = None       # {run_id, acked, last_sent, sends} being relayed to the UAV
     onboard_publisher = fence_status_publisher = None
     if args.publish_ros:
         import rclpy
@@ -435,6 +444,20 @@ def main():
         # Latched (seaowls_ocs publishes it TRANSIENT_LOCAL): starting after the
         # OCS got the retained course still delivers it.
         ros_node.create_subscription(UavGeofence, args.geofence_topic, on_geofence, latched)
+
+        def on_run_start(msg):
+            nonlocal run_start
+            try:
+                run_id = int(json.loads(msg.data)["run_id"])
+            except (ValueError, KeyError, TypeError):
+                print(f"[beacon-ground] [runstart] ignored malformed RunStart: {msg.data!r}")
+                return
+            if run_start is None or run_start["run_id"] != run_id:
+                run_start = dict(run_id=run_id, acked=False, last_sent=0.0, sends=0)
+                print(f"[beacon-ground] [runstart] RunStart run_id={run_id} verified by the OCS "
+                      f"-- relaying to the UAV")
+
+        ros_node.create_subscription(String, RUN_START_TOPIC, on_run_start, latched)
         onboard_publisher = ros_node.create_publisher(UavGeofence, args.onboard_topic, latched)
         fence_status_publisher = ros_node.create_publisher(String, args.fence_status_topic, latched)
         print(f"[beacon-ground] Uploading geofence from ROS2 topic {args.geofence_topic} to PX4"
@@ -571,6 +594,15 @@ def main():
                         fence_job = dict(course_id=course_id, course=course, transit=transit,
                                          warnings=warnings)
             fence.tick(time.monotonic())
+            if (run_start is not None and not run_start["acked"]
+                    and time.monotonic() - run_start["last_sent"] >= RUNSTART_RESEND_S):
+                mav.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO,
+                                        f"{RUNSTART_PREFIX} {run_start['run_id']}".encode())
+                run_start["last_sent"] = time.monotonic()
+                run_start["sends"] += 1
+                if run_start["sends"] % 15 == 0:
+                    print(f"[beacon-ground] [runstart] still no acknowledgement from the UAV "
+                          f"for run_id={run_start['run_id']} ({run_start['sends']} sends)")
             if (fence_job is not None and fence.waiting_reason
                     and fence_job.get("waiting") != fence.waiting_reason):
                 fence_job["waiting"] = fence.waiting_reason
@@ -649,6 +681,13 @@ def main():
                     last_status_t = now
                 continue
             if msg_type == "STATUSTEXT":
+                text = str(msg.text).strip("\x00 ")
+                if text.startswith(RUNSTART_ACK_PREFIX + " ") and run_start is not None:
+                    if text.split()[-1] == str(run_start["run_id"]) and not run_start["acked"]:
+                        run_start["acked"] = True
+                        print(f"[beacon-ground] [runstart] UAV acknowledged RunStart "
+                              f"run_id={run_start['run_id']}")
+                    continue
                 task = _parse_task_statustext(msg.text)
                 if task is not None and task != current_task:
                     print(f"[beacon-ground] current_task {current_task} -> {task}")

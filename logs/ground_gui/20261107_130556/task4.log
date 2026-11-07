@@ -1,0 +1,20 @@
+
+== Task 4 Core
+RC -> assistance_request seq=280061
+RC <- incident_ack from USV1 command_seq=280061 (report seq=1)  OK
+   (waiting for the vehicle to reach the position and report ready)
+reported USV1 ready for seq 280061
+RC <- readiness from USV1 command_seq=280061 (report seq=2)  OK
+RC -> readiness_confirm seq=280062
+
+== Task 4 Advanced
+RC -> keep_out_zone seq=280063
+RC <- incident_ack from USV1 command_seq=280063 (report seq=3)  OK
+RC -> all_clear seq=280064
+RC <- incident_ack from USV1 command_seq=280064 (report seq=4)  OK
+
+== Task 4 Disruptive
+RC -> moving_object_alert seq=280065
+   (no acknowledgement in this chain -- check the OCS log routed it)
+
+RESULT: PASS -- every expected response arrived

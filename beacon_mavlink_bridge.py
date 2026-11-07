@@ -34,6 +34,15 @@ on --task-topic (std_msgs/UInt8, published by the sweep script) goes out as a
 STATUSTEXT "SEABIRD_TASK <n>" right away and is resent every
 TASK_RESEND_S, so a dropped packet or a restarted ground station still
 learns it. beacon_mavlink_ground.py turns it into VehicleStatus.current_task.
+
+And it brings RoboCommand's RunStart down to the drone (Handbook 3.4.10:
+vehicles begin the run only after the OCS verifies RunStart). The ground
+station sends STATUSTEXT "SEABIRD_RUNSTART <run_id>" up ELRS; the drone's ELRS
+bridge (voxl/elrs_mavlink_bridge_ratelimited.py) copies ground STATUSTEXT
+starting "SEABIRD_" to --onboard-listen; this publishes it once per run_id on
+--run-start-topic (latched std_msgs/String JSON {"run_id": n}) for the sweep,
+and answers "SEABIRD_RUNSTART_ACK <run_id>" every time so the ground stops
+resending.
 """
 
 import argparse
@@ -45,6 +54,7 @@ from datetime import datetime
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile
 from std_msgs.msg import String, UInt8
 
 from pymavlink import mavutil
@@ -61,6 +71,12 @@ DEFAULT_TASK_TOPIC = "/seabird/current_task"
 # Must match beacon_mavlink_ground.py's TASK_STATUSTEXT_PREFIX.
 TASK_STATUSTEXT_PREFIX = "SEABIRD_TASK"
 TASK_RESEND_S = 2.0
+# RunStart relay -- must match beacon_mavlink_ground.py and the drone ELRS
+# bridge's --onboard-ip/--onboard-port (default 127.0.0.1:14570).
+DEFAULT_ONBOARD_LISTEN = "udpin:127.0.0.1:14570"
+DEFAULT_RUN_START_TOPIC = "/seabird/run_start"
+RUNSTART_PREFIX = "SEABIRD_RUNSTART"
+RUNSTART_ACK_PREFIX = "SEABIRD_RUNSTART_ACK"
 
 _LOG_FIELDS = ["iso_time", "epoch_time", "copy", "msg_id", "tracking_id",
                "latitude", "longitude", "color", "is_blinking"]
@@ -69,13 +85,17 @@ _LOG_FIELDS = ["iso_time", "epoch_time", "copy", "msg_id", "tracking_id",
 class BeaconMavlinkBridge(Node):
     def __init__(self, mavlink_endpoint: str, detections_topic: str,
                  repeat: int = DEFAULT_REPEAT, repeat_gap: float = DEFAULT_REPEAT_GAP,
-                 log_path: str = None, task_topic: str = DEFAULT_TASK_TOPIC):
+                 log_path: str = None, task_topic: str = DEFAULT_TASK_TOPIC,
+                 onboard_listen: str = DEFAULT_ONBOARD_LISTEN,
+                 run_start_topic: str = DEFAULT_RUN_START_TOPIC):
         super().__init__("beacon_mavlink_bridge")
         self._lock = threading.Lock()
         self._repeat = max(1, repeat)
         self._repeat_gap = max(0.0, repeat_gap)
         self._next_msg_id = 0
         self._current_task = None  # nothing sent until the mission reports a task
+        self._run_id = None        # last RunStart run_id published to the sweep
+        self._running = True
 
         self._log_file = self._log_writer = None
         if log_path:
@@ -101,6 +121,33 @@ class BeaconMavlinkBridge(Node):
         self.create_timer(TASK_RESEND_S, self._send_task)
         self.get_logger().info(f"Subscribed to {task_topic} — relaying as STATUSTEXT "
                                f"'{TASK_STATUSTEXT_PREFIX} <n>' every {TASK_RESEND_S:.0f} s")
+
+        self._run_start_pub = self.create_publisher(
+            String, run_start_topic, QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
+        self._onboard = mavutil.mavlink_connection(onboard_listen)
+        threading.Thread(target=self._listen_onboard, daemon=True).start()
+        self.get_logger().info(f"Listening on {onboard_listen} for '{RUNSTART_PREFIX} <run_id>' "
+                               f"from the ground — publishing RunStart on {run_start_topic}")
+
+    def _listen_onboard(self) -> None:
+        """Ground STATUSTEXT copied onboard by the drone ELRS bridge."""
+        while self._running:
+            msg = self._onboard.recv_match(type="STATUSTEXT", blocking=True, timeout=1.0)
+            if msg is None:
+                continue
+            parts = str(msg.text).strip("\x00 ").split()
+            if len(parts) != 2 or parts[0] != RUNSTART_PREFIX or not parts[1].isdigit():
+                continue
+            run_id = int(parts[1])
+            if run_id != self._run_id:
+                self._run_id = run_id
+                self._run_start_pub.publish(String(data=json.dumps(
+                    {"run_id": run_id, "received": time.time()})))
+                self.get_logger().info(f"RunStart run_id={run_id} received from the ground — "
+                                       f"the sweep may begin the run")
+            with self._lock:   # every copy: the ground resends until it sees this
+                self._mav.mav.statustext_send(
+                    mavutil.mavlink.MAV_SEVERITY_INFO, f"{RUNSTART_ACK_PREFIX} {run_id}".encode())
 
     def _on_task(self, msg: UInt8) -> None:
         if msg.data == self._current_task:
@@ -211,16 +258,26 @@ def main():
         "--task-topic", default=DEFAULT_TASK_TOPIC,
         help=f"RxTask topic (std_msgs/UInt8) relayed as STATUSTEXT (default: {DEFAULT_TASK_TOPIC})",
     )
+    ap.add_argument(
+        "--onboard-listen", default=DEFAULT_ONBOARD_LISTEN,
+        help="Where the drone ELRS bridge copies ground 'SEABIRD_' STATUSTEXT "
+             f"(default: {DEFAULT_ONBOARD_LISTEN})",
+    )
+    ap.add_argument(
+        "--run-start-topic", default=DEFAULT_RUN_START_TOPIC,
+        help=f"Latched topic the verified RunStart is published on (default: {DEFAULT_RUN_START_TOPIC})",
+    )
     args = ap.parse_args()
 
     rclpy.init()
     node = BeaconMavlinkBridge(args.mavlink_endpoint, args.topic, args.repeat, args.repeat_gap,
-                               args.log, args.task_topic)
+                               args.log, args.task_topic, args.onboard_listen, args.run_start_topic)
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
+        node._running = False
         node.close_log()
         node.destroy_node()
         rclpy.shutdown()

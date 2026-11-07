@@ -1,0 +1,133 @@
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4, inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 1 — listening for beacon messages
+[beacon-ground] BENCH: assuming home 0 m HAE until the UAV reports a GPS fix / home
+[beacon-ground] [pos] no GPS fix (fix_type=0)
+[beacon-ground] [fence] UPLOADING course 'MOCK'
+[beacon-ground] [fence] Uploading 1 inclusion polygon(s), 4 vertices, to system 1
+[beacon-ground] [fence] ✓ Fence accepted by PX4
+[beacon-ground] [fence] Using ASSUMED home 0.0 m HAE (bench, no GPS fix)
+[beacon-ground] [fence] ✓ GF_MAX_VER_DIST = 39.0 m above home (39.0 m HAE)
+[beacon-ground] [fence] Reading the fence back from PX4
+[beacon-ground] [fence] note: PX4 returns the fence items with mission_type=0; accepting them (fence commands, our download)
+[beacon-ground] [fence] ✓ Read back from PX4: 1 inclusion polygon(s), 4 vertices
+[beacon-ground] [fence] ✓ Read back GF_MAX_VER_DIST = 39.0 m above home (39.0 m HAE, ASSUMED home)
+[beacon-ground] [fence] VALID course 'MOCK'
+[beacon-ground] [fence] NOTE: ceiling HAE uses the ASSUMED home height (bench) -- not valid for the competition
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 730, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 726, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4, inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 0 — listening for beacon messages
+[beacon-ground] [pos] no GPS fix (fix_type=0)
+[beacon-ground] [fence] UPLOADING course 'SV1'
+[beacon-ground] [fence] Uploading 1 inclusion polygon(s), 4 vertices, to system 1
+[beacon-ground] [fence] ✓ Fence accepted by PX4
+[beacon-ground] [fence] Waiting: no home position (HOME_POSITION) and no 3D GPS fix with ellipsoid height (GPS_RAW_INT) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] [fence] WAITING course 'SV1': no home position (HOME_POSITION) and no 3D GPS fix with ellipsoid height (GPS_RAW_INT) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] [pos] 3D fix lat=1.4455588 lon=103.7853220 sats=6
+[beacon-ground] [fence] WAITING course 'SV1': no home position (HOME_POSITION) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] [pos] 3D fix lat=1.4454845 lon=103.7852946 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454985 lon=103.7852761 sats=6
+[beacon-ground] [fence] FAILED: ceiling 39.0 m HAE is not above home (168.4 m HAE)
+[beacon-ground] [fence] FAILED course 'SV1': ceiling 39.0 m HAE is not above home (168.4 m HAE)
+[beacon-ground] [pos] 3D fix lat=1.4455208 lon=103.7852310 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4455142 lon=103.7852363 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454993 lon=103.7852584 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454966 lon=103.7852617 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454934 lon=103.7852643 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454883 lon=103.7852722 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454776 lon=103.7852864 sats=5
+[beacon-ground] [pos] 3D fix lat=1.4454716 lon=103.7852981 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454604 lon=103.7853189 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454264 lon=103.7853790 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454063 lon=103.7854189 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453978 lon=103.7854337 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453991 lon=103.7854335 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454089 lon=103.7854257 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454214 lon=103.7854202 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454299 lon=103.7854166 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454328 lon=103.7854158 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454368 lon=103.7854188 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454427 lon=103.7854220 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454538 lon=103.7854207 sats=5
+[beacon-ground] [pos] 3D fix lat=1.4454627 lon=103.7854161 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454380 lon=103.7854108 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454022 lon=103.7854047 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454050 lon=103.7854046 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454205 lon=103.7854081 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454136 lon=103.7854099 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454074 lon=103.7854090 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453973 lon=103.7854108 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453849 lon=103.7854131 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453833 lon=103.7854141 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454264 lon=103.7853833 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454481 lon=103.7853675 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454592 lon=103.7853552 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454775 lon=103.7853399 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454924 lon=103.7853376 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454981 lon=103.7853575 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454908 lon=103.7853951 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454852 lon=103.7854112 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454583 lon=103.7854522 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454357 lon=103.7854776 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454288 lon=103.7854795 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454255 lon=103.7854731 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454209 lon=103.7854683 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454173 lon=103.7854619 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454115 lon=103.7854586 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454172 lon=103.7854559 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453981 lon=103.7854380 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453892 lon=103.7854312 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453628 lon=103.7854275 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453687 lon=103.7854332 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454022 lon=103.7854406 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454143 lon=103.7854423 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454190 lon=103.7854380 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454360 lon=103.7854407 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454403 lon=103.7854380 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454264 lon=103.7854299 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454132 lon=103.7854289 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454178 lon=103.7854352 sats=5
+[beacon-ground] [pos] 3D fix lat=1.4454192 lon=103.7854671 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454025 lon=103.7854767 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453839 lon=103.7854861 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453523 lon=103.7854847 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453236 lon=103.7854750 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453269 lon=103.7854745 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453275 lon=103.7854718 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453287 lon=103.7854622 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453286 lon=103.7854617 sats=4
+[beacon-ground] [pos] 3D fix lat=1.4453445 lon=103.7854642 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4453840 lon=103.7854854 sats=6
+[beacon-ground] [pos] 3D fix lat=1.4454297 lon=103.7854931 sats=5
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 730, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 726, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241

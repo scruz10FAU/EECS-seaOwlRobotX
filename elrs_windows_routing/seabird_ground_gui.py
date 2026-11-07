@@ -84,6 +84,10 @@ DEFAULTS = {
         "competition_max_hae_m": "50",
         "fence_inset_m": "1.0",
         "ceiling_margin_m": "1.0",
+        "declare_auto": "0",   # "0": the operator sends RunDeclaration with the button
+        # Tier attempted per task (RunDeclaration); the OCS's original values.
+        "task1_tier": "CORE", "task2_tier": "NONE", "task3_tier": "NONE", "task4_tier": "NONE",
+        "task4_vehicle_ack": "0",   # "1": vehicles send their own Task 4 acknowledgement
     },
     "Competition": {"adapter": "", "robocommand_host": ""},
     "Test": {
@@ -93,8 +97,12 @@ DEFAULTS = {
         "mock_size": "25,25",
         "mock_invalid": "VALID course",
         "bench_home_hae_m": "0",
+        "task4_vehicle_type": "USV",   # vehicle type the Task 4 rehearsal addresses
     },
 }
+# RunDeclaration tiers (common.proto TaskTier, without TIER_UNKNOWN).
+TIER_NAMES = ("NONE", "CORE", "ADVANCED", "DISRUPTIVE")
+
 # Mock course kinds: GUI label (with the expected outcome) -> the
 # mock_robocommand_course.py --invalid value (None = a proper course).
 COURSE_KINDS = {
@@ -270,6 +278,9 @@ class GroundGui(tk.Tk):
         self._pending_preflight = None   # results handed over by the preflight worker
         self.drone_fix = None            # (lat, lon, sats, monotonic time) from Ground's '[pos]' lines
         self.fence_warnings = []         # Ground's '[fence] WARNING' lines for the current course
+        self.task4_waiting_ready = []    # (vehicle, AssistanceRequest seq) not yet reported ready
+        self.last_delivery_request = None   # (task, resource, circle) from the USV, for the UAV echo
+        self.active_run_id = None           # set by a verified RunStart: the OCS mustn't restart now
         self.drone_fix_lost = False
 
         self.procs = {
@@ -278,6 +289,8 @@ class GroundGui(tk.Tk):
             "OCS": Managed(self, "OCS", stop_pattern="seaowls_ocs"),
             "Ground": Managed(self, "Ground", stop_pattern="beacon_mavlink_ground.py"),
             "Mock": Managed(self, "Mock"),
+            "Declare": Managed(self, "Declare"),   # one-shot: asks the OCS to send RunDeclaration
+            "Task4": Managed(self, "Task4"),       # one-shot: ReadinessReport / Task 4 rehearsal
         }
         self._build()
         self._on_profile()
@@ -355,6 +368,21 @@ class GroundGui(tk.Tk):
         f.columnconfigure(1, weight=1)
         self.derived = ttk.Label(f, foreground="#555")
         self.derived.grid(row=len(rows), column=0, columnspan=2, sticky="w", pady=(4, 0))
+        ttk.Checkbutton(f, text="Send RunDeclaration automatically when the UAV fence is VALID\n"
+                                "(unticked: send it with the button on the Declaration row)",
+                        variable=self._var("common", "declare_auto"), onvalue="1", offvalue="0").grid(
+            row=len(rows) + 1, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        tiers = ttk.Frame(f)
+        tiers.grid(row=len(rows) + 2, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        ttk.Label(tiers, text="Tiers declared:").pack(side="left")
+        for t in (1, 2, 3, 4):
+            ttk.Label(tiers, text=f"  T{t}").pack(side="left")
+            ttk.Combobox(tiers, textvariable=self._var("common", f"task{t}_tier"), values=TIER_NAMES,
+                         state="readonly", width=10).pack(side="left")
+        ttk.Checkbutton(f, text="Task 4: vehicles send their own IncidentAck\n"
+                                "(unticked: the OCS acknowledges as soon as it routes the command)",
+                        variable=self._var("common", "task4_vehicle_ack"), onvalue="1", offvalue="0").grid(
+            row=len(rows) + 3, column=0, columnspan=2, sticky="w", pady=(4, 0))
         for name in ("pilot_first_name", "uapl_id", "team_code", "caas_sticker"):
             self.vars[("common", name)].trace_add("write", lambda *_: self._update_derived())
         self._update_derived()
@@ -400,6 +428,13 @@ class GroundGui(tk.Tk):
         b.grid(row=6, column=0, columnspan=2, sticky="w", pady=(4, 0))
         ttk.Button(b, text="Publish mock course", command=self.publish_mock).pack(side="left")
         ttk.Button(b, text="Clear mock course", command=self.clear_mock).pack(side="left", padx=6)
+        t4 = ttk.Frame(self.test_frame)
+        t4.grid(row=7, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        ttk.Button(t4, text="Rehearse Task 4", command=self.rehearse_task4).pack(side="left")
+        ttk.Label(t4, text=" addressing ").pack(side="left")
+        ttk.Combobox(t4, textvariable=self._var("Test", "task4_vehicle_type"), values=("USV", "UUV", "UAV"),
+                     state="readonly", width=5).pack(side="left")
+        ttk.Label(t4, text=" (Core, Advanced, Disruptive)").pack(side="left")
         self.test_frame.columnconfigure(1, weight=1)
         self._var("Test", "robocommand_host")
         self._on_use_gps()
@@ -408,7 +443,7 @@ class GroundGui(tk.Tk):
         st = ttk.LabelFrame(right, text="Status", padding=6)
         st.pack(fill="x")
         for i, key in enumerate(("Router", "Broker", "OCS", "Ground", "Heartbeats", "Geofence",
-                                 "Declaration", "RunStart")):
+                                 "Declaration", "RunStart", "Commands", "Task 4", "Reports")):
             ttk.Label(st, text=key + ":", width=12).grid(row=i, column=0, sticky="w")
             lbl = tk.Label(st, text="—", anchor="w", justify="left", wraplength=640)
             lbl.grid(row=i, column=1, sticky="w")
@@ -417,7 +452,16 @@ class GroundGui(tk.Tk):
                 bf = ttk.Frame(st)
                 bf.grid(row=i, column=2, sticky="e")
                 ttk.Button(bf, text="Start", width=6, command=lambda k=key: self.start_one(k)).pack(side="left")
-                ttk.Button(bf, text="Stop", width=6, command=lambda k=key: self.procs[k].stop()).pack(side="left")
+                ttk.Button(bf, text="Stop", width=6, command=lambda k=key: self.stop_one(k)).pack(side="left")
+            elif key == "Declaration":
+                ttk.Button(st, text="Send RunDeclaration", command=self.send_declaration).grid(
+                    row=i, column=2, sticky="e")
+            elif key == "Task 4":
+                ttk.Button(st, text="Send ReadinessReport", command=self.send_readiness).grid(
+                    row=i, column=2, sticky="e")
+            elif key == "Reports":
+                ttk.Button(st, text="Echo delivery request (UAV)", command=self.echo_delivery).grid(
+                    row=i, column=2, sticky="e")
         st.columnconfigure(1, weight=1)
 
         # preflight
@@ -546,6 +590,20 @@ class GroundGui(tk.Tk):
                     text=self.status["Geofence"].cget("text") + "  [ASSUMED home HAE: bench only]")
             elif "Heartbeat received from system" in line:
                 self._set("Ground", "receiving UAV MAVLink", "#1b7f1b")
+            # RunStart relay to the UAV (Handbook 3.4.10: the UAV holds until it arrives)
+            m = re.search(r"\[runstart\] RunStart run_id=(\S+) verified by the OCS", line)
+            if m:
+                self._set("RunStart", f"verified: run_id {m.group(1)} — relaying to the UAV…", "#a86b00")
+            m = re.search(r"\[runstart\] UAV acknowledged RunStart run_id=(\S+)", line)
+            if m:
+                self._set("RunStart", f"verified: run_id {m.group(1)} — UAV acknowledged, the run "
+                                      f"may begin", "#1b7f1b")
+            m = re.search(r"\[runstart\] still no acknowledgement from the UAV for run_id=(\S+) \((\d+) sends\)",
+                          line)
+            if m:
+                self._set("RunStart", f"verified: run_id {m.group(1)} — NO acknowledgement from the UAV "
+                                      f"yet ({m.group(2)} sends): check the ELRS link and "
+                                      f"beacon_mavlink_bridge.py on the drone", "#c0182b")
             m = re.search(r"\[pos\] 3D fix lat=(-?[\d.]+) lon=(-?[\d.]+) sats=(\d+)", line)
             if m:
                 self.drone_fix = (float(m.group(1)), float(m.group(2)), int(m.group(3)), time.monotonic())
@@ -559,14 +617,82 @@ class GroundGui(tk.Tk):
             if m:
                 self._set("Declaration", f"sent seq {m.group(1)}, course {m.group(2)}{m.group(3)}",
                           "#1b7f1b")
-            m = re.search(r"(REFUSED UAV1 geofence.*|RunDeclaration NOT sent: .*|RunDeclaration waiting .*)", line)
+            m = re.search(r"(REFUSED UAV1 geofence.*|RunDeclaration NOT sent.*|RunDeclaration waiting .*)", line)
             if m:
                 bad = not m.group(1).startswith("RunDeclaration waiting")
                 self._set("Declaration", m.group(1), "#c0182b" if bad else "#a86b00")
+            m = re.search(r"RunDeclaration READY for course (\S+)(.*?) -- manual mode", line)
+            if m:
+                self._set("Declaration", f"READY — course {m.group(1)}{m.group(2)}: press "
+                                         f"Send RunDeclaration when you're ready to go", "#a86b00")
             m = re.search(r"RunStart declaration_seq=(\d+) run_id=(\S+)", line)
             if m:
-                self._set("RunStart", f"received: declaration_seq {m.group(1)}, run_id {m.group(2)}",
-                          "#1b7f1b")
+                self.active_run_id = m.group(2)   # guards against restarting the OCS mid-run
+                self._set("RunStart", f"received and verified: declaration_seq {m.group(1)}, "
+                                      f"run_id {m.group(2)}", "#1b7f1b")
+            m = re.search(r"RunStart IGNORED: (.*)", line)
+            if m:
+                self._set("RunStart", f"IGNORED (not for our declaration): {m.group(1)}", "#c0182b")
+            # 3.4.13: command receipt and the reports we send, visible to the operator.
+            now = time.strftime("%H:%M:%S")
+            m = re.search(r"RxCommand seq=(\d+) body=(\S+)", line)
+            if m:
+                self._set("Commands", f"last received: {m.group(2)} (command seq {m.group(1)}) at {now}",
+                          "#222")
+            m = re.search(r"ignored command for team (\S+)", line)
+            if m:
+                self._set("Commands", f"ignored a command addressed to team {m.group(1)} at {now}",
+                          "#a86b00")
+            m = re.search(r"invalid RxCommand: (.*)", line)
+            if m:
+                self._set("Commands", f"malformed RxCommand rejected at {now}: {m.group(1)}", "#c0182b")
+            m = re.search(r"report (\S+) seq=(\d+) (\w+)", line)
+            if m:
+                self._set("Reports", f"last sent: {m.group(3)} as {m.group(1)} (report seq {m.group(2)}) "
+                                     f"at {now}", "#1b7f1b")
+            # Tasks 2/3 resource delivery and Task 2 pipeline survey (3.4.12)
+            m = re.search(r"\[resource\] request from (\S+) task=(\d+) resource=(\d+) circle=(\d+)", line)
+            if m:
+                self.last_delivery_request = tuple(int(x) for x in m.group(2, 3, 4))
+                self._set("Reports", f"ResourceDeliveryRequest from {m.group(1)} (task {m.group(2)}) at {now}; "
+                                     f"press Echo when the UAV begins the delivery", "#a86b00")
+            m = re.search(r"\[(resource|pipeline)\] (.* not sent: .*)", line)
+            if m:
+                self._set("Reports", f"{m.group(1)}: {m.group(2)}", "#c0182b")
+            # Task 4 command-response chains (3.4.12)
+            m = re.search(r"\[task4\] (\w+) seq=(\d+) -> (\S+)(.*)", line)
+            if m:
+                name, seq, v, where = m.groups()
+                if name == "AssistanceRequest":
+                    self.task4_waiting_ready.append((v, seq))
+                    nxt = "IncidentAck, then ReadinessReport when on station"
+                elif name == "MovingObjectAlert":
+                    nxt = "no acknowledgement in this chain"
+                else:
+                    nxt = "IncidentAck"
+                self._set("Task 4", f"{name} seq {seq} → {v}{where} at {now}; next: {nxt}", "#a86b00")
+            m = re.search(r"\[task4\] IncidentAck (\S+) command_seq=(\d+) \(report seq=(\d+)\)", line)
+            if m:
+                self._set("Task 4", f"IncidentAck sent as {m.group(1)} for command seq {m.group(2)} "
+                                    f"(report seq {m.group(3)}) at {now}", "#1b7f1b")
+            m = re.search(r"\[task4\] waiting for (\S+) to acknowledge seq=(\d+)", line)
+            if m:
+                self._set("Task 4", f"waiting for {m.group(1)} to acknowledge command seq {m.group(2)}",
+                          "#a86b00")
+            m = re.search(r"\[task4\] ReadinessReport (\S+) for AssistanceRequest seq=(\d+) \(report seq=(\d+)\)",
+                          line)
+            if m:
+                if (m.group(1), m.group(2)) in self.task4_waiting_ready:
+                    self.task4_waiting_ready.remove((m.group(1), m.group(2)))
+                self._set("Task 4", f"ReadinessReport sent as {m.group(1)} (report seq {m.group(3)}) "
+                                    f"at {now}; waiting for ReadinessConfirm", "#a86b00")
+            m = re.search(r"\[task4\] ReadinessConfirm (\S+) report seq=(\d+)", line)
+            if m:
+                self._set("Task 4", f"ReadinessConfirm for {m.group(1)} (report seq {m.group(2)}) at {now}: "
+                                    f"cleared to resume — chain complete", "#1b7f1b")
+            m = re.search(r"\[task4\] (.*(?:not routed|doesn't match|isn't an AssistanceRequest).*)", line)
+            if m:
+                self._set("Task 4", m.group(1), "#c0182b")
             if "MQTT connected" in line:
                 self._set("OCS", "connected to RoboCommand broker", "#1b7f1b")
             elif "MQTT disconnected" in line:
@@ -574,7 +700,7 @@ class GroundGui(tk.Tk):
 
     def _tick(self):
         for key, p in self.procs.items():
-            if key == "Mock" or (key == "Broker" and self.profile.get() == "Competition"):
+            if key in ("Mock", "Declare", "Task4") or (key == "Broker" and self.profile.get() == "Competition"):
                 continue
             text = self.status[key].cget("text")
             if p.running:
@@ -678,6 +804,52 @@ class GroundGui(tk.Tk):
             "; ".join(problems) + ("  (OK only for the INVALID demonstration)" if problems else "")
             if problems else f"{c['altitude_limit_hae_m']} m HAE ≤ {c['competition_max_hae_m']} m HAE; "
                             f"PX4 ceiling {float(c['altitude_limit_hae_m']) - float(c['ceiling_margin_m']):g} m HAE")
+
+        # Declared tiers
+        tiers = {t: (c.get(f"task{t}_tier") or "NONE") for t in (1, 2, 3, 4)}
+        text = ", ".join(f"T{t} {name}" for t, name in tiers.items())
+        vehicles = {v.strip() for v in c.get("vehicles", "").split(",") if v.strip()}
+        if all(name == "NONE" for name in tiers.values()):
+            add("Declared tiers", "warn", f"{text}: no task attempted")
+        elif "UAV1" in vehicles and tiers[1] == "CORE":
+            add("Declared tiers", "warn", f"{text}: Task 1 by the UAV is Advanced/Disruptive "
+                "(RoboCommand: SafePassage is sent by USV/UUV at Core, UAV at Advanced/Disruptive)")
+        else:
+            add("Declared tiers", "ok", text)
+
+        # Clocks (3.4.8: sent_at must be the publish time, OCS clock synchronised).
+        # The OCS runs in WSL, whose clock can drift from Windows' after sleep.
+        try:
+            t_before = time.time()
+            out = subprocess.run(["wsl.exe", "-d", c["wsl_distro"], "--", "date", "+%s.%N"],
+                                 capture_output=True, text=True, timeout=30,
+                                 creationflags=CREATE_NO_WINDOW).stdout.strip()
+            t_after = time.time()
+            skew = float(out) - (t_before + t_after) / 2
+            margin = (t_after - t_before) / 2   # the call's own duration bounds the error
+            ok = abs(skew) <= 1.0 + margin
+            add("WSL clock", "ok" if ok else "bad",
+                f"WSL is {skew:+.2f} s from Windows" + ("" if ok else
+                " — sent_at timestamps will be off: run 'wsl --shutdown' and restart, or "
+                "'sudo hwclock -s' in WSL"))
+        except (OSError, ValueError, subprocess.TimeoutExpired) as e:
+            add("WSL clock", "warn", f"couldn't read the WSL clock: {e}")
+        try:
+            status = subprocess.run(["w32tm", "/query", "/status"], capture_output=True, text=True,
+                                    timeout=10, creationflags=CREATE_NO_WINDOW).stdout
+            last = re.search(r"Last Successful Sync Time:\s*(.+)", status)
+            if "has not been started" in status or "0x80070426" in status:
+                add("Windows clock sync", "bad", "the Windows Time service isn't running, so the clock "
+                    "can't sync: Settings → Time & language → Set time automatically → Sync now "
+                    "(or admin PowerShell: Start-Service w32time; w32tm /resync)")
+            elif last and "unspecified" not in last.group(1).lower():
+                add("Windows clock sync", "ok", f"last synced {last.group(1).strip()} — "
+                    f"sync before leaving for the course (course networks have no Internet)")
+            else:
+                add("Windows clock sync", "warn", "no successful sync recorded — sync the clock "
+                    "(Settings → Time → Sync now) before the course")
+        except (OSError, subprocess.TimeoutExpired):
+            add("Windows clock sync", "warn", "couldn't query w32tm — sync the clock before the course")
 
         # WSL mirrored networking
         try:
@@ -830,6 +1002,9 @@ class GroundGui(tk.Tk):
                 "UAV_GEOFENCE_MAX_ALTITUDE_HAE_M": c["altitude_limit_hae_m"],
                 "UAV_MAX_ALTITUDE_HAE_M": c["competition_max_hae_m"],
                 "UAV_PILOT_CALLSIGN": callsign(c), "UAV_REGISTRATION": registration(c),
+                "OCS_DECLARE_MODE": "auto" if c.get("declare_auto") == "1" else "manual",
+                **{f"TASK{t}_TIER": c.get(f"task{t}_tier") or "NONE" for t in (1, 2, 3, 4)},
+                "TASK4_ACK_MODE": "vehicle" if c.get("task4_vehicle_ack") == "1" else "auto",
             }
             exports = "".join(f"export {k}={sh_quote(v)}\n" for k, v in env.items())
             self.log("OCS", f"RoboCommand {host}:1883, callsign {callsign(c)!r}, "
@@ -870,11 +1045,158 @@ class GroundGui(tk.Tk):
         for i, key in enumerate(keys):
             self.after(i * 1500, lambda k=key: self.start_one(k))
 
+    def ocs_stop_ok(self) -> bool:
+        """Handbook 3.4.15: sequence counters must not reset during an active run,
+        and they live in the OCS -- confirm before stopping it mid-run."""
+        if not (self.active_run_id and self.procs["OCS"].running):
+            return True
+        if not messagebox.askyesno(
+                "Run in progress",
+                f"Run {self.active_run_id} is active (RunStart verified).\n\n"
+                f"Stopping the OCS resets every vehicle's report sequence counter, which must not "
+                f"happen during a run (Handbook 3.4.15), and stops the heartbeats.\n\nStop it anyway?"):
+            return False
+        self.active_run_id = None
+        return True
+
+    def stop_one(self, key):
+        if key == "OCS" and not self.ocs_stop_ok():
+            return
+        self.procs[key].stop()
+
     def stop_all(self):
+        if not self.ocs_stop_ok():
+            return
+
         def worker():
-            for key in ("Ground", "OCS", "Broker", "Router", "Mock"):
+            for key in ("Ground", "OCS", "Broker", "Router", "Mock", "Declare", "Task4"):
                 self.procs[key].stop()
         threading.Thread(target=worker, daemon=True).start()
+
+    # ── Tasks 2/3: the UAV echoes the resource delivery request ──
+    def echo_delivery(self):
+        """Operator: the UAV has begun the delivery -> republish the last request on
+        /seaowls/uav1/report/resource_delivery, sent to RoboCommand as UAV1."""
+        if not self.procs["OCS"].running:
+            messagebox.showerror("Echo delivery request", "Start the OCS first.")
+            return
+        if self.last_delivery_request is None:
+            messagebox.showinfo("Echo delivery request", "No ResourceDeliveryRequest received yet.")
+            return
+        if self.procs["Task4"].running:
+            return
+        task, resource, circle = self.last_delivery_request
+        if not messagebox.askyesno("Echo delivery request",
+                                   f"The UAV is starting the delivery: echo the request "
+                                   f"(task {task}, resource {resource}, circle {circle}) as UAV1?"):
+            return
+        publish = "\n".join([
+            "import time, rclpy",
+            "from seaowls_interfaces.msg import ResourceDeliveryRequest as R",
+            "rclpy.init(); n = rclpy.create_node('echo_delivery')",
+            "p = n.create_publisher(R, '/seaowls/uav1/report/resource_delivery', 10)",
+            "end = time.time() + 30",
+            "while p.get_subscription_count() == 0 and time.time() < end:",
+            "    rclpy.spin_once(n, timeout_sec=0.1)",
+            "if p.get_subscription_count() == 0:",
+            "    print('OCS not found on ROS after 30 s: is it running?'); raise SystemExit(1)",
+            f"p.publish(R(task={task}, resource_color={resource}, delivery_circle_color={circle}))",
+            "print('echoed the delivery request as UAV1')",
+            "end = time.time() + 1",
+            "while time.time() < end: rclpy.spin_once(n, timeout_sec=0.1)",
+        ])
+        self._set("Reports", "echoing the delivery request as UAV1…", "#a86b00")
+        self.procs["Task4"].start(self._wsl(
+            "uav_echo", self._ros_prelude() + f"exec python3 -u -c {sh_quote(publish)}\n"))
+
+    # ── Task 4 ──
+    def send_readiness(self):
+        """Operator: the vehicle is on station after the latest AssistanceRequest
+        -> std_msgs/UInt32 (its seq) on /seaowls/<vehicle>/task4/ready, and the
+        OCS sends the ReadinessReport."""
+        if not self.procs["OCS"].running:
+            messagebox.showerror("Send ReadinessReport", "Start the OCS first.")
+            return
+        if not self.task4_waiting_ready:
+            messagebox.showinfo("Send ReadinessReport", "No AssistanceRequest is waiting for a ReadinessReport.")
+            return
+        if self.procs["Task4"].running:
+            return
+        v, seq = self.task4_waiting_ready[-1]
+        if not messagebox.askyesno("Send ReadinessReport",
+                                   f"Report {v} on station for AssistanceRequest seq {seq}?"):
+            return
+        topic = f"/seaowls/{v.lower()}/task4/ready"
+        publish = "\n".join([
+            "import time, rclpy",
+            "from std_msgs.msg import UInt32",
+            "rclpy.init(); n = rclpy.create_node('send_task4_ready')",
+            f"p = n.create_publisher(UInt32, '{topic}', 10)",
+            "end = time.time() + 30",
+            "while p.get_subscription_count() == 0 and time.time() < end:",
+            "    rclpy.spin_once(n, timeout_sec=0.1)",
+            "if p.get_subscription_count() == 0:",
+            "    print('OCS not found on ROS after 30 s: is it running?'); raise SystemExit(1)",
+            f"p.publish(UInt32(data={int(seq)})); print('reported {v} ready for seq {seq}')",
+            "end = time.time() + 1",
+            "while time.time() < end: rclpy.spin_once(n, timeout_sec=0.1)",
+        ])
+        self._set("Task 4", f"sending ReadinessReport for {v} (AssistanceRequest seq {seq})…", "#a86b00")
+        self.procs["Task4"].start(self._wsl(
+            "task4_ready", self._ros_prelude() + f"exec python3 -u -c {sh_quote(publish)}\n"))
+
+    def rehearse_task4(self):
+        """Test profile: play RoboCommand's side of Task 4 against the running OCS."""
+        if self.profile.get() != "Test":
+            messagebox.showerror("Rehearse Task 4", "Only in the Test profile (it plays RoboCommand).")
+            return
+        if not self.procs["OCS"].running:
+            messagebox.showerror("Rehearse Task 4", "Start the OCS first.")
+            return
+        if self.procs["Task4"].running:
+            return
+        self._save_settings()
+        vtype = self.vars[("Test", "task4_vehicle_type")].get() or "USV"
+        vehicles = [v.strip() for v in self.common("vehicles").split(",") if v.strip()]
+        if not any(v.upper().startswith(vtype) for v in vehicles):
+            messagebox.showwarning("Rehearse Task 4", f"No {vtype} in Vehicles ({', '.join(vehicles)}): "
+                                                     f"the OCS will log the commands as not routed.")
+        repo = to_wsl_path(REPO)
+        cmd = (f"cd {sh_quote(repo)}\n"
+               f"export ROBOCOMMAND_ROOT={sh_quote(to_wsl_path(self.common('robocommand_repo')))}\n"
+               f"export TEAM_ID={sh_quote(self.common('team_id').strip())}\n"
+               f"exec python3 -u tests/mock_robocommand_task4.py --scenario all --vehicle-type {vtype} "
+               f"--timeout 120\n")
+        self.procs["Task4"].start(self._wsl("task4_rehearsal", cmd))
+        self.logs.select(list(self.procs).index("Task4"))
+
+    # ── RunDeclaration (sent on request) ──
+    def send_declaration(self):
+        """Ask seaowls_ocs to send its RunDeclaration now (std_msgs/Empty on
+        /seaowls/ocs/send_run_declaration). The OCS answers in its log:
+        'RunDeclaration seq=N …' when sent, or 'NOT sent (requested): why'."""
+        if not self.procs["OCS"].running:
+            messagebox.showerror("Send RunDeclaration", "Start the OCS first.")
+            return
+        if self.procs["Declare"].running:
+            return   # a request is already on its way
+        publish = "\n".join([
+            "import time, rclpy",
+            "from std_msgs.msg import Empty",
+            "rclpy.init(); n = rclpy.create_node('send_run_declaration')",
+            "p = n.create_publisher(Empty, '/seaowls/ocs/send_run_declaration', 10)",
+            "end = time.time() + 30",
+            "while p.get_subscription_count() == 0 and time.time() < end:",
+            "    rclpy.spin_once(n, timeout_sec=0.1)",
+            "if p.get_subscription_count() == 0:",
+            "    print('OCS not found on ROS after 30 s: is it running?'); raise SystemExit(1)",
+            "p.publish(Empty()); print('asked the OCS to send RunDeclaration')",
+            "end = time.time() + 1",
+            "while time.time() < end: rclpy.spin_once(n, timeout_sec=0.1)",
+        ])
+        self._set("Declaration", "sending — asking the OCS…", "#a86b00")
+        self.procs["Declare"].start(self._wsl(
+            "declare", self._ros_prelude() + f"exec python3 -u -c {sh_quote(publish)}\n"))
 
     # ── mock course (Test) ──
     def _mock(self, extra):
@@ -921,15 +1243,19 @@ class GroundGui(tk.Tk):
                 "Stop the OCS first?"):
             return
         if self.procs["OCS"].running:
+            if not self.ocs_stop_ok():
+                return
             self.procs["OCS"].stop()
         self._mock("--clear")
 
     def _on_close(self):
+        if not self.ocs_stop_ok():
+            return
         if any(p.running for p in self.procs.values()) and not messagebox.askyesno(
                 "Quit", "Stop everything and quit?"):
             return
         self._save_settings()
-        for key in ("Ground", "OCS", "Broker", "Router", "Mock"):
+        for key in ("Ground", "OCS", "Broker", "Router", "Mock", "Declare", "Task4"):
             self.procs[key].stop()
         self.destroy()
 

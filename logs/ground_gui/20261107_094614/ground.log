@@ -1,0 +1,158 @@
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4, inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 0 — listening for beacon messages
+[beacon-ground] [pos] 3D fix lat=1.4447307 lon=103.7852219 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4447240 lon=103.7852240 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4447201 lon=103.7852275 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4447205 lon=103.7852298 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4447168 lon=103.7852315 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4447092 lon=103.7852329 sats=15
+[beacon-ground] [pos] 3D fix lat=1.4447088 lon=103.7852310 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4447113 lon=103.7852266 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4446981 lon=103.7852256 sats=15
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 730, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 726, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4, inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 0 — listening for beacon messages
+[beacon-ground] [pos] 3D fix lat=1.4447003 lon=103.7852311 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446910 lon=103.7852349 sats=11
+[beacon-ground] [pos] 3D fix lat=1.4446773 lon=103.7852392 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446622 lon=103.7852465 sats=12
+[beacon-ground] [fence] UPLOADING course 'SV1'
+[beacon-ground] [fence] Uploading 1 inclusion polygon(s), 4 vertices, to system 1
+[beacon-ground] [fence] ✓ Fence accepted by PX4
+[beacon-ground] [fence] FAILED: ceiling 39.0 m HAE is not above home (45.5 m HAE)
+[beacon-ground] [fence] FAILED course 'SV1': ceiling 39.0 m HAE is not above home (45.5 m HAE)
+[beacon-ground] [pos] 3D fix lat=1.4446401 lon=103.7852565 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446292 lon=103.7852611 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4446244 lon=103.7852625 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4446070 lon=103.7852682 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4445859 lon=103.7852752 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4445666 lon=103.7852798 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4445521 lon=103.7852818 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4445459 lon=103.7852844 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4445489 lon=103.7852851 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4445555 lon=103.7852857 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4445538 lon=103.7852870 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4445571 lon=103.7852855 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4445683 lon=103.7852822 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4445765 lon=103.7852790 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4445779 lon=103.7852751 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4445770 lon=103.7852711 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4445773 lon=103.7852679 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4445757 lon=103.7852643 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4445751 lon=103.7852608 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4445755 lon=103.7852592 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4445795 lon=103.7852598 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4445815 lon=103.7852621 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4445925 lon=103.7852611 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4445977 lon=103.7852616 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4446016 lon=103.7852616 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4446063 lon=103.7852580 sats=13
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 730, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 726, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4, inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 1 — listening for beacon messages
+[beacon-ground] [pos] 3D fix lat=1.4446466 lon=103.7852363 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446456 lon=103.7852373 sats=12
+[beacon-ground] [fence] UPLOADING course 'SV1'
+[beacon-ground] [fence] Uploading 1 inclusion polygon(s), 4 vertices, to system 1
+[beacon-ground] [fence] ✓ Fence accepted by PX4
+[beacon-ground] [fence] FAILED: ceiling 39.0 m HAE is not above home (44.4 m HAE)
+[beacon-ground] [fence] FAILED course 'SV1': ceiling 39.0 m HAE is not above home (44.4 m HAE)
+[beacon-ground] [pos] 3D fix lat=1.4446454 lon=103.7852372 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4446503 lon=103.7852354 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446677 lon=103.7852300 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4446771 lon=103.7852286 sats=16
+[beacon-ground] [pos] 3D fix lat=1.4446779 lon=103.7852286 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446780 lon=103.7852303 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446845 lon=103.7852289 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446993 lon=103.7852245 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4447115 lon=103.7852201 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4447184 lon=103.7852175 sats=11
+[beacon-ground] [pos] 3D fix lat=1.4447217 lon=103.7852157 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4447148 lon=103.7852180 sats=12
+[beacon-ground] [pos] 3D fix lat=1.4447024 lon=103.7852216 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4446983 lon=103.7852239 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4446970 lon=103.7852236 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4446895 lon=103.7852246 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4446742 lon=103.7852269 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446651 lon=103.7852279 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446655 lon=103.7852265 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446738 lon=103.7852242 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446786 lon=103.7852210 sats=15
+[beacon-ground] [pos] 3D fix lat=1.4446854 lon=103.7852166 sats=15
+[beacon-ground] [pos] 3D fix lat=1.4446888 lon=103.7852140 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446920 lon=103.7852142 sats=15
+[beacon-ground] [pos] 3D fix lat=1.4446965 lon=103.7852140 sats=14
+[beacon-ground] [pos] 3D fix lat=1.4446988 lon=103.7852143 sats=15
+[beacon-ground] [pos] 3D fix lat=1.4446986 lon=103.7852135 sats=13
+[beacon-ground] [pos] 3D fix lat=1.4446948 lon=103.7852128 sats=15
+[beacon-ground] [pos] 3D fix lat=1.4446903 lon=103.7852148 sats=15
+[beacon-ground] [pos] 3D fix lat=1.4446877 lon=103.7852162 sats=14
+[beacon-ground] [pos] no GPS fix (fix_type=0)
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 730, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 726, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4, inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 1 — listening for beacon messages
+[beacon-ground] BENCH: assuming home 0 m HAE until the UAV reports a GPS fix / home
+[beacon-ground] [pos] no GPS fix (fix_type=0)
+[beacon-ground] [fence] UPLOADING course 'MOCK'
+[beacon-ground] [fence] Uploading 1 inclusion polygon(s), 4 vertices, to system 1
+[beacon-ground] [fence] ✓ Fence accepted by PX4
+[beacon-ground] [fence] Using ASSUMED home 0.0 m HAE (bench, no GPS fix)
+[beacon-ground] [fence] ✓ GF_MAX_VER_DIST = 39.0 m above home (39.0 m HAE)
+[beacon-ground] [fence] Reading the fence back from PX4
+[beacon-ground] [fence] note: PX4 returns the fence items with mission_type=0; accepting them (fence commands, our download)
+[beacon-ground] [fence] ✓ Read back from PX4: 1 inclusion polygon(s), 4 vertices
+[beacon-ground] [fence] ✓ Read back GF_MAX_VER_DIST = 39.0 m above home (39.0 m HAE, ASSUMED home)
+[beacon-ground] [fence] VALID course 'MOCK'
+[beacon-ground] [fence] NOTE: ceiling HAE uses the ASSUMED home height (bench) -- not valid for the competition

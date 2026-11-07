@@ -1,0 +1,84 @@
+[WARN] [1794028000.585944096] [seaowls_ocs]: [SEAOWLS OCS] UAV_REGISTRATION not set; heartbeats go without uav_registration
+[INFO] [1794028000.823395999] [seaowls_ocs]: [SEAOWLS OCS] RunDeclaration mode: manual (send with std_msgs/Empty on /seaowls/ocs/send_run_declaration) tiers=T1:CORE,T2:NONE,T3:NONE,T4:DISRUPTIVE
+[INFO] [1794028000.990851360] [seaowls_ocs]: [SEAOWLS OCS] MQTT connected
+[WARN] [1794028001.949426204] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028002.040597896] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028002.934819364] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028003.029867044] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028003.946863747] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028004.046730120] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028004.951738436] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028005.047033542] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028005.941536200] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028006.050972118] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028006.958244523] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028007.063589636] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[INFO] [1794028007.821855690] [seaowls_ocs]: [SEAOWLS OCS] RxCommand seq=280061 body=assistance_request
+[INFO] [1794028007.900834178] [seaowls_ocs]: [SEAOWLS OCS] [task4] AssistanceRequest seq=280061 -> USV1 at 26.371200,-80.103400
+[WARN] [1794028007.908127886] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[INFO] [1794028007.981954782] [seaowls_ocs]: [SEAOWLS OCS] report USV1 seq=1 IncidentAck
+[WARN] [1794028007.989353465] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[INFO] [1794028008.082864632] [seaowls_ocs]: [SEAOWLS OCS] [task4] IncidentAck USV1 command_seq=280061 (report seq=1)
+[WARN] [1794028008.965237341] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028009.051476765] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028009.933603037] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028010.023162619] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028010.976975996] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028011.071126469] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028024.672526792] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028024.761828500] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[INFO] [1794028024.832249337] [seaowls_ocs]: [SEAOWLS OCS] report USV1 seq=2 ReadinessReport
+[INFO] [1794028024.833858850] [seaowls_ocs]: [SEAOWLS OCS] RxCommand seq=280062 body=readiness_confirm
+[INFO] [1794028024.900281449] [seaowls_ocs]: [SEAOWLS OCS] [task4] ReadinessConfirm USV1 report seq=2 (AssistanceRequest seq=280061): cleared to resume normal operations
+[INFO] [1794028024.901710344] [seaowls_ocs]: [SEAOWLS OCS] [task4] ReadinessReport USV1 for AssistanceRequest seq=280061 (report seq=2) -- waiting for ReadinessConfirm
+[WARN] [1794028024.965538611] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[INFO] [1794028024.966900809] [seaowls_ocs]: [SEAOWLS OCS] RxCommand seq=280063 body=keep_out_zone
+[INFO] [1794028025.032268839] [seaowls_ocs]: [SEAOWLS OCS] [task4] KeepOutZone seq=280063 -> USV1 at 26.371200,-80.103400 radius=10m
+[WARN] [1794028025.033860628] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[INFO] [1794028025.135122871] [seaowls_ocs]: [SEAOWLS OCS] report USV1 seq=3 IncidentAck
+[INFO] [1794028025.239292004] [seaowls_ocs]: [SEAOWLS OCS] [task4] IncidentAck USV1 command_seq=280063 (report seq=3)
+[INFO] [1794028025.327968852] [seaowls_ocs]: [SEAOWLS OCS] RxCommand seq=280064 body=all_clear
+[INFO] [1794028025.411773868] [seaowls_ocs]: [SEAOWLS OCS] [task4] AllClear seq=280064 -> USV1
+[INFO] [1794028025.489631810] [seaowls_ocs]: [SEAOWLS OCS] report USV1 seq=4 IncidentAck
+[INFO] [1794028025.582097930] [seaowls_ocs]: [SEAOWLS OCS] [task4] IncidentAck USV1 command_seq=280064 (report seq=4)
+[INFO] [1794028025.640817400] [seaowls_ocs]: [SEAOWLS OCS] RxCommand seq=280065 body=moving_object_alert
+[INFO] [1794028025.706680238] [seaowls_ocs]: [SEAOWLS OCS] [task4] MovingObjectAlert seq=280065 -> USV1 at 26.371200,-80.103400 radius=5m
+[WARN] [1794028025.951036423] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028026.040570252] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028026.943315360] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028027.032642407] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028027.947227772] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028028.028380694] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028028.963081559] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028029.058040261] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028029.960558545] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028030.060002548] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028030.958690435] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028031.053039485] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028031.946318899] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028032.028820135] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028032.969122035] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028033.075330231] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028033.951651316] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028034.045577627] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794028034.949532550] [seaowls_ocs]: [SEAOWLS OCS] waiting for USV1
+[WARN] [1794028035.037205984] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/install/seaowls_robocommand/lib/seaowls_robocommand/seaowls_ocs", line 33, in <module>
+    sys.exit(load_entry_point('seaowls-robocommand', 'console_scripts', 'seaowls_ocs')())
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/build/seaowls_robocommand/seaowls_robocommand/ocs_node.py", line 699, in main
+    n.m.disconnect()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 1892, in disconnect
+    return self._send_disconnect(reasoncode, properties)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3610, in _send_disconnect
+    return self._packet_queue(command, packet, 0, 0)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3791, in _packet_queue
+    return self.loop_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 2121, in loop_write
+    rc = self._packet_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3226, in _packet_write
+    self._do_on_disconnect(
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 4383, in _do_on_disconnect
+    on_disconnect(
+TypeError: Ocs.disconnected() takes from 4 to 5 positional arguments but 6 were given
+[ros2run]: Process exited with failure 1

@@ -73,6 +73,7 @@ enforce it. At `GF_ACTION = 0` the fence is stored but ignored.
 SEARCH_AREA_SHAPE    = "fence"
 MAVSDK_ADDRESS       = "udpin://0.0.0.0:14540"   # drone value: "udpin://0.0.0.0:14551"
 BENCH_TEST           = False                     # BENCH_TEST returns before the fence is read
+RUNSTART_GATE        = False                     # no RoboCommand in sim: don't wait for RunStart
 ```
 
 **4. Run the sweep:**

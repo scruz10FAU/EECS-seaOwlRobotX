@@ -1,0 +1,35 @@
+[WARN] [1794024599.050332443] [seaowls_ocs]: [SEAOWLS OCS] UAV_REGISTRATION not set; heartbeats go without uav_registration
+[INFO] [1794024599.372239915] [seaowls_ocs]: [SEAOWLS OCS] RunDeclaration mode: manual (send with std_msgs/Empty on /seaowls/ocs/send_run_declaration)
+[INFO] [1794024599.517597501] [seaowls_ocs]: [SEAOWLS OCS] MQTT connected
+[WARN] [1794024600.479815404] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794024601.487164993] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794024602.481011509] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794024603.474231330] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794024604.469991790] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794024605.477751103] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794024606.479536346] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794024607.479946604] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794024608.482688611] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794024609.480415270] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[ERROR] [1794024610.455382879] [seaowls_ocs]: [SEAOWLS OCS] RunDeclaration NOT sent (requested): no RxCourse received from RoboCommand yet
+[WARN] [1794024610.544640995] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794024611.480610991] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/install/seaowls_robocommand/lib/seaowls_robocommand/seaowls_ocs", line 33, in <module>
+    sys.exit(load_entry_point('seaowls-robocommand', 'console_scripts', 'seaowls_ocs')())
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/build/seaowls_robocommand/seaowls_robocommand/ocs_node.py", line 513, in main
+    n.m.disconnect()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 1892, in disconnect
+    return self._send_disconnect(reasoncode, properties)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3610, in _send_disconnect
+    return self._packet_queue(command, packet, 0, 0)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3791, in _packet_queue
+    return self.loop_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 2121, in loop_write
+    rc = self._packet_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3226, in _packet_write
+    self._do_on_disconnect(
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 4383, in _do_on_disconnect
+    on_disconnect(
+TypeError: Ocs.disconnected() takes from 4 to 5 positional arguments but 6 were given
+[ros2run]: Process exited with failure 1

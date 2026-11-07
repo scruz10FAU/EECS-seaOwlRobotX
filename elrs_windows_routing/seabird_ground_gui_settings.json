@@ -10,22 +10,29 @@
     "pilot_first_name": "Samantha",
     "uapl_id": "",
     "team_code": "FLAU",
-    "caas_sticker": "",
+    "caas_sticker": "53556",
     "altitude_limit_hae_m": "40",
     "competition_max_hae_m": "50",
     "fence_inset_m": "1.0",
-    "ceiling_margin_m": "1.0"
+    "ceiling_margin_m": "1.0",
+    "declare_auto": "1",
+    "task1_tier": "ADVANCED",
+    "task2_tier": "NONE",
+    "task3_tier": "CORE",
+    "task4_tier": "NONE",
+    "task4_vehicle_ack": "0"
   },
   "Competition": {
     "adapter": "Ethernet  [Disconnected]  Intel(R) Ethernet Connection (16) I219-LM",
-    "robocommand_host": ""
+    "robocommand_host": "192.168.69.2"
   },
   "Test": {
     "robocommand_host": "localhost",
     "mock_use_gps": "0",
     "mock_center": "1.28298, 103.84663",
     "mock_size": "25,25",
-    "mock_invalid": "(valid)",
-    "bench_home_hae_m": "0"
+    "mock_invalid": "INVALID: too small (1 m inset collapses it)",
+    "bench_home_hae_m": "0",
+    "task4_vehicle_type": "UAV"
   }
 }

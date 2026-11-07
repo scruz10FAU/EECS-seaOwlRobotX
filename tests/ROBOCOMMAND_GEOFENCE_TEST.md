@@ -162,6 +162,13 @@ py -3.10 seabird_ground_gui.py
 
   The line under the fields shows the exact `uav_pilot_callsign` and
   `uav_registration` that will be sent.
+- **Send RunDeclaration automatically when the UAV fence is VALID**
+  (checkbox, **unticked by default**). Unticked, the OCS prepares and
+  checks the RunDeclaration but only sends it when you press **Send
+  RunDeclaration** on the Declaration row, so you decide when RoboCommand
+  gets it, before going autonomous. Ticked, it's sent as soon as it's ready.
+  Outside the GUI the OCS defaults to automatic (`OCS_DECLARE_MODE=auto`;
+  `manual` waits for `std_msgs/Empty` on `/seaowls/ocs/send_run_declaration`).
 - **Competition box:** the RoboCommand-facing adapter (↻ refreshes the list),
   and the RoboCommand host. Leave the host blank to use the DHCP gateway.
 - **Test box:**
@@ -202,7 +209,8 @@ py -3.10 seabird_ground_gui.py
   - Ground: receiving UAV MAVLink;
   - **Heartbeats:** UAV1 → RoboCommand at ~2 Hz;
   - **Geofence:** VALID / REFUSED / FAILED + reason;
-  - **Declaration:** seq, fence and altitude sent, or why not;
+  - **Declaration:** `READY` (waiting for you), `sent seq N` with the fence and altitude, or why
+    not. The **Send RunDeclaration** button on this row sends it (see below);
   - **RunStart.**
 - **Log tabs** per process. Each start's logs are also kept in
   `logs/ground_gui/<timestamp>/`, never overwritten.
@@ -223,6 +231,22 @@ cd /home/voxluser/seabirdDocker/EECS-seaOwlRobotX
 python3 beacon_mavlink_bridge.py --mavlink-endpoint udpout:10.200.0.2:14550
 ```
 
+**One-time deployment for the RunStart relay.** RoboCommand's RunStart
+reaches the sweep through the drone's ELRS bridge, which now also copies
+ground STATUSTEXT starting `SEABIRD_` to `127.0.0.1:14570`, where
+`beacon_mavlink_bridge.py` listens. Copy the updated
+`voxl/elrs_mavlink_bridge_ratelimited.py` over the drone's
+`/usr/local/bin/elrs_mavlink_bridge.py` (the `elrs-mavlink` service), then
+`systemctl restart elrs-mavlink`. Its startup log should include
+`Ground STATUSTEXT 'SEABIRD_*' also copied onboard to 127.0.0.1:14570`.
+
+The ELRS bridge runs in the `rfdns` network namespace. If
+`beacon_mavlink_bridge.py` runs outside it (it reaches the bridge at
+`10.200.0.2`), the copy must go to an address it can reach. Start the ELRS
+bridge with `--onboard-ip`, and `beacon_mavlink_bridge.py` with
+`--onboard-listen udpin:<that ip>:14570`. Check with the bench test below:
+the GUI's RunStart row must reach **UAV acknowledged**.
+
 ### 5.2 GUI
 
 1. Select **Test**, fill in the settings, then **Run preflight**.
@@ -235,9 +259,13 @@ python3 beacon_mavlink_bridge.py --mavlink-endpoint udpout:10.200.0.2:14550
    - Ground: receiving UAV MAVLink.
 4. **Publish mock course.** Expect:
    - **Geofence:** `UPLOADING`, then `VALID — course MOCK (on the UAV, read back)`;
-   - **Declaration:** `sent seq 1, course MOCK uav_geofence=5 points (read back from UAV1) altitude=39.0m HAE callsign=…`;
+   - **Declaration:** `READY — course MOCK, UAV1 fence 5 points 39.0m HAE: press Send RunDeclaration…`;
    - **Heartbeats:** green.
-5. In QGC, under Plan → Fence → Download, the fence should sit 1 m inside
+5. **Send RunDeclaration** (Declaration row). Expect
+   `sent seq 1, course MOCK uav_geofence=5 points (read back from UAV1) altitude=39.0m HAE callsign=…`.
+   It takes a few seconds (the button starts a short ROS process in WSL). Pressing it again sends
+   a fresh declaration (next seq).
+6. In QGC, under Plan → Fence → Download, the fence should sit 1 m inside
    the course.
 
 The mock doesn't answer the RunDeclaration, so **RunStart** stays empty on
@@ -252,7 +280,7 @@ course is fixed in Singapore) sends it.
 | Crossing corner order | Course kind → `VALID after repair: corners in crossing order` | **VALID**, with `⚠ … reordered into a non-crossing polygon…` under it |
 | Implausible size | Course kind → `VALID + warning: too large (> 1 km)` | **VALID**, with `⚠ … 3532 m across … check the coordinates` |
 | INVALID altitude | Stop all → set altitude limit to `0` or `60` → Start all (confirm the prompt) → Publish a `VALID course` | **Geofence: REFUSED**, e.g. "altitude limit 60 m HAE is above the maximum 50 m HAE" |
-| VALID again | Kind `VALID course`, altitude `40`, Publish | **VALID**, new declaration seq |
+| VALID again | Kind `VALID course`, altitude `40`, Publish, then **Send RunDeclaration** | **VALID**, then `sent seq N` |
 
 ### 5.4 Task 1 reporting check
 
@@ -267,9 +295,85 @@ This reports Task 1 started (`current_task` 2) while it runs and stood down
 reports, which the OCS logs as `SafePassage UAV1 -> RoboCommand`. Use
 `--no-task` when the sweep is running.
 
+### 5.5 Task 4 (Dynamic Incident Response) rehearsal
+
+The OCS handles all three Task 4 chains (Handbook 3.4.12) and routes each
+command to the targeted vehicle(s). A command addressed by type goes to every
+vehicle of that type in **Vehicles**; one with a `vehicle_id` goes only to
+that vehicle:
+
+| Tier | RoboCommand → | OCS / vehicle response |
+|---|---|---|
+| Core | AssistanceRequest | IncidentAck, then ReadinessReport when the vehicle is on station; RoboCommand answers ReadinessConfirm |
+| Advanced | KeepOutZone, then AllClear | IncidentAck to each |
+| Disruptive | MovingObjectAlert | none (routed to the vehicles only) |
+
+**In the GUI (Test profile):**
+1. Put the target vehicle in **Vehicles** (e.g. `USV1,UAV1`) and Start all.
+2. Choose the vehicle type next to **Rehearse Task 4** and press it. It plays
+   RoboCommand's side (`tests/mock_robocommand_task4.py`).
+3. Watch the **Task 4** row: AssistanceRequest → IncidentAck sent → (waiting
+   for the vehicle). When the vehicle is on station, press **Send
+   ReadinessReport** (or let the vehicle's own code report it, below). Then
+   it moves on: ReadinessConfirm "chain complete" → KeepOutZone/AllClear
+   acks → MovingObjectAlert routed.
+4. The Task 4 log tab ends with `RESULT: PASS -- every expected response arrived`.
+
+**Settings:** "Task 4: vehicles send their own IncidentAck" (unticked by
+default: the OCS acknowledges as soon as it has routed the command). At the
+competition, Task 4 commands arrive from RoboCommand and the same Task 4 row
+and **Send ReadinessReport** button apply.
+
+**For the vehicle software teams (ROS interface):**
+- Commands arrive as `seaowls_interfaces/Task4Command` on
+  `/seaowls/<vehicle lowercase>/task4/command` (`kind`, `command_seq`,
+  position, `radius_m`, heading/speed for moving objects, `assistance_seq`
+  for READINESS_CONFIRM).
+- On station after an ASSISTANCE_REQUEST: publish `std_msgs/UInt32` (the
+  `command_seq`) on `/seaowls/<vehicle>/task4/ready`, and the OCS sends the
+  ReadinessReport.
+- Only with "vehicles send their own IncidentAck" ticked: acknowledge with
+  `std_msgs/UInt32` on `/seaowls/<vehicle>/task4/ack`.
+- `seaowls_interfaces` gained `Task4Command.msg` and `PipelineSurvey.msg`:
+  rebuild the workspace
+  (`colcon build --packages-select seaowls_interfaces seaowls_robocommand`).
+
+### 5.6 Tasks 2 and 3 reports
+
+| Report (Handbook 3.4.12) | Sent as | How it reaches the OCS |
+|---|---|---|
+| Task 2 `PipelineSurveyReport` | UUV1 | The UUV publishes `seaowls_interfaces/PipelineSurvey` on `/seaowls/uuv1/report/pipeline_survey`: active (GREEN) buoy position and `segments` (0 unknown / 1 intact / 2 damaged, from the active buoy end), once, after the survey and any repair. Needs `UUV1` in **Vehicles**. |
+| Tasks 2/3 `ResourceDeliveryRequest` (detecting vehicle) | USV1 | The USV publishes on `/seaowls/usv1/report/resource_delivery` (unchanged). The OCS also passes it to the UAV on `/seaowls/uav1/task/resource_delivery`. |
+| Tasks 2/3 `ResourceDeliveryRequest` echo when delivery begins (Advanced/Disruptive) | UAV1 | The UAV publishes the same request on `/seaowls/uav1/report/resource_delivery`, or the operator presses **Echo delivery request (UAV)** on the GUI's Reports row when the UAV starts the delivery. |
+| Task 3 `DockingReport`, `FirefightingReport` | USV1 | Unchanged |
+
+The GUI's **Reports** row shows the last report sent (vehicle and report
+seq), a delivery request waiting for the UAV's echo, and any report the OCS
+refused, e.g. an invalid segment value or `UUV1` not in Vehicles.
+
 ---
 
 ## 6. Ground / Flight Validation and competition (Competition profile)
+
+**Before leaving for the course (no Internet there):**
+- **Sync the laptop clock.** `sent_at` on every message is the OCS clock
+  (Handbook 3.4.8). In Windows Settings → Time & language → Date & time,
+  turn on "Set time automatically" and press **Sync now**, then run
+  `wsl --shutdown` so WSL takes the corrected time. Preflight's **WSL
+  clock** and **Windows clock sync** rows must be ✓. On 2026-11-07 this
+  laptop had the Windows Time service stopped and WSL 2 hours off from
+  Windows.
+- **Confirm the protobuf is the latest** (preflight ✓ while you still have
+  Internet).
+
+**During a run, never restart the OCS.** Each vehicle's report sequence
+counter lives in the OCS and must not reset during an active run (3.4.15).
+After RunStart, the GUI asks before stopping the OCS (Stop, Stop all, Clear
+mock course, closing the window).
+
+**Rate limit (3.4.5, at most 5 messages/s per system):** UAV1 sends 2
+heartbeats/s, and SafePassage updates are merged to at most one per second
+(the latest buoy field is always sent).
 
 1. Plug the provided RJ-45 cable into the laptop's Ethernet port. Check that
    the adapter is on DHCP (Windows Settings → Network → Ethernet → IP
@@ -284,9 +388,13 @@ reports, which the OCS logs as `SafePassage UAV1 -> RoboCommand`. Use
 6. RoboCommand publishes the course and the round trip runs by itself.
    Watch for:
    - Geofence: `VALID — course <id> (on the UAV, read back)`;
-   - Declaration: `sent seq N … read back from UAV1`;
-   - Heartbeats: green;
-   - RunStart: received once every declared vehicle reports AUTO.
+   - Declaration: `READY — course <id> …`;
+   - Heartbeats: green.
+7. **Before starting the autonomous mission**, press **Send RunDeclaration**.
+   Expect `Declaration: sent seq N … read back from UAV1`. RoboCommand
+   doesn't reply to a declaration: **RunStart** arrives once every declared
+   vehicle reports AUTO. No RunStart after going AUTO means the declaration
+   was refused or a vehicle isn't AUTO.
 
 What to show the judges:
 - **heartbeats:** the Heartbeats row and OCS log, complete at 2 Hz;
@@ -306,7 +414,25 @@ In `sweep_rrt_overfly_downward_center.py`:
 SEARCH_AREA_SHAPE    = "fence"    # or "disc" for the 10 m circle
 FENCE_MARGIN_M       = 2.0        # search stays this far inside the fence
 BENCH_TEST           = False      # BENCH_TEST returns before the fence is read
+RUNSTART_GATE        = True       # hold in OFFBOARD until RoboCommand's RunStart
+RUNSTART_WAIT_MAX_S  = 600.0      # no RunStart by then -> return to launch
 ```
+
+**RunStart gate (Handbook 3.4.10: "only when the OCS receives and verifies
+the RunStart should any vehicle begin their run").** After takeoff and
+OFFBOARD, the sweep holds position, which counts as AUTO for RoboCommand,
+until RunStart arrives on `/seabird/run_start`. Only then does it set
+`current_task` 2 and start searching. The full chain:
+1. OCS verifies RunStart (GUI RunStart row: `verified: run_id N — relaying to the UAV…`);
+2. ground relays it up ELRS;
+3. the drone's ELRS bridge copies it onboard;
+4. `beacon_mavlink_bridge.py` publishes it and acknowledges (GUI: `UAV acknowledged, the run may begin`).
+
+The sweep logs `Holding position in OFFBOARD until RoboCommand's RunStart
+arrives…`, then `✓ RunStart received (run_id=N) — beginning the run`.
+Without a RunStart in `RUNSTART_WAIT_MAX_S` it doesn't search and returns
+to launch. Set `RUNSTART_GATE = False` for bench and sim tests without
+RoboCommand.
 
 The fence must be **VALID (on the UAV)** before the sweep starts. The sweep
 reads it once, before arming. In the drone's container:
@@ -317,8 +443,8 @@ python3.10 sweep_rrt_overfly_downward_center.py
 
 Expect `[rrt] ✓ PX4 geofence: 1 inclusion polygon(s), … m², margin 2.0 m`.
 The sweep aborts before arming if there's no usable fence, or if takeoff is
-outside it. `current_task` goes 1 → 2 at offboard start and 2 → 1 after
-landing. For Gazebo, see [SIM_GEOFENCE_TEST.md](SIM_GEOFENCE_TEST.md).
+outside it. `current_task` goes 1 → 2 when the run begins (after RunStart)
+and 2 → 1 after landing. For Gazebo, see [SIM_GEOFENCE_TEST.md](SIM_GEOFENCE_TEST.md).
 
 ---
 
