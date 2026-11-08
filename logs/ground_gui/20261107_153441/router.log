@@ -1,0 +1,1239 @@
+ELRS router | COM1 @ 460800
+Radio -> QGC: ('127.0.0.1', 14550), WSL: ('127.0.0.1', 14551)
+QGC -> radio: 127.0.0.1:14600
+Only this router should open COM port. Ctrl+C to stop.
+Connected to COM1
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=1693 valid_frames=53 lost_frames_estimate=196 duplicate_frames=16 out_of_order_frames=9 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=53 wsl_failed=0 qgc_sent=53 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=15, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4, ATTITUDE=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+Last interval: serial_bytes=1518 valid_frames=43 lost_frames_estimate=290 duplicate_frames=1 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1508 valid_frames=45 lost_frames_estimate=295 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1534 valid_frames=44 lost_frames_estimate=283 duplicate_frames=2 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1495 valid_frames=44 lost_frames_estimate=294 duplicate_frames=1 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1534 valid_frames=44 lost_frames_estimate=282 duplicate_frames=2 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1952 valid_frames=59 lost_frames_estimate=299 duplicate_frames=16 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=14, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+Last interval: serial_bytes=1521 valid_frames=43 lost_frames_estimate=286 duplicate_frames=1 out_of_order_frames=11 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1508 valid_frames=45 lost_frames_estimate=284 duplicate_frames=2 out_of_order_frames=13 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1519 valid_frames=42 lost_frames_estimate=281 duplicate_frames=1 out_of_order_frames=12 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=42 wsl_failed=0 qgc_sent=42 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=4, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1510 valid_frames=46 lost_frames_estimate=300 duplicate_frames=2 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=6, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1474 valid_frames=42 lost_frames_estimate=288 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=42 wsl_failed=0 qgc_sent=42 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=4, GPS_RAW_INT=4, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1506 valid_frames=45 lost_frames_estimate=289 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1521 valid_frames=43 lost_frames_estimate=293 duplicate_frames=1 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1506 valid_frames=45 lost_frames_estimate=287 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1537 valid_frames=44 lost_frames_estimate=306 duplicate_frames=2 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1433 valid_frames=42 lost_frames_estimate=280 duplicate_frames=1 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=42 wsl_failed=0 qgc_sent=42 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=8, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1530 valid_frames=44 lost_frames_estimate=284 duplicate_frames=2 out_of_order_frames=13 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1495 valid_frames=44 lost_frames_estimate=298 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1495 valid_frames=43 lost_frames_estimate=280 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1511 valid_frames=45 lost_frames_estimate=293 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1521 valid_frames=43 lost_frames_estimate=288 duplicate_frames=1 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1506 valid_frames=45 lost_frames_estimate=293 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1532 valid_frames=44 lost_frames_estimate=285 duplicate_frames=2 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1495 valid_frames=44 lost_frames_estimate=305 duplicate_frames=1 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1978 valid_frames=58 lost_frames_estimate=289 duplicate_frames=16 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=14, HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1508 valid_frames=45 lost_frames_estimate=292 duplicate_frames=2 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1534 valid_frames=44 lost_frames_estimate=288 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1495 valid_frames=44 lost_frames_estimate=295 duplicate_frames=1 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1534 valid_frames=44 lost_frames_estimate=297 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1508 valid_frames=45 lost_frames_estimate=306 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1521 valid_frames=43 lost_frames_estimate=283 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1508 valid_frames=45 lost_frames_estimate=305 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1534 valid_frames=44 lost_frames_estimate=282 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=2, UNKNOWN_411=2
+Last interval: serial_bytes=1485 valid_frames=43 lost_frames_estimate=294 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=2, BATTERY_STATUS=2
+Last interval: serial_bytes=1491 valid_frames=44 lost_frames_estimate=307 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, UNKNOWN_411=2, BATTERY_STATUS=2
+Last interval: serial_bytes=1534 valid_frames=44 lost_frames_estimate=276 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=3, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1508 valid_frames=44 lost_frames_estimate=287 duplicate_frames=2 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1511 valid_frames=45 lost_frames_estimate=310 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=67 qgc_rx_frames=2 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, UNKNOWN_411=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: MISSION_COUNT=1, MISSION_ITEM_INT=1
+Last interval: serial_bytes=2151 valid_frames=65 lost_frames_estimate=261 duplicate_frames=8 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=365 qgc_rx_frames=12 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_REQUEST_INT=4, MISSION_ITEM_INT=4
+  QGC TX messages: MISSION_ITEM_INT=4, MISSION_REQUEST_INT=4, PARAM_SET=1, MISSION_REQUEST_LIST=1, MISSION_ACK=1, PARAM_REQUEST_READ=1
+Last interval: serial_bytes=1766 valid_frames=52 lost_frames_estimate=315 duplicate_frames=9 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=52 wsl_failed=0 qgc_sent=52 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=3
+Last interval: serial_bytes=1498 valid_frames=44 lost_frames_estimate=285 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2, UNKNOWN_411=2
+Last interval: serial_bytes=1766 valid_frames=52 lost_frames_estimate=331 duplicate_frames=9 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=52 wsl_failed=0 qgc_sent=52 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=3
+Last interval: serial_bytes=1705 valid_frames=50 lost_frames_estimate=267 duplicate_frames=8 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1546 valid_frames=45 lost_frames_estimate=324 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=3, UNKNOWN_411=2
+Last interval: serial_bytes=1497 valid_frames=44 lost_frames_estimate=262 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2, UNKNOWN_411=2
+Last interval: serial_bytes=1532 valid_frames=44 lost_frames_estimate=301 duplicate_frames=1 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=3, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1497 valid_frames=44 lost_frames_estimate=292 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2, UNKNOWN_411=2
+Last interval: serial_bytes=1545 valid_frames=45 lost_frames_estimate=317 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=3, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1482 valid_frames=43 lost_frames_estimate=286 duplicate_frames=1 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1535 valid_frames=44 lost_frames_estimate=294 duplicate_frames=2 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1507 valid_frames=45 lost_frames_estimate=297 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1521 valid_frames=43 lost_frames_estimate=296 duplicate_frames=1 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1508 valid_frames=45 lost_frames_estimate=294 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1534 valid_frames=44 lost_frames_estimate=290 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1495 valid_frames=44 lost_frames_estimate=294 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1534 valid_frames=44 lost_frames_estimate=310 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=2, UNKNOWN_411=2
+Last interval: serial_bytes=1472 valid_frames=44 lost_frames_estimate=260 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1961 valid_frames=57 lost_frames_estimate=297 duplicate_frames=15 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=14, ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=2
+Last interval: serial_bytes=1508 valid_frames=45 lost_frames_estimate=334 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1473 valid_frames=42 lost_frames_estimate=263 duplicate_frames=1 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=42 wsl_failed=0 qgc_sent=42 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1557 valid_frames=46 lost_frames_estimate=316 duplicate_frames=2 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=6, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1488 valid_frames=43 lost_frames_estimate=260 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1515 valid_frames=45 lost_frames_estimate=293 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1528 valid_frames=43 lost_frames_estimate=294 duplicate_frames=1 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1509 valid_frames=45 lost_frames_estimate=296 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1538 valid_frames=44 lost_frames_estimate=288 duplicate_frames=2 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1500 valid_frames=44 lost_frames_estimate=288 duplicate_frames=1 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1539 valid_frames=44 lost_frames_estimate=290 duplicate_frames=2 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1513 valid_frames=45 lost_frames_estimate=286 duplicate_frames=2 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1526 valid_frames=43 lost_frames_estimate=287 duplicate_frames=1 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1513 valid_frames=45 lost_frames_estimate=289 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1539 valid_frames=44 lost_frames_estimate=293 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1500 valid_frames=44 lost_frames_estimate=305 duplicate_frames=1 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1539 valid_frames=44 lost_frames_estimate=297 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1513 valid_frames=45 lost_frames_estimate=293 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1487 valid_frames=42 lost_frames_estimate=257 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=42 wsl_failed=0 qgc_sent=42 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1512 valid_frames=45 lost_frames_estimate=308 duplicate_frames=2 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1526 valid_frames=43 lost_frames_estimate=296 duplicate_frames=1 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1735 valid_frames=52 lost_frames_estimate=316 duplicate_frames=9 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=52 wsl_failed=0 qgc_sent=52 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=7, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+Last interval: serial_bytes=1761 valid_frames=51 lost_frames_estimate=298 duplicate_frames=9 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=51 wsl_failed=0 qgc_sent=51 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=7, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1513 valid_frames=45 lost_frames_estimate=294 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, BATTERY_STATUS=2
+BEACON Windows RX tracking_id=0 MAVLink_seq=1
+BEACON Windows RX tracking_id=0 MAVLink_seq=2
+BEACON Windows RX tracking_id=1 MAVLink_seq=3
+BEACON Windows RX tracking_id=1 MAVLink_seq=5
+BEACON Windows RX tracking_id=2 MAVLink_seq=6
+Last interval: serial_bytes=1864 valid_frames=50 lost_frames_estimate=292 duplicate_frames=1 out_of_order_frames=20 memory_vect=5 beacons=5 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MEMORY_VECT=5, BATTERY_STATUS=3, MISSION_CURRENT=2
+BEACON Windows RX tracking_id=2 MAVLink_seq=7
+BEACON Windows RX tracking_id=3 MAVLink_seq=8
+BEACON Windows RX tracking_id=3 MAVLink_seq=10
+BEACON Windows RX tracking_id=4 MAVLink_seq=11
+BEACON Windows RX tracking_id=4 MAVLink_seq=12
+BEACON Windows RX tracking_id=5 MAVLink_seq=13
+BEACON Windows RX tracking_id=5 MAVLink_seq=15
+BEACON Windows RX tracking_id=6 MAVLink_seq=16
+BEACON Windows RX tracking_id=6 MAVLink_seq=17
+BEACON Windows RX tracking_id=7 MAVLink_seq=18
+Last interval: serial_bytes=2071 valid_frames=57 lost_frames_estimate=291 duplicate_frames=2 out_of_order_frames=18 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=7 MAVLink_seq=20
+BEACON Windows RX tracking_id=8 MAVLink_seq=21
+BEACON Windows RX tracking_id=8 MAVLink_seq=22
+BEACON Windows RX tracking_id=9 MAVLink_seq=23
+BEACON Windows RX tracking_id=9 MAVLink_seq=25
+BEACON Windows RX tracking_id=10 MAVLink_seq=26
+BEACON Windows RX tracking_id=10 MAVLink_seq=27
+BEACON Windows RX tracking_id=11 MAVLink_seq=28
+BEACON Windows RX tracking_id=11 MAVLink_seq=30
+BEACON Windows RX tracking_id=12 MAVLink_seq=31
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=282 duplicate_frames=2 out_of_order_frames=11 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, STATUSTEXT=3
+BEACON Windows RX tracking_id=12 MAVLink_seq=32
+BEACON Windows RX tracking_id=13 MAVLink_seq=33
+BEACON Windows RX tracking_id=13 MAVLink_seq=35
+BEACON Windows RX tracking_id=14 MAVLink_seq=36
+BEACON Windows RX tracking_id=14 MAVLink_seq=37
+BEACON Windows RX tracking_id=15 MAVLink_seq=38
+BEACON Windows RX tracking_id=15 MAVLink_seq=40
+BEACON Windows RX tracking_id=16 MAVLink_seq=41
+BEACON Windows RX tracking_id=16 MAVLink_seq=42
+BEACON Windows RX tracking_id=17 MAVLink_seq=43
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=285 duplicate_frames=1 out_of_order_frames=11 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=17 MAVLink_seq=45
+BEACON Windows RX tracking_id=18 MAVLink_seq=46
+BEACON Windows RX tracking_id=18 MAVLink_seq=47
+BEACON Windows RX tracking_id=19 MAVLink_seq=48
+BEACON Windows RX tracking_id=19 MAVLink_seq=50
+BEACON Windows RX tracking_id=20 MAVLink_seq=51
+BEACON Windows RX tracking_id=20 MAVLink_seq=52
+BEACON Windows RX tracking_id=21 MAVLink_seq=53
+BEACON Windows RX tracking_id=21 MAVLink_seq=55
+BEACON Windows RX tracking_id=22 MAVLink_seq=56
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=282 duplicate_frames=2 out_of_order_frames=10 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, STATUSTEXT=3
+BEACON Windows RX tracking_id=22 MAVLink_seq=57
+BEACON Windows RX tracking_id=23 MAVLink_seq=58
+BEACON Windows RX tracking_id=23 MAVLink_seq=60
+BEACON Windows RX tracking_id=24 MAVLink_seq=61
+BEACON Windows RX tracking_id=24 MAVLink_seq=62
+BEACON Windows RX tracking_id=25 MAVLink_seq=63
+BEACON Windows RX tracking_id=25 MAVLink_seq=65
+BEACON Windows RX tracking_id=26 MAVLink_seq=66
+BEACON Windows RX tracking_id=26 MAVLink_seq=67
+BEACON Windows RX tracking_id=27 MAVLink_seq=68
+Last interval: serial_bytes=2293 valid_frames=64 lost_frames_estimate=291 duplicate_frames=9 out_of_order_frames=12 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=64 wsl_failed=0 qgc_sent=64 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, UNKNOWN_410=7, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3
+BEACON Windows RX tracking_id=27 MAVLink_seq=70
+BEACON Windows RX tracking_id=28 MAVLink_seq=71
+BEACON Windows RX tracking_id=28 MAVLink_seq=72
+BEACON Windows RX tracking_id=29 MAVLink_seq=73
+BEACON Windows RX tracking_id=29 MAVLink_seq=75
+BEACON Windows RX tracking_id=30 MAVLink_seq=76
+BEACON Windows RX tracking_id=30 MAVLink_seq=77
+BEACON Windows RX tracking_id=31 MAVLink_seq=78
+BEACON Windows RX tracking_id=31 MAVLink_seq=80
+Last interval: serial_bytes=2322 valid_frames=62 lost_frames_estimate=293 duplicate_frames=8 out_of_order_frames=14 memory_vect=9 beacons=9 bad_data=0 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=9, UNKNOWN_410=7, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=32 MAVLink_seq=81
+BEACON Windows RX tracking_id=32 MAVLink_seq=82
+BEACON Windows RX tracking_id=33 MAVLink_seq=83
+BEACON Windows RX tracking_id=33 MAVLink_seq=85
+BEACON Windows RX tracking_id=34 MAVLink_seq=86
+BEACON Windows RX tracking_id=34 MAVLink_seq=87
+BEACON Windows RX tracking_id=35 MAVLink_seq=88
+BEACON Windows RX tracking_id=35 MAVLink_seq=90
+BEACON Windows RX tracking_id=36 MAVLink_seq=91
+BEACON Windows RX tracking_id=36 MAVLink_seq=92
+Last interval: serial_bytes=2070 valid_frames=57 lost_frames_estimate=291 duplicate_frames=2 out_of_order_frames=17 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=37 MAVLink_seq=93
+BEACON Windows RX tracking_id=37 MAVLink_seq=95
+BEACON Windows RX tracking_id=38 MAVLink_seq=96
+BEACON Windows RX tracking_id=38 MAVLink_seq=97
+BEACON Windows RX tracking_id=39 MAVLink_seq=98
+BEACON Windows RX tracking_id=39 MAVLink_seq=100
+BEACON Windows RX tracking_id=40 MAVLink_seq=101
+BEACON Windows RX tracking_id=40 MAVLink_seq=102
+BEACON Windows RX tracking_id=41 MAVLink_seq=103
+BEACON Windows RX tracking_id=41 MAVLink_seq=105
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=286 duplicate_frames=2 out_of_order_frames=15 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, STATUSTEXT=3
+BEACON Windows RX tracking_id=42 MAVLink_seq=106
+BEACON Windows RX tracking_id=42 MAVLink_seq=107
+BEACON Windows RX tracking_id=43 MAVLink_seq=108
+BEACON Windows RX tracking_id=43 MAVLink_seq=110
+BEACON Windows RX tracking_id=44 MAVLink_seq=111
+BEACON Windows RX tracking_id=44 MAVLink_seq=112
+BEACON Windows RX tracking_id=45 MAVLink_seq=113
+BEACON Windows RX tracking_id=45 MAVLink_seq=115
+BEACON Windows RX tracking_id=46 MAVLink_seq=116
+BEACON Windows RX tracking_id=46 MAVLink_seq=117
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=290 duplicate_frames=1 out_of_order_frames=16 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=47 MAVLink_seq=118
+BEACON Windows RX tracking_id=47 MAVLink_seq=120
+BEACON Windows RX tracking_id=48 MAVLink_seq=121
+BEACON Windows RX tracking_id=48 MAVLink_seq=122
+BEACON Windows RX tracking_id=49 MAVLink_seq=123
+BEACON Windows RX tracking_id=49 MAVLink_seq=125
+BEACON Windows RX tracking_id=50 MAVLink_seq=126
+BEACON Windows RX tracking_id=50 MAVLink_seq=127
+BEACON Windows RX tracking_id=51 MAVLink_seq=128
+BEACON Windows RX tracking_id=51 MAVLink_seq=130
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=296 duplicate_frames=2 out_of_order_frames=17 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, STATUSTEXT=3
+BEACON Windows RX tracking_id=52 MAVLink_seq=131
+BEACON Windows RX tracking_id=52 MAVLink_seq=132
+BEACON Windows RX tracking_id=53 MAVLink_seq=133
+BEACON Windows RX tracking_id=53 MAVLink_seq=135
+BEACON Windows RX tracking_id=54 MAVLink_seq=136
+BEACON Windows RX tracking_id=54 MAVLink_seq=137
+BEACON Windows RX tracking_id=55 MAVLink_seq=138
+BEACON Windows RX tracking_id=55 MAVLink_seq=140
+BEACON Windows RX tracking_id=56 MAVLink_seq=141
+BEACON Windows RX tracking_id=56 MAVLink_seq=142
+Last interval: serial_bytes=2071 valid_frames=57 lost_frames_estimate=284 duplicate_frames=2 out_of_order_frames=18 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=57 MAVLink_seq=143
+BEACON Windows RX tracking_id=57 MAVLink_seq=145
+BEACON Windows RX tracking_id=58 MAVLink_seq=146
+BEACON Windows RX tracking_id=58 MAVLink_seq=147
+BEACON Windows RX tracking_id=59 MAVLink_seq=148
+BEACON Windows RX tracking_id=59 MAVLink_seq=150
+BEACON Windows RX tracking_id=60 MAVLink_seq=151
+BEACON Windows RX tracking_id=60 MAVLink_seq=152
+BEACON Windows RX tracking_id=61 MAVLink_seq=153
+BEACON Windows RX tracking_id=61 MAVLink_seq=155
+Last interval: serial_bytes=2143 valid_frames=56 lost_frames_estimate=298 duplicate_frames=1 out_of_order_frames=19 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, STATUSTEXT=3
+BEACON Windows RX tracking_id=62 MAVLink_seq=156
+BEACON Windows RX tracking_id=62 MAVLink_seq=157
+BEACON Windows RX tracking_id=63 MAVLink_seq=158
+BEACON Windows RX tracking_id=63 MAVLink_seq=160
+BEACON Windows RX tracking_id=64 MAVLink_seq=161
+BEACON Windows RX tracking_id=64 MAVLink_seq=162
+BEACON Windows RX tracking_id=65 MAVLink_seq=164
+BEACON Windows RX tracking_id=65 MAVLink_seq=165
+BEACON Windows RX tracking_id=66 MAVLink_seq=166
+BEACON Windows RX tracking_id=66 MAVLink_seq=167
+Last interval: serial_bytes=2040 valid_frames=56 lost_frames_estimate=299 duplicate_frames=2 out_of_order_frames=19 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=67 MAVLink_seq=169
+BEACON Windows RX tracking_id=67 MAVLink_seq=170
+BEACON Windows RX tracking_id=68 MAVLink_seq=171
+BEACON Windows RX tracking_id=68 MAVLink_seq=172
+BEACON Windows RX tracking_id=69 MAVLink_seq=174
+BEACON Windows RX tracking_id=69 MAVLink_seq=175
+BEACON Windows RX tracking_id=70 MAVLink_seq=176
+BEACON Windows RX tracking_id=70 MAVLink_seq=177
+BEACON Windows RX tracking_id=71 MAVLink_seq=179
+BEACON Windows RX tracking_id=71 MAVLink_seq=180
+Last interval: serial_bytes=2147 valid_frames=57 lost_frames_estimate=274 duplicate_frames=2 out_of_order_frames=17 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, HEARTBEAT=10, ATTITUDE=9, GPS_RAW_INT=6, SYS_STATUS=5, VFR_HUD=5, BATTERY_STATUS=3, STATUSTEXT=3
+BEACON Windows RX tracking_id=72 MAVLink_seq=181
+BEACON Windows RX tracking_id=72 MAVLink_seq=182
+BEACON Windows RX tracking_id=73 MAVLink_seq=184
+BEACON Windows RX tracking_id=73 MAVLink_seq=185
+BEACON Windows RX tracking_id=74 MAVLink_seq=186
+BEACON Windows RX tracking_id=74 MAVLink_seq=187
+BEACON Windows RX tracking_id=75 MAVLink_seq=189
+BEACON Windows RX tracking_id=75 MAVLink_seq=190
+BEACON Windows RX tracking_id=76 MAVLink_seq=191
+BEACON Windows RX tracking_id=76 MAVLink_seq=192
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=299 duplicate_frames=1 out_of_order_frames=17 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=77 MAVLink_seq=194
+BEACON Windows RX tracking_id=77 MAVLink_seq=195
+BEACON Windows RX tracking_id=78 MAVLink_seq=196
+BEACON Windows RX tracking_id=78 MAVLink_seq=197
+BEACON Windows RX tracking_id=79 MAVLink_seq=199
+BEACON Windows RX tracking_id=79 MAVLink_seq=200
+BEACON Windows RX tracking_id=80 MAVLink_seq=201
+BEACON Windows RX tracking_id=80 MAVLink_seq=202
+BEACON Windows RX tracking_id=81 MAVLink_seq=204
+BEACON Windows RX tracking_id=81 MAVLink_seq=205
+Last interval: serial_bytes=2102 valid_frames=56 lost_frames_estimate=273 duplicate_frames=2 out_of_order_frames=16 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=4, BATTERY_STATUS=3, STATUSTEXT=3
+BEACON Windows RX tracking_id=82 MAVLink_seq=206
+BEACON Windows RX tracking_id=82 MAVLink_seq=207
+BEACON Windows RX tracking_id=83 MAVLink_seq=209
+BEACON Windows RX tracking_id=83 MAVLink_seq=210
+BEACON Windows RX tracking_id=84 MAVLink_seq=211
+BEACON Windows RX tracking_id=84 MAVLink_seq=212
+BEACON Windows RX tracking_id=85 MAVLink_seq=214
+BEACON Windows RX tracking_id=85 MAVLink_seq=215
+BEACON Windows RX tracking_id=86 MAVLink_seq=216
+BEACON Windows RX tracking_id=86 MAVLink_seq=217
+Last interval: serial_bytes=2057 valid_frames=56 lost_frames_estimate=302 duplicate_frames=1 out_of_order_frames=14 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=87 MAVLink_seq=219
+BEACON Windows RX tracking_id=87 MAVLink_seq=220
+BEACON Windows RX tracking_id=88 MAVLink_seq=221
+BEACON Windows RX tracking_id=88 MAVLink_seq=222
+BEACON Windows RX tracking_id=89 MAVLink_seq=224
+BEACON Windows RX tracking_id=89 MAVLink_seq=225
+BEACON Windows RX tracking_id=90 MAVLink_seq=226
+BEACON Windows RX tracking_id=90 MAVLink_seq=227
+BEACON Windows RX tracking_id=91 MAVLink_seq=229
+BEACON Windows RX tracking_id=91 MAVLink_seq=230
+Last interval: serial_bytes=2376 valid_frames=64 lost_frames_estimate=281 duplicate_frames=9 out_of_order_frames=17 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=64 wsl_failed=0 qgc_sent=64 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, UNKNOWN_410=7, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=92 MAVLink_seq=231
+BEACON Windows RX tracking_id=92 MAVLink_seq=232
+BEACON Windows RX tracking_id=93 MAVLink_seq=234
+BEACON Windows RX tracking_id=93 MAVLink_seq=235
+BEACON Windows RX tracking_id=94 MAVLink_seq=236
+BEACON Windows RX tracking_id=94 MAVLink_seq=237
+BEACON Windows RX tracking_id=95 MAVLink_seq=239
+BEACON Windows RX tracking_id=95 MAVLink_seq=240
+BEACON Windows RX tracking_id=96 MAVLink_seq=241
+Last interval: serial_bytes=2231 valid_frames=62 lost_frames_estimate=294 duplicate_frames=9 out_of_order_frames=15 memory_vect=9 beacons=9 bad_data=0 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=9, HEARTBEAT=9, UNKNOWN_410=7, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3
+BEACON Windows RX tracking_id=96 MAVLink_seq=242
+BEACON Windows RX tracking_id=97 MAVLink_seq=244
+BEACON Windows RX tracking_id=97 MAVLink_seq=245
+BEACON Windows RX tracking_id=98 MAVLink_seq=246
+BEACON Windows RX tracking_id=98 MAVLink_seq=247
+BEACON Windows RX tracking_id=99 MAVLink_seq=249
+BEACON Windows RX tracking_id=99 MAVLink_seq=250
+BEACON Windows RX tracking_id=100 MAVLink_seq=251
+BEACON Windows RX tracking_id=100 MAVLink_seq=252
+BEACON Windows RX tracking_id=101 MAVLink_seq=254
+Last interval: serial_bytes=2144 valid_frames=56 lost_frames_estimate=302 duplicate_frames=1 out_of_order_frames=15 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, HEARTBEAT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=101 MAVLink_seq=255
+BEACON Windows RX tracking_id=102 MAVLink_seq=0
+BEACON Windows RX tracking_id=102 MAVLink_seq=1
+BEACON Windows RX tracking_id=103 MAVLink_seq=3
+BEACON Windows RX tracking_id=103 MAVLink_seq=4
+BEACON Windows RX tracking_id=104 MAVLink_seq=5
+BEACON Windows RX tracking_id=104 MAVLink_seq=6
+BEACON Windows RX tracking_id=105 MAVLink_seq=8
+BEACON Windows RX tracking_id=105 MAVLink_seq=9
+BEACON Windows RX tracking_id=106 MAVLink_seq=10
+Last interval: serial_bytes=2071 valid_frames=57 lost_frames_estimate=290 duplicate_frames=2 out_of_order_frames=16 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=106 MAVLink_seq=11
+BEACON Windows RX tracking_id=107 MAVLink_seq=13
+BEACON Windows RX tracking_id=107 MAVLink_seq=14
+BEACON Windows RX tracking_id=108 MAVLink_seq=15
+BEACON Windows RX tracking_id=108 MAVLink_seq=16
+BEACON Windows RX tracking_id=109 MAVLink_seq=18
+BEACON Windows RX tracking_id=109 MAVLink_seq=19
+BEACON Windows RX tracking_id=110 MAVLink_seq=20
+BEACON Windows RX tracking_id=110 MAVLink_seq=21
+BEACON Windows RX tracking_id=111 MAVLink_seq=23
+Last interval: serial_bytes=2152 valid_frames=57 lost_frames_estimate=291 duplicate_frames=2 out_of_order_frames=20 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=111 MAVLink_seq=24
+BEACON Windows RX tracking_id=112 MAVLink_seq=25
+BEACON Windows RX tracking_id=112 MAVLink_seq=26
+BEACON Windows RX tracking_id=113 MAVLink_seq=28
+BEACON Windows RX tracking_id=113 MAVLink_seq=29
+BEACON Windows RX tracking_id=114 MAVLink_seq=30
+BEACON Windows RX tracking_id=114 MAVLink_seq=31
+BEACON Windows RX tracking_id=115 MAVLink_seq=33
+BEACON Windows RX tracking_id=115 MAVLink_seq=34
+BEACON Windows RX tracking_id=116 MAVLink_seq=35
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=295 duplicate_frames=1 out_of_order_frames=22 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=116 MAVLink_seq=36
+BEACON Windows RX tracking_id=117 MAVLink_seq=38
+BEACON Windows RX tracking_id=117 MAVLink_seq=39
+BEACON Windows RX tracking_id=118 MAVLink_seq=40
+BEACON Windows RX tracking_id=118 MAVLink_seq=41
+BEACON Windows RX tracking_id=119 MAVLink_seq=43
+BEACON Windows RX tracking_id=119 MAVLink_seq=44
+BEACON Windows RX tracking_id=120 MAVLink_seq=45
+BEACON Windows RX tracking_id=120 MAVLink_seq=46
+BEACON Windows RX tracking_id=121 MAVLink_seq=48
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=292 duplicate_frames=2 out_of_order_frames=21 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=121 MAVLink_seq=49
+BEACON Windows RX tracking_id=122 MAVLink_seq=50
+BEACON Windows RX tracking_id=122 MAVLink_seq=51
+BEACON Windows RX tracking_id=123 MAVLink_seq=53
+BEACON Windows RX tracking_id=123 MAVLink_seq=54
+BEACON Windows RX tracking_id=124 MAVLink_seq=55
+BEACON Windows RX tracking_id=124 MAVLink_seq=56
+BEACON Windows RX tracking_id=125 MAVLink_seq=58
+BEACON Windows RX tracking_id=125 MAVLink_seq=59
+BEACON Windows RX tracking_id=126 MAVLink_seq=60
+Last interval: serial_bytes=2071 valid_frames=57 lost_frames_estimate=296 duplicate_frames=2 out_of_order_frames=21 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=126 MAVLink_seq=61
+BEACON Windows RX tracking_id=127 MAVLink_seq=63
+BEACON Windows RX tracking_id=127 MAVLink_seq=64
+BEACON Windows RX tracking_id=128 MAVLink_seq=65
+BEACON Windows RX tracking_id=128 MAVLink_seq=66
+BEACON Windows RX tracking_id=129 MAVLink_seq=68
+BEACON Windows RX tracking_id=129 MAVLink_seq=69
+BEACON Windows RX tracking_id=130 MAVLink_seq=70
+BEACON Windows RX tracking_id=130 MAVLink_seq=71
+BEACON Windows RX tracking_id=131 MAVLink_seq=73
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=295 duplicate_frames=2 out_of_order_frames=22 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=131 MAVLink_seq=74
+BEACON Windows RX tracking_id=132 MAVLink_seq=75
+BEACON Windows RX tracking_id=132 MAVLink_seq=76
+BEACON Windows RX tracking_id=133 MAVLink_seq=78
+BEACON Windows RX tracking_id=133 MAVLink_seq=79
+BEACON Windows RX tracking_id=134 MAVLink_seq=80
+BEACON Windows RX tracking_id=134 MAVLink_seq=81
+BEACON Windows RX tracking_id=135 MAVLink_seq=83
+BEACON Windows RX tracking_id=135 MAVLink_seq=84
+BEACON Windows RX tracking_id=136 MAVLink_seq=85
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=293 duplicate_frames=1 out_of_order_frames=21 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=136 MAVLink_seq=86
+BEACON Windows RX tracking_id=137 MAVLink_seq=88
+BEACON Windows RX tracking_id=137 MAVLink_seq=89
+BEACON Windows RX tracking_id=138 MAVLink_seq=90
+BEACON Windows RX tracking_id=138 MAVLink_seq=91
+BEACON Windows RX tracking_id=139 MAVLink_seq=93
+BEACON Windows RX tracking_id=139 MAVLink_seq=94
+BEACON Windows RX tracking_id=140 MAVLink_seq=95
+BEACON Windows RX tracking_id=140 MAVLink_seq=97
+BEACON Windows RX tracking_id=141 MAVLink_seq=98
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=292 duplicate_frames=2 out_of_order_frames=22 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=141 MAVLink_seq=99
+BEACON Windows RX tracking_id=142 MAVLink_seq=100
+BEACON Windows RX tracking_id=142 MAVLink_seq=102
+BEACON Windows RX tracking_id=143 MAVLink_seq=103
+BEACON Windows RX tracking_id=143 MAVLink_seq=104
+BEACON Windows RX tracking_id=144 MAVLink_seq=105
+BEACON Windows RX tracking_id=144 MAVLink_seq=107
+BEACON Windows RX tracking_id=145 MAVLink_seq=108
+BEACON Windows RX tracking_id=145 MAVLink_seq=109
+BEACON Windows RX tracking_id=146 MAVLink_seq=110
+Last interval: serial_bytes=2071 valid_frames=57 lost_frames_estimate=297 duplicate_frames=2 out_of_order_frames=23 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=146 MAVLink_seq=112
+BEACON Windows RX tracking_id=147 MAVLink_seq=113
+BEACON Windows RX tracking_id=147 MAVLink_seq=114
+BEACON Windows RX tracking_id=148 MAVLink_seq=115
+BEACON Windows RX tracking_id=148 MAVLink_seq=117
+BEACON Windows RX tracking_id=149 MAVLink_seq=118
+BEACON Windows RX tracking_id=149 MAVLink_seq=119
+BEACON Windows RX tracking_id=150 MAVLink_seq=120
+BEACON Windows RX tracking_id=150 MAVLink_seq=122
+BEACON Windows RX tracking_id=151 MAVLink_seq=123
+Last interval: serial_bytes=2143 valid_frames=56 lost_frames_estimate=293 duplicate_frames=1 out_of_order_frames=22 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=151 MAVLink_seq=124
+BEACON Windows RX tracking_id=152 MAVLink_seq=125
+BEACON Windows RX tracking_id=152 MAVLink_seq=127
+BEACON Windows RX tracking_id=153 MAVLink_seq=128
+BEACON Windows RX tracking_id=153 MAVLink_seq=129
+BEACON Windows RX tracking_id=154 MAVLink_seq=130
+BEACON Windows RX tracking_id=154 MAVLink_seq=132
+BEACON Windows RX tracking_id=155 MAVLink_seq=133
+BEACON Windows RX tracking_id=155 MAVLink_seq=134
+BEACON Windows RX tracking_id=156 MAVLink_seq=135
+Last interval: serial_bytes=2071 valid_frames=57 lost_frames_estimate=312 duplicate_frames=2 out_of_order_frames=24 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=156 MAVLink_seq=137
+BEACON Windows RX tracking_id=157 MAVLink_seq=138
+BEACON Windows RX tracking_id=157 MAVLink_seq=139
+BEACON Windows RX tracking_id=158 MAVLink_seq=140
+BEACON Windows RX tracking_id=158 MAVLink_seq=142
+BEACON Windows RX tracking_id=159 MAVLink_seq=143
+BEACON Windows RX tracking_id=159 MAVLink_seq=144
+BEACON Windows RX tracking_id=160 MAVLink_seq=145
+BEACON Windows RX tracking_id=160 MAVLink_seq=147
+BEACON Windows RX tracking_id=161 MAVLink_seq=148
+Last interval: serial_bytes=2143 valid_frames=56 lost_frames_estimate=286 duplicate_frames=1 out_of_order_frames=24 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=161 MAVLink_seq=149
+BEACON Windows RX tracking_id=162 MAVLink_seq=150
+BEACON Windows RX tracking_id=162 MAVLink_seq=152
+BEACON Windows RX tracking_id=163 MAVLink_seq=153
+BEACON Windows RX tracking_id=163 MAVLink_seq=154
+BEACON Windows RX tracking_id=164 MAVLink_seq=155
+BEACON Windows RX tracking_id=164 MAVLink_seq=157
+BEACON Windows RX tracking_id=165 MAVLink_seq=158
+BEACON Windows RX tracking_id=165 MAVLink_seq=159
+BEACON Windows RX tracking_id=166 MAVLink_seq=160
+Last interval: serial_bytes=2021 valid_frames=55 lost_frames_estimate=303 duplicate_frames=2 out_of_order_frames=24 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=9, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=166 MAVLink_seq=162
+BEACON Windows RX tracking_id=167 MAVLink_seq=163
+BEACON Windows RX tracking_id=167 MAVLink_seq=164
+BEACON Windows RX tracking_id=168 MAVLink_seq=165
+BEACON Windows RX tracking_id=168 MAVLink_seq=167
+BEACON Windows RX tracking_id=169 MAVLink_seq=168
+BEACON Windows RX tracking_id=169 MAVLink_seq=169
+BEACON Windows RX tracking_id=170 MAVLink_seq=170
+BEACON Windows RX tracking_id=170 MAVLink_seq=172
+BEACON Windows RX tracking_id=171 MAVLink_seq=173
+Last interval: serial_bytes=2339 valid_frames=63 lost_frames_estimate=265 duplicate_frames=9 out_of_order_frames=23 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=9, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3
+BEACON Windows RX tracking_id=171 MAVLink_seq=174
+BEACON Windows RX tracking_id=172 MAVLink_seq=175
+BEACON Windows RX tracking_id=172 MAVLink_seq=177
+BEACON Windows RX tracking_id=173 MAVLink_seq=178
+BEACON Windows RX tracking_id=173 MAVLink_seq=179
+BEACON Windows RX tracking_id=174 MAVLink_seq=180
+BEACON Windows RX tracking_id=174 MAVLink_seq=182
+BEACON Windows RX tracking_id=175 MAVLink_seq=183
+BEACON Windows RX tracking_id=175 MAVLink_seq=184
+BEACON Windows RX tracking_id=176 MAVLink_seq=185
+Last interval: serial_bytes=2292 valid_frames=64 lost_frames_estimate=305 duplicate_frames=9 out_of_order_frames=20 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=64 wsl_failed=0 qgc_sent=64 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3
+BEACON Windows RX tracking_id=176 MAVLink_seq=187
+BEACON Windows RX tracking_id=177 MAVLink_seq=188
+BEACON Windows RX tracking_id=177 MAVLink_seq=189
+BEACON Windows RX tracking_id=178 MAVLink_seq=190
+BEACON Windows RX tracking_id=178 MAVLink_seq=192
+BEACON Windows RX tracking_id=179 MAVLink_seq=193
+BEACON Windows RX tracking_id=179 MAVLink_seq=194
+BEACON Windows RX tracking_id=180 MAVLink_seq=195
+BEACON Windows RX tracking_id=180 MAVLink_seq=197
+Last interval: serial_bytes=2101 valid_frames=55 lost_frames_estimate=282 duplicate_frames=1 out_of_order_frames=15 memory_vect=9 beacons=9 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=9, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=181 MAVLink_seq=198
+BEACON Windows RX tracking_id=181 MAVLink_seq=199
+BEACON Windows RX tracking_id=182 MAVLink_seq=200
+BEACON Windows RX tracking_id=182 MAVLink_seq=202
+BEACON Windows RX tracking_id=183 MAVLink_seq=203
+BEACON Windows RX tracking_id=183 MAVLink_seq=204
+BEACON Windows RX tracking_id=184 MAVLink_seq=205
+BEACON Windows RX tracking_id=184 MAVLink_seq=207
+BEACON Windows RX tracking_id=185 MAVLink_seq=208
+BEACON Windows RX tracking_id=185 MAVLink_seq=209
+Last interval: serial_bytes=2515 valid_frames=71 lost_frames_estimate=298 duplicate_frames=16 out_of_order_frames=15 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=71 wsl_failed=0 qgc_sent=71 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=14, MEMORY_VECT=10, HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3
+BEACON Windows RX tracking_id=186 MAVLink_seq=210
+BEACON Windows RX tracking_id=186 MAVLink_seq=212
+BEACON Windows RX tracking_id=187 MAVLink_seq=213
+BEACON Windows RX tracking_id=187 MAVLink_seq=214
+BEACON Windows RX tracking_id=188 MAVLink_seq=215
+BEACON Windows RX tracking_id=188 MAVLink_seq=217
+BEACON Windows RX tracking_id=189 MAVLink_seq=218
+BEACON Windows RX tracking_id=189 MAVLink_seq=219
+BEACON Windows RX tracking_id=190 MAVLink_seq=220
+BEACON Windows RX tracking_id=190 MAVLink_seq=222
+Last interval: serial_bytes=2154 valid_frames=57 lost_frames_estimate=300 duplicate_frames=2 out_of_order_frames=18 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=191 MAVLink_seq=223
+BEACON Windows RX tracking_id=191 MAVLink_seq=224
+BEACON Windows RX tracking_id=192 MAVLink_seq=225
+BEACON Windows RX tracking_id=192 MAVLink_seq=227
+BEACON Windows RX tracking_id=193 MAVLink_seq=228
+BEACON Windows RX tracking_id=193 MAVLink_seq=229
+BEACON Windows RX tracking_id=194 MAVLink_seq=230
+BEACON Windows RX tracking_id=194 MAVLink_seq=232
+BEACON Windows RX tracking_id=195 MAVLink_seq=233
+BEACON Windows RX tracking_id=195 MAVLink_seq=234
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=288 duplicate_frames=1 out_of_order_frames=16 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, MEMORY_VECT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=196 MAVLink_seq=235
+BEACON Windows RX tracking_id=196 MAVLink_seq=237
+BEACON Windows RX tracking_id=197 MAVLink_seq=238
+BEACON Windows RX tracking_id=197 MAVLink_seq=239
+BEACON Windows RX tracking_id=198 MAVLink_seq=240
+BEACON Windows RX tracking_id=198 MAVLink_seq=242
+BEACON Windows RX tracking_id=199 MAVLink_seq=243
+BEACON Windows RX tracking_id=199 MAVLink_seq=244
+BEACON Windows RX tracking_id=200 MAVLink_seq=245
+BEACON Windows RX tracking_id=200 MAVLink_seq=247
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=291 duplicate_frames=2 out_of_order_frames=17 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=201 MAVLink_seq=248
+BEACON Windows RX tracking_id=201 MAVLink_seq=249
+BEACON Windows RX tracking_id=202 MAVLink_seq=250
+BEACON Windows RX tracking_id=202 MAVLink_seq=252
+BEACON Windows RX tracking_id=203 MAVLink_seq=253
+BEACON Windows RX tracking_id=203 MAVLink_seq=254
+BEACON Windows RX tracking_id=204 MAVLink_seq=255
+BEACON Windows RX tracking_id=204 MAVLink_seq=1
+BEACON Windows RX tracking_id=205 MAVLink_seq=2
+BEACON Windows RX tracking_id=205 MAVLink_seq=3
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=297 duplicate_frames=1 out_of_order_frames=17 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=206 MAVLink_seq=4
+BEACON Windows RX tracking_id=206 MAVLink_seq=6
+BEACON Windows RX tracking_id=207 MAVLink_seq=7
+BEACON Windows RX tracking_id=207 MAVLink_seq=8
+BEACON Windows RX tracking_id=208 MAVLink_seq=9
+BEACON Windows RX tracking_id=208 MAVLink_seq=11
+BEACON Windows RX tracking_id=209 MAVLink_seq=12
+BEACON Windows RX tracking_id=209 MAVLink_seq=13
+BEACON Windows RX tracking_id=210 MAVLink_seq=14
+BEACON Windows RX tracking_id=210 MAVLink_seq=16
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=296 duplicate_frames=2 out_of_order_frames=21 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=211 MAVLink_seq=17
+BEACON Windows RX tracking_id=211 MAVLink_seq=18
+BEACON Windows RX tracking_id=212 MAVLink_seq=19
+BEACON Windows RX tracking_id=212 MAVLink_seq=21
+BEACON Windows RX tracking_id=213 MAVLink_seq=22
+BEACON Windows RX tracking_id=213 MAVLink_seq=23
+BEACON Windows RX tracking_id=214 MAVLink_seq=24
+BEACON Windows RX tracking_id=214 MAVLink_seq=26
+BEACON Windows RX tracking_id=215 MAVLink_seq=27
+BEACON Windows RX tracking_id=215 MAVLink_seq=28
+Last interval: serial_bytes=2071 valid_frames=57 lost_frames_estimate=293 duplicate_frames=2 out_of_order_frames=23 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=216 MAVLink_seq=29
+BEACON Windows RX tracking_id=216 MAVLink_seq=31
+BEACON Windows RX tracking_id=217 MAVLink_seq=32
+BEACON Windows RX tracking_id=217 MAVLink_seq=33
+BEACON Windows RX tracking_id=218 MAVLink_seq=34
+BEACON Windows RX tracking_id=218 MAVLink_seq=36
+BEACON Windows RX tracking_id=219 MAVLink_seq=37
+BEACON Windows RX tracking_id=219 MAVLink_seq=38
+BEACON Windows RX tracking_id=220 MAVLink_seq=40
+BEACON Windows RX tracking_id=220 MAVLink_seq=41
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=294 duplicate_frames=2 out_of_order_frames=21 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=221 MAVLink_seq=42
+BEACON Windows RX tracking_id=221 MAVLink_seq=43
+BEACON Windows RX tracking_id=222 MAVLink_seq=45
+BEACON Windows RX tracking_id=222 MAVLink_seq=46
+BEACON Windows RX tracking_id=223 MAVLink_seq=47
+BEACON Windows RX tracking_id=223 MAVLink_seq=48
+BEACON Windows RX tracking_id=224 MAVLink_seq=50
+BEACON Windows RX tracking_id=224 MAVLink_seq=51
+BEACON Windows RX tracking_id=225 MAVLink_seq=52
+BEACON Windows RX tracking_id=225 MAVLink_seq=53
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=292 duplicate_frames=1 out_of_order_frames=20 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=226 MAVLink_seq=55
+BEACON Windows RX tracking_id=226 MAVLink_seq=56
+BEACON Windows RX tracking_id=227 MAVLink_seq=57
+BEACON Windows RX tracking_id=227 MAVLink_seq=58
+BEACON Windows RX tracking_id=228 MAVLink_seq=60
+BEACON Windows RX tracking_id=228 MAVLink_seq=61
+BEACON Windows RX tracking_id=229 MAVLink_seq=62
+BEACON Windows RX tracking_id=229 MAVLink_seq=63
+BEACON Windows RX tracking_id=230 MAVLink_seq=65
+BEACON Windows RX tracking_id=230 MAVLink_seq=66
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=306 duplicate_frames=2 out_of_order_frames=21 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=231 MAVLink_seq=67
+BEACON Windows RX tracking_id=231 MAVLink_seq=68
+BEACON Windows RX tracking_id=232 MAVLink_seq=70
+BEACON Windows RX tracking_id=232 MAVLink_seq=71
+BEACON Windows RX tracking_id=233 MAVLink_seq=72
+BEACON Windows RX tracking_id=233 MAVLink_seq=73
+BEACON Windows RX tracking_id=234 MAVLink_seq=75
+BEACON Windows RX tracking_id=234 MAVLink_seq=76
+BEACON Windows RX tracking_id=235 MAVLink_seq=77
+BEACON Windows RX tracking_id=235 MAVLink_seq=78
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=292 duplicate_frames=1 out_of_order_frames=18 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=236 MAVLink_seq=80
+BEACON Windows RX tracking_id=236 MAVLink_seq=81
+BEACON Windows RX tracking_id=237 MAVLink_seq=82
+BEACON Windows RX tracking_id=237 MAVLink_seq=83
+BEACON Windows RX tracking_id=238 MAVLink_seq=85
+BEACON Windows RX tracking_id=238 MAVLink_seq=86
+BEACON Windows RX tracking_id=239 MAVLink_seq=87
+BEACON Windows RX tracking_id=239 MAVLink_seq=88
+BEACON Windows RX tracking_id=240 MAVLink_seq=90
+BEACON Windows RX tracking_id=240 MAVLink_seq=91
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=286 duplicate_frames=2 out_of_order_frames=15 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=241 MAVLink_seq=92
+BEACON Windows RX tracking_id=241 MAVLink_seq=93
+BEACON Windows RX tracking_id=242 MAVLink_seq=95
+BEACON Windows RX tracking_id=242 MAVLink_seq=96
+BEACON Windows RX tracking_id=243 MAVLink_seq=97
+BEACON Windows RX tracking_id=243 MAVLink_seq=98
+BEACON Windows RX tracking_id=244 MAVLink_seq=100
+BEACON Windows RX tracking_id=244 MAVLink_seq=101
+BEACON Windows RX tracking_id=245 MAVLink_seq=102
+BEACON Windows RX tracking_id=245 MAVLink_seq=103
+Last interval: serial_bytes=2071 valid_frames=57 lost_frames_estimate=292 duplicate_frames=2 out_of_order_frames=17 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=246 MAVLink_seq=105
+BEACON Windows RX tracking_id=246 MAVLink_seq=106
+BEACON Windows RX tracking_id=247 MAVLink_seq=107
+BEACON Windows RX tracking_id=247 MAVLink_seq=108
+BEACON Windows RX tracking_id=248 MAVLink_seq=110
+BEACON Windows RX tracking_id=248 MAVLink_seq=111
+BEACON Windows RX tracking_id=249 MAVLink_seq=112
+BEACON Windows RX tracking_id=249 MAVLink_seq=113
+BEACON Windows RX tracking_id=250 MAVLink_seq=115
+BEACON Windows RX tracking_id=250 MAVLink_seq=116
+Last interval: serial_bytes=2143 valid_frames=56 lost_frames_estimate=293 duplicate_frames=1 out_of_order_frames=18 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=251 MAVLink_seq=117
+BEACON Windows RX tracking_id=251 MAVLink_seq=118
+BEACON Windows RX tracking_id=252 MAVLink_seq=120
+BEACON Windows RX tracking_id=252 MAVLink_seq=121
+BEACON Windows RX tracking_id=253 MAVLink_seq=122
+BEACON Windows RX tracking_id=253 MAVLink_seq=123
+BEACON Windows RX tracking_id=254 MAVLink_seq=125
+BEACON Windows RX tracking_id=254 MAVLink_seq=126
+BEACON Windows RX tracking_id=255 MAVLink_seq=127
+Last interval: serial_bytes=2028 valid_frames=56 lost_frames_estimate=289 duplicate_frames=2 out_of_order_frames=19 memory_vect=9 beacons=9 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, MEMORY_VECT=9, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=255 MAVLink_seq=128
+BEACON Windows RX tracking_id=256 MAVLink_seq=130
+BEACON Windows RX tracking_id=256 MAVLink_seq=131
+BEACON Windows RX tracking_id=257 MAVLink_seq=132
+BEACON Windows RX tracking_id=257 MAVLink_seq=133
+BEACON Windows RX tracking_id=258 MAVLink_seq=135
+BEACON Windows RX tracking_id=258 MAVLink_seq=136
+BEACON Windows RX tracking_id=259 MAVLink_seq=137
+BEACON Windows RX tracking_id=259 MAVLink_seq=138
+BEACON Windows RX tracking_id=260 MAVLink_seq=140
+Last interval: serial_bytes=2377 valid_frames=64 lost_frames_estimate=308 duplicate_frames=9 out_of_order_frames=21 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=64 wsl_failed=0 qgc_sent=64 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, HEARTBEAT=10, ATTITUDE=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3
+BEACON Windows RX tracking_id=260 MAVLink_seq=141
+BEACON Windows RX tracking_id=261 MAVLink_seq=142
+BEACON Windows RX tracking_id=261 MAVLink_seq=143
+BEACON Windows RX tracking_id=262 MAVLink_seq=145
+BEACON Windows RX tracking_id=262 MAVLink_seq=146
+BEACON Windows RX tracking_id=263 MAVLink_seq=147
+BEACON Windows RX tracking_id=263 MAVLink_seq=148
+BEACON Windows RX tracking_id=264 MAVLink_seq=150
+BEACON Windows RX tracking_id=264 MAVLink_seq=151
+BEACON Windows RX tracking_id=265 MAVLink_seq=152
+Last interval: serial_bytes=2264 valid_frames=63 lost_frames_estimate=302 duplicate_frames=9 out_of_order_frames=20 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, HEARTBEAT=10, ATTITUDE=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4, MISSION_CURRENT=3
+BEACON Windows RX tracking_id=265 MAVLink_seq=153
+BEACON Windows RX tracking_id=266 MAVLink_seq=155
+BEACON Windows RX tracking_id=266 MAVLink_seq=156
+BEACON Windows RX tracking_id=267 MAVLink_seq=157
+BEACON Windows RX tracking_id=267 MAVLink_seq=158
+BEACON Windows RX tracking_id=268 MAVLink_seq=160
+BEACON Windows RX tracking_id=268 MAVLink_seq=161
+BEACON Windows RX tracking_id=269 MAVLink_seq=162
+BEACON Windows RX tracking_id=269 MAVLink_seq=163
+BEACON Windows RX tracking_id=270 MAVLink_seq=165
+Last interval: serial_bytes=2084 valid_frames=55 lost_frames_estimate=249 duplicate_frames=1 out_of_order_frames=18 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, HEARTBEAT=10, ATTITUDE=9, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=270 MAVLink_seq=166
+BEACON Windows RX tracking_id=271 MAVLink_seq=167
+BEACON Windows RX tracking_id=271 MAVLink_seq=168
+BEACON Windows RX tracking_id=272 MAVLink_seq=170
+BEACON Windows RX tracking_id=272 MAVLink_seq=171
+BEACON Windows RX tracking_id=273 MAVLink_seq=172
+BEACON Windows RX tracking_id=273 MAVLink_seq=173
+BEACON Windows RX tracking_id=274 MAVLink_seq=175
+BEACON Windows RX tracking_id=274 MAVLink_seq=176
+BEACON Windows RX tracking_id=275 MAVLink_seq=177
+Last interval: serial_bytes=2068 valid_frames=57 lost_frames_estimate=287 duplicate_frames=2 out_of_order_frames=17 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=275 MAVLink_seq=178
+BEACON Windows RX tracking_id=276 MAVLink_seq=180
+BEACON Windows RX tracking_id=276 MAVLink_seq=181
+BEACON Windows RX tracking_id=277 MAVLink_seq=182
+BEACON Windows RX tracking_id=277 MAVLink_seq=183
+BEACON Windows RX tracking_id=278 MAVLink_seq=185
+BEACON Windows RX tracking_id=278 MAVLink_seq=186
+BEACON Windows RX tracking_id=279 MAVLink_seq=187
+BEACON Windows RX tracking_id=279 MAVLink_seq=188
+BEACON Windows RX tracking_id=280 MAVLink_seq=190
+Last interval: serial_bytes=2146 valid_frames=56 lost_frames_estimate=301 duplicate_frames=1 out_of_order_frames=17 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=280 MAVLink_seq=191
+BEACON Windows RX tracking_id=281 MAVLink_seq=192
+BEACON Windows RX tracking_id=281 MAVLink_seq=193
+BEACON Windows RX tracking_id=282 MAVLink_seq=195
+BEACON Windows RX tracking_id=282 MAVLink_seq=196
+BEACON Windows RX tracking_id=283 MAVLink_seq=197
+BEACON Windows RX tracking_id=283 MAVLink_seq=198
+BEACON Windows RX tracking_id=284 MAVLink_seq=200
+BEACON Windows RX tracking_id=284 MAVLink_seq=201
+BEACON Windows RX tracking_id=285 MAVLink_seq=202
+Last interval: serial_bytes=2073 valid_frames=57 lost_frames_estimate=293 duplicate_frames=2 out_of_order_frames=15 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=285 MAVLink_seq=203
+BEACON Windows RX tracking_id=286 MAVLink_seq=205
+BEACON Windows RX tracking_id=286 MAVLink_seq=206
+BEACON Windows RX tracking_id=287 MAVLink_seq=207
+BEACON Windows RX tracking_id=287 MAVLink_seq=208
+BEACON Windows RX tracking_id=288 MAVLink_seq=210
+BEACON Windows RX tracking_id=288 MAVLink_seq=211
+BEACON Windows RX tracking_id=289 MAVLink_seq=212
+BEACON Windows RX tracking_id=289 MAVLink_seq=214
+BEACON Windows RX tracking_id=290 MAVLink_seq=215
+Last interval: serial_bytes=2152 valid_frames=57 lost_frames_estimate=291 duplicate_frames=2 out_of_order_frames=18 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=290 MAVLink_seq=216
+BEACON Windows RX tracking_id=291 MAVLink_seq=217
+BEACON Windows RX tracking_id=291 MAVLink_seq=219
+BEACON Windows RX tracking_id=292 MAVLink_seq=220
+BEACON Windows RX tracking_id=292 MAVLink_seq=221
+BEACON Windows RX tracking_id=293 MAVLink_seq=222
+BEACON Windows RX tracking_id=293 MAVLink_seq=224
+BEACON Windows RX tracking_id=294 MAVLink_seq=225
+BEACON Windows RX tracking_id=294 MAVLink_seq=226
+BEACON Windows RX tracking_id=295 MAVLink_seq=227
+Last interval: serial_bytes=2059 valid_frames=56 lost_frames_estimate=278 duplicate_frames=1 out_of_order_frames=16 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=295 MAVLink_seq=229
+BEACON Windows RX tracking_id=296 MAVLink_seq=230
+BEACON Windows RX tracking_id=296 MAVLink_seq=231
+BEACON Windows RX tracking_id=297 MAVLink_seq=232
+BEACON Windows RX tracking_id=297 MAVLink_seq=234
+BEACON Windows RX tracking_id=298 MAVLink_seq=235
+BEACON Windows RX tracking_id=298 MAVLink_seq=236
+BEACON Windows RX tracking_id=299 MAVLink_seq=237
+BEACON Windows RX tracking_id=299 MAVLink_seq=239
+BEACON Windows RX tracking_id=300 MAVLink_seq=240
+Last interval: serial_bytes=2155 valid_frames=57 lost_frames_estimate=306 duplicate_frames=2 out_of_order_frames=19 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=300 MAVLink_seq=241
+BEACON Windows RX tracking_id=301 MAVLink_seq=242
+BEACON Windows RX tracking_id=301 MAVLink_seq=244
+BEACON Windows RX tracking_id=302 MAVLink_seq=245
+BEACON Windows RX tracking_id=302 MAVLink_seq=246
+BEACON Windows RX tracking_id=303 MAVLink_seq=247
+BEACON Windows RX tracking_id=303 MAVLink_seq=249
+BEACON Windows RX tracking_id=304 MAVLink_seq=250
+BEACON Windows RX tracking_id=304 MAVLink_seq=251
+BEACON Windows RX tracking_id=305 MAVLink_seq=252
+Last interval: serial_bytes=2069 valid_frames=57 lost_frames_estimate=288 duplicate_frames=2 out_of_order_frames=16 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=305 MAVLink_seq=254
+BEACON Windows RX tracking_id=306 MAVLink_seq=255
+BEACON Windows RX tracking_id=306 MAVLink_seq=0
+BEACON Windows RX tracking_id=307 MAVLink_seq=1
+BEACON Windows RX tracking_id=307 MAVLink_seq=3
+BEACON Windows RX tracking_id=308 MAVLink_seq=4
+BEACON Windows RX tracking_id=308 MAVLink_seq=5
+BEACON Windows RX tracking_id=309 MAVLink_seq=6
+BEACON Windows RX tracking_id=309 MAVLink_seq=8
+BEACON Windows RX tracking_id=310 MAVLink_seq=9
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=289 duplicate_frames=2 out_of_order_frames=16 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=310 MAVLink_seq=10
+BEACON Windows RX tracking_id=311 MAVLink_seq=11
+BEACON Windows RX tracking_id=311 MAVLink_seq=13
+BEACON Windows RX tracking_id=312 MAVLink_seq=14
+BEACON Windows RX tracking_id=312 MAVLink_seq=15
+BEACON Windows RX tracking_id=313 MAVLink_seq=16
+BEACON Windows RX tracking_id=313 MAVLink_seq=18
+BEACON Windows RX tracking_id=314 MAVLink_seq=19
+BEACON Windows RX tracking_id=314 MAVLink_seq=20
+BEACON Windows RX tracking_id=315 MAVLink_seq=21
+Last interval: serial_bytes=2502 valid_frames=70 lost_frames_estimate=310 duplicate_frames=15 out_of_order_frames=18 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=70 wsl_failed=0 qgc_sent=70 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=14, ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3
+BEACON Windows RX tracking_id=315 MAVLink_seq=23
+BEACON Windows RX tracking_id=316 MAVLink_seq=24
+BEACON Windows RX tracking_id=316 MAVLink_seq=25
+BEACON Windows RX tracking_id=317 MAVLink_seq=26
+BEACON Windows RX tracking_id=317 MAVLink_seq=28
+BEACON Windows RX tracking_id=318 MAVLink_seq=29
+BEACON Windows RX tracking_id=318 MAVLink_seq=30
+BEACON Windows RX tracking_id=319 MAVLink_seq=31
+BEACON Windows RX tracking_id=319 MAVLink_seq=33
+BEACON Windows RX tracking_id=320 MAVLink_seq=34
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=288 duplicate_frames=2 out_of_order_frames=20 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=320 MAVLink_seq=35
+BEACON Windows RX tracking_id=321 MAVLink_seq=36
+BEACON Windows RX tracking_id=321 MAVLink_seq=38
+BEACON Windows RX tracking_id=322 MAVLink_seq=39
+BEACON Windows RX tracking_id=322 MAVLink_seq=40
+BEACON Windows RX tracking_id=323 MAVLink_seq=41
+BEACON Windows RX tracking_id=323 MAVLink_seq=43
+BEACON Windows RX tracking_id=324 MAVLink_seq=44
+BEACON Windows RX tracking_id=324 MAVLink_seq=45
+BEACON Windows RX tracking_id=325 MAVLink_seq=46
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=295 duplicate_frames=1 out_of_order_frames=18 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=325 MAVLink_seq=48
+BEACON Windows RX tracking_id=326 MAVLink_seq=49
+BEACON Windows RX tracking_id=326 MAVLink_seq=50
+BEACON Windows RX tracking_id=327 MAVLink_seq=51
+BEACON Windows RX tracking_id=327 MAVLink_seq=53
+BEACON Windows RX tracking_id=328 MAVLink_seq=54
+BEACON Windows RX tracking_id=328 MAVLink_seq=55
+BEACON Windows RX tracking_id=329 MAVLink_seq=56
+BEACON Windows RX tracking_id=329 MAVLink_seq=58
+Last interval: serial_bytes=2115 valid_frames=56 lost_frames_estimate=286 duplicate_frames=2 out_of_order_frames=20 memory_vect=9 beacons=9 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=9, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=330 MAVLink_seq=59
+BEACON Windows RX tracking_id=330 MAVLink_seq=60
+BEACON Windows RX tracking_id=331 MAVLink_seq=61
+BEACON Windows RX tracking_id=331 MAVLink_seq=63
+BEACON Windows RX tracking_id=332 MAVLink_seq=64
+BEACON Windows RX tracking_id=332 MAVLink_seq=65
+BEACON Windows RX tracking_id=333 MAVLink_seq=66
+BEACON Windows RX tracking_id=333 MAVLink_seq=68
+BEACON Windows RX tracking_id=334 MAVLink_seq=69
+BEACON Windows RX tracking_id=334 MAVLink_seq=70
+Last interval: serial_bytes=2068 valid_frames=57 lost_frames_estimate=313 duplicate_frames=2 out_of_order_frames=21 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=335 MAVLink_seq=71
+BEACON Windows RX tracking_id=335 MAVLink_seq=73
+BEACON Windows RX tracking_id=336 MAVLink_seq=74
+BEACON Windows RX tracking_id=336 MAVLink_seq=75
+BEACON Windows RX tracking_id=337 MAVLink_seq=76
+BEACON Windows RX tracking_id=337 MAVLink_seq=78
+BEACON Windows RX tracking_id=338 MAVLink_seq=79
+BEACON Windows RX tracking_id=338 MAVLink_seq=80
+BEACON Windows RX tracking_id=339 MAVLink_seq=81
+BEACON Windows RX tracking_id=339 MAVLink_seq=83
+Last interval: serial_bytes=2600 valid_frames=71 lost_frames_estimate=289 duplicate_frames=16 out_of_order_frames=22 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=71 wsl_failed=0 qgc_sent=71 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=14, MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3
+BEACON Windows RX tracking_id=340 MAVLink_seq=84
+BEACON Windows RX tracking_id=340 MAVLink_seq=85
+BEACON Windows RX tracking_id=341 MAVLink_seq=86
+BEACON Windows RX tracking_id=341 MAVLink_seq=88
+BEACON Windows RX tracking_id=342 MAVLink_seq=89
+BEACON Windows RX tracking_id=342 MAVLink_seq=90
+BEACON Windows RX tracking_id=343 MAVLink_seq=91
+BEACON Windows RX tracking_id=343 MAVLink_seq=93
+Last interval: serial_bytes=2029 valid_frames=55 lost_frames_estimate=311 duplicate_frames=1 out_of_order_frames=21 memory_vect=8 beacons=8 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=8, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+Last interval: serial_bytes=1716 valid_frames=47 lost_frames_estimate=291 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1631 valid_frames=47 lost_frames_estimate=299 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, STATUSTEXT=2
+Last interval: serial_bytes=1666 valid_frames=45 lost_frames_estimate=265 duplicate_frames=1 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3, MISSION_CURRENT=2
+Last interval: serial_bytes=1630 valid_frames=47 lost_frames_estimate=288 duplicate_frames=2 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+BEACON Windows RX tracking_id=0 MAVLink_seq=107
+BEACON Windows RX tracking_id=0 MAVLink_seq=109
+BEACON Windows RX tracking_id=1 MAVLink_seq=110
+BEACON Windows RX tracking_id=1 MAVLink_seq=111
+BEACON Windows RX tracking_id=2 MAVLink_seq=112
+BEACON Windows RX tracking_id=2 MAVLink_seq=114
+BEACON Windows RX tracking_id=3 MAVLink_seq=115
+Last interval: serial_bytes=2068 valid_frames=54 lost_frames_estimate=285 duplicate_frames=1 out_of_order_frames=15 memory_vect=7 beacons=7 bad_data=0 parser_errors=0 wsl_sent=54 wsl_failed=0 qgc_sent=54 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=7, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=4, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=3 MAVLink_seq=116
+BEACON Windows RX tracking_id=4 MAVLink_seq=117
+BEACON Windows RX tracking_id=4 MAVLink_seq=119
+BEACON Windows RX tracking_id=5 MAVLink_seq=120
+BEACON Windows RX tracking_id=5 MAVLink_seq=121
+BEACON Windows RX tracking_id=6 MAVLink_seq=122
+BEACON Windows RX tracking_id=6 MAVLink_seq=124
+BEACON Windows RX tracking_id=7 MAVLink_seq=125
+BEACON Windows RX tracking_id=7 MAVLink_seq=126
+BEACON Windows RX tracking_id=8 MAVLink_seq=127
+Last interval: serial_bytes=2071 valid_frames=57 lost_frames_estimate=289 duplicate_frames=2 out_of_order_frames=15 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=8 MAVLink_seq=129
+BEACON Windows RX tracking_id=9 MAVLink_seq=130
+BEACON Windows RX tracking_id=9 MAVLink_seq=131
+BEACON Windows RX tracking_id=0 MAVLink_seq=132
+BEACON Windows RX tracking_id=0 MAVLink_seq=134
+BEACON Windows RX tracking_id=1 MAVLink_seq=135
+BEACON Windows RX tracking_id=1 MAVLink_seq=136
+BEACON Windows RX tracking_id=2 MAVLink_seq=137
+BEACON Windows RX tracking_id=2 MAVLink_seq=139
+BEACON Windows RX tracking_id=3 MAVLink_seq=140
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=285 duplicate_frames=2 out_of_order_frames=13 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=3 MAVLink_seq=141
+BEACON Windows RX tracking_id=4 MAVLink_seq=142
+BEACON Windows RX tracking_id=4 MAVLink_seq=144
+BEACON Windows RX tracking_id=5 MAVLink_seq=145
+BEACON Windows RX tracking_id=5 MAVLink_seq=146
+BEACON Windows RX tracking_id=6 MAVLink_seq=147
+BEACON Windows RX tracking_id=6 MAVLink_seq=149
+BEACON Windows RX tracking_id=7 MAVLink_seq=150
+BEACON Windows RX tracking_id=7 MAVLink_seq=151
+BEACON Windows RX tracking_id=8 MAVLink_seq=152
+Last interval: serial_bytes=2058 valid_frames=56 lost_frames_estimate=288 duplicate_frames=1 out_of_order_frames=15 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=8 MAVLink_seq=154
+BEACON Windows RX tracking_id=9 MAVLink_seq=155
+BEACON Windows RX tracking_id=9 MAVLink_seq=156
+BEACON Windows RX tracking_id=0 MAVLink_seq=157
+BEACON Windows RX tracking_id=0 MAVLink_seq=159
+BEACON Windows RX tracking_id=1 MAVLink_seq=160
+BEACON Windows RX tracking_id=1 MAVLink_seq=161
+BEACON Windows RX tracking_id=2 MAVLink_seq=162
+BEACON Windows RX tracking_id=2 MAVLink_seq=164
+BEACON Windows RX tracking_id=3 MAVLink_seq=165
+Last interval: serial_bytes=2156 valid_frames=57 lost_frames_estimate=284 duplicate_frames=2 out_of_order_frames=13 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, MEMORY_VECT=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=3 MAVLink_seq=166
+BEACON Windows RX tracking_id=4 MAVLink_seq=167
+BEACON Windows RX tracking_id=4 MAVLink_seq=169
+BEACON Windows RX tracking_id=5 MAVLink_seq=170
+BEACON Windows RX tracking_id=5 MAVLink_seq=171
+BEACON Windows RX tracking_id=6 MAVLink_seq=172
+BEACON Windows RX tracking_id=6 MAVLink_seq=174
+BEACON Windows RX tracking_id=7 MAVLink_seq=175
+BEACON Windows RX tracking_id=7 MAVLink_seq=176
+Last interval: serial_bytes=2030 valid_frames=56 lost_frames_estimate=286 duplicate_frames=2 out_of_order_frames=12 memory_vect=9 beacons=9 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, MEMORY_VECT=9, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=8 MAVLink_seq=177
+BEACON Windows RX tracking_id=8 MAVLink_seq=179
+BEACON Windows RX tracking_id=9 MAVLink_seq=180
+BEACON Windows RX tracking_id=9 MAVLink_seq=181
+BEACON Windows RX tracking_id=0 MAVLink_seq=182
+BEACON Windows RX tracking_id=0 MAVLink_seq=184
+BEACON Windows RX tracking_id=1 MAVLink_seq=185
+BEACON Windows RX tracking_id=1 MAVLink_seq=186
+BEACON Windows RX tracking_id=2 MAVLink_seq=187
+BEACON Windows RX tracking_id=2 MAVLink_seq=189
+Last interval: serial_bytes=2153 valid_frames=57 lost_frames_estimate=284 duplicate_frames=2 out_of_order_frames=14 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=3 MAVLink_seq=190
+BEACON Windows RX tracking_id=3 MAVLink_seq=191
+BEACON Windows RX tracking_id=4 MAVLink_seq=192
+BEACON Windows RX tracking_id=4 MAVLink_seq=194
+BEACON Windows RX tracking_id=5 MAVLink_seq=195
+BEACON Windows RX tracking_id=5 MAVLink_seq=196
+BEACON Windows RX tracking_id=6 MAVLink_seq=197
+BEACON Windows RX tracking_id=6 MAVLink_seq=199
+BEACON Windows RX tracking_id=7 MAVLink_seq=200
+BEACON Windows RX tracking_id=7 MAVLink_seq=201
+Last interval: serial_bytes=2280 valid_frames=63 lost_frames_estimate=293 duplicate_frames=8 out_of_order_frames=12 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=7, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3
+BEACON Windows RX tracking_id=8 MAVLink_seq=202
+BEACON Windows RX tracking_id=8 MAVLink_seq=204
+BEACON Windows RX tracking_id=9 MAVLink_seq=205
+BEACON Windows RX tracking_id=9 MAVLink_seq=206
+BEACON Windows RX tracking_id=0 MAVLink_seq=207
+BEACON Windows RX tracking_id=0 MAVLink_seq=209
+BEACON Windows RX tracking_id=1 MAVLink_seq=210
+BEACON Windows RX tracking_id=1 MAVLink_seq=211
+BEACON Windows RX tracking_id=2 MAVLink_seq=212
+BEACON Windows RX tracking_id=2 MAVLink_seq=214
+Last interval: serial_bytes=2378 valid_frames=64 lost_frames_estimate=293 duplicate_frames=9 out_of_order_frames=14 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=64 wsl_failed=0 qgc_sent=64 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=7, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3
+BEACON Windows RX tracking_id=3 MAVLink_seq=215
+BEACON Windows RX tracking_id=3 MAVLink_seq=216
+BEACON Windows RX tracking_id=4 MAVLink_seq=217
+BEACON Windows RX tracking_id=4 MAVLink_seq=219
+BEACON Windows RX tracking_id=5 MAVLink_seq=220
+BEACON Windows RX tracking_id=5 MAVLink_seq=221
+BEACON Windows RX tracking_id=6 MAVLink_seq=222
+BEACON Windows RX tracking_id=6 MAVLink_seq=224
+Last interval: serial_bytes=1780 valid_frames=46 lost_frames_estimate=227 duplicate_frames=1 out_of_order_frames=7 memory_vect=8 beacons=8 bad_data=76 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  bad_data by reason: bad_prefix=76(runs 1)
+    e.g. bad_prefix (76 bytes, 'Bad prefix'): 00 80 00 80 00 80 00 80 80 80 80 00 80 78 80 80 f8 80 00 80 00 80 00 80 80 f8 80 80 80 80 80 00 80 00 f8 78 78 78 f8 00 78 78 78 78 78 78 80 80 ...
+  radio RX messages: HEARTBEAT=9, MEMORY_VECT=8, ATTITUDE=8, SYS_STATUS=4, VFR_HUD=4, GPS_RAW_INT=4, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+BEACON Windows RX tracking_id=7 MAVLink_seq=225
+BEACON Windows RX tracking_id=7 MAVLink_seq=226
+Last interval: serial_bytes=1393 valid_frames=7 lost_frames_estimate=40 duplicate_frames=0 out_of_order_frames=2 memory_vect=2 beacons=2 bad_data=1144 parser_errors=0 wsl_sent=7 wsl_failed=0 qgc_sent=7 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  bad_data by reason: bad_prefix=1144(runs 1)
+    e.g. bad_prefix (1144 bytes, 'Bad prefix'): 00 78 80 78 80 80 78 78 78 78 f8 78 80 00 80 00 80 00 80 80 80 80 00 80 78 80 80 f8 80 00 80 00 80 00 80 80 f8 80 80 80 80 80 80 80 80 f8 80 78 ...
+  radio RX messages: MEMORY_VECT=2, SYS_STATUS=1, ATTITUDE=1, HEARTBEAT=1, VFR_HUD=1, MISSION_CURRENT=1
+BEACON Windows RX tracking_id=8 MAVLink_seq=227
+BEACON Windows RX tracking_id=8 MAVLink_seq=229
+BEACON Windows RX tracking_id=9 MAVLink_seq=230
+BEACON Windows RX tracking_id=3 MAVLink_seq=240
+BEACON Windows RX tracking_id=3 MAVLink_seq=241
+BEACON Windows RX tracking_id=4 MAVLink_seq=242
+BEACON Windows RX tracking_id=4 MAVLink_seq=244
+BEACON Windows RX tracking_id=5 MAVLink_seq=245
+BEACON Windows RX tracking_id=5 MAVLink_seq=246
+BEACON Windows RX tracking_id=6 MAVLink_seq=247
+BEACON Windows RX tracking_id=6 MAVLink_seq=249
+BEACON Windows RX tracking_id=7 MAVLink_seq=250
+BEACON Windows RX tracking_id=7 MAVLink_seq=251
+Last interval: serial_bytes=2863 valid_frames=77 lost_frames_estimate=377 duplicate_frames=3 out_of_order_frames=19 memory_vect=13 beacons=13 bad_data=0 parser_errors=0 wsl_sent=77 wsl_failed=0 qgc_sent=77 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=14, HEARTBEAT=13, MEMORY_VECT=13, GPS_RAW_INT=8, SYS_STATUS=7, VFR_HUD=6, EXTENDED_SYS_STATE=4, UNKNOWN_411=3
+BEACON Windows RX tracking_id=8 MAVLink_seq=252
+BEACON Windows RX tracking_id=8 MAVLink_seq=254
+BEACON Windows RX tracking_id=9 MAVLink_seq=255
+BEACON Windows RX tracking_id=9 MAVLink_seq=0
+BEACON Windows RX tracking_id=0 MAVLink_seq=2
+BEACON Windows RX tracking_id=0 MAVLink_seq=3
+BEACON Windows RX tracking_id=1 MAVLink_seq=4
+BEACON Windows RX tracking_id=1 MAVLink_seq=5
+BEACON Windows RX tracking_id=2 MAVLink_seq=7
+BEACON Windows RX tracking_id=2 MAVLink_seq=8
+Last interval: serial_bytes=2143 valid_frames=56 lost_frames_estimate=274 duplicate_frames=1 out_of_order_frames=16 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, BATTERY_STATUS=3
+BEACON Windows RX tracking_id=3 MAVLink_seq=9
+BEACON Windows RX tracking_id=3 MAVLink_seq=10
+BEACON Windows RX tracking_id=4 MAVLink_seq=12
+BEACON Windows RX tracking_id=4 MAVLink_seq=13
+BEACON Windows RX tracking_id=5 MAVLink_seq=14
+BEACON Windows RX tracking_id=5 MAVLink_seq=15
+BEACON Windows RX tracking_id=6 MAVLink_seq=17
+BEACON Windows RX tracking_id=6 MAVLink_seq=18
+BEACON Windows RX tracking_id=7 MAVLink_seq=19
+BEACON Windows RX tracking_id=7 MAVLink_seq=20
+Last interval: serial_bytes=2019 valid_frames=56 lost_frames_estimate=307 duplicate_frames=2 out_of_order_frames=16 memory_vect=10 beacons=10 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: MEMORY_VECT=10, ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+BEACON Windows RX tracking_id=8 MAVLink_seq=22
+BEACON Windows RX tracking_id=8 MAVLink_seq=23
+BEACON Windows RX tracking_id=9 MAVLink_seq=24
+BEACON Windows RX tracking_id=9 MAVLink_seq=25
+Last interval: serial_bytes=1949 valid_frames=52 lost_frames_estimate=266 duplicate_frames=2 out_of_order_frames=15 memory_vect=4 beacons=4 bad_data=0 parser_errors=0 wsl_sent=52 wsl_failed=0 qgc_sent=52 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=4, MEMORY_VECT=4, BATTERY_STATUS=3
+Last interval: serial_bytes=1615 valid_frames=46 lost_frames_estimate=308 duplicate_frames=1 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, STATUSTEXT=2
+Last interval: serial_bytes=1716 valid_frames=47 lost_frames_estimate=291 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1593 valid_frames=46 lost_frames_estimate=277 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1702 valid_frames=46 lost_frames_estimate=284 duplicate_frames=1 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, MISSION_CURRENT=2
+Last interval: serial_bytes=1630 valid_frames=47 lost_frames_estimate=302 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1716 valid_frames=47 lost_frames_estimate=281 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1618 valid_frames=46 lost_frames_estimate=305 duplicate_frames=1 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, STATUSTEXT=2
+Last interval: serial_bytes=1716 valid_frames=47 lost_frames_estimate=273 duplicate_frames=2 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1631 valid_frames=47 lost_frames_estimate=299 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1707 valid_frames=46 lost_frames_estimate=289 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, MISSION_CURRENT=2
+Last interval: serial_bytes=1627 valid_frames=47 lost_frames_estimate=299 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1716 valid_frames=47 lost_frames_estimate=287 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1618 valid_frames=46 lost_frames_estimate=302 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, STATUSTEXT=2
+Last interval: serial_bytes=1716 valid_frames=47 lost_frames_estimate=296 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1631 valid_frames=47 lost_frames_estimate=299 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1682 valid_frames=45 lost_frames_estimate=281 duplicate_frames=1 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=9, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, MISSION_CURRENT=2
+Last interval: serial_bytes=1853 valid_frames=54 lost_frames_estimate=313 duplicate_frames=9 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=54 wsl_failed=0 qgc_sent=54 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, UNKNOWN_410=7, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+Last interval: serial_bytes=1938 valid_frames=54 lost_frames_estimate=293 duplicate_frames=9 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=54 wsl_failed=0 qgc_sent=54 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, UNKNOWN_410=7, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3
+Last interval: serial_bytes=1622 valid_frames=46 lost_frames_estimate=294 duplicate_frames=1 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, STATUSTEXT=2
+Last interval: serial_bytes=1712 valid_frames=47 lost_frames_estimate=295 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1595 valid_frames=46 lost_frames_estimate=288 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1703 valid_frames=46 lost_frames_estimate=286 duplicate_frames=1 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, MISSION_CURRENT=2
+Last interval: serial_bytes=1631 valid_frames=47 lost_frames_estimate=302 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1712 valid_frames=47 lost_frames_estimate=279 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, UNKNOWN_411=2
+Last interval: serial_bytes=1631 valid_frames=47 lost_frames_estimate=296 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, STATUSTEXT=2
+Last interval: serial_bytes=1703 valid_frames=46 lost_frames_estimate=285 duplicate_frames=1 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, MISSION_CURRENT=2
+Last interval: serial_bytes=1631 valid_frames=47 lost_frames_estimate=296 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, UNKNOWN_411=2
+Last interval: serial_bytes=1716 valid_frames=47 lost_frames_estimate=305 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, STATUSTEXT=3, BATTERY_STATUS=3, MISSION_CURRENT=2
+Last interval: serial_bytes=1604 valid_frames=45 lost_frames_estimate=285 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=2, STATUSTEXT=2
+Last interval: serial_bytes=1685 valid_frames=46 lost_frames_estimate=280 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=9, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=4, EXTENDED_SYS_STATE=3, STATUSTEXT=3, BATTERY_STATUS=3
+Last interval: serial_bytes=1602 valid_frames=45 lost_frames_estimate=316 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=2, STATUSTEXT=2

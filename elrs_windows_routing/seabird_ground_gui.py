@@ -98,6 +98,7 @@ DEFAULTS = {
         "mock_invalid": "VALID course",
         "bench_home_hae_m": "0",
         "task4_vehicle_type": "USV",   # vehicle type the Task 4 rehearsal addresses
+        "mock_no_wait_auto": "1",      # mock RoboCommand: RunStart without waiting for AUTO
     },
 }
 # RunDeclaration tiers (common.proto TaskTier, without TIER_UNKNOWN).
@@ -288,7 +289,8 @@ class GroundGui(tk.Tk):
             "Broker": Managed(self, "Broker", stop_pattern="mosquitto -p 1883"),
             "OCS": Managed(self, "OCS", stop_pattern="seaowls_ocs"),
             "Ground": Managed(self, "Ground", stop_pattern="beacon_mavlink_ground.py"),
-            "Mock": Managed(self, "Mock"),
+            # Long-running: the mock course stays up as RoboCommand (--serve).
+            "Mock": Managed(self, "Mock", stop_pattern="tests/mock_robocommand_course.py"),
             "Declare": Managed(self, "Declare"),   # one-shot: asks the OCS to send RunDeclaration
             "Task4": Managed(self, "Task4"),       # one-shot: ReadinessReport / Task 4 rehearsal
         }
@@ -428,6 +430,10 @@ class GroundGui(tk.Tk):
         b.grid(row=6, column=0, columnspan=2, sticky="w", pady=(4, 0))
         ttk.Button(b, text="Publish mock course", command=self.publish_mock).pack(side="left")
         ttk.Button(b, text="Clear mock course", command=self.clear_mock).pack(side="left", padx=6)
+        ttk.Checkbutton(self.test_frame,
+                        text="Mock RoboCommand sends RunStart without waiting for AUTO (props-off bench)",
+                        variable=self._var("Test", "mock_no_wait_auto"), onvalue="1", offvalue="0").grid(
+            row=8, column=0, columnspan=2, sticky="w", pady=(2, 0))
         t4 = ttk.Frame(self.test_frame)
         t4.grid(row=7, column=0, columnspan=2, sticky="w", pady=(4, 0))
         ttk.Button(t4, text="Rehearse Task 4", command=self.rehearse_task4).pack(side="left")
@@ -1200,11 +1206,20 @@ class GroundGui(tk.Tk):
 
     # ── mock course (Test) ──
     def _mock(self, extra):
-        repo = to_wsl_path(REPO)
-        cmd = (f"cd {sh_quote(repo)}\nexport ROBOCOMMAND_ROOT={sh_quote(to_wsl_path(self.common('robocommand_repo')))}\n"
-               f"exec python3 -u tests/mock_robocommand_course.py {extra}\n")
-        self.procs["Mock"].start(self._wsl("mock", cmd))
+        """(Re)start the mock RoboCommand. A previous one (it keeps serving)
+        is stopped first, so only one plays RoboCommand."""
+        def start():
+            if self.procs["Mock"].running:
+                self.procs["Mock"].stop()
+            repo = to_wsl_path(REPO)
+            cmd = (f"cd {sh_quote(repo)}\n"
+                   f"export ROBOCOMMAND_ROOT={sh_quote(to_wsl_path(self.common('robocommand_repo')))}\n"
+                   f"export TEAM_ID={sh_quote(self.common('team_id').strip())}\n"
+                   f"exec python3 -u tests/mock_robocommand_course.py {extra}\n")
+            self.procs["Mock"].start(self._wsl("mock", cmd))
         self.logs.select(list(self.procs).index("Mock"))
+        # stop() can take seconds (pkill in WSL): keep the window responsive.
+        threading.Thread(target=start, daemon=True).start()
 
     def publish_mock(self):
         self._save_settings()
@@ -1233,6 +1248,10 @@ class GroundGui(tk.Tk):
         invalid = COURSE_KINDS.get(_OLD_KIND_LABELS.get(kind, kind))
         if invalid:
             extra += f" --invalid {invalid}"
+        # Keep serving as RoboCommand: check the RunDeclaration and send RunStart.
+        extra += f" --serve --max-alt-hae {float(self.common('competition_max_hae_m') or 50):g}"
+        if self.vars[("Test", "mock_no_wait_auto")].get() == "1":
+            extra += " --no-wait-auto"
         self.log("Mock", f"publishing: {kind}\n")
         self._mock(extra)
 

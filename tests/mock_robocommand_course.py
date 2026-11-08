@@ -32,6 +32,12 @@ Usage (in WSL, with an MQTT broker on localhost:1883):
     python3 tests/mock_robocommand_course.py --center 26.37140,-80.10320 --period 30   # republish
     python3 tests/mock_robocommand_course.py --center 26.37140,-80.10320 --dry-run
     python3 tests/mock_robocommand_course.py --clear     # remove the retained course from the broker
+    python3 tests/mock_robocommand_course.py --center 26.37140,-80.10320 --serve
+                                                          # also act as RoboCommand: check the
+                                                          # RunDeclaration, RunStart when all AUTO
+    python3 tests/mock_robocommand_course.py --center 26.37140,-80.10320 --serve --no-wait-auto
+                                                          # props-off bench: RunStart 3 s after an
+                                                          # accepted declaration
     python3 tests/mock_robocommand_course.py --center 26.37140,-80.10320 --invalid self-intersecting
                                                           # INVALID demo: open, two-points,
                                                           # self-intersecting, bad-coords,
@@ -173,6 +179,21 @@ def main():
     ap.add_argument("--period", type=float, default=0.0,
                     help="Republish every this many seconds with a fresh sent_at "
                          "(default: 0 = publish once and exit)")
+    g = ap.add_argument_group("serve: play RoboCommand's start sequence (Handbook 3.4.10)")
+    g.add_argument("--serve", action="store_true",
+                   help="After publishing the course, stay running as RoboCommand: check each "
+                        "RunDeclaration (vehicles, tiers, UAV geofence vs this course, altitude) "
+                        "and send RunStart once every declared vehicle reports STATE_AUTO")
+    g.add_argument("--no-wait-auto", action="store_true",
+                   help="With --serve: send RunStart --run-start-delay s after an accepted "
+                        "declaration, without waiting for STATE_AUTO (props-off bench tests)")
+    g.add_argument("--run-start-delay", type=float, default=3.0,
+                   help="With --no-wait-auto: seconds before RunStart (default: 3)")
+    g.add_argument("--max-alt-hae", type=float, default=50.0,
+                   help="With --serve: competition maximum UAV altitude, m HAE (default: 50, "
+                        "as the official test server)")
+    g.add_argument("--team-id", default=os.getenv("TEAM_ID", "FLAU"),
+                   help="With --serve: team whose requests/reports to watch (default: $TEAM_ID or FLAU)")
 
     g = ap.add_argument_group("course")
     g.add_argument("--course-id", default="MOCK", help="RxCourse.course_id (default: MOCK)")
@@ -227,6 +248,9 @@ def main():
             client.publish(TOPIC, course.SerializeToString(), retain=True).wait_for_publish()
             print(f"Published RxCourse (retained) -> {TOPIC} on {args.host}:{args.port}")
             print(describe(course), flush=True)
+            if args.serve:
+                serve(client, args, course, schemas)   # until stopped
+                break
             if args.period <= 0:
                 break
             time.sleep(args.period)
@@ -235,6 +259,107 @@ def main():
     finally:
         client.loop_stop()
         client.disconnect()
+
+
+def serve(client, args, course, schemas):
+    """Play RoboCommand's start sequence for this course (Handbook 3.4.10):
+    check each RunDeclaration, then send RunStart when every declared vehicle
+    reports STATE_AUTO (or after --run-start-delay with --no-wait-auto)."""
+    import threading
+    common_pb2, _, Timestamp = schemas
+    from robotx import rx_commands_pb2, rx_reports_pb2, rx_requests_pb2
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # repo root, for utils/
+    from utils.geofence_check import fence_problems, validate_altitude
+
+    root = f"robocommand/robotx/{args.team_id}"
+    corners = [(p.latitude, p.longitude) for p in course.corners]
+    transit = [(p.latitude, p.longitude) for p in course.uav_transit_area] or None
+    lock = threading.Lock()
+    state = {"pending": None, "run_id": 0, "command_seq": 0, "start_at": None}
+
+    def say(text):
+        print(f"[mock RoboCommand] {text}", flush=True)
+
+    def declaration_problems(d):
+        problems = []
+        if not d.vehicle_ids:
+            problems.append("no vehicle_ids")
+        for t in (1, 2, 3, 4):
+            if getattr(d, f"task{t}_tier") == common_pb2.TIER_UNKNOWN:
+                problems.append(f"task{t}_tier is TIER_UNKNOWN (use TIER_NONE)")
+        if any(v.startswith("UAV") for v in d.vehicle_ids):
+            fence = [(p.latitude, p.longitude) for p in d.uav_geofence]
+            problems += fence_problems(fence, corners, transit) if fence else ["no uav_geofence"]
+            problems += validate_altitude(d.uav_geofence_max_altitude_hae_m, args.max_alt_hae)
+            if not d.uav_pilot_callsign:
+                problems.append("no uav_pilot_callsign")
+        return problems
+
+    def send_run_start():
+        p = state["pending"]
+        state["run_id"] += 1
+        state["command_seq"] += 1
+        ts = Timestamp(); ts.GetCurrentTime()
+        cmd = rx_commands_pb2.RxCommand(
+            team_id=args.team_id, seq=state["command_seq"], sent_at=ts,
+            run_start=rx_commands_pb2.RunStart(declaration_seq=p["seq"], run_id=state["run_id"]))
+        client.publish(f"{root}/command", cmd.SerializeToString())
+        p["started"] = True
+        say(f"RunStart sent: declaration_seq={p['seq']} run_id={state['run_id']}")
+
+    def on_message(c, userdata, msg):
+        try:
+            if msg.topic == f"{root}/request":
+                r = rx_requests_pb2.RxRequest(); r.ParseFromString(msg.payload)
+                if r.WhichOneof("body") != "run_declaration":
+                    return
+                d = r.run_declaration
+                tiers = ", ".join(common_pb2.TaskTier.Name(getattr(d, f"task{t}_tier")) for t in (1, 2, 3, 4))
+                problems = declaration_problems(d)
+                with lock:
+                    if problems:
+                        state["pending"] = None
+                        say(f"RunDeclaration seq={r.seq} REFUSED (RoboCommand sends nothing back): "
+                            + "; ".join(problems))
+                        return
+                    state["pending"] = {"seq": r.seq, "vehicles": set(d.vehicle_ids), "auto": set(),
+                                        "started": False}
+                    say(f"RunDeclaration seq={r.seq} ACCEPTED: vehicles={sorted(d.vehicle_ids)} "
+                        f"tiers=[{tiers}]")
+                    if args.no_wait_auto:
+                        state["start_at"] = time.time() + args.run_start_delay
+                        say(f"--no-wait-auto: RunStart in {args.run_start_delay:g} s")
+                    else:
+                        say("waiting for every declared vehicle to report STATE_AUTO")
+            elif msg.topic.startswith(f"{root}/") and msg.topic.endswith("/report"):
+                r = rx_reports_pb2.RxReport(); r.ParseFromString(msg.payload)
+                if r.WhichOneof("body") != "heartbeat":
+                    return
+                with lock:
+                    p = state["pending"]
+                    if p is None or p["started"] or args.no_wait_auto or r.vehicle_id not in p["vehicles"]:
+                        return
+                    auto = r.heartbeat.state == common_pb2.STATE_AUTO
+                    if auto and r.vehicle_id not in p["auto"]:
+                        say(f"{r.vehicle_id} reports STATE_AUTO")
+                    (p["auto"].add if auto else p["auto"].discard)(r.vehicle_id)
+                    if p["auto"] == p["vehicles"]:
+                        send_run_start()
+        except Exception as e:   # a malformed payload must not stop the mock
+            say(f"ignored a message on {msg.topic}: {e}")
+
+    client.on_message = on_message
+    client.subscribe(f"{root}/request")
+    client.subscribe(f"{root}/+/report")
+    say(f"serving team {args.team_id}: waiting for a RunDeclaration "
+        + ("(RunStart without waiting for AUTO)" if args.no_wait_auto else "(RunStart when all AUTO)"))
+    while True:
+        time.sleep(0.2)
+        with lock:
+            p = state["pending"]
+            if state["start_at"] and p and not p["started"] and time.time() >= state["start_at"]:
+                state["start_at"] = None
+                send_run_start()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,113 @@
+[INFO] [1794135127.579853903] [seaowls_ocs]: [SEAOWLS OCS] RunDeclaration mode: auto tiers=T1:ADVANCED,T2:NONE,T3:NONE,T4:NONE
+[INFO] [1794135127.845152709] [seaowls_ocs]: [SEAOWLS OCS] MQTT connected
+[WARN] [1794135128.740287918] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135129.756625353] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135130.759987127] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135131.760300992] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135132.756562870] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135133.681961709] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135134.765754844] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135135.674541962] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135136.679530894] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135137.690649001] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135138.650844680] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135139.728258878] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135140.744914500] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135141.745411284] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135142.683065138] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135143.762497798] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135144.755488224] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135145.770420205] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135146.743270774] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135147.669156741] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135148.725317027] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135149.676918106] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135150.756189205] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135151.746533593] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135152.750258177] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135153.731300526] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135154.711018172] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135155.736520199] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135156.653498456] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135157.666605450] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135158.718314793] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135159.752983819] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135160.654797553] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135161.659447900] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135162.728253886] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135163.745807542] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135164.755889467] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135165.698088655] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135166.762815657] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135167.706195035] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135168.688867468] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135169.697305507] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135170.690936804] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135171.845295504] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135172.903623138] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135173.857391475] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135174.842618800] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135175.793477817] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135176.806584379] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135177.749018991] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135178.869013259] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135179.746127049] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135180.851458998] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135181.684509831] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135182.785907195] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135183.695809121] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135184.671126303] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135185.637780442] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135186.732313261] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135187.724094825] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135188.729355463] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135189.730388039] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135190.702791283] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135191.708450098] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135192.690135157] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135193.732435605] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135194.753371897] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135195.755633670] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135196.643705508] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135197.645493348] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135198.692706964] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135199.746786961] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135200.755893724] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135201.738426321] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135202.750143628] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135203.742242043] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135204.745409385] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135205.738624856] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135206.705134507] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135207.763022171] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135208.758309717] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135209.738800999] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135210.761844186] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135211.752532734] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135212.760007926] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135213.702707977] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135214.753898204] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135215.727269702] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135216.750292649] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135217.746197332] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135218.760941703] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794135219.744458161] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/install/seaowls_robocommand/lib/seaowls_robocommand/seaowls_ocs", line 33, in <module>
+    sys.exit(load_entry_point('seaowls-robocommand', 'console_scripts', 'seaowls_ocs')())
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/build/seaowls_robocommand/seaowls_robocommand/ocs_node.py", line 781, in main
+    n.m.disconnect()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 1892, in disconnect
+    return self._send_disconnect(reasoncode, properties)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3610, in _send_disconnect
+    return self._packet_queue(command, packet, 0, 0)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3791, in _packet_queue
+    return self.loop_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 2121, in loop_write
+    rc = self._packet_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3226, in _packet_write
+    self._do_on_disconnect(
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 4383, in _do_on_disconnect
+    on_disconnect(
+TypeError: Ocs.disconnected() takes from 4 to 5 positional arguments but 6 were given
+[ros2run]: Process exited with failure 1

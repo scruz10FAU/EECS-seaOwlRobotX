@@ -1,0 +1,18 @@
+Published RxCourse (retained) -> robocommand/robotx/course on localhost:1883
+RxCourse course_id='MOCK' pinger_freq_hz=25000
+  corners: 5 points
+    1.28297439, 103.84662438
+    1.28297439, 103.84663562
+    1.28298561, 103.84663562
+    1.28298561, 103.84662438
+    1.28297439, 103.84662438
+  uav_transit_area: 0 points (empty)
+Published RxCourse (retained) -> robocommand/robotx/course on localhost:1883
+RxCourse course_id='MOCK' pinger_freq_hz=25000
+  corners: 5 points
+    1.28286771, 103.84651768
+    1.28286771, 103.84674232
+    1.28309229, 103.84674232
+    1.28309229, 103.84651768
+    1.28286771, 103.84651768
+  uav_transit_area: 0 points (empty)

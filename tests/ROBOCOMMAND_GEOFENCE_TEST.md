@@ -268,9 +268,25 @@ the GUI's RunStart row must reach **UAV acknowledged**.
 6. In QGC, under Plan → Fence → Download, the fence should sit 1 m inside
    the course.
 
-The mock doesn't answer the RunDeclaration, so **RunStart** stays empty on
-the bench. Only real RoboCommand (or RoboNation's `test_server.py`, whose
-course is fixed in Singapore) sends it.
+**RunStart on the bench.** After publishing, the mock keeps running as
+RoboCommand (`--serve`), with its log in the Mock tab:
+- It checks your RunDeclaration as RoboCommand does: vehicles listed, no
+  `TIER_UNKNOWN`, a callsign, the UAV fence within the mock course (same 1 m
+  rule as RoboNation's checker), and the altitude no higher than the GUI's
+  **Competition maximum**. It logs `ACCEPTED`, or `REFUSED` with the reason;
+  like real RoboCommand it sends nothing back for a refusal.
+- It then sends **RunStart** once every declared vehicle's heartbeat reports
+  `STATE_AUTO`. With **"Mock RoboCommand sends RunStart without waiting for
+  AUTO"** ticked (the default, for props-off bench work), it sends RunStart
+  3 s after an accepted declaration instead.
+- The GUI shows **RunStart** `verified: run_id N — relaying to the UAV…` →
+  `UAV acknowledged, the run may begin`, and **Commands** `last received:
+  run_start`. The sweep's hold is released (with `RUNSTART_GATE = True`).
+
+Untick the box to rehearse the real condition: the drone must be in an AUTO
+mode (OFFBOARD, Hold, Mission…) before RunStart arrives. **Clear mock
+course** stops the mock RoboCommand. Publishing again restarts it, and each
+new declaration needs a new RunStart.
 
 ### 5.3 Rehearse the INVALID demonstration
 
