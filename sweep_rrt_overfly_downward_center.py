@@ -105,11 +105,15 @@ HOVER_STABILIZE_S    = 8.0    # seconds to stabilise after takeoff
 # order of 25 m x 25 m" (final size varies), so the default is a 25 x 25 box.
 # Edit these for testing — e.g. shrink the box, or switch SEARCH_AREA_SHAPE to
 # "disc" for the old circular behaviour.
-SEARCH_AREA_SHAPE    = "disc"   # "rect" = W x L box (default), "disc" = circle,
+SEARCH_AREA_SHAPE    = "fence"   # "rect" = W x L box (default), "disc" = circle,
                                 #   "fence" = PX4's geofence polygon(s), read back
                                 #   before arming (uploaded by beacon_mavlink_ground.py
                                 #   from the RoboCommand course); won't arm without it
 FENCE_MARGIN_M       = 2.0      # fence: keep the search this far inside its edges (m)
+SKIP_OUTSIDE_FENCE   = True     # fence: ignore any beacon whose position is outside the
+                                #   fence (margin included) instead of trying to fly over
+                                #   it — the drone can't reach it without leaving the fence,
+                                #   so chasing it just stalls. Only applies in "fence" mode.
 SEARCH_WIDTH_M       = 25.0     # rect: east–west extent of the box (m)
 SEARCH_LENGTH_M      = 25.0     # rect: north–south extent of the box (m)
 SEARCH_ORIGIN        = "center" # where the takeoff point sits in the box:
@@ -753,6 +757,26 @@ def in_fence(n: float, e: float, margin_m: float = FENCE_MARGIN_M) -> bool:
                for p in _fence_ne)
 
 
+def fence_pull_inside(n_in: float, e_in: float,
+                      n_out: float, e_out: float) -> tuple:
+    """
+    Walk from an in-fence point toward an out-of-fence point and return the
+    furthest spot along that segment that is still in_fence() (i.e. the fence
+    edge, kept FENCE_MARGIN_M inside). Bisection — (n_in, e_in) MUST satisfy
+    in_fence(); (n_out, e_out) is assumed outside. Used to keep the drone moving
+    toward a target up to the geofence boundary without ever crossing it, instead
+    of jumping to a random point.
+    """
+    lo, hi = 0.0, 1.0   # lo is known-inside, hi is known-outside
+    for _ in range(24):
+        mid = 0.5 * (lo + hi)
+        if in_fence(n_in + (n_out - n_in) * mid, e_in + (e_out - e_in) * mid):
+            lo = mid
+        else:
+            hi = mid
+    return n_in + (n_out - n_in) * lo, e_in + (e_out - e_in) * lo
+
+
 async def load_fence(drone: System) -> bool:
     """
     Download PX4's geofence, keep its inclusion polygons as _fence_ne, and size
@@ -1012,12 +1036,28 @@ def _det_candidates(map_pts, classified_pts):
     return out
 
 
+_skipped_outside_logged: set = set()
+
+
 def _all_candidates():
     classified_pts = _classified_points()
     mapc = _map_candidates(classified_pts)
     map_pts = [(c[2], c[3]) for c in mapc]
     detc = _det_candidates(map_pts, classified_pts)
-    return mapc + detc
+    cands = mapc + detc
+    # In fence mode, drop beacons outside the fence — the drone can't fly over
+    # them without leaving the fence, so selecting one just stalls the over-fly.
+    if SKIP_OUTSIDE_FENCE and SEARCH_AREA_SHAPE == "fence" and _fence_ne:
+        kept = []
+        for c in cands:
+            if in_fence(c[2], c[3]):
+                kept.append(c)
+            elif c[1] not in _skipped_outside_logged:
+                _skipped_outside_logged.add(c[1])
+                log(f"[rrt]   ⤫ ignoring beacon outside the fence at "
+                    f"N={c[2]:+.2f} E={c[3]:+.2f} (unreachable without leaving it)")
+        return kept
+    return cands
 
 
 def unconfirmed_beacon_location(near_n: float, near_e: float):
@@ -1178,7 +1218,17 @@ class RRT:
         """Clamp a point into the search area (box clamp, or project onto disc).
         Fence: a point outside is replaced by a fresh sample inside."""
         if SEARCH_AREA_SHAPE == "fence":
-            return (north, east) if in_fence(north, east) else self._uniform_sample()
+            if in_fence(north, east):
+                return north, east
+            # Project back onto the fence edge along origin->point, so a target
+            # just outside is approached up to the boundary rather than swapped
+            # for a random interior point. Fall back to a fresh interior sample
+            # only if even the origin is out of fence (shouldn't happen: takeoff
+            # is verified inside before arming).
+            if in_fence(self._origin_north, self._origin_east):
+                return fence_pull_inside(self._origin_north, self._origin_east,
+                                         north, east)
+            return self._uniform_sample()
         if SEARCH_AREA_SHAPE == "rect":
             return (min(max(north, self._n_min), self._n_max),
                     min(max(east,  self._e_min), self._e_max))
@@ -1316,6 +1366,15 @@ async def fly_over_beacon(drone: System, rrt: RRT,
         if math.hypot(gn - node.north, ge - node.east) <= BEACON_OVERFLY_TOL_M:
             return True
         nn, ne = rrt.steer(node, gn, ge)
+        # Never let an over-fly leg cross the geofence. `node` is in-fence; if the
+        # steered endpoint isn't, pull it back onto the fence edge. If that leaves
+        # no forward progress, the beacon can't be reached without leaving the
+        # fence, so stop here rather than place a node outside it.
+        if SEARCH_AREA_SHAPE == "fence" and not in_fence(nn, ne):
+            nn, ne = fence_pull_inside(node.north, node.east, nn, ne)
+            if math.hypot(nn - node.north, ne - node.east) < 1e-3:
+                log("[rrt]   ⚠ beacon lies past the geofence — holding at the fence edge")
+                return False
         yaw = math.degrees(math.atan2(ne - _state.east_m,
                                       nn - _state.north_m)) % 360.0
         log(f"[rrt]   ◎→ leg toward beacon: N={nn:+.2f} E={ne:+.2f} "
