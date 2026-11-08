@@ -534,6 +534,7 @@ def main():
     cache = {}  # latest GLOBAL_POSITION_INT / ATTITUDE / GPS_RAW_INT / VFR_HUD / EXTENDED_SYS_STATE
     last_heartbeat_t = time.monotonic()  # wait_heartbeat() just saw one
     last_heartbeat = None  # latest UAV HEARTBEAT, reused for position-driven updates
+    last_mode = None       # (PX4 mode, RoboCommand state, armed) last logged
     last_unknown_t = 0.0
     last_status_t = 0.0
     try:
@@ -679,6 +680,16 @@ def main():
                     last_heartbeat = msg
                     publish_status(msg)
                     last_status_t = now
+                    # Log every flight-mode / RoboCommand-state change (same rule as
+                    # _build_vehicle_status), e.g. to show the UAV AUTONOMOUS before RunStart.
+                    mode = mavutil.mode_string_v10(msg)
+                    state = ("STATE_KILLED" if msg.system_status in _KILLED_SYSTEM_STATUS
+                             else "STATE_AUTO" if mode in _AUTO_MODES else "STATE_MANUAL")
+                    armed = bool(msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
+                    if (mode, state, armed) != last_mode:
+                        last_mode = (mode, state, armed)
+                        print(f"[beacon-ground] [mode] {args.vehicle_id} {mode} -> {state} "
+                              f"({'armed' if armed else 'disarmed'})", flush=True)
                 continue
             if msg_type == "STATUSTEXT":
                 text = str(msg.text).strip("\x00 ")

@@ -282,6 +282,7 @@ class GroundGui(tk.Tk):
         self.task4_waiting_ready = []    # (vehicle, AssistanceRequest seq) not yet reported ready
         self.last_delivery_request = None   # (task, resource, circle) from the USV, for the UAV echo
         self.active_run_id = None           # set by a verified RunStart: the OCS mustn't restart now
+        self.uav_mode = None                # (PX4 mode, STATE_*, armed) from Ground's '[mode]' lines
         self.drone_fix_lost = False
 
         self.procs = {
@@ -596,6 +597,9 @@ class GroundGui(tk.Tk):
                     text=self.status["Geofence"].cget("text") + "  [ASSUMED home HAE: bench only]")
             elif "Heartbeat received from system" in line:
                 self._set("Ground", "receiving UAV MAVLink", "#1b7f1b")
+            m = re.search(r"\[mode\] (\S+) (\S+) -> (STATE_\w+) \((armed|disarmed)\)", line)
+            if m:
+                self.uav_mode = m.group(2, 3, 4)   # PX4 mode, RoboCommand state, armed
             # RunStart relay to the UAV (Handbook 3.4.10: the UAV holds until it arrives)
             m = re.search(r"\[runstart\] RunStart run_id=(\S+) verified by the OCS", line)
             if m:
@@ -730,7 +734,14 @@ class GroundGui(tk.Tk):
         if self.last_heartbeat is not None:
             age = time.monotonic() - self.last_heartbeat
             if age < 2.0:
-                self._set("Heartbeats", "UAV1 → RoboCommand at ~2 Hz", "#1b7f1b")
+                text, color = "UAV1 → RoboCommand at ~2 Hz", "#1b7f1b"
+                if self.uav_mode:
+                    mode, state, armed = self.uav_mode
+                    label = {"STATE_AUTO": "AUTONOMOUS", "STATE_MANUAL": "manual",
+                             "STATE_KILLED": "KILLED"}.get(state, state)
+                    text += f" — {mode}, {label} ({armed})"
+                    color = {"STATE_AUTO": "#1b7f1b", "STATE_KILLED": "#c0182b"}.get(state, "#a86b00")
+                self._set("Heartbeats", text, color)
             else:
                 self._set("Heartbeats", f"none for {age:.0f} s (OCS suppresses stale UAV telemetry)",
                           "#c0182b")

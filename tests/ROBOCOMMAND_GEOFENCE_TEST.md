@@ -464,6 +464,66 @@ and 2 → 1 after landing. For Gazebo, see [SIM_GEOFENCE_TEST.md](SIM_GEOFENCE_T
 
 ---
 
+## 7b. UAV Flight Validation: autonomous mode → RunStart → autonomous hover
+
+Handbook 3.4.10: "All vehicles should position-hold after switching into
+Autonomous Mode. Only when the OCS receives and verifies the RunStart should
+any vehicle begin their run." `flight_validation_hover.py` (repo root, run
+on the drone like the sweep) does exactly that, in four steps:
+
+1. **Autonomous on the ground.** After a position fix and home, it puts PX4
+   in **Hold** (`AUTO.LOITER`) while still disarmed. The ground station
+   reports Hold as `STATE_AUTO` in the RoboCommand heartbeat, the condition
+   for RunStart. The GUI's **Heartbeats** row shows `— LOITER, AUTONOMOUS
+   (disarmed)` in green, and the Ground log has
+   `[mode] UAV1 LOITER -> STATE_AUTO (disarmed)`. If PX4 refuses Hold on the
+   ground, or with `AUTONOMOUS_MODE_SOURCE = "pilot"`, the pilot switches to
+   an autonomous mode via RC/QGC and the script waits for it.
+2. **Hold until RunStart.** It waits on `/seabird/run_start`, logging any
+   change of flight mode. A RunStart from before the script started (latched
+   from an earlier run) is ignored.
+3. **After RunStart: the autonomous hover.** Arm → autonomous takeoff to
+   `HOVER_ALT_M` (3 m) → **autonomous hover in Hold** for `HOVER_DURATION_S`
+   (20 s) → autonomous land → disarm. Every phase is an autonomous PX4 mode
+   (TAKEOFF / HOLD / LAND), so the heartbeat stays `STATE_AUTO` throughout.
+4. **Pilot takeover** with the sticks (needs `COM_RC_OVERRIDE` ≠ 0) at any
+   time: the script stops commanding.
+
+**Settings** (top of the script): `HOVER_ALT_M`, `HOVER_DURATION_S`,
+`AUTONOMOUS_MODE_SOURCE` (`"script"` / `"pilot"`), `MAVSDK_ADDRESS`, and
+**`BENCH_TEST`** (default `True`). Bench test does steps 1–2, then only logs
+what the flight would do, and never arms. Set it to `False` for the real
+flight.
+
+**Order on the day:**
+1. GUI **Competition** profile → Start all. The geofence round trip gives
+   Geofence `VALID (on the UAV, read back)`.
+2. On the drone: `python3.10 flight_validation_hover.py`. **Start it before
+   the UAV goes autonomous**, so the RunStart it acts on is the one that
+   follows.
+3. Heartbeats row: `LOITER, AUTONOMOUS`. Press **Send RunDeclaration** (if
+   not automatic).
+4. RoboCommand sends RunStart once the declaration is accepted and the UAV
+   is autonomous (and Garuda/course manager have cleared it). The RunStart
+   row goes `verified` → `UAV acknowledged`. The drone takes off, hovers
+   autonomously, and lands.
+
+**Rehearse it on the bench (Test profile, props off, `BENCH_TEST = True`):**
+untick **"Mock RoboCommand sends RunStart without waiting for AUTO"** so the
+mock RoboCommand waits for the autonomous heartbeat, as the real one does.
+Then Publish mock course → Send RunDeclaration → start the script. Expect:
+- Heartbeats `LOITER, AUTONOMOUS`;
+- Mock log `UAV1 reports STATE_AUTO` → `RunStart sent`;
+- RunStart row `UAV acknowledged`;
+- script log `RunStart received … BENCH_TEST: would arm, take off…`.
+
+Tested against a simulated MAVSDK drone: commands were hold → arm → takeoff
+→ (HOLD hover) → land → disarm, a stale RunStart was ignored, and a pilot
+takeover during the hover stopped the script. **Not yet flown on the real
+drone.**
+
+---
+
 ## 8. Without the GUI (manual commands)
 
 The GUI runs exactly these. In WSL, each in its own terminal, after

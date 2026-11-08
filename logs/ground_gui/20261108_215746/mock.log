@@ -1,0 +1,25 @@
+Published RxCourse (retained) -> robocommand/robotx/course on localhost:1883
+RxCourse course_id='MOCK' pinger_freq_hz=25000
+  corners: 5 points
+    1.28286771, 103.84651768
+    1.28286771, 103.84674232
+    1.28309229, 103.84674232
+    1.28309229, 103.84651768
+    1.28286771, 103.84651768
+  uav_transit_area: 0 points (empty)
+[mock RoboCommand] serving team FLAU: waiting for a RunDeclaration (RunStart without waiting for AUTO)
+[mock RoboCommand] RunDeclaration seq=1 ACCEPTED: vehicles=['UAV1'] tiers=[TIER_ADVANCED, TIER_NONE, TIER_NONE, TIER_NONE]
+[mock RoboCommand] --no-wait-auto: RunStart in 3 s
+[mock RoboCommand] RunStart sent: declaration_seq=1 run_id=1
+[mock RoboCommand] RunDeclaration seq=2 ACCEPTED: vehicles=['UAV1'] tiers=[TIER_ADVANCED, TIER_NONE, TIER_NONE, TIER_NONE]
+[mock RoboCommand] --no-wait-auto: RunStart in 3 s
+[mock RoboCommand] RunStart sent: declaration_seq=2 run_id=2
+[mock RoboCommand] RunDeclaration seq=3 ACCEPTED: vehicles=['UAV1'] tiers=[TIER_ADVANCED, TIER_NONE, TIER_NONE, TIER_NONE]
+[mock RoboCommand] --no-wait-auto: RunStart in 3 s
+[mock RoboCommand] RunStart sent: declaration_seq=3 run_id=3
+[mock RoboCommand] RunDeclaration seq=4 ACCEPTED: vehicles=['UAV1'] tiers=[TIER_ADVANCED, TIER_NONE, TIER_NONE, TIER_NONE]
+[mock RoboCommand] --no-wait-auto: RunStart in 3 s
+[mock RoboCommand] RunStart sent: declaration_seq=4 run_id=4
+[mock RoboCommand] RunDeclaration seq=5 ACCEPTED: vehicles=['UAV1'] tiers=[TIER_ADVANCED, TIER_NONE, TIER_NONE, TIER_NONE]
+[mock RoboCommand] --no-wait-auto: RunStart in 3 s
+[mock RoboCommand] RunStart sent: declaration_seq=5 run_id=5

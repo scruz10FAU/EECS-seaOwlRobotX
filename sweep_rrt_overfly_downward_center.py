@@ -274,6 +274,7 @@ _classified_ids: set    = set() # beacon-map ids already classified & recorded
 _overfly_attempts: dict = {}    # target key (map id, or ("det",n,e)) -> passes tried
 _lock = threading.Lock()
 _battery_low: bool    = False   # set True by monitor_battery() when threshold crossed
+_SCRIPT_STARTED       = time.time()        # RunStarts received before this are stale
 _run_start_event      = threading.Event()  # set when /seabird/run_start arrives
 _run_start_id         = None
 _detector_alive       = threading.Event()  # set when first /seabird/beacon_map msg arrives
@@ -366,13 +367,22 @@ def _rclpy_thread_fn() -> None:
         _task_pub = node.create_publisher(UInt8, "/seabird/current_task", 10)
         node.create_timer(TASK_REPUBLISH_S, lambda: _task_pub.publish(UInt8(data=_current_task)))
 
-        # ── RoboCommand RunStart (latched: one that arrived before us still counts) ──
+        # ── RoboCommand RunStart ──
+        # The topic is latched, so a RunStart from an EARLIER run (still held by
+        # beacon_mavlink_bridge.py) would arrive at once and skip the hold.
+        # Only a RunStart received after this script started counts.
         def _on_run_start(msg: String) -> None:
             global _run_start_id
             try:
-                _run_start_id = json.loads(msg.data).get("run_id")
-            except (json.JSONDecodeError, AttributeError):
-                _run_start_id = None
+                data = json.loads(msg.data)
+            except json.JSONDecodeError:
+                return
+            received = float(data.get("received", 0.0) or 0.0)
+            if received and received < _SCRIPT_STARTED:
+                log(f"[rrt] ignoring RunStart run_id={data.get('run_id')} from before this "
+                    f"script started (latched from an earlier run)")
+                return
+            _run_start_id = data.get("run_id")
             _run_start_event.set()
 
         from rclpy.qos import DurabilityPolicy, QoSProfile
@@ -546,6 +556,56 @@ def publish_rrt_node(north: float, east: float, alt: float) -> None:
 
 
 # ── Flight helpers ────────────────────────────────────────────────────────────
+
+# PX4 modes beacon_mavlink_ground.py reports as STATE_AUTO (MAVSDK names).
+AUTONOMOUS_MODE_NAMES = {"HOLD", "MISSION", "OFFBOARD", "TAKEOFF", "LAND",
+                         "RETURN_TO_LAUNCH", "FOLLOW_ME", "PRECISION_LAND"}
+
+
+async def autonomous_until_runstart(drone: System) -> bool:
+    """Put PX4 in Hold while still disarmed (the UAV is then AUTONOMOUS for
+    RoboCommand) and wait there for RunStart. False = don't arm."""
+    mode = {"name": "UNKNOWN"}
+
+    async def track_mode():
+        async for m in drone.telemetry.flight_mode():
+            name = getattr(m, "name", str(m))
+            if name != mode["name"]:
+                tag = "AUTONOMOUS" if name in AUTONOMOUS_MODE_NAMES else "not autonomous"
+                log(f"[rrt] PX4 mode: {name} ({tag})")
+            mode["name"] = name
+    tracker = asyncio.ensure_future(track_mode())
+    try:
+        log("[rrt] Switching PX4 to Hold on the ground (disarmed) — UAV goes AUTONOMOUS")
+        try:
+            await drone.action.hold()
+        except ActionError as e:
+            log(f"[rrt] PX4 refused Hold on the ground ({e}) — switch to Hold via RC/QGC; waiting")
+        t0 = time.monotonic()
+        while mode["name"] not in AUTONOMOUS_MODE_NAMES:
+            if time.monotonic() - t0 > 120.0:
+                log("[rrt] ABORT: not in an autonomous mode after 120 s — not arming")
+                return False
+            await asyncio.sleep(0.2)
+        log(f"[rrt] ✓ AUTONOMOUS ({mode['name']}) — waiting for RoboCommand's RunStart "
+            f"(up to {RUNSTART_WAIT_MAX_S:.0f} s)")
+
+        t0, warned = time.monotonic(), False
+        while not _run_start_event.is_set():
+            if time.monotonic() - t0 > RUNSTART_WAIT_MAX_S:
+                log(f"[rrt] No RunStart after {RUNSTART_WAIT_MAX_S:.0f} s — not arming")
+                return False
+            autonomous = mode["name"] in AUTONOMOUS_MODE_NAMES
+            if not autonomous and not warned:
+                log(f"[rrt] WARNING: left autonomous mode ({mode['name']}) before RunStart — "
+                    f"RoboCommand won't start the run until it is autonomous again")
+            warned = not autonomous
+            await asyncio.sleep(0.2)
+        log(f"[rrt] ✓ RunStart received (run_id={_run_start_id}) — arming")
+        return True
+    finally:
+        tracker.cancel()
+
 
 async def wait_for_ready_position(drone: System) -> None:
     log("[rrt] Waiting for PX4 position readiness...")
@@ -1542,10 +1602,6 @@ async def run_mission() -> None:
         traceback.print_exc()
         return
 
-    if BENCH_TEST:
-        log("*** BENCH_TEST — connection verified, not arming or taking off ***")
-        return
-
     await wait_for_ready_position(drone)
 
     asyncio.ensure_future(track_position(drone))
@@ -1570,6 +1626,14 @@ async def run_mission() -> None:
     #if not await wait_for_detector():
         #log("[rrt] ABORT: beacon detector not detected — not arming")
         #return
+
+    # ── Autonomous on the ground, then RunStart (Flight Validation) ──────────
+    if RUNSTART_GATE and not await autonomous_until_runstart(drone):
+        return
+
+    if BENCH_TEST:
+        log("*** BENCH_TEST — not arming or taking off ***")
+        return
 
     # ── Arm ───────────────────────────────────────────────────────────────────
     log("[rrt] Arming...")
