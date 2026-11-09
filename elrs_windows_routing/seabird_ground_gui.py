@@ -16,8 +16,8 @@ One window to run the UAV ground station at the competition or on the bench:
   * Preflight checks: latest RoboCommand protobuf, UAV pilot callsign and
     registration formats, altitude limit, and (Competition) the Handbook
     3.4.3 network rules -- DHCP, address in the course subnet, gateway =
-    RoboCommand, no bridge / Internet sharing / forwarding, MQTT 1883
-    reachable, WSL mirrored networking.
+    RoboCommand, no bridge / Internet sharing / forwarding, MQTT port
+    (setting, default 1883) reachable, WSL mirrored networking.
   * Start / stop of the ELRS router (Windows), and in WSL the broker (Test),
     seaowls_ocs and beacon_mavlink_ground.py, with live logs. Every run's
     logs are kept in a new logs/ground_gui/<timestamp>/ folder.
@@ -72,6 +72,7 @@ DEFAULTS = {
     "common": {
         "wsl_distro": "Ubuntu-22.04",
         "robocommand_repo": str(REPO.parent / "seaowls-robotx-robocommand"),
+        "mqtt_port": "1883",   # RoboCommand MQTT broker port (Handbook 3.4.3: 1883)
         "com_port": "COM6",
         "baud": "460800",
         "team_id": "FLAU",
@@ -200,6 +201,15 @@ try {{
     return json.loads(raw) if raw else {"Found": False}
 
 
+def parse_port(text):
+    """A TCP port number from text, or None if it isn't 1-65535."""
+    try:
+        port = int(str(text).strip())
+    except ValueError:
+        return None
+    return port if 1 <= port <= 65535 else None
+
+
 def tcp_reachable(host: str, port: int, timeout=3.0) -> bool:
     try:
         with socket.create_connection((host, port), timeout=timeout):
@@ -287,13 +297,14 @@ class GroundGui(tk.Tk):
 
         self.procs = {
             "Router": Managed(self, "Router"),
-            "Broker": Managed(self, "Broker", stop_pattern="mosquitto -p 1883"),
+            "Broker": Managed(self, "Broker", stop_pattern="mosquitto -p"),
             "OCS": Managed(self, "OCS", stop_pattern="seaowls_ocs"),
             "Ground": Managed(self, "Ground", stop_pattern="beacon_mavlink_ground.py"),
             # Long-running: the mock course stays up as RoboCommand (--serve).
             "Mock": Managed(self, "Mock", stop_pattern="tests/mock_robocommand_course.py"),
             "Declare": Managed(self, "Declare"),   # one-shot: asks the OCS to send RunDeclaration
             "Task4": Managed(self, "Task4"),       # one-shot: ReadinessReport / Task 4 rehearsal
+            "Restart": Managed(self, "Restart"),   # one-shot: asks Ground to restart the drone mission
         }
         self._build()
         self._on_profile()
@@ -322,6 +333,10 @@ class GroundGui(tk.Tk):
 
     def common(self, name):
         return self.vars[("common", name)].get()
+
+    def mqtt_port(self):
+        """The MQTT port setting, or None when it isn't a valid port number."""
+        return parse_port(self.common("mqtt_port"))
 
     def prof(self, name):
         return self.vars[(self.profile.get(), name)].get()
@@ -363,6 +378,7 @@ class GroundGui(tk.Tk):
             ("Competition maximum (m HAE)", "competition_max_hae_m"),
             ("Fence inset (m)", "fence_inset_m"), ("Ceiling margin (m)", "ceiling_margin_m"),
             ("WSL distro", "wsl_distro"), ("RoboCommand repo", "robocommand_repo"),
+            ("MQTT port", "mqtt_port"),
         ]
         for i, (label, name) in enumerate(rows):
             ttk.Label(f, text=label).grid(row=i, column=0, sticky="w")
@@ -450,7 +466,8 @@ class GroundGui(tk.Tk):
         st = ttk.LabelFrame(right, text="Status", padding=6)
         st.pack(fill="x")
         for i, key in enumerate(("Router", "Broker", "OCS", "Ground", "Heartbeats", "Geofence",
-                                 "Declaration", "RunStart", "Commands", "Task 4", "Reports")):
+                                 "Declaration", "RunStart", "Commands", "Task 4", "Reports",
+                                 "Drone mission")):
             ttk.Label(st, text=key + ":", width=12).grid(row=i, column=0, sticky="w")
             lbl = tk.Label(st, text="—", anchor="w", justify="left", wraplength=640)
             lbl.grid(row=i, column=1, sticky="w")
@@ -468,6 +485,9 @@ class GroundGui(tk.Tk):
                     row=i, column=2, sticky="e")
             elif key == "Reports":
                 ttk.Button(st, text="Echo delivery request (UAV)", command=self.echo_delivery).grid(
+                    row=i, column=2, sticky="e")
+            elif key == "Drone mission":
+                ttk.Button(st, text="Restart drone mission", command=self.restart_drone_mission).grid(
                     row=i, column=2, sticky="e")
         st.columnconfigure(1, weight=1)
 
@@ -614,6 +634,21 @@ class GroundGui(tk.Tk):
                 self._set("RunStart", f"verified: run_id {m.group(1)} — NO acknowledgement from the UAV "
                                       f"yet ({m.group(2)} sends): check the ELRS link and "
                                       f"beacon_mavlink_bridge.py on the drone", "#c0182b")
+            # Remote restart of the drone's seabird-mission (over ELRS)
+            m = re.search(r"\[restart\] (.*)", line)
+            if m:
+                text = m.group(1)
+                if text.startswith("request "):
+                    self._set("Drone mission", "restart sent over ELRS — waiting for the drone…", "#a86b00")
+                elif text.startswith("drone: OK"):
+                    self._set("Drone mission", "drone: OK — seabird-mission restarting; it waits for "
+                                               "the CH7 trigger again", "#1b7f1b")
+                elif text.startswith("drone: "):
+                    self._set("Drone mission", f"drone {text[len('drone: '):]}", "#c0182b")
+                elif text.startswith("REFUSED"):
+                    self._set("Drone mission", f"ground {text}", "#c0182b")
+                elif text.startswith("no acknowledgement"):
+                    self._set("Drone mission", text, "#c0182b")
             m = re.search(r"\[pos\] 3D fix lat=(-?[\d.]+) lon=(-?[\d.]+) sats=(\d+)", line)
             if m:
                 self.drone_fix = (float(m.group(1)), float(m.group(2)), int(m.group(3)), time.monotonic())
@@ -879,6 +914,9 @@ class GroundGui(tk.Tk):
             else "not mirrored: OCS in WSL can't reach the course network / router uplink")
 
         host = c["rc_host"] if comp else "localhost"
+        port = parse_port(c.get("mqtt_port", "1883"))
+        if port is None:
+            add("MQTT port", "bad", f"{c.get('mqtt_port')!r} isn't a port number (1-65535)")
         if comp:
             name = adapter_name(c["adapter"])
             if not name:
@@ -927,13 +965,17 @@ class GroundGui(tk.Tk):
                     add("IP forwarding", "ok" if s["Forwarding"] != "Enabled" else "bad",
                         "off" if s["Forwarding"] != "Enabled"
                         else "on — other networks must not be routed through this interface")
-            if host:
-                add("RoboCommand MQTT", "ok" if tcp_reachable(host, 1883) else "bad",
-                    f"{host}:1883 " + ("reachable" if tcp_reachable(host, 1883)
-                                        else "NOT reachable (cable, subnet, firewall?)"))
-        else:
-            add("Local broker", "ok" if tcp_reachable("127.0.0.1", 1883) else "warn",
-                "localhost:1883 listening" if tcp_reachable("127.0.0.1", 1883)
+            if port and port != 1883:
+                add("MQTT port", "warn", f"{port} — Handbook 3.4.3 says RoboCommand uses 1883")
+            if host and port:
+                reachable = tcp_reachable(host, port)
+                add("RoboCommand MQTT", "ok" if reachable else "bad",
+                    f"{host}:{port} " + ("reachable" if reachable
+                                         else "NOT reachable (cable, subnet, firewall, port?)"))
+        elif port:
+            listening = tcp_reachable("127.0.0.1", port)
+            add("Local broker", "ok" if listening else "warn",
+                f"localhost:{port} listening" if listening
                 else "not running yet — Start all starts Mosquitto in WSL")
             p = c["drone_position"] if c["mock_use_gps"] else None
             if p:
@@ -1001,20 +1043,28 @@ class GroundGui(tk.Tk):
             if self.profile.get() == "Competition":
                 messagebox.showinfo("Broker", "Competition uses RoboCommand's broker; no local broker.")
                 return
-            if tcp_reachable("127.0.0.1", 1883):
-                self.log("Broker", "localhost:1883 already listening — using it\n")
+            port = self.mqtt_port()
+            if port is None:
+                messagebox.showerror("Broker", "MQTT port must be a number from 1 to 65535.")
+                return
+            if tcp_reachable("127.0.0.1", port):
+                self.log("Broker", f"localhost:{port} already listening — using it\n")
                 self._set("Broker", "already running (not started by this window)", "#1b7f1b")
                 return
-            self.procs["Broker"].start(self._wsl("broker", "exec mosquitto -p 1883 -v\n"))
+            self.procs["Broker"].start(self._wsl("broker", f"exec mosquitto -p {port} -v\n"))
         elif key == "OCS":
             host = self._robocommand_host()
             if not host:
                 messagebox.showerror("OCS", "No RoboCommand host: choose the adapter (DHCP gateway) "
                                             "or type the host.")
                 return
+            port = self.mqtt_port()
+            if port is None:
+                messagebox.showerror("OCS", "MQTT port must be a number from 1 to 65535.")
+                return
             env = {
                 "ROBOCOMMAND_ROOT": to_wsl_path(c["robocommand_repo"]),
-                "ROBOCOMMAND_HOST": host, "ROBOCOMMAND_PORT": "1883",
+                "ROBOCOMMAND_HOST": host, "ROBOCOMMAND_PORT": str(port),
                 "TEAM_ID": c["team_id"].strip(), "VEHICLES": c["vehicles"].replace(" ", ""),
                 "UAV_GEOFENCE_MAX_ALTITUDE_HAE_M": c["altitude_limit_hae_m"],
                 "UAV_MAX_ALTITUDE_HAE_M": c["competition_max_hae_m"],
@@ -1024,7 +1074,7 @@ class GroundGui(tk.Tk):
                 "TASK4_ACK_MODE": "vehicle" if c.get("task4_vehicle_ack") == "1" else "auto",
             }
             exports = "".join(f"export {k}={sh_quote(v)}\n" for k, v in env.items())
-            self.log("OCS", f"RoboCommand {host}:1883, callsign {callsign(c)!r}, "
+            self.log("OCS", f"RoboCommand {host}:{port}, callsign {callsign(c)!r}, "
                             f"registration {registration(c)!r}\n")
             self.procs["OCS"].start(self._wsl("ocs", self._ros_prelude() + exports
                                               + "exec ros2 run seaowls_robocommand seaowls_ocs\n"))
@@ -1091,6 +1141,45 @@ class GroundGui(tk.Tk):
         threading.Thread(target=worker, daemon=True).start()
 
     # ── Tasks 2/3: the UAV echoes the resource delivery request ──
+    def restart_drone_mission(self):
+        """Ask beacon_mavlink_ground.py to restart seabird-mission on the drone
+        over ELRS (String request id on /seaowls/uav1/restart_mission). Refused
+        while the UAV is armed -- here, in the ground station and on the drone."""
+        if not self.procs["Ground"].running:
+            messagebox.showerror("Restart drone mission",
+                                 "Start Ground first: it sends the request over the ELRS link.")
+            return
+        if self.uav_mode and self.uav_mode[2] == "armed":
+            messagebox.showerror("Restart drone mission",
+                                 "The UAV is ARMED — the mission can't be restarted while armed.")
+            return
+        if self.procs["Restart"].running:
+            return   # a request is already on its way
+        if not messagebox.askyesno("Restart drone mission",
+                                   "Restart seabird-mission on the drone?\n\n"
+                                   "It stops the running mission script and waits for the "
+                                   "CH7 trigger again."):
+            return
+        request_id = time.strftime("%H%M%S")
+        publish = "\n".join([
+            "import time, rclpy",
+            "from std_msgs.msg import String",
+            "rclpy.init(); n = rclpy.create_node('restart_drone_mission')",
+            "p = n.create_publisher(String, '/seaowls/uav1/restart_mission', 10)",
+            "end = time.time() + 30",
+            "while p.get_subscription_count() == 0 and time.time() < end:",
+            "    rclpy.spin_once(n, timeout_sec=0.1)",
+            "if p.get_subscription_count() == 0:",
+            "    print('Ground (beacon_mavlink_ground.py) not found on ROS after 30 s'); "
+            "raise SystemExit(1)",
+            f"p.publish(String(data='{request_id}')); print('restart request {request_id} sent')",
+            "end = time.time() + 1",
+            "while time.time() < end: rclpy.spin_once(n, timeout_sec=0.1)",
+        ])
+        self._set("Drone mission", f"asking Ground to send restart request {request_id}…", "#a86b00")
+        self.procs["Restart"].start(self._wsl(
+            "restart_mission", self._ros_prelude() + f"exec python3 -u -c {sh_quote(publish)}\n"))
+
     def echo_delivery(self):
         """Operator: the UAV has begun the delivery -> republish the last request on
         /seaowls/uav1/report/resource_delivery, sent to RoboCommand as UAV1."""
@@ -1182,6 +1271,7 @@ class GroundGui(tk.Tk):
         cmd = (f"cd {sh_quote(repo)}\n"
                f"export ROBOCOMMAND_ROOT={sh_quote(to_wsl_path(self.common('robocommand_repo')))}\n"
                f"export TEAM_ID={sh_quote(self.common('team_id').strip())}\n"
+               f"export ROBOCOMMAND_PORT={self.mqtt_port() or 1883}\n"
                f"exec python3 -u tests/mock_robocommand_task4.py --scenario all --vehicle-type {vtype} "
                f"--timeout 120\n")
         self.procs["Task4"].start(self._wsl("task4_rehearsal", cmd))
@@ -1219,6 +1309,7 @@ class GroundGui(tk.Tk):
     def _mock(self, extra):
         """(Re)start the mock RoboCommand. A previous one (it keeps serving)
         is stopped first, so only one plays RoboCommand."""
+        port = self.mqtt_port() or 1883   # read on the GUI thread
         def start():
             if self.procs["Mock"].running:
                 self.procs["Mock"].stop()
@@ -1226,6 +1317,7 @@ class GroundGui(tk.Tk):
             cmd = (f"cd {sh_quote(repo)}\n"
                    f"export ROBOCOMMAND_ROOT={sh_quote(to_wsl_path(self.common('robocommand_repo')))}\n"
                    f"export TEAM_ID={sh_quote(self.common('team_id').strip())}\n"
+                   f"export ROBOCOMMAND_PORT={port}\n"
                    f"exec python3 -u tests/mock_robocommand_course.py {extra}\n")
             self.procs["Mock"].start(self._wsl("mock", cmd))
         self.logs.select(list(self.procs).index("Mock"))

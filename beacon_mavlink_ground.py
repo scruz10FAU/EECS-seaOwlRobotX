@@ -107,6 +107,17 @@ RUN_START_TOPIC = "/seaowls/run_start"
 RUNSTART_PREFIX = "SEABIRD_RUNSTART"
 RUNSTART_ACK_PREFIX = "SEABIRD_RUNSTART_ACK"
 RUNSTART_RESEND_S = 2.0
+# Remote restart of the drone's seabird-mission (GUI "Restart drone mission").
+# A String (request id) on RESTART_TOPIC goes up ELRS as STATUSTEXT
+# "SEABIRD_RESTART_MISSION <id>", resent every RESTART_RESEND_S until
+# voxl/seabird_remote_restart.py answers "SEABIRD_RESTART_ACK <id> OK|REFUSED <why>"
+# or RESTART_GIVE_UP_S passes. Refused here while the UAV is armed (and again
+# on the drone).
+RESTART_TOPIC = "/seaowls/uav1/restart_mission"
+RESTART_PREFIX = "SEABIRD_RESTART_MISSION"
+RESTART_ACK_PREFIX = "SEABIRD_RESTART_ACK"
+RESTART_RESEND_S = 2.0
+RESTART_GIVE_UP_S = 30.0
 _VALID_TASKS = {1, 2, 3, 4, 5}
 
 # A msg_id seen again within this window is a repeated copy from the bridge
@@ -417,6 +428,8 @@ def main():
     buoy_field = _BuoyField(args.buoy_merge_m)
     pending_fence = None   # latest UavGeofence not yet handed to the uploader
     run_start = None       # {run_id, acked, last_sent, sends} being relayed to the UAV
+    restart_req = None     # {id, last_sent, started} remote restart being relayed
+    uav_armed = None       # armed flag from the latest UAV heartbeat (None = none yet)
     onboard_publisher = fence_status_publisher = None
     if args.publish_ros:
         import rclpy
@@ -458,6 +471,27 @@ def main():
                       f"-- relaying to the UAV")
 
         ros_node.create_subscription(String, RUN_START_TOPIC, on_run_start, latched)
+
+        def on_restart(msg):
+            nonlocal restart_req
+            request_id = "".join(ch for ch in str(msg.data) if ch.isalnum())[:16]
+            if not request_id:
+                print(f"[beacon-ground] [restart] ignored request without an id: {msg.data!r}",
+                      flush=True)
+                return
+            if uav_armed:
+                print(f"[beacon-ground] [restart] REFUSED: {args.vehicle_id} is armed "
+                      f"(request {request_id})", flush=True)
+                return
+            if uav_armed is None:
+                print(f"[beacon-ground] [restart] no {args.vehicle_id} heartbeat yet -- sending "
+                      f"anyway (the drone checks armed itself)", flush=True)
+            restart_req = dict(id=request_id, last_sent=0.0, started=time.monotonic())
+            print(f"[beacon-ground] [restart] request {request_id} sent to {args.vehicle_id}",
+                  flush=True)
+
+        # Volatile (not latched): an old request is never replayed on restart.
+        ros_node.create_subscription(String, RESTART_TOPIC, on_restart, 10)
         onboard_publisher = ros_node.create_publisher(UavGeofence, args.onboard_topic, latched)
         fence_status_publisher = ros_node.create_publisher(String, args.fence_status_topic, latched)
         print(f"[beacon-ground] Uploading geofence from ROS2 topic {args.geofence_topic} to PX4"
@@ -604,6 +638,17 @@ def main():
                 if run_start["sends"] % 15 == 0:
                     print(f"[beacon-ground] [runstart] still no acknowledgement from the UAV "
                           f"for run_id={run_start['run_id']} ({run_start['sends']} sends)")
+            if restart_req is not None:
+                if time.monotonic() - restart_req["started"] > RESTART_GIVE_UP_S:
+                    print(f"[beacon-ground] [restart] no acknowledgement after "
+                          f"{RESTART_GIVE_UP_S:.0f} s (request {restart_req['id']}): is "
+                          f"seabird-remote running on the drone, and the ELRS bridge copying "
+                          f"to 14571?", flush=True)
+                    restart_req = None
+                elif time.monotonic() - restart_req["last_sent"] >= RESTART_RESEND_S:
+                    mav.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO,
+                                            f"{RESTART_PREFIX} {restart_req['id']}".encode())
+                    restart_req["last_sent"] = time.monotonic()
             if (fence_job is not None and fence.waiting_reason
                     and fence_job.get("waiting") != fence.waiting_reason):
                 fence_job["waiting"] = fence.waiting_reason
@@ -686,6 +731,7 @@ def main():
                     state = ("STATE_KILLED" if msg.system_status in _KILLED_SYSTEM_STATUS
                              else "STATE_AUTO" if mode in _AUTO_MODES else "STATE_MANUAL")
                     armed = bool(msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
+                    uav_armed = armed
                     if (mode, state, armed) != last_mode:
                         last_mode = (mode, state, armed)
                         print(f"[beacon-ground] [mode] {args.vehicle_id} {mode} -> {state} "
@@ -698,6 +744,17 @@ def main():
                         run_start["acked"] = True
                         print(f"[beacon-ground] [runstart] UAV acknowledged RunStart "
                               f"run_id={run_start['run_id']}")
+                    continue
+                if text.startswith(RESTART_ACK_PREFIX + " "):
+                    parts = text.split(None, 2)   # prefix, id, result
+                    if (restart_req is not None and len(parts) >= 3
+                            and parts[1] == restart_req["id"]):
+                        result = parts[2]
+                        detail = ("seabird-mission restarting" if result == "OK"
+                                  else "seabird-mission NOT restarted")
+                        print(f"[beacon-ground] [restart] drone: {result} -- {detail} "
+                              f"(request {restart_req['id']})", flush=True)
+                        restart_req = None
                     continue
                 task = _parse_task_statustext(msg.text)
                 if task is not None and task != current_task:

@@ -1,0 +1,33 @@
+# /etc/systemd/system/seabird-remote.service
+# Restarts seabird-mission on request from the ground station
+# (GUI "Restart drone mission" -> ELRS -> STATUSTEXT "SEABIRD_RESTART_MISSION <id>").
+# Refuses while PX4 is armed; after a restart the launcher waits for the CH7
+# RC trigger again, so this never starts a flight.
+#
+# Independent of seabird-mission (no Requires/PartOf), so it still works when
+# the mission is down. Restart=always restarts only this listener -- and
+# retries while rfd-host (10.200.0.1) isn't up yet at boot.
+#
+# Install:
+#   sudo cp seabird-remote.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now seabird-remote
+# The ELRS bridge must copy to this port: elrs-mavlink ExecStart needs
+#   --onboard-ip 10.200.0.1 --onboard-port 14570,14571
+
+[Unit]
+Description=Seabird remote restart listener (ground -> ELRS -> restart seabird-mission)
+After=network-online.target voxl-mavlink-server.service elrs-mavlink.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /home/voxluser/seabirdDocker/EECS-seaOwlRobotX/seabird_remote_restart.py --listen udpin:10.200.0.1:14571 --reply udpout:10.200.0.2:14550
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

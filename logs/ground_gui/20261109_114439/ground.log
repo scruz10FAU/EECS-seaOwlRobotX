@@ -1,0 +1,35 @@
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4, inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 0 — listening for beacon messages
+[beacon-ground] [pos] 3D fix lat=1.3167567 lon=103.6278462 sats=11
+[beacon-ground] [mode] UAV1 POSCTL -> STATE_KILLED (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.3167553 lon=103.6278455 sats=10
+[beacon-ground] [pos] 3D fix lat=1.3167531 lon=103.6278448 sats=10
+[beacon-ground] [pos] 3D fix lat=1.3167498 lon=103.6278447 sats=11
+[beacon-ground] [pos] 3D fix lat=1.3167462 lon=103.6278449 sats=11
+[beacon-ground] [pos] 3D fix lat=1.3167437 lon=103.6278458 sats=11
+[beacon-ground] [pos] 3D fix lat=1.3167400 lon=103.6278460 sats=11
+[beacon-ground] [pos] 3D fix lat=1.3167362 lon=103.6278457 sats=11
+[beacon-ground] [pos] 3D fix lat=1.3167321 lon=103.6278416 sats=10
+[beacon-ground] [pos] 3D fix lat=1.3167305 lon=103.6278371 sats=11
+[beacon-ground] [pos] 3D fix lat=1.3167308 lon=103.6278335 sats=10
+[beacon-ground] [pos] 3D fix lat=1.3167337 lon=103.6278310 sats=10
+[beacon-ground] [pos] 3D fix lat=1.3167379 lon=103.6278287 sats=10
+[beacon-ground] [pos] 3D fix lat=1.3167479 lon=103.6278210 sats=10
+[beacon-ground] [pos] 3D fix lat=1.3167493 lon=103.6278154 sats=10
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 780, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 776, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241

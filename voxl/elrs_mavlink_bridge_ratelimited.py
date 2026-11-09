@@ -273,9 +273,21 @@ class DownlinkLimiter:
 
 
 # Ground -> onboard: STATUSTEXT whose text starts with this is ALSO copied to
-# --onboard-port, where beacon_mavlink_bridge.py listens (e.g. the
-# "SEABIRD_RUNSTART <run_id>" relay). Everything still goes to PX4 as before.
+# every --onboard-port: beacon_mavlink_bridge.py (the "SEABIRD_RUNSTART
+# <run_id>" relay, 14570) and seabird_remote_restart.py ("SEABIRD_RESTART_
+# MISSION <id>", 14571). Everything still goes to PX4 as before.
 ONBOARD_STATUSTEXT_PREFIX = "SEABIRD_"
+
+
+def port_list(text):
+    """argparse type: '14570' or '14570,14571' -> [ports]; '0' -> [] (off)."""
+    try:
+        ports = [int(p) for p in str(text).split(",") if p.strip()]
+    except ValueError:
+        raise argparse.ArgumentTypeError("ports must be numbers, e.g. 14570,14571")
+    if any(not 0 <= p <= 65535 for p in ports):
+        raise argparse.ArgumentTypeError("ports must be 0-65535")
+    return [p for p in ports if p]
 
 
 def filter_gcs_to_px4(parser, data):
@@ -340,8 +352,9 @@ def main():
              "(beacon_mavlink_bridge.py's onboard listener)",
     )
     parser.add_argument(
-        "--onboard-port", type=int, default=14570,
-        help="UDP port for those copies (0 = don't copy)",
+        "--onboard-port", type=port_list, default=[14570],
+        help="UDP port(s) for those copies, comma-separated, e.g. 14570,14571 "
+             "(0 = don't copy)",
     )
     parser.add_argument(
         "--max-bps", type=float, default=800.0,
@@ -447,7 +460,8 @@ def main():
     print(
         "Ground STATUSTEXT '{}*' also copied onboard to {}".format(
             ONBOARD_STATUSTEXT_PREFIX,
-            "{}:{}".format(args.onboard_ip, args.onboard_port) if args.onboard_port else "(disabled)"
+            ", ".join("{}:{}".format(args.onboard_ip, p) for p in args.onboard_port)
+            if args.onboard_port else "(disabled)"
         ),
         flush=True,
     )
@@ -488,11 +502,12 @@ def main():
                         filtered, onboard, blocked, malformed = filter_gcs_to_px4(
                             gcs_to_px4_parser, data
                         )
-                        if onboard and args.onboard_port:
-                            try:
-                                udp_socket.sendto(onboard, (args.onboard_ip, args.onboard_port))
-                            except OSError:
-                                pass   # nothing listening onboard: PX4 still gets it below
+                        if onboard:
+                            for onboard_port in args.onboard_port:
+                                try:
+                                    udp_socket.sendto(onboard, (args.onboard_ip, onboard_port))
+                                except OSError:
+                                    pass   # nothing listening there: PX4 still gets it below
                         blocked_gcs_to_px4_messages += blocked
                         malformed_gcs_to_px4_bytes += malformed
 
