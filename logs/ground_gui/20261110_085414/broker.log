@@ -1,0 +1,339 @@
+1794272062: mosquitto version 2.0.11 starting
+1794272062: Using default config.
+1794272062: Starting in local only mode. Connections will only be possible from clients running on this machine.
+1794272062: Create a configuration file which defines a listener to allow remote access.
+1794272062: For more details see https://mosquitto.org/documentation/authentication-methods/
+1794272062: Opening ipv4 listen socket on port 1914.
+1794272062: Opening ipv6 listen socket on port 1914.
+1794272062: mosquitto version 2.0.11 running
+1794272106: New connection from 127.0.0.1:48141 on port 1914.
+1794272106: New client connected from 127.0.0.1:48141 as auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (p2, c1, k60).
+1794272106: No will message specified.
+1794272106: Sending CONNACK to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (0, 0)
+1794272106: Received SUBSCRIBE from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272106: 	robocommand/robotx/course (QoS 0)
+1794272106: auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 0 robocommand/robotx/course
+1794272106: Sending SUBACK to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272106: Received SUBSCRIBE from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272106: 	robocommand/robotx/FLAU/command (QoS 0)
+1794272106: auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 0 robocommand/robotx/FLAU/command
+1794272106: Sending SUBACK to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272170: Received PINGREQ from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272170: Sending PINGRESP to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272233: Received PINGREQ from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272233: Sending PINGRESP to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272299: Received PINGREQ from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272299: Sending PINGRESP to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272365: Received PINGREQ from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272365: Sending PINGRESP to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272431: Received PINGREQ from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272431: Sending PINGRESP to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272497: Received PINGREQ from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272497: Sending PINGRESP to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272552: New connection from 127.0.0.1:46041 on port 1914.
+1794272552: New client connected from 127.0.0.1:46041 as auto-7D752803-3C13-736E-CA73-C36AD384E055 (p2, c1, k60).
+1794272552: No will message specified.
+1794272552: Sending CONNACK to auto-7D752803-3C13-736E-CA73-C36AD384E055 (0, 0)
+1794272552: Received PUBLISH from auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r1, m0, 'robocommand/robotx/course', ... (124 bytes))
+1794272552: Sending PUBLISH to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/course', ... (124 bytes))
+1794272552: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272552: Received SUBSCRIBE from auto-7D752803-3C13-736E-CA73-C36AD384E055
+1794272552: 	robocommand/robotx/FLAU/request (QoS 0)
+1794272552: auto-7D752803-3C13-736E-CA73-C36AD384E055 0 robocommand/robotx/FLAU/request
+1794272552: Sending SUBACK to auto-7D752803-3C13-736E-CA73-C36AD384E055
+1794272552: Received SUBSCRIBE from auto-7D752803-3C13-736E-CA73-C36AD384E055
+1794272552: 	robocommand/robotx/FLAU/+/report (QoS 0)
+1794272552: auto-7D752803-3C13-736E-CA73-C36AD384E055 0 robocommand/robotx/FLAU/+/report
+1794272552: Sending SUBACK to auto-7D752803-3C13-736E-CA73-C36AD384E055
+1794272553: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272553: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272553: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272553: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272554: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272554: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272554: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272554: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272555: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272555: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272558: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272558: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272558: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272558: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272559: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272559: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272559: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272559: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272560: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272560: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272560: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272560: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272561: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272561: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272561: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272561: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272562: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272562: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272562: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272562: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272563: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272563: Sending PUBLISH to auto-7D752803-3C13-736E-CA73-C36AD384E055 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272563: Received DISCONNECT from auto-7D752803-3C13-736E-CA73-C36AD384E055
+1794272563: Client auto-7D752803-3C13-736E-CA73-C36AD384E055 disconnected.
+1794272563: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272563: Received PINGREQ from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272563: Sending PINGRESP to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272564: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272564: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272565: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272565: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272566: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272566: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272567: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272567: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272568: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272568: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272569: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272569: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272570: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272570: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272571: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272571: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272572: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272572: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272573: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272573: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272573: New connection from 127.0.0.1:47487 on port 1914.
+1794272573: New client connected from 127.0.0.1:47487 as auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (p2, c1, k60).
+1794272573: No will message specified.
+1794272573: Sending CONNACK to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (0, 0)
+1794272573: Received PUBLISH from auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r1, m0, 'robocommand/robotx/course', ... (124 bytes))
+1794272573: Sending PUBLISH to auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/course', ... (124 bytes))
+1794272574: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272574: Received SUBSCRIBE from auto-575FD231-10FC-3926-419E-4D6E220DC9D5
+1794272574: 	robocommand/robotx/FLAU/request (QoS 0)
+1794272574: auto-575FD231-10FC-3926-419E-4D6E220DC9D5 0 robocommand/robotx/FLAU/request
+1794272574: Sending SUBACK to auto-575FD231-10FC-3926-419E-4D6E220DC9D5
+1794272574: Received SUBSCRIBE from auto-575FD231-10FC-3926-419E-4D6E220DC9D5
+1794272574: 	robocommand/robotx/FLAU/+/report (QoS 0)
+1794272574: auto-575FD231-10FC-3926-419E-4D6E220DC9D5 0 robocommand/robotx/FLAU/+/report
+1794272574: Sending SUBACK to auto-575FD231-10FC-3926-419E-4D6E220DC9D5
+1794272574: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272574: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272575: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272575: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272575: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272575: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272576: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272576: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272576: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272576: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272577: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272577: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272577: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272577: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272578: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272578: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272578: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272578: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272579: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272579: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272579: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272579: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272580: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272580: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272580: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272580: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272581: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272581: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272581: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272581: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272582: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272582: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272582: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272582: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272583: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272583: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272583: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272583: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272584: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272584: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272584: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272584: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272585: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272585: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272585: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272585: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272586: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272586: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272586: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272586: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272587: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272587: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272587: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272587: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272588: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272588: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272588: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272588: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272589: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272589: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272589: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272589: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272590: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272590: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272590: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272590: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272593: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272593: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272594: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272594: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272594: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272594: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272595: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272595: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272595: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272595: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272596: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272596: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272596: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272596: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272597: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272597: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272597: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272597: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272598: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272598: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272598: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272598: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272599: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272599: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272599: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272599: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272600: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272600: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272600: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272600: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272601: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272601: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272601: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272601: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272602: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272602: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272602: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272602: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272603: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272603: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272603: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272603: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272604: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272604: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272604: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272604: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272605: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272605: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272605: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272605: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272606: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272606: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272606: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272606: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272607: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272607: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272607: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272607: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272608: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272608: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272608: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272608: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272609: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272609: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272609: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272609: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272610: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272610: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272610: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272610: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272611: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272611: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272611: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272611: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272612: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272612: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272612: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272612: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272613: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272613: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272613: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272613: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272614: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272614: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272614: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272614: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272615: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272615: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272615: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272615: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272616: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272616: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272616: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272616: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272617: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272617: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272617: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272617: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272618: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272618: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272618: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272618: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272619: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272619: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272619: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272619: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272620: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272620: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (99 bytes))
+1794272620: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272620: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272621: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272621: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272621: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (101 bytes))
+1794272621: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (101 bytes))
+1794272622: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272622: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272622: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (101 bytes))
+1794272622: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (101 bytes))
+1794272623: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272623: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272623: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (101 bytes))
+1794272623: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (101 bytes))
+1794272624: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272624: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (100 bytes))
+1794272624: Received PUBLISH from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (101 bytes))
+1794272624: Sending PUBLISH to auto-575FD231-10FC-3926-419E-4D6E220DC9D5 (d0, q0, r0, m0, 'robocommand/robotx/FLAU/UAV1/report', ... (101 bytes))
+1794272625: Received DISCONNECT from auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7
+1794272625: Client auto-FF3BCD7C-7756-6479-CBBB-C6B3260D63B7 disconnected.
+1794272626: mosquitto version 2.0.11 terminating
+1794272636: mosquitto version 2.0.11 starting
+1794272636: Using default config.
+1794272636: Starting in local only mode. Connections will only be possible from clients running on this machine.
+1794272636: Create a configuration file which defines a listener to allow remote access.
+1794272636: For more details see https://mosquitto.org/documentation/authentication-methods/
+1794272636: Opening ipv4 listen socket on port 1914.
+1794272636: Opening ipv6 listen socket on port 1914.
+1794272636: mosquitto version 2.0.11 running
+1794272657: New connection from 127.0.0.1:44625 on port 1914.
+1794272657: New client connected from 127.0.0.1:44625 as auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815 (p2, c1, k60).
+1794272657: No will message specified.
+1794272657: Sending CONNACK to auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815 (0, 0)
+1794272657: Received SUBSCRIBE from auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815
+1794272657: 	robocommand/robotx/course (QoS 0)
+1794272657: auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815 0 robocommand/robotx/course
+1794272657: Sending SUBACK to auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815
+1794272657: Received SUBSCRIBE from auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815
+1794272657: 	robocommand/robotx/FLAU/command (QoS 0)
+1794272657: auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815 0 robocommand/robotx/FLAU/command
+1794272657: Sending SUBACK to auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815
+1794272723: Received PINGREQ from auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815
+1794272723: Sending PINGRESP to auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815
+1794272767: Received DISCONNECT from auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815
+1794272767: Client auto-D7B1CFDE-DC86-A4F1-F2CD-A01F173FA815 disconnected.
+1794272830: mosquitto version 2.0.11 terminating

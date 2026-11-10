@@ -745,7 +745,7 @@ class GroundGui(tk.Tk):
 
     def _tick(self):
         for key, p in self.procs.items():
-            if key in ("Mock", "Declare", "Task4") or (key == "Broker" and self.profile.get() == "Competition"):
+            if key in ("Mock", "Declare", "Task4", "Restart") or (key == "Broker" and self.profile.get() == "Competition"):
                 continue
             text = self.status[key].cget("text")
             if p.running:
@@ -1136,7 +1136,7 @@ class GroundGui(tk.Tk):
             return
 
         def worker():
-            for key in ("Ground", "OCS", "Broker", "Router", "Mock", "Declare", "Task4"):
+            for key in ("Ground", "OCS", "Broker", "Router", "Mock", "Declare", "Task4", "Restart"):
                 self.procs[key].stop()
         threading.Thread(target=worker, daemon=True).start()
 
@@ -1377,7 +1377,7 @@ class GroundGui(tk.Tk):
                 "Quit", "Stop everything and quit?"):
             return
         self._save_settings()
-        for key in ("Ground", "OCS", "Broker", "Router", "Mock", "Declare", "Task4"):
+        for key in ("Ground", "OCS", "Broker", "Router", "Mock", "Declare", "Task4", "Restart"):
             self.procs[key].stop()
         self.destroy()
 

@@ -24,7 +24,9 @@ Behavior:
   3. Wait for RunStart on /seabird/run_start (verified by the OCS, relayed
      ground -> ELRS -> beacon_mavlink_bridge.py). A RunStart received before
      this script started (latched from an earlier run) is ignored.
-  4. After RunStart: arm.
+  4. After RunStart: arm. If PX4 isn't ready (e.g. GPS lost: arm / MISSION /
+     Hold refused), retry every READY_RETRY_S until it is, for up to
+     RUNSTART_READY_WAIT_S, and take off as soon as it is -- once.
        MISSION: PX4 flies the uploaded mission itself (takeoff, hover, land).
        Hold:    autonomous takeoff to HOVER_ALT_M, hover in Hold for
                 HOVER_DURATION_S, autonomous land.
@@ -76,6 +78,12 @@ POSITION_REPORT_S  = 5.0     # how often to log what's still missing
 RUNSTART_WAIT_MAX_S = 1800.0  # give up (stay on the ground) if no RunStart by then
 TAKEOFF_TIMEOUT_S  = 45.0    # to reach the hover altitude
 LAND_TIMEOUT_S     = 90.0
+# After RunStart, if PX4 isn't ready (e.g. GPS lost: arming / MISSION / Hold
+# refused), keep retrying every READY_RETRY_S until it is, for up to
+# RUNSTART_READY_WAIT_S -- then take off as soon as it's ready. Never retries
+# once airborne.
+READY_RETRY_S         = 5.0
+RUNSTART_READY_WAIT_S = 600.0
 
 # How the UAV gets into autonomous mode before RunStart:
 #   "script" -- this script commands Hold (AUTO.LOITER) on the ground, disarmed
@@ -91,7 +99,7 @@ GROUND_AUTONOMOUS_MODE = "mission"
 
 # BENCH_TEST=True: connect, go autonomous (Hold, disarmed), wait for RunStart,
 # then only LOG what the flight would do -- never arms. Safe with props on.
-BENCH_TEST = True
+BENCH_TEST = False
 
 RUN_START_TOPIC = "/seabird/run_start"
 
@@ -215,42 +223,106 @@ async def enter_mission_mode(drone, position, modes):
         log("switching PX4 to MISSION on the ground (disarmed)")
         await drone.mission.start_mission()
     except Exception as e:   # MissionError, or TypeError from an older MAVSDK
-        log(f"MISSION mode not available ({type(e).__name__}: {e}) -- falling back to Hold")
+        log(f"MISSION mode not available ({type(e).__name__}: {e})")
         return False
     if await wait_for(lambda: modes.mode == FlightMode.MISSION, 10.0):
         return True
-    log(f"PX4 didn't switch to MISSION (now {modes.mode.name if modes.mode else '-'}) -- "
-        f"falling back to Hold")
+    log(f"PX4 didn't switch to MISSION (now {modes.mode.name if modes.mode else '-'})")
     return False
 
 
-async def fly_mission(drone, modes, in_air):
-    """After RunStart, in MISSION: arm and let PX4 fly the uploaded mission."""
-    if modes.mode != FlightMode.MISSION:
-        log(f"not in MISSION ({modes.mode.name}) -- switching back before arming")
+async def safe_disarm(drone):
+    """Disarm on the ground; kill (motors off) if PX4 refuses. Only call on the ground."""
+    try:
+        await drone.action.disarm()
+        log("disarmed")
+    except ActionError as e:
+        log(f"disarm refused ({e}) -- killing motors (on the ground)")
         try:
-            await drone.mission.start_mission()
-        except Exception as e:
-            log(f"ERROR: can't switch to MISSION ({e}) -- staying on the ground")
-            return
-        if not await wait_for(lambda: modes.mode == FlightMode.MISSION, 10.0):
-            log("ERROR: PX4 isn't in MISSION -- staying on the ground")
-            return
+            await drone.action.kill()
+        except ActionError as e2:
+            log(f"ERROR: kill refused too ({e2}) -- pilot, disarm now")
 
+
+async def wait_ready(health, deadline):
+    """Wait for global position + home (PX4 needs them to arm in MISSION/Hold).
+    False = deadline passed."""
+    last_report = 0.0
+    while not (health["gpos"] and health["home"]):
+        now = time.monotonic()
+        if now > deadline:
+            return False
+        if now - last_report >= POSITION_REPORT_S:
+            missing = [n for n, ok in (("global position", health["gpos"]),
+                                       ("home", health["home"])) if not ok]
+            log(f"RunStart received -- waiting for PX4 to be ready (missing {', '.join(missing)}); "
+                f"{deadline - now:.0f} s left")
+            last_report = now
+        await asyncio.sleep(0.5)
+    return True
+
+
+async def mission_takeoff(drone, position, modes, in_air):
+    """One attempt: (re)enter MISSION, arm, wait to be airborne.
+    'airborne' | 'retry' (PX4 not ready, nothing armed) | 'failed' (armed, didn't lift off)."""
+    if modes.mode != FlightMode.MISSION:
+        log(f"not in MISSION ({modes.mode.name if modes.mode else '-'}) -- re-entering it")
+        if not await enter_mission_mode(drone, position, modes):
+            return "retry"
+    try:
+        log("arming -- PX4 flies the mission (takeoff, hover, land)")
+        await drone.action.arm()
+    except ActionError as e:
+        log(f"arm refused: {e} -- will retry")
+        return "retry"
+    # This PX4 doesn't start the mission on arming in MISSION mode: (re)start it
+    # now that we're armed, or the UAV sits armed on the ground.
+    try:
+        await drone.mission.start_mission()
+        log("mission started (armed) -- taking off")
+    except Exception as e:   # MissionError
+        log(f"mission start refused after arming ({type(e).__name__}: {e}) -- disarming, will retry")
+        await safe_disarm(drone)
+        return "retry"
+    if not await wait_for(lambda: in_air["v"], TAKEOFF_TIMEOUT_S):
+        log(f"ERROR: armed but not airborne after {TAKEOFF_TIMEOUT_S:.0f} s "
+            f"(mode {modes.mode.name}) -- disarming, not retrying")
+        await safe_disarm(drone)
+        return "failed"
+    return "airborne"
+
+
+async def hold_takeoff(drone, modes, in_air):
+    """One attempt: arm, autonomous takeoff, wait to be airborne. Same results as mission_takeoff."""
+    try:
+        log("arming")
+        await drone.action.arm()
+    except ActionError as e:
+        log(f"arm refused: {e} -- will retry")
+        return "retry"
+    try:
+        await drone.action.set_takeoff_altitude(HOVER_ALT_M)
+        log(f"autonomous takeoff to {HOVER_ALT_M:g} m")
+        await drone.action.takeoff()
+    except ActionError as e:
+        log(f"takeoff refused: {e} -- disarming, will retry")
+        await safe_disarm(drone)
+        return "retry"
+    if not await wait_for(lambda: in_air["v"], TAKEOFF_TIMEOUT_S):
+        log(f"ERROR: armed but not airborne after {TAKEOFF_TIMEOUT_S:.0f} s "
+            f"(mode {modes.mode.name}) -- disarming, not retrying")
+        await safe_disarm(drone)
+        return "failed"
+    return "airborne"
+
+
+async def finish_mission(drone, modes, in_air):
+    """Airborne in MISSION: let PX4 fly the rest (hover, land), then disarm."""
     async def log_progress():
         async for p in drone.mission.mission_progress():
             log(f"mission item {p.current}/{p.total}")
     progress = asyncio.ensure_future(log_progress())
     try:
-        try:
-            log("arming -- PX4 flies the mission (takeoff, hover, land)")
-            await drone.action.arm()
-        except ActionError as e:
-            log(f"ERROR: arm refused: {e} -- staying on the ground")
-            return
-        if not await wait_for(lambda: in_air["v"], TAKEOFF_TIMEOUT_S):
-            log(f"WARNING: not airborne after {TAKEOFF_TIMEOUT_S:.0f} s (mode {modes.mode.name})")
-            return
         log("airborne -- mission running")
         end = time.monotonic() + TAKEOFF_TIMEOUT_S + HOVER_DURATION_S + LAND_TIMEOUT_S
         while in_air["v"]:
@@ -304,6 +376,21 @@ async def run_validation(runstart: RunStartListener):
         async for v in drone.telemetry.in_air():
             in_air["v"] = v
     asyncio.ensure_future(track_in_air())
+    px4_ready = {"gpos": False, "home": False}   # (not "health": step 1's loop variable)
+
+    async def track_health():
+        async for h in drone.telemetry.health():
+            px4_ready["gpos"], px4_ready["home"] = h.is_global_position_ok, h.is_home_position_ok
+    asyncio.ensure_future(track_health())
+
+    # PX4's own messages (e.g. the reason behind an arming COMMAND_DENIED).
+    async def log_px4_text():
+        try:
+            async for st in drone.telemetry.status_text():
+                log(f"PX4 [{getattr(st.type, 'name', st.type)}]: {st.text}")
+        except Exception as e:
+            log(f"(PX4 message log stopped: {type(e).__name__}: {e})")
+    asyncio.ensure_future(log_px4_text())
 
     # 1. Position + home (needed for Hold and for takeoff).
     log("waiting for a global position estimate and home...")
@@ -373,17 +460,31 @@ async def run_validation(runstart: RunStartListener):
         log(f"BENCH_TEST: would arm, take off to {HOVER_ALT_M:g} m, hover {HOVER_DURATION_S:g} s, "
             f"land and disarm ({how}) -- not arming")
         return
+    # Retry until PX4 is ready (e.g. GPS back after a dropout), then take off once.
+    deadline = time.monotonic() + RUNSTART_READY_WAIT_S
+    attempt = 0
+    while True:
+        if not await wait_ready(px4_ready, deadline):
+            log(f"ERROR: PX4 not ready {RUNSTART_READY_WAIT_S:.0f} s after RunStart -- "
+                f"stopping (still on the ground)")
+            return
+        attempt += 1
+        log(f"takeoff attempt {attempt}")
+        if use_mission:
+            result = await mission_takeoff(drone, position, modes, in_air)
+        else:
+            result = await hold_takeoff(drone, modes, in_air)
+        if result == "airborne":
+            break
+        if result == "failed":
+            return
+        if time.monotonic() + READY_RETRY_S > deadline:
+            log(f"ERROR: PX4 still refusing {RUNSTART_READY_WAIT_S:.0f} s after RunStart -- "
+                f"stopping (still on the ground)")
+            return
+        await asyncio.sleep(READY_RETRY_S)
     if use_mission:
-        await fly_mission(drone, modes, in_air)
-        return
-    try:
-        log("arming")
-        await drone.action.arm()
-        await drone.action.set_takeoff_altitude(HOVER_ALT_M)
-        log(f"autonomous takeoff to {HOVER_ALT_M:g} m")
-        await drone.action.takeoff()
-    except ActionError as e:
-        log(f"ERROR: arm/takeoff refused: {e} -- staying on the ground")
+        await finish_mission(drone, modes, in_air)
         return
     reached = await wait_for(lambda: altitude["rel"] >= 0.9 * HOVER_ALT_M, TAKEOFF_TIMEOUT_S)
     if not reached:

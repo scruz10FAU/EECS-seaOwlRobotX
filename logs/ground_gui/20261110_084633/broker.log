@@ -1,0 +1,9 @@
+1794272035: mosquitto version 2.0.11 starting
+1794272035: Using default config.
+1794272035: Starting in local only mode. Connections will only be possible from clients running on this machine.
+1794272035: Create a configuration file which defines a listener to allow remote access.
+1794272035: For more details see https://mosquitto.org/documentation/authentication-methods/
+1794272035: Opening ipv4 listen socket on port 1914.
+1794272035: Opening ipv6 listen socket on port 1914.
+1794272035: mosquitto version 2.0.11 running
+1794272050: mosquitto version 2.0.11 terminating

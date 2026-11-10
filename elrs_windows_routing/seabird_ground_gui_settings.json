@@ -3,7 +3,7 @@
   "common": {
     "wsl_distro": "Ubuntu-22.04",
     "robocommand_repo": "C:\\Users\\Precision 3571\\seaowls-robotx-robocommand",
-    "mqtt_port": "1914",
+    "mqtt_port": "1883",
     "com_port": "COM1",
     "baud": "460800",
     "team_id": "FLAU",
@@ -16,7 +16,7 @@
     "competition_max_hae_m": "60",
     "fence_inset_m": "1.0",
     "ceiling_margin_m": "1.0",
-    "declare_auto": "0",
+    "declare_auto": "1",
     "task1_tier": "ADVANCED",
     "task2_tier": "NONE",
     "task3_tier": "NONE",
@@ -25,12 +25,12 @@
   },
   "Competition": {
     "adapter": "Ethernet  [Disconnected]  Intel(R) Ethernet Connection (16) I219-LM",
-    "robocommand_host": "192.168.70.74"
+    "robocommand_host": "192.168.69.4"
   },
   "Test": {
     "robocommand_host": "localhost",
     "mock_use_gps": "1",
-    "mock_center": "1.28298, 103.84663",
+    "mock_center": "1.3662891, 103.7349081",
     "mock_size": "25,25",
     "mock_invalid": "VALID course",
     "bench_home_hae_m": "0",
