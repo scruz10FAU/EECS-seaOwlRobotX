@@ -3,7 +3,7 @@
   "common": {
     "wsl_distro": "Ubuntu-22.04",
     "robocommand_repo": "C:\\Users\\Precision 3571\\seaowls-robotx-robocommand",
-    "mqtt_port": "1883",
+    "mqtt_port": "1914",
     "com_port": "COM1",
     "baud": "460800",
     "team_id": "FLAU",
@@ -25,7 +25,7 @@
   },
   "Competition": {
     "adapter": "Ethernet  [Disconnected]  Intel(R) Ethernet Connection (16) I219-LM",
-    "robocommand_host": "192.168.69.4"
+    "robocommand_host": "192.168.70.74"
   },
   "Test": {
     "robocommand_host": "localhost",
