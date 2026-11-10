@@ -44,11 +44,14 @@ Usage (on the drone, see voxl/telemetry_stream/run.sh):
 """
 
 import argparse
+import csv
 import json
 import math
 import os
+import shutil
 import threading
 import time
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Optional
 from urllib.parse import parse_qs
@@ -244,6 +247,118 @@ class TelemetryHub(FrameHub):
             return seq, jpeg, getattr(self, "_telem", b"{}")
 
 
+class ViewerTracker:
+    """When each /stream.mjpg client last received a whole frame. A viewer whose
+    Wi-Fi dropped stops completing frames (the socket write stalls) before the
+    connection itself errors out, so 'receiving' goes false within seconds."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._last = {}
+
+    def sent(self, key):
+        with self._lock:
+            self._last[key] = time.monotonic()
+
+    def gone(self, key):
+        with self._lock:
+            self._last.pop(key, None)
+
+    def receiving(self, within_s: float) -> bool:
+        now = time.monotonic()
+        with self._lock:
+            return any(now - t < within_s for t in self._last.values())
+
+
+# ─── Local recording (no viewer / no Wi-Fi) ───────────────────────────
+
+# Same columns as telemetry_viewer.py's captures.csv, so the same tools read both.
+# laptop_time_iso holds the drone's clock here.
+CSV_FIELDS = [
+    "filename", "laptop_time_iso", "frame_stamp",
+    "gps_lat", "gps_lon", "gps_alt_msl_m", "gps_fix_type", "gps_sats", "gps_eph", "gps_epv",
+    "height_agl_m", "local_x", "local_y", "local_z", "heading_deg",
+    "roll_deg", "pitch_deg", "yaw_deg", "qw", "qx", "qy", "qz",
+    "gyro_x", "gyro_y", "gyro_z", "accel_x", "accel_y", "accel_z",
+    "gps_age_s", "local_age_s", "att_age_s", "imu_age_s",
+]
+CSV_MAP = [
+    ("gps_lat", "gps", "lat"), ("gps_lon", "gps", "lon"), ("gps_alt_msl_m", "gps", "alt_msl_m"),
+    ("gps_fix_type", "gps", "fix_type"), ("gps_sats", "gps", "satellites"),
+    ("gps_eph", "gps", "eph"), ("gps_epv", "gps", "epv"),
+    ("height_agl_m", "local", "height_agl_m"), ("local_x", "local", "x"),
+    ("local_y", "local", "y"), ("local_z", "local", "z"), ("heading_deg", "local", "heading_deg"),
+    ("roll_deg", "attitude", "roll_deg"), ("pitch_deg", "attitude", "pitch_deg"),
+    ("yaw_deg", "attitude", "yaw_deg"), ("qw", "attitude", "qw"), ("qx", "attitude", "qx"),
+    ("qy", "attitude", "qy"), ("qz", "attitude", "qz"),
+    ("gyro_x", "imu", "gyro_x"), ("gyro_y", "imu", "gyro_y"), ("gyro_z", "imu", "gyro_z"),
+    ("accel_x", "imu", "accel_x"), ("accel_y", "imu", "accel_y"), ("accel_z", "imu", "accel_z"),
+    ("gps_age_s", "gps", "age_s"), ("local_age_s", "local", "age_s"),
+    ("att_age_s", "attitude", "age_s"), ("imu_age_s", "imu", "age_s"),
+]
+
+
+class LocalRecorder:
+    """Saves stream frames + telemetry on the drone: <root>/<start time>/images/*.jpg
+    and captures.csv. A new folder per start; existing files are never overwritten."""
+
+    def __init__(self, root: str, when: str, fps: float, min_free_mb: float):
+        self.when = when
+        self.period = 1.0 / fps if fps > 0 else 0.0
+        self.min_free = min_free_mb * 1024 * 1024
+        base = os.path.join(root, datetime.now().strftime("%Y%m%d_%H%M%S"))
+        self.dir, n = base, 1
+        while os.path.exists(self.dir):
+            self.dir, n = f"{base}_{n}", n + 1
+        self.img_dir = os.path.join(self.dir, "images")
+        os.makedirs(self.img_dir)
+        self._csv_file = open(os.path.join(self.dir, "captures.csv"), "x", newline="")
+        self._csv = csv.DictWriter(self._csv_file, fieldnames=CSV_FIELDS)
+        self._csv.writeheader()
+        self._csv_file.flush()
+        self.active, self.saved = False, 0
+        self._last, self._low_disk = 0.0, False
+        print(f"[record] local saving ({when}) -> {self.dir}", flush=True)
+
+    def offer(self, jpeg: bytes, snap: dict, viewer_receiving: bool):
+        want = self.when == "always" or not viewer_receiving
+        if want != self.active:
+            self.active = want
+            print("[record] no viewer receiving: saving frames locally" if want else
+                  f"[record] viewer receiving: local saving paused ({self.saved} saved)", flush=True)
+        if not want:
+            return
+        now = time.monotonic()
+        if self.period and now - self._last < self.period:
+            return
+        self._last = now
+        if shutil.disk_usage(self.dir).free < self.min_free:
+            if not self._low_disk:
+                print(f"[record] WARNING: under {self.min_free // 2**20} MB free, not saving", flush=True)
+            self._low_disk = True
+            return
+        self._low_disk = False
+        stamp = snap["frame"]["stamp"]
+        name = datetime.fromtimestamp(stamp).strftime("%Y%m%d_%H%M%S_%f") + ".jpg"
+        try:
+            with open(os.path.join(self.img_dir, name), "xb") as f:   # never overwrite
+                f.write(jpeg)
+        except FileExistsError:
+            return
+        except OSError as e:
+            print(f"[record] write failed: {e}", flush=True)
+            return
+        row = {"filename": name, "laptop_time_iso": datetime.now().isoformat(),
+               "frame_stamp": stamp}
+        for col, g, k in CSV_MAP:
+            row[col] = (snap.get(g) or {}).get(k)
+        self._csv.writerow({k: "" if v is None else v for k, v in row.items()})
+        self._csv_file.flush()
+        self.saved += 1
+
+
+SEND_TIMEOUT_S = 10.0   # a stalled viewer connection is dropped after this
+
 VIEWER_HTML = b"""<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Telemetry stream</title>
@@ -253,7 +368,8 @@ img{display:block;max-width:100%;margin:0 auto}p{text-align:center}a{color:#8cf}
 <a href="/snapshot.jpg">snapshot</a></p></body></html>"""
 
 
-def make_handler(hub: TelemetryHub, telem: Telemetry, cam: CameraControl):
+def make_handler(hub: TelemetryHub, telem: Telemetry, cam: CameraControl,
+                 viewers: ViewerTracker):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):  # quiet: one line per request is noise
             pass
@@ -306,6 +422,8 @@ def make_handler(hub: TelemetryHub, telem: Telemetry, cam: CameraControl):
             self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
+            self.connection.settimeout(SEND_TIMEOUT_S)
+            key = id(self)
             seq = -1
             try:
                 while True:
@@ -318,8 +436,12 @@ def make_handler(hub: TelemetryHub, telem: Telemetry, cam: CameraControl):
                                      b"Content-Length: %d\r\n\r\n" % (tj, len(jpeg)))
                     self.wfile.write(jpeg)
                     self.wfile.write(b"\r\n")
-            except (BrokenPipeError, ConnectionResetError):
+                    self.wfile.flush()
+                    viewers.sent(key)
+            except OSError:   # broken pipe, reset, or send timeout (Wi-Fi gone)
                 pass
+            finally:
+                viewers.gone(key)
 
     return Handler
 
@@ -342,6 +464,14 @@ def main():
     src.add_argument("--video", help="video file instead of ROS")
     src.add_argument("--image", help="single image instead of ROS")
     ap.add_argument("--file-fps", type=float, default=10, help="--video/--image feed rate")
+    ap.add_argument("--record-dir", help="save frames + telemetry here on the drone (off if unset)")
+    ap.add_argument("--record-when", choices=("offline", "always"), default="offline",
+                    help="offline = only while no viewer is receiving the stream")
+    ap.add_argument("--record-fps", type=float, default=2, help="local save rate (0 = every streamed frame)")
+    ap.add_argument("--record-min-free-mb", type=float, default=500,
+                    help="stop saving below this much free disk")
+    ap.add_argument("--offline-after", type=float, default=3.0, metavar="S",
+                    help="viewer counts as gone after S seconds without a delivered frame")
     args = ap.parse_args()
 
     frames, telem = LatestFrame(), Telemetry()
@@ -361,8 +491,13 @@ def main():
     elif not start_ros(args.topic, frames, telem, args.image_time_offset / 1e3):
         raise SystemExit("ROS 2 unavailable: use --video or --image")
 
-    hub = TelemetryHub()
-    server = ThreadingHTTPServer(("0.0.0.0", args.port), make_handler(hub, telem, CameraControl(args.mpa_dir, args.camera)))
+    hub, viewers = TelemetryHub(), ViewerTracker()
+    recorder = (LocalRecorder(args.record_dir, args.record_when, args.record_fps,
+                              args.record_min_free_mb) if args.record_dir else None)
+    # at low --max-fps frames are far apart; don't call a viewer gone between two of them
+    offline_after = max(args.offline_after, 2.5 / args.max_fps if args.max_fps > 0 else 0.0)
+    server = ThreadingHTTPServer(("0.0.0.0", args.port),
+                                 make_handler(hub, telem, CameraControl(args.mpa_dir, args.camera), viewers))
     server.daemon_threads = True
     threading.Thread(target=server.serve_forever, daemon=True).start()
     print(f"[telemetry] serving http://0.0.0.0:{args.port}/  (stream: /stream.mjpg)")
@@ -384,7 +519,10 @@ def main():
             continue
         snap = telem.snapshot_at(stamp)
         snap["frame"] = {"stamp": stamp, "width": img.shape[1], "height": img.shape[0]}
-        hub.publish(jpeg.tobytes(), json.dumps(snap, separators=(",", ":")).encode())
+        jpeg = jpeg.tobytes()
+        hub.publish(jpeg, json.dumps(snap, separators=(",", ":")).encode())
+        if recorder is not None:
+            recorder.offer(jpeg, snap, viewers.receiving(offline_after))
 
         n += 1
         if t0 - last_log > 5:

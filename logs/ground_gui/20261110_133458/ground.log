@@ -1,0 +1,17 @@
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4, inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 837, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 534, in main
+    mav.wait_heartbeat()
+  File "/home/jeston/.local/lib/python3.10/site-packages/pymavlink/mavutil.py", line 557, in wait_heartbeat
+    return self.recv_match(type='HEARTBEAT', blocking=blocking, timeout=timeout)
+  File "/home/jeston/.local/lib/python3.10/site-packages/pymavlink/mavutil.py", line 524, in recv_match
+    self.select(0.05)
+  File "/home/jeston/.local/lib/python3.10/site-packages/pymavlink/mavutil.py", line 346, in select
+    (rin, win, xin) = select.select([self.fd], [], [], timeout)
+KeyboardInterrupt

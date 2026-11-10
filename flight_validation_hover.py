@@ -10,61 +10,51 @@ Autonomous Mode. Only when the OCS receives and verifies the RunStart should
 any vehicle begin their run."
 
 Behavior:
-  1. Connect to PX4 and wait for a global position + home.
-  2. Go AUTONOMOUS on the ground while still disarmed
-     (AUTONOMOUS_MODE_SOURCE = "script"):
-       GROUND_AUTONOMOUS_MODE = "mission": upload a hover mission (takeoff to
-         HOVER_ALT_M, loiter HOVER_DURATION_S, land -- all at the current
-         position) and switch PX4 to MISSION. Falls back to Hold if PX4 or
-         MAVSDK refuses.
-       GROUND_AUTONOMOUS_MODE = "hold": put PX4 in Hold (AUTO.LOITER).
-     Or ("pilot") wait for the pilot to switch to an autonomous mode.
-     beacon_mavlink_ground.py reports an autonomous PX4 mode as STATE_AUTO in
-     the RoboCommand heartbeat -- RoboCommand's condition for RunStart.
-  3. Wait for RunStart on /seabird/run_start (verified by the OCS, relayed
-     ground -> ELRS -> beacon_mavlink_bridge.py). A RunStart received before
-     this script started (latched from an earlier run) is ignored.
-  4. After RunStart: arm. If PX4 isn't ready (e.g. GPS lost: arm / MISSION /
+  1-5. mission_gate.run_gate() -- every vehicle-side RoboCommand step before
+     the run (same directory, shared with the sweep): PX4 + GPS/home, the PX4
+     geofence present with the UAV inside it, current_task = TASK_NONE (the
+     validation hover is not a task attempt), AUTONOMOUS on the ground while
+     disarmed (MISSION with this hover uploaded, or Hold), and a fresh
+     RunStart. Ground-mode / fence settings live in mission_gate.py.
+  6. After RunStart: arm. If PX4 isn't ready (e.g. GPS lost: arm / MISSION /
      Hold refused), retry every READY_RETRY_S until it is, for up to
      RUNSTART_READY_WAIT_S, and take off as soon as it is -- once.
-       MISSION: PX4 flies the uploaded mission itself (takeoff, hover, land).
-       Hold:    autonomous takeoff to HOVER_ALT_M, hover in Hold for
-                HOVER_DURATION_S, autonomous land.
+       MISSION: start the mission once armed; PX4 flies it (takeoff to
+                HOVER_ALT_M, hover HOVER_DURATION_S, land).
+       Hold:    autonomous takeoff, hover in Hold, autonomous land.
      Then disarm. Every phase is an autonomous PX4 mode, so the heartbeat
      stays STATE_AUTO.
 
-The flight mode is logged on every change, for the record. The pilot can
-take over with the sticks at any time (needs COM_RC_OVERRIDE != 0); the
-script then stops commanding.
+The flight mode and PX4's own messages are logged. The pilot can take over
+with the sticks at any time (needs COM_RC_OVERRIDE != 0); the script then
+stops commanding.
 
 SAFETY:
   * Props on only for real flight, outdoors, in the validation area.
   * COM_RC_OVERRIDE must be non-zero and stick takeover bench-verified.
-  * The PX4 geofence from RoboCommand's course should be VALID (on the UAV)
-    before flying -- see tests/ROBOCOMMAND_GEOFENCE_TEST.md.
+  * After RunStart the UAV may arm and take off as soon as PX4 is ready
+    (up to RUNSTART_READY_WAIT_S later): keep clear.
 
-Run on the drone (same place/environment as the sweep script):
+Run on the drone (same place/environment as the sweep script), with
+mission_gate.py next to it:
     python3.10 flight_validation_hover.py
 """
 
 import asyncio
-import json
+import os
 import sys
-import threading
 import time
 
 try:
     from mavsdk import System
     from mavsdk.action import ActionError
     from mavsdk.telemetry import FlightMode
-    from mavsdk.mission import MissionItem, MissionPlan
 except ImportError:
     print("[ERROR] mavsdk not installed. Run: pip install mavsdk")
     sys.exit(1)
 
-import rclpy
-from rclpy.qos import DurabilityPolicy, QoSProfile
-from std_msgs.msg import String
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mission_gate import TASK_NONE, run_gate, wait_for  # noqa: E402
 
 
 # -- Configuration -----------------------------------------------------------
@@ -72,11 +62,7 @@ MAVSDK_ADDRESS = "udpin://0.0.0.0:14551"   # physical drone; "udpin://0.0.0.0:14
 
 HOVER_ALT_M        = 3.0     # autonomous takeoff/hover altitude above home (m)
 HOVER_DURATION_S   = 20.0    # how long to hold the autonomous hover
-CONNECT_TIMEOUT_S  = 30.0
-POSITION_TIMEOUT_S = 180.0   # give up if PX4 has no global position/home by then
-POSITION_REPORT_S  = 5.0     # how often to log what's still missing
-RUNSTART_WAIT_MAX_S = 1800.0  # give up (stay on the ground) if no RunStart by then
-TAKEOFF_TIMEOUT_S  = 45.0    # to reach the hover altitude
+TAKEOFF_TIMEOUT_S  = 45.0    # to be airborne after arming
 LAND_TIMEOUT_S     = 90.0
 # After RunStart, if PX4 isn't ready (e.g. GPS lost: arming / MISSION / Hold
 # refused), keep retrying every READY_RETRY_S until it is, for up to
@@ -85,151 +71,16 @@ LAND_TIMEOUT_S     = 90.0
 READY_RETRY_S         = 5.0
 RUNSTART_READY_WAIT_S = 600.0
 
-# How the UAV gets into autonomous mode before RunStart:
-#   "script" -- this script commands Hold (AUTO.LOITER) on the ground, disarmed
-#   "pilot"  -- the pilot switches to an autonomous mode (Hold, etc.) via RC/QGC
-AUTONOMOUS_MODE_SOURCE = "script"
-
-# Which autonomous PX4 mode the script puts the UAV in on the ground ("script"):
-#   "mission" -- upload the hover as a mission and switch to MISSION (falls
-#                back to Hold if that's refused). Overwrites PX4's stored mission
-#                (not the geofence).
-#   "hold"    -- Hold (AUTO.LOITER); the script commands takeoff/hover/land.
-GROUND_AUTONOMOUS_MODE = "mission"
-
-# BENCH_TEST=True: connect, go autonomous (Hold, disarmed), wait for RunStart,
-# then only LOG what the flight would do -- never arms. Safe with props on.
+# BENCH_TEST=True: run the gate (autonomous, RunStart), then only LOG what the
+# flight would do -- never arms. Safe with props on.
 BENCH_TEST = False
-
-RUN_START_TOPIC = "/seabird/run_start"
-
-# PX4 modes beacon_mavlink_ground.py reports as STATE_AUTO (its _AUTO_MODES).
-# getattr: not every MAVSDK version has every member (e.g. PRECISION_LAND).
-AUTONOMOUS_MODES = {m for m in (getattr(FlightMode, name, None) for name in (
-    "HOLD", "MISSION", "OFFBOARD", "TAKEOFF", "LAND", "RETURN_TO_LAUNCH", "FOLLOW_ME",
-    "PRECISION_LAND")) if m is not None}
 
 
 def log(text):
     print(f"[{time.strftime('%H:%M:%S')}] [validation] {text}", flush=True)
 
 
-# -- RunStart listener (ROS, own context in a thread, like the sweep) ---------
-
-class RunStartListener:
-    """Latches the first RunStart received AFTER this script started."""
-
-    def __init__(self):
-        self.started_at = time.time()
-        self.event = threading.Event()
-        self.run_id = None
-        self._ctx = rclpy.Context()
-        rclpy.init(context=self._ctx)
-        self._node = rclpy.create_node("flight_validation_hover", context=self._ctx)
-        self._node.create_subscription(
-            String, RUN_START_TOPIC, self._on_run_start,
-            QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
-        self._running = True
-        self._thread = threading.Thread(target=self._spin, daemon=True)
-        self._thread.start()
-
-    def _spin(self):
-        from rclpy.executors import SingleThreadedExecutor
-        ex = SingleThreadedExecutor(context=self._ctx)
-        ex.add_node(self._node)
-        while self._running and rclpy.ok(context=self._ctx):
-            ex.spin_once(timeout_sec=0.1)
-        ex.shutdown()
-
-    def close(self):
-        """Stop the ROS thread cleanly (exiting with it still spinning aborts the process)."""
-        self._running = False
-        self._thread.join(timeout=2.0)
-        self._node.destroy_node()
-        rclpy.shutdown(context=self._ctx)
-
-    def _on_run_start(self, msg):
-        try:
-            data = json.loads(msg.data)
-        except json.JSONDecodeError:
-            return
-        received = float(data.get("received", 0.0))
-        if received and received < self.started_at:
-            log(f"ignoring RunStart run_id={data.get('run_id')} from before this script started "
-                f"(latched from an earlier run)")
-            return
-        if not self.event.is_set():
-            self.run_id = data.get("run_id")
-            self.event.set()
-
-
 # -- Flight ------------------------------------------------------------------
-
-class ModeWatcher:
-    """Tracks PX4's flight mode and logs every change."""
-
-    def __init__(self, drone):
-        self.mode = None
-        self._drone = drone
-
-    async def run(self):
-        async for mode in self._drone.telemetry.flight_mode():
-            if mode != self.mode:
-                tag = "AUTONOMOUS" if mode in AUTONOMOUS_MODES else "not autonomous"
-                log(f"flight mode {self.mode.name if self.mode else '-'} -> {mode.name} ({tag})")
-                self.mode = mode
-
-    @property
-    def autonomous(self):
-        return self.mode in AUTONOMOUS_MODES
-
-
-async def wait_for(predicate, timeout_s, poll_s=0.2):
-    end = time.monotonic() + timeout_s
-    while time.monotonic() < end:
-        if predicate():
-            return True
-        await asyncio.sleep(poll_s)
-    return predicate()
-
-
-def _mission_item(lat, lon, rel_alt_m, loiter_s, action_name):
-    """One MissionItem (keyword args: raises TypeError on a MAVSDK too old for
-    vehicle_action, which the caller treats as 'fall back to Hold')."""
-    nan = float("nan")
-    return MissionItem(
-        latitude_deg=lat, longitude_deg=lon, relative_altitude_m=rel_alt_m,
-        speed_m_s=nan, is_fly_through=False, gimbal_pitch_deg=nan, gimbal_yaw_deg=nan,
-        camera_action=MissionItem.CameraAction.NONE, loiter_time_s=loiter_s,
-        camera_photo_interval_s=nan, acceptance_radius_m=1.0, yaw_deg=nan,
-        camera_photo_distance_m=nan,
-        vehicle_action=getattr(MissionItem.VehicleAction, action_name))
-
-
-async def enter_mission_mode(drone, position, modes):
-    """Upload the hover mission at the current position and switch PX4 to
-    MISSION while disarmed. True = PX4 reports MISSION."""
-    lat, lon = position["lat"], position["lon"]
-    try:
-        items = [
-            _mission_item(lat, lon, HOVER_ALT_M, 0.0, "TAKEOFF"),
-            _mission_item(lat, lon, HOVER_ALT_M, HOVER_DURATION_S, "NONE"),
-            _mission_item(lat, lon, 0.0, 0.0, "LAND"),
-        ]
-        log(f"uploading hover mission at {lat:.7f}, {lon:.7f}: takeoff {HOVER_ALT_M:g} m, "
-            f"hover {HOVER_DURATION_S:g} s, land")
-        await drone.mission.set_return_to_launch_after_mission(False)
-        await drone.mission.upload_mission(MissionPlan(items))
-        log("switching PX4 to MISSION on the ground (disarmed)")
-        await drone.mission.start_mission()
-    except Exception as e:   # MissionError, or TypeError from an older MAVSDK
-        log(f"MISSION mode not available ({type(e).__name__}: {e})")
-        return False
-    if await wait_for(lambda: modes.mode == FlightMode.MISSION, 10.0):
-        return True
-    log(f"PX4 didn't switch to MISSION (now {modes.mode.name if modes.mode else '-'})")
-    return False
-
 
 async def safe_disarm(drone):
     """Disarm on the ground; kill (motors off) if PX4 refuses. Only call on the ground."""
@@ -244,30 +95,13 @@ async def safe_disarm(drone):
             log(f"ERROR: kill refused too ({e2}) -- pilot, disarm now")
 
 
-async def wait_ready(health, deadline):
-    """Wait for global position + home (PX4 needs them to arm in MISSION/Hold).
-    False = deadline passed."""
-    last_report = 0.0
-    while not (health["gpos"] and health["home"]):
-        now = time.monotonic()
-        if now > deadline:
-            return False
-        if now - last_report >= POSITION_REPORT_S:
-            missing = [n for n, ok in (("global position", health["gpos"]),
-                                       ("home", health["home"])) if not ok]
-            log(f"RunStart received -- waiting for PX4 to be ready (missing {', '.join(missing)}); "
-                f"{deadline - now:.0f} s left")
-            last_report = now
-        await asyncio.sleep(0.5)
-    return True
-
-
-async def mission_takeoff(drone, position, modes, in_air):
-    """One attempt: (re)enter MISSION, arm, wait to be airborne.
+async def mission_takeoff(gate, in_air):
+    """One attempt: (re)enter MISSION, arm, start the mission, wait to be airborne.
     'airborne' | 'retry' (PX4 not ready, nothing armed) | 'failed' (armed, didn't lift off)."""
+    drone, modes = gate.drone, gate.modes
     if modes.mode != FlightMode.MISSION:
-        log(f"not in MISSION ({modes.mode.name if modes.mode else '-'}) -- re-entering it")
-        if not await enter_mission_mode(drone, position, modes):
+        log(f"not in MISSION ({modes.name}) -- re-entering it")
+        if not await gate.enter_mission(HOVER_ALT_M, HOVER_DURATION_S):
             return "retry"
     try:
         log("arming -- PX4 flies the mission (takeoff, hover, land)")
@@ -286,14 +120,15 @@ async def mission_takeoff(drone, position, modes, in_air):
         return "retry"
     if not await wait_for(lambda: in_air["v"], TAKEOFF_TIMEOUT_S):
         log(f"ERROR: armed but not airborne after {TAKEOFF_TIMEOUT_S:.0f} s "
-            f"(mode {modes.mode.name}) -- disarming, not retrying")
+            f"(mode {modes.name}) -- disarming, not retrying")
         await safe_disarm(drone)
         return "failed"
     return "airborne"
 
 
-async def hold_takeoff(drone, modes, in_air):
+async def hold_takeoff(gate, in_air):
     """One attempt: arm, autonomous takeoff, wait to be airborne. Same results as mission_takeoff."""
+    drone = gate.drone
     try:
         log("arming")
         await drone.action.arm()
@@ -310,14 +145,16 @@ async def hold_takeoff(drone, modes, in_air):
         return "retry"
     if not await wait_for(lambda: in_air["v"], TAKEOFF_TIMEOUT_S):
         log(f"ERROR: armed but not airborne after {TAKEOFF_TIMEOUT_S:.0f} s "
-            f"(mode {modes.mode.name}) -- disarming, not retrying")
+            f"(mode {gate.modes.name}) -- disarming, not retrying")
         await safe_disarm(drone)
         return "failed"
     return "airborne"
 
 
-async def finish_mission(drone, modes, in_air):
+async def finish_mission(gate, in_air):
     """Airborne in MISSION: let PX4 fly the rest (hover, land), then disarm."""
+    drone, modes = gate.drone, gate.modes
+
     async def log_progress():
         async for p in drone.mission.mission_progress():
             log(f"mission item {p.current}/{p.total}")
@@ -327,7 +164,7 @@ async def finish_mission(drone, modes, in_air):
         end = time.monotonic() + TAKEOFF_TIMEOUT_S + HOVER_DURATION_S + LAND_TIMEOUT_S
         while in_air["v"]:
             if not modes.autonomous:
-                log(f"pilot took over ({modes.mode.name}) -- the script stops")
+                log(f"pilot took over ({modes.name}) -- the script stops")
                 return
             if time.monotonic() > end:
                 log("WARNING: mission still in the air past its expected time -- pilot, take over")
@@ -343,149 +180,9 @@ async def finish_mission(drone, modes, in_air):
         progress.cancel()
 
 
-async def _wait_connected(drone):
-    async for state in drone.core.connection_state():
-        if state.is_connected:
-            return
-
-
-async def run_validation(runstart: RunStartListener):
-    drone = System()
-    log(f"connecting to PX4 at {MAVSDK_ADDRESS} ...")
-    await drone.connect(system_address=MAVSDK_ADDRESS)
-    try:
-        await asyncio.wait_for(_wait_connected(drone), timeout=CONNECT_TIMEOUT_S)
-    except asyncio.TimeoutError:
-        log(f"ERROR: no MAVLink heartbeat after {CONNECT_TIMEOUT_S:.0f} s at {MAVSDK_ADDRESS}")
-        return
-    log("connected to PX4")
-
-    modes = ModeWatcher(drone)
-    asyncio.ensure_future(modes.run())
-    altitude = {"rel": 0.0}
-    position = {"lat": None, "lon": None}
-
-    async def track_altitude():
-        async for pos in drone.telemetry.position():
-            altitude["rel"] = pos.relative_altitude_m
-            position["lat"], position["lon"] = pos.latitude_deg, pos.longitude_deg
-    asyncio.ensure_future(track_altitude())
-    in_air = {"v": False}
-
-    async def track_in_air():
-        async for v in drone.telemetry.in_air():
-            in_air["v"] = v
-    asyncio.ensure_future(track_in_air())
-    px4_ready = {"gpos": False, "home": False}   # (not "health": step 1's loop variable)
-
-    async def track_health():
-        async for h in drone.telemetry.health():
-            px4_ready["gpos"], px4_ready["home"] = h.is_global_position_ok, h.is_home_position_ok
-    asyncio.ensure_future(track_health())
-
-    # PX4's own messages (e.g. the reason behind an arming COMMAND_DENIED).
-    async def log_px4_text():
-        try:
-            async for st in drone.telemetry.status_text():
-                log(f"PX4 [{getattr(st.type, 'name', st.type)}]: {st.text}")
-        except Exception as e:
-            log(f"(PX4 message log stopped: {type(e).__name__}: {e})")
-    asyncio.ensure_future(log_px4_text())
-
-    # 1. Position + home (needed for Hold and for takeoff).
-    log("waiting for a global position estimate and home...")
-    t0, last_report, ready = time.monotonic(), 0.0, False
-    async for health in drone.telemetry.health():
-        if health.is_global_position_ok and health.is_home_position_ok:
-            log("global position OK, home set")
-            ready = True
-            break
-        elapsed = time.monotonic() - t0
-        if elapsed - last_report >= POSITION_REPORT_S:
-            missing = [name for name, ok in (("global position", health.is_global_position_ok),
-                                              ("home", health.is_home_position_ok)) if not ok]
-            log(f"still waiting ({elapsed:.0f} s): missing {', '.join(missing)} -- PX4 refuses "
-                f"Hold without them (check the GPS fix)")
-            last_report = elapsed
-        if elapsed > POSITION_TIMEOUT_S:
-            break
-        await asyncio.sleep(1.0)
-    if not ready:
-        log(f"ERROR: no global position/home after {POSITION_TIMEOUT_S:.0f} s -- can't go "
-            f"autonomous; stopping (still on the ground)")
-        return
-
-    # 2. Autonomous on the ground.
-    use_mission = False
-    if AUTONOMOUS_MODE_SOURCE == "script":
-        if GROUND_AUTONOMOUS_MODE == "mission":
-            await wait_for(lambda: position["lat"] is not None, 5.0)
-            if position["lat"] is not None:
-                use_mission = await enter_mission_mode(drone, position, modes)
-            else:
-                log("no position from telemetry yet -- can't build the mission; using Hold")
-        if not use_mission:
-            log("switching PX4 to Hold (AUTO.LOITER) on the ground")
-            try:
-                await drone.action.hold()
-            except ActionError as e:
-                log(f"PX4 refused Hold on the ground ({e}): ask the pilot to switch to an "
-                    f"autonomous mode (e.g. Hold) via RC/QGC -- waiting for it")
-    else:
-        log("waiting for the pilot to switch to an autonomous mode (e.g. Hold)...")
-    if not await wait_for(lambda: modes.autonomous, 120.0):
-        log("ERROR: the UAV isn't in an autonomous mode after 120 s -- stopping (still on the ground)")
-        return
-    log(f"UAV AUTONOMOUS in {modes.mode.name}: RoboCommand heartbeat reports STATE_AUTO -- "
-        f"holding until RunStart")
-
-    # 3. Wait for RunStart, holding position (on the ground) meanwhile.
-    t0, warned = time.monotonic(), False
-    while not runstart.event.is_set():
-        if time.monotonic() - t0 > RUNSTART_WAIT_MAX_S:
-            log(f"no RunStart after {RUNSTART_WAIT_MAX_S:.0f} s -- not flying")
-            return
-        if not modes.autonomous and not warned:
-            log(f"WARNING: left autonomous mode ({modes.mode.name}) before RunStart -- RoboCommand "
-                f"won't start the run until the UAV is autonomous again")
-            warned = True
-        elif modes.autonomous:
-            warned = False
-        await asyncio.sleep(0.2)
-    log(f"RunStart received (run_id={runstart.run_id}) -- beginning the run: autonomous hover")
-
-    # 4. The run: arm, takeoff, hover, land -- all in autonomous PX4 modes.
-    if BENCH_TEST:
-        how = "PX4 flies the MISSION" if use_mission else "script commands takeoff/Hold/land"
-        log(f"BENCH_TEST: would arm, take off to {HOVER_ALT_M:g} m, hover {HOVER_DURATION_S:g} s, "
-            f"land and disarm ({how}) -- not arming")
-        return
-    # Retry until PX4 is ready (e.g. GPS back after a dropout), then take off once.
-    deadline = time.monotonic() + RUNSTART_READY_WAIT_S
-    attempt = 0
-    while True:
-        if not await wait_ready(px4_ready, deadline):
-            log(f"ERROR: PX4 not ready {RUNSTART_READY_WAIT_S:.0f} s after RunStart -- "
-                f"stopping (still on the ground)")
-            return
-        attempt += 1
-        log(f"takeoff attempt {attempt}")
-        if use_mission:
-            result = await mission_takeoff(drone, position, modes, in_air)
-        else:
-            result = await hold_takeoff(drone, modes, in_air)
-        if result == "airborne":
-            break
-        if result == "failed":
-            return
-        if time.monotonic() + READY_RETRY_S > deadline:
-            log(f"ERROR: PX4 still refusing {RUNSTART_READY_WAIT_S:.0f} s after RunStart -- "
-                f"stopping (still on the ground)")
-            return
-        await asyncio.sleep(READY_RETRY_S)
-    if use_mission:
-        await finish_mission(drone, modes, in_air)
-        return
+async def finish_hold(gate, in_air, altitude):
+    """Airborne after a Hold-path takeoff: hover in Hold, land, disarm."""
+    drone, modes = gate.drone, gate.modes
     reached = await wait_for(lambda: altitude["rel"] >= 0.9 * HOVER_ALT_M, TAKEOFF_TIMEOUT_S)
     if not reached:
         log(f"WARNING: hover altitude not reached in {TAKEOFF_TIMEOUT_S:.0f} s "
@@ -497,11 +194,11 @@ async def run_validation(runstart: RunStartListener):
             await drone.action.hold()
         except ActionError as e:
             log(f"WARNING: Hold refused in the air ({e})")
-    log(f"autonomous hover in {modes.mode.name} at {altitude['rel']:.1f} m for {HOVER_DURATION_S:g} s")
+    log(f"autonomous hover in {modes.name} at {altitude['rel']:.1f} m for {HOVER_DURATION_S:g} s")
     end = time.monotonic() + HOVER_DURATION_S
     while time.monotonic() < end:
         if not modes.autonomous:
-            log(f"pilot took over ({modes.mode.name}) -- the script stops commanding")
+            log(f"pilot took over ({modes.name}) -- the script stops commanding")
             return
         await asyncio.sleep(0.5)
     log("hover complete -- autonomous landing")
@@ -522,21 +219,85 @@ async def run_validation(runstart: RunStartListener):
     log("disarmed -- validation hover complete")
 
 
+async def run_validation():
+    drone = System()
+    log(f"connecting to PX4 at {MAVSDK_ADDRESS} ...")
+    await drone.connect(system_address=MAVSDK_ADDRESS)
+
+    altitude = {"rel": 0.0}
+    in_air = {"v": False}
+
+    async def track_altitude():
+        async for pos in drone.telemetry.position():
+            altitude["rel"] = pos.relative_altitude_m
+    asyncio.ensure_future(track_altitude())
+
+    async def track_in_air():
+        async for v in drone.telemetry.in_air():
+            in_air["v"] = v
+    asyncio.ensure_future(track_in_air())
+
+    # 1-5: every RoboCommand step before the run (validation hover: no task).
+    gate = await run_gate(drone, run_task=TASK_NONE,
+                          mission_alt_m=HOVER_ALT_M, mission_hover_s=HOVER_DURATION_S)
+    if gate is None:
+        log("start gate failed (see [gate] above) -- not flying")
+        return
+    try:
+        await fly(gate, in_air, altitude)
+    finally:
+        gate.close()
+
+
+async def fly(gate, in_air, altitude):
+    """6: the run -- arm, take off, hover, land; all in autonomous PX4 modes."""
+    use_mission = gate.in_mission
+    log(f"RunStart {gate.run_id}: beginning the run -- autonomous hover "
+        f"({'MISSION' if use_mission else 'Hold'})")
+    if BENCH_TEST:
+        how = "PX4 flies the MISSION" if use_mission else "script commands takeoff/Hold/land"
+        log(f"BENCH_TEST: would arm, take off to {HOVER_ALT_M:g} m, hover {HOVER_DURATION_S:g} s, "
+            f"land and disarm ({how}) -- not arming")
+        return
+    # Retry until PX4 is ready (e.g. GPS back after a dropout), then take off once.
+    deadline = time.monotonic() + RUNSTART_READY_WAIT_S
+    attempt = 0
+    while True:
+        if not await gate.wait_ready(deadline):
+            log(f"ERROR: PX4 not ready {RUNSTART_READY_WAIT_S:.0f} s after RunStart -- "
+                f"stopping (still on the ground)")
+            return
+        attempt += 1
+        log(f"takeoff attempt {attempt}")
+        if use_mission:
+            result = await mission_takeoff(gate, in_air)
+        else:
+            result = await hold_takeoff(gate, in_air)
+        if result == "airborne":
+            break
+        if result == "failed":
+            return
+        if time.monotonic() + READY_RETRY_S > deadline:
+            log(f"ERROR: PX4 still refusing {RUNSTART_READY_WAIT_S:.0f} s after RunStart -- "
+                f"stopping (still on the ground)")
+            return
+        await asyncio.sleep(READY_RETRY_S)
+    if use_mission:
+        await finish_mission(gate, in_air)
+    else:
+        await finish_hold(gate, in_air, altitude)
+
+
 def main():
     log("=" * 60)
     log("RobotX UAV Flight Validation: autonomous mode -> RunStart -> autonomous hover")
-    log(f"  MAVSDK_ADDRESS={MAVSDK_ADDRESS}  HOVER_ALT_M={HOVER_ALT_M}  HOVER_DURATION_S={HOVER_DURATION_S}")
-    log(f"  AUTONOMOUS_MODE_SOURCE={AUTONOMOUS_MODE_SOURCE}  "
-        f"GROUND_AUTONOMOUS_MODE={GROUND_AUTONOMOUS_MODE}  BENCH_TEST={BENCH_TEST}")
+    log(f"  MAVSDK_ADDRESS={MAVSDK_ADDRESS}  HOVER_ALT_M={HOVER_ALT_M}  "
+        f"HOVER_DURATION_S={HOVER_DURATION_S}  BENCH_TEST={BENCH_TEST}")
     log("=" * 60)
-    runstart = RunStartListener()
-    log(f"listening for RunStart on {RUN_START_TOPIC}")
     try:
-        asyncio.run(run_validation(runstart))
+        asyncio.run(run_validation())
     except KeyboardInterrupt:
         log("interrupted")
-    finally:
-        runstart.close()
 
 
 if __name__ == "__main__":

@@ -158,6 +158,32 @@ Environment variables read by `run.sh`:
 | `PORT` | `8092` | HTTP port |
 | `RESTART` | `no` | docker restart policy, e.g. `unless-stopped` to start on boot |
 | `ROS_DOMAIN_ID` | `8` | must match the host's `voxl_mpa_to_ros2` and PX4; e.g. `ROS_DOMAIN_ID=0 run.sh start` |
+| `RECORD` | `offline` | save frames on the drone: `offline` (while no viewer is receiving), `always`, or `off` |
+| `RECORD_DIR` | `/data/telemetry_stream` | where local saves go on the drone |
+
+## Saving on the drone (no Wi-Fi)
+
+While no viewer is receiving the stream (laptop out of Wi-Fi range, closed, or
+never connected), the drone saves frames itself:
+
+```
+/data/telemetry_stream/<start time>/
+  images/<frame time>.jpg     # the streamed JPEG, unchanged
+  captures.csv                # same columns as the viewer's captures.csv
+```
+
+A viewer counts as gone after 3 s without a delivered frame (`--offline-after`),
+so a Wi-Fi drop starts local saving within seconds; saving pauses again once a
+viewer is receiving (the log shows `[record] ...` at each switch). Each container
+start gets a new folder and nothing is overwritten. Rate: `--record-fps` (default
+2); saving stops below `--record-min-free-mb` (default 500) free. `laptop_time_iso`
+in the CSV is the drone's clock here.
+
+The folder is created by docker as root. Copy it off with, e.g.:
+
+```bash
+scp -r root@<drone-ip>:/data/telemetry_stream ./drone_captures
+```
 
 ## Without the viewer
 

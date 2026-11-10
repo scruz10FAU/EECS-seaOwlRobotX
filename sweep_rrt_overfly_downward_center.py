@@ -89,6 +89,10 @@ except ImportError:
           flush=True)
     sys.exit(1)
 
+# RoboCommand start gate (same directory): every vehicle-side step before the run.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mission_gate import run_gate  # noqa: E402
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  CONFIGURATION  — edit the constants in this block to tune the search
@@ -228,7 +232,7 @@ STATE_MEANING = {
 }
 
 # Survey the whole field, then report. The field has a known buoy count.
-EXPECTED_BUOY_COUNT = 2      # Task 1 has ten buoys
+EXPECTED_BUOY_COUNT = 10      # Task 1 has ten buoys
 BUOY_MERGE_DIST_M   = 2.0     # detections within this distance = same buoy
 REQUIRE_ENTRY_EXIT  = True    # real mission: don't stop until a flashing-blue ENTRY
                               # *and* a solid-blue EXIT are classified. Set False for
@@ -293,6 +297,7 @@ _rrt_node_pub   = None
 _rrt_node_msg   = None
 _rclpy_node     = None
 _task_pub       = None
+_gate           = None   # mission_gate.GateResult once the start gate opened
 
 # RobotX RxTask (rx_common.proto) this mission is attempting, republished on
 # /seabird/current_task for beacon_mavlink_bridge.py -> ground VehicleStatus.
@@ -365,7 +370,9 @@ def _rclpy_thread_fn() -> None:
 
         # ── Current RobotX task — republished so a late-starting bridge hears it ──
         _task_pub = node.create_publisher(UInt8, "/seabird/current_task", 10)
-        node.create_timer(TASK_REPUBLISH_S, lambda: _task_pub.publish(UInt8(data=_current_task)))
+        # (mission_gate publishes it instead while the start gate is in use)
+        node.create_timer(TASK_REPUBLISH_S,
+                          lambda: _gate is None and _task_pub.publish(UInt8(data=_current_task)))
 
         # ── RoboCommand RunStart ──
         # The topic is latched, so a RunStart from an EARLIER run (still held by
@@ -541,7 +548,9 @@ def set_current_task(task: int) -> None:
     if task != _current_task:
         log(f"[rrt] current_task {_current_task} -> {task}")
     _current_task = task
-    if _task_pub is not None:
+    if _gate is not None:          # the start gate owns /seabird/current_task
+        _gate.set_task(task)
+    elif _task_pub is not None:
         _task_pub.publish(UInt8(data=task))
 
 
@@ -556,56 +565,6 @@ def publish_rrt_node(north: float, east: float, alt: float) -> None:
 
 
 # ── Flight helpers ────────────────────────────────────────────────────────────
-
-# PX4 modes beacon_mavlink_ground.py reports as STATE_AUTO (MAVSDK names).
-AUTONOMOUS_MODE_NAMES = {"HOLD", "MISSION", "OFFBOARD", "TAKEOFF", "LAND",
-                         "RETURN_TO_LAUNCH", "FOLLOW_ME", "PRECISION_LAND"}
-
-
-async def autonomous_until_runstart(drone: System) -> bool:
-    """Put PX4 in Hold while still disarmed (the UAV is then AUTONOMOUS for
-    RoboCommand) and wait there for RunStart. False = don't arm."""
-    mode = {"name": "UNKNOWN"}
-
-    async def track_mode():
-        async for m in drone.telemetry.flight_mode():
-            name = getattr(m, "name", str(m))
-            if name != mode["name"]:
-                tag = "AUTONOMOUS" if name in AUTONOMOUS_MODE_NAMES else "not autonomous"
-                log(f"[rrt] PX4 mode: {name} ({tag})")
-            mode["name"] = name
-    tracker = asyncio.ensure_future(track_mode())
-    try:
-        log("[rrt] Switching PX4 to Hold on the ground (disarmed) — UAV goes AUTONOMOUS")
-        try:
-            await drone.action.hold()
-        except ActionError as e:
-            log(f"[rrt] PX4 refused Hold on the ground ({e}) — switch to Hold via RC/QGC; waiting")
-        t0 = time.monotonic()
-        while mode["name"] not in AUTONOMOUS_MODE_NAMES:
-            if time.monotonic() - t0 > 120.0:
-                log("[rrt] ABORT: not in an autonomous mode after 120 s — not arming")
-                return False
-            await asyncio.sleep(0.2)
-        log(f"[rrt] ✓ AUTONOMOUS ({mode['name']}) — waiting for RoboCommand's RunStart "
-            f"(up to {RUNSTART_WAIT_MAX_S:.0f} s)")
-
-        t0, warned = time.monotonic(), False
-        while not _run_start_event.is_set():
-            if time.monotonic() - t0 > RUNSTART_WAIT_MAX_S:
-                log(f"[rrt] No RunStart after {RUNSTART_WAIT_MAX_S:.0f} s — not arming")
-                return False
-            autonomous = mode["name"] in AUTONOMOUS_MODE_NAMES
-            if not autonomous and not warned:
-                log(f"[rrt] WARNING: left autonomous mode ({mode['name']}) before RunStart — "
-                    f"RoboCommand won't start the run until it is autonomous again")
-            warned = not autonomous
-            await asyncio.sleep(0.2)
-        log(f"[rrt] ✓ RunStart received (run_id={_run_start_id}) — arming")
-        return True
-    finally:
-        tracker.cancel()
-
 
 async def wait_for_ready_position(drone: System) -> None:
     log("[rrt] Waiting for PX4 position readiness...")
@@ -1627,9 +1586,18 @@ async def run_mission() -> None:
         #log("[rrt] ABORT: beacon detector not detected — not arming")
         #return
 
-    # ── Autonomous on the ground, then RunStart (Flight Validation) ──────────
-    if RUNSTART_GATE and not await autonomous_until_runstart(drone):
-        return
+    # ── RoboCommand start gate (mission_gate.py): fence on the UAV, current_task,
+    #    AUTONOMOUS on the ground (MISSION until arming), fresh RunStart ────────
+    if RUNSTART_GATE:
+        global _gate, _run_start_id
+        gate = await run_gate(drone, run_task=TASK_SAFE_PASSAGE, mission_alt_m=TAKEOFF_ALT_M)
+        if gate is None:
+            log("[rrt] ABORT: start gate failed (see [gate] above) — not arming")
+            return
+        _gate = gate
+        _run_start_id = gate.run_id
+        _run_start_event.set()      # the OFFBOARD RunStart hold below passes straight through
+        log(f"[rrt] ✓ Start gate open: RunStart {gate.run_id}, PX4 in {gate.modes.name} — arming")
 
     if BENCH_TEST:
         log("*** BENCH_TEST — not arming or taking off ***")
@@ -1931,6 +1899,11 @@ def main() -> None:
             set_current_task(TASK_NONE)
         except Exception:
             pass
+        if _gate is not None:
+            try:
+                _gate.close()       # stops the gate's ROS node (current_task)
+            except Exception:
+                pass
         try:
             if rclpy.ok():
                 rclpy.shutdown()

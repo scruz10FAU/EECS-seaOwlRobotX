@@ -374,9 +374,9 @@ def main():
              f"--publish-ros is set (default: {DEFAULT_GEOFENCE_TOPIC})",
     )
     ap.add_argument(
-        "--fence-include-transit", action="store_true",
-        help="Also upload the UAV transit area as a second inclusion polygon (default: "
-             "course boundary only -- what seaowls_ocs declares to RoboCommand)",
+        "--fence-include-transit", action=argparse.BooleanOptionalAction, default=True,
+        help="Also upload the UAV transit area as a second inclusion polygon "
+             "(default: on; --no-fence-include-transit uploads the course boundary only)",
     )
     ap.add_argument(
         "--onboard-topic", default=DEFAULT_ONBOARD_TOPIC,

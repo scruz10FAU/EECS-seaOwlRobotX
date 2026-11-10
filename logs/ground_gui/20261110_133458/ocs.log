@@ -1,0 +1,62 @@
+[INFO] [1794288929.916258042] [seaowls_ocs]: [SEAOWLS OCS] RunDeclaration mode: auto tiers=T1:ADVANCED,T2:NONE,T3:NONE,T4:NONE
+[INFO] [1794288930.277852016] [seaowls_ocs]: [SEAOWLS OCS] MQTT connected
+[INFO] [1794288930.461113786] [seaowls_ocs]: [SEAOWLS OCS] Published UAV geofence course=ALPHA boundary_points=5 transit_points=5 altitude=50.0m
+[WARN] [1794288930.553370627] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4020.40s; heartbeat suppressed
+[WARN] [1794288930.603684486] [seaowls_ocs]: [SEAOWLS OCS] RunDeclaration waiting for UAV1's read-back geofence for course ALPHA on /seaowls/uav1/mission/geofence_onboard
+[WARN] [1794288931.062145539] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4020.90s; heartbeat suppressed
+[WARN] [1794288931.209960285] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288931.584902340] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4021.40s; heartbeat suppressed
+[WARN] [1794288932.079633414] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4021.90s; heartbeat suppressed
+[WARN] [1794288932.196267085] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288932.552301093] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4022.40s; heartbeat suppressed
+[WARN] [1794288933.084957184] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4022.90s; heartbeat suppressed
+[WARN] [1794288933.236394670] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288933.559913148] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4023.40s; heartbeat suppressed
+[WARN] [1794288934.069114298] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4023.90s; heartbeat suppressed
+[WARN] [1794288934.206907821] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288934.529837221] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4024.40s; heartbeat suppressed
+[WARN] [1794288935.072204401] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4024.90s; heartbeat suppressed
+[WARN] [1794288935.209416954] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288935.581619342] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4025.40s; heartbeat suppressed
+[WARN] [1794288936.070791325] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4025.90s; heartbeat suppressed
+[WARN] [1794288936.191559790] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288936.554863562] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4026.40s; heartbeat suppressed
+[WARN] [1794288937.020153832] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4026.90s; heartbeat suppressed
+[WARN] [1794288937.107130186] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288937.559193902] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4027.40s; heartbeat suppressed
+[WARN] [1794288938.081382661] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4027.90s; heartbeat suppressed
+[WARN] [1794288938.215376898] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288938.574127129] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4028.40s; heartbeat suppressed
+[WARN] [1794288939.038821529] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4028.90s; heartbeat suppressed
+[WARN] [1794288939.152317800] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288939.586953686] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4029.40s; heartbeat suppressed
+[WARN] [1794288939.999166589] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4029.90s; heartbeat suppressed
+[WARN] [1794288940.034168789] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288940.513833918] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4030.40s; heartbeat suppressed
+[WARN] [1794288940.974259866] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4030.90s; heartbeat suppressed
+[WARN] [1794288941.011104124] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288941.492081894] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4031.40s; heartbeat suppressed
+[WARN] [1794288942.060833415] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4031.90s; heartbeat suppressed
+[WARN] [1794288942.149655501] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+[WARN] [1794288942.554948020] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4032.40s; heartbeat suppressed
+[WARN] [1794288943.028194962] [seaowls_ocs]: [SEAOWLS OCS] STALE telemetry UAV1 age=4032.90s; heartbeat suppressed
+[WARN] [1794288943.081749672] [seaowls_ocs]: [SEAOWLS OCS] waiting for UAV1
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/install/seaowls_robocommand/lib/seaowls_robocommand/seaowls_ocs", line 33, in <module>
+    sys.exit(load_entry_point('seaowls-robocommand', 'console_scripts', 'seaowls_ocs')())
+  File "/mnt/c/Users/Precision 3571/seaowls-robotx-robocommand/ros2_ws/build/seaowls_robocommand/seaowls_robocommand/ocs_node.py", line 781, in main
+    n.m.disconnect()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 1892, in disconnect
+    return self._send_disconnect(reasoncode, properties)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3610, in _send_disconnect
+    return self._packet_queue(command, packet, 0, 0)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3791, in _packet_queue
+    return self.loop_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 2121, in loop_write
+    rc = self._packet_write()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 3226, in _packet_write
+    self._do_on_disconnect(
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 4383, in _do_on_disconnect
+    on_disconnect(
+TypeError: Ocs.disconnected() takes from 4 to 5 positional arguments but 6 were given
+[ros2run]: Process exited with failure 1
