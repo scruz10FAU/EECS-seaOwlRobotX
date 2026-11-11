@@ -380,10 +380,10 @@ def main():
              "(default: on; --no-fence-include-transit uploads the course boundary only)",
     )
     ap.add_argument(
-        "--transit-fraction", type=float, default=0.5,
+        "--transit-fraction", type=float, default=0.7,
         help="Upload only the part of the transit area within this fraction of its depth "
-             "from the course edge it adjoins (default: 0.5 = the half next to the course; "
-             "1 = the whole transit area)",
+             "from the course edge it adjoins (default: 0.7 -- the launch pad sits in the "
+             "transit area and needs GPS margin; 1 = the whole transit area)",
     )
     ap.add_argument(
         "--onboard-topic", default=DEFAULT_ONBOARD_TOPIC,
