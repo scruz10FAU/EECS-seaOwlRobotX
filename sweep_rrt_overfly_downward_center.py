@@ -128,6 +128,19 @@ SEARCH_ORIGIN        = "center" # where the takeoff point sits in the box:
 MAX_SEARCH_RADIUS_M  = 10     # disc: radius from takeoff (m); used ONLY when
                                 #       SEARCH_AREA_SHAPE == "disc"
 
+# ── Lawnmower failsafe (coverage fallback) ──────────────────────────────────────
+# If the RRT has not classified ANY buoy within LAWNMOWER_AFTER_S of the search
+# starting, stop the random search and fly a systematic vertical-lane (boustrophedon)
+# sweep from the corner of the search area nearest the drone, reading each buoy from
+# overhead as the downward camera passes over it (the normal over-fly+classify branch
+# still fires when a buoy is detected underneath). It is bounded by the SAME
+# geofence / in_bounds() test as the RRT, so it never leaves the fence and changes
+# no geofence setting. Set LAWNMOWER_ENABLED = False to disable.
+LAWNMOWER_ENABLED    = True
+LAWNMOWER_AFTER_S    = 60.0   # trigger if no buoy classified within this of search start
+LAWNMOWER_LANE_W     = 4.0    # east spacing between vertical lanes (m) ~ downward footprint
+LAWNMOWER_STEP_M     = 2.0    # waypoint spacing along each lane (m)
+
 
 def _search_bounds(origin_n: float, origin_e: float):
     """(n_min, n_max, e_min, e_max) of the rect box around a takeoff point."""
@@ -1138,6 +1151,60 @@ def next_overfly_target(near_n: float, near_e: float):
     return min(cands, key=lambda c: (c[2] - near_n) ** 2 + (c[3] - near_e) ** 2)
 
 
+# ── Lawnmower failsafe waypoints ────────────────────────────────────────────────
+
+def _area_bbox(rrt):
+    """(n_min, n_max, e_min, e_max) bounding box of the active search area."""
+    if SEARCH_AREA_SHAPE == "fence" and _fence_ne:
+        ns = [n for p in _fence_ne for n, _ in p]
+        es = [e for p in _fence_ne for _, e in p]
+        return min(ns), max(ns), min(es), max(es)
+    if SEARCH_AREA_SHAPE == "rect":
+        return rrt._n_min, rrt._n_max, rrt._e_min, rrt._e_max
+    r = MAX_SEARCH_RADIUS_M
+    return (rrt._origin_north - r, rrt._origin_north + r,
+            rrt._origin_east - r, rrt._origin_east + r)
+
+
+def build_lawnmower_waypoints(rrt, cur_n, cur_e):
+    """
+    Vertical-lane (north-south) boustrophedon path covering the search area,
+    starting from the corner nearest (cur_n, cur_e). Every waypoint is accepted
+    only if rrt.in_bounds() — which in "fence" mode is in_fence() with the SAME
+    FENCE_MARGIN_M as the RRT — so the lawnmower stays inside the geofence and the
+    2 m margin without touching any geofence setting. Returns a list of (n, e).
+    """
+    n_min, n_max, e_min, e_max = _area_bbox(rrt)
+    step = max(0.5, LAWNMOWER_STEP_M)
+    lane = max(0.5, LAWNMOWER_LANE_W)
+
+    # east lane positions across the box
+    xs, x = [], e_min
+    while x < e_max + 1e-9:
+        xs.append(min(x, e_max))
+        x += lane
+    if not xs:
+        xs = [(e_min + e_max) / 2.0]
+    # start from the east side nearest the drone
+    if abs(cur_e - e_max) < abs(cur_e - e_min):
+        xs.reverse()
+    # north sample positions
+    rows = max(1, int(round((n_max - n_min) / step)))
+    col_ns = [n_min + i * (n_max - n_min) / rows for i in range(rows + 1)]
+    # first lane climbs north if the drone is nearer the south edge
+    go_north = abs(cur_n - n_min) <= abs(cur_n - n_max)
+
+    wps = []
+    for ex in xs:
+        inside = [n for n in col_ns if rrt.in_bounds(n, ex)]
+        if not inside:
+            continue                      # whole lane falls in the margin / outside
+        lane_pts = inside if go_north else inside[::-1]
+        wps.extend((n, ex) for n in lane_pts)
+        go_north = not go_north           # snake back on the next lane
+    return wps
+
+
 def beacon_map_entry(bid):
     """Latest beacon-map entry for an id (snapshot), or {}."""
     with _lock:
@@ -1753,6 +1820,12 @@ async def run_mission() -> None:
     log("[rrt] ═══════════════════════════════════════════")
     log("")
 
+    # Lawnmower failsafe state (see LAWNMOWER_* config)
+    _search_start = time.monotonic()
+    _lawn_wps = None       # None until the failsafe triggers, then a list of (n, e)
+    _lawn_i = 0
+    _lawn_triggered = False
+
     try:
         while run_started and rrt.size < RRT_MAX_NODES:
 
@@ -1787,6 +1860,38 @@ async def run_mission() -> None:
                         break
                     await asyncio.sleep(0.3)
                     continue
+
+            # ── Lawnmower failsafe: no buoy found in time → systematic coverage ─
+            # If the RRT has turned up nothing within LAWNMOWER_AFTER_S, build a
+            # vertical-lane path over the whole (fenced) area and fly it. The
+            # over-fly branch above keeps running every pass, so the moment a buoy
+            # is detected underneath, the drone still diverts, stops overhead and
+            # reads its colour/blink — then resumes the lanes.
+            if (LAWNMOWER_ENABLED and _lawn_wps is None and not _lawn_triggered
+                    and classified_count() == 0
+                    and (time.monotonic() - _search_start) > LAWNMOWER_AFTER_S):
+                _lawn_triggered = True
+                _lawn_wps = build_lawnmower_waypoints(rrt, _state.north_m, _state.east_m)
+                _lawn_i = 0
+                log(f"[rrt] ⚠ No buoy found in {LAWNMOWER_AFTER_S:.0f}s — switching to "
+                    f"LAWNMOWER coverage: {len(_lawn_wps)} waypoints, vertical lanes "
+                    f"{LAWNMOWER_LANE_W:.0f} m apart (bounded by the geofence)")
+
+            if _lawn_wps is not None:
+                if _lawn_i >= len(_lawn_wps):
+                    log("[rrt] ▤ Lawnmower coverage complete — all lanes flown")
+                    break
+                tn, te = _lawn_wps[_lawn_i]
+                _lawn_i += 1
+                yaw = math.degrees(math.atan2(te - _state.east_m,
+                                              tn - _state.north_m)) % 360.0
+                log(f"[rrt] ▤ lawnmower wp {_lawn_i}/{len(_lawn_wps)}  "
+                    f"N={tn:+.2f} E={te:+.2f}  buoys={classified_count()}/{EXPECTED_BUOY_COUNT}")
+                if await fly_to(drone, tn, te, down_m, yaw):
+                    publish_rrt_node(tn, te, TAKEOFF_ALT_M)
+                    publish_path_point()
+                await asyncio.sleep(0.2)
+                continue
 
             # ── Extend the RRT ────────────────────────────────────────────────
             new_n, new_e, parent_node = rrt.extend()
