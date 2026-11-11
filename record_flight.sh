@@ -9,7 +9,7 @@
 #
 # What is captured
 #   bag/       ros2 bag of $TOPICS (beacon detections, beacon map, current_task,
-#              run_start).
+#              run_start, exposure_controller.py's /seabird/exposure).
 #   elrs.pcap  UDP to/from the drone's ELRS bridge (elrs-mavlink) inside the
 #              $NETNS namespace: port 14550 = everything sent towards the ground
 #              (PX4 telemetry from voxl-mavlink-server + beacon_mavlink_bridge.py's
@@ -128,7 +128,7 @@ if [ "${1:-}" = decode ]; then
 fi
 
 OUT_ROOT=${OUT_ROOT:-/data/seabird_flight_logs}
-TOPICS=${TOPICS:-"/seabird/beacon_detections_downward /seabird/beacon_detections /seabird/beacon_map /seabird/current_task /seabird/run_start"}
+TOPICS=${TOPICS:-"/seabird/beacon_detections_downward /seabird/beacon_detections /seabird/beacon_map /seabird/current_task /seabird/run_start /seabird/exposure"}
 export ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-8}
 NETNS=${NETNS-rfdns}
 PORTS=${PORTS:-"14550 14570 14571"}
