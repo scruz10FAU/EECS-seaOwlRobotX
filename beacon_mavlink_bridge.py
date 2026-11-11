@@ -75,6 +75,16 @@ TASK_RESEND_S = 2.0
 # bridge's --onboard-ip/--onboard-port (default 127.0.0.1:14570).
 DEFAULT_ONBOARD_LISTEN = "udpin:127.0.0.1:14570"
 DEFAULT_RUN_START_TOPIC = "/seabird/run_start"
+# Pre-flight abort reasons from the flight script (latched std_msgs/String),
+# relayed as WARNING STATUSTEXT so QGC shows them and beacon_mavlink_ground.py
+# logs them. STATUSTEXT holds 50 chars (MAVLink 1, no chunking): longer text
+# goes as "ALERT k/n <part>" messages. Must match beacon_mavlink_ground.py.
+DEFAULT_ALERT_TOPIC = "/seabird/ground_alert"
+ALERT_PREFIX = "ALERT"
+ALERT_PART_CHARS = 40     # 50 - len("ALERT k/n ")
+ALERT_MAX_PARTS = 9
+ALERT_REPEATS = 3         # whole alert resent, since ELRS loses bursts
+ALERT_REPEAT_GAP_S = 2.0
 RUNSTART_PREFIX = "SEABIRD_RUNSTART"
 RUNSTART_ACK_PREFIX = "SEABIRD_RUNSTART_ACK"
 
@@ -87,7 +97,8 @@ class BeaconMavlinkBridge(Node):
                  repeat: int = DEFAULT_REPEAT, repeat_gap: float = DEFAULT_REPEAT_GAP,
                  log_path: str = None, task_topic: str = DEFAULT_TASK_TOPIC,
                  onboard_listen: str = DEFAULT_ONBOARD_LISTEN,
-                 run_start_topic: str = DEFAULT_RUN_START_TOPIC):
+                 run_start_topic: str = DEFAULT_RUN_START_TOPIC,
+                 alert_topic: str = DEFAULT_ALERT_TOPIC):
         super().__init__("beacon_mavlink_bridge")
         self._lock = threading.Lock()
         self._repeat = max(1, repeat)
@@ -122,6 +133,14 @@ class BeaconMavlinkBridge(Node):
         self.get_logger().info(f"Subscribed to {task_topic} — relaying as STATUSTEXT "
                                f"'{TASK_STATUSTEXT_PREFIX} <n>' every {TASK_RESEND_S:.0f} s")
 
+        # Latched on both sides: an alert published before this bridge started
+        # (or reconnected) is still delivered.
+        self.create_subscription(
+            String, alert_topic, self._on_alert,
+            QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
+        self.get_logger().info(f"Subscribed to {alert_topic} — relaying alerts as WARNING "
+                               f"STATUSTEXT '{ALERT_PREFIX} k/n ...' ({ALERT_REPEATS}x)")
+
         self._run_start_pub = self.create_publisher(
             String, run_start_topic, QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
         self._onboard = mavutil.mavlink_connection(onboard_listen)
@@ -148,6 +167,26 @@ class BeaconMavlinkBridge(Node):
             with self._lock:   # every copy: the ground resends until it sees this
                 self._mav.mav.statustext_send(
                     mavutil.mavlink.MAV_SEVERITY_INFO, f"{RUNSTART_ACK_PREFIX} {run_id}".encode())
+
+    def _on_alert(self, msg: String) -> None:
+        text = " ".join(str(msg.data).split())   # one line
+        if not text:
+            return
+        parts = [text[i:i + ALERT_PART_CHARS]
+                 for i in range(0, len(text), ALERT_PART_CHARS)][:ALERT_MAX_PARTS]
+        self.get_logger().warn(f"ground alert: {text}")
+        for r in range(ALERT_REPEATS):
+            t = threading.Timer(r * ALERT_REPEAT_GAP_S, self._send_alert, args=(parts,))
+            t.daemon = True
+            t.start()
+
+    def _send_alert(self, parts: list) -> None:
+        n = len(parts)
+        with self._lock:
+            for k, part in enumerate(parts, 1):
+                self._mav.mav.statustext_send(
+                    mavutil.mavlink.MAV_SEVERITY_WARNING,
+                    f"{ALERT_PREFIX} {k}/{n} {part}".encode()[:50])
 
     def _on_task(self, msg: UInt8) -> None:
         if msg.data == self._current_task:
@@ -277,11 +316,17 @@ def main():
         "--run-start-topic", default=DEFAULT_RUN_START_TOPIC,
         help=f"Latched topic the verified RunStart is published on (default: {DEFAULT_RUN_START_TOPIC})",
     )
+    ap.add_argument(
+        "--alert-topic", default=DEFAULT_ALERT_TOPIC,
+        help="Latched std_msgs/String alerts (e.g. why the UAV didn't arm) relayed as WARNING "
+             f"STATUSTEXT (default: {DEFAULT_ALERT_TOPIC})",
+    )
     args = ap.parse_args()
 
     rclpy.init()
     node = BeaconMavlinkBridge(args.mavlink_endpoint, args.topic, args.repeat, args.repeat_gap,
-                               args.log, args.task_topic, args.onboard_listen, args.run_start_topic)
+                               args.log, args.task_topic, args.onboard_listen, args.run_start_topic,
+                               args.alert_topic)
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

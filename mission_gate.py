@@ -101,7 +101,13 @@ FENCE_INCLUSION_VERTEX = 5001   # MAV_CMD_NAV_FENCE_POLYGON_VERTEX_INCLUSION
 _GATE_STARTED = time.time()     # RunStarts received before this are stale
 
 
+last_failure = None   # text of the last "FAIL step N: ..." -- why run_gate returned None
+
+
 def log(text):
+    global last_failure
+    if text.startswith("FAIL"):
+        last_failure = text
     print(f"[{time.strftime('%H:%M:%S')}] [gate] {text}", flush=True)
 
 

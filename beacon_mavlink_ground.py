@@ -50,6 +50,7 @@ import csv
 import json
 import math
 import os
+import re
 import time
 from datetime import datetime
 
@@ -100,6 +101,10 @@ _FLIGHT_PHASE_UNKNOWN, _FLIGHT_PHASE_GROUNDED, _FLIGHT_PHASE_AIRBORNE = 0, 1, 2
 # STATUSTEXT "SEABIRD_TASK <n>" from the drone sets current_task to RxTask n.
 # TASK_UNKNOWN (0) is never accepted -- RoboCommand mustn't see it as a change.
 TASK_STATUSTEXT_PREFIX = "SEABIRD_TASK"
+# "ALERT k/n <part>" STATUSTEXT from beacon_mavlink_bridge.py: a drone alert
+# (e.g. why it didn't arm) split into 50-char messages. Must match the bridge.
+ALERT_RE = re.compile(r"^ALERT ([1-9])/([1-9]) (.*)$", re.S)
+ALERT_DEDUP_S = 30.0
 # RunStart relay to the UAV (Handbook 3.4.10: vehicles begin the run only after
 # the OCS verifies RunStart). seaowls_ocs publishes the verified RunStart on
 # RUN_START_TOPIC; it goes up ELRS as STATUSTEXT "SEABIRD_RUNSTART <run_id>",
@@ -276,11 +281,13 @@ class _BuoyField:
     expects resent in full whenever it changes. Beacons merge by tracking_id
     when there is one (>= 0); otherwise (the downward classifier always sends
     -1) by distance to an existing buoy. A re-read replaces the old state, so
-    colours that change mid-run (Disruptive tier) are tracked.
+    colours that change mid-run (Disruptive tier) are tracked. A re-read by
+    tracking_id more than max_jump_m from that buoy is ignored as a bad fix.
     """
 
-    def __init__(self, merge_m: float):
+    def __init__(self, merge_m: float, max_jump_m: float):
         self.merge_m = merge_m
+        self.max_jump_m = max_jump_m
         self.buoys = []  # [{"tracking_id", "lat", "lon", "state", "t"}]
 
     def update(self, beacon, received: float) -> bool:
@@ -291,6 +298,12 @@ class _BuoyField:
         match = None
         if beacon.tracking_id >= 0:
             match = next((b for b in self.buoys if b["tracking_id"] == beacon.tracking_id), None)
+            if match is not None:
+                jump = _distance_m(match["lat"], match["lon"], beacon.latitude, beacon.longitude)
+                if jump > self.max_jump_m:
+                    print(f"[beacon-ground] ignored re-read of tracking_id={beacon.tracking_id}: "
+                          f"{jump:.1f} m from its buoy (> {self.max_jump_m:g} m)")
+                    return False
         if match is None:
             near = [b for b in self.buoys
                     if _distance_m(b["lat"], b["lon"], beacon.latitude, beacon.longitude) <= self.merge_m]
@@ -365,9 +378,15 @@ def main():
              f"--publish-ros is set (default: {DEFAULT_SAFE_PASSAGE_TOPIC})",
     )
     ap.add_argument(
-        "--buoy-merge-m", type=float, default=3.0,
+        "--buoy-merge-m", type=float, default=1.5,
         help="Beacons without a tracking_id within this distance (m) of a known buoy "
-             "update it instead of adding a new one (default: 3.0)",
+             "update it instead of adding a new one (default: 1.5 -- small enough that "
+             "the two buoys of a narrow gate don't merge)",
+    )
+    ap.add_argument(
+        "--buoy-max-jump-m", type=float, default=4.0,
+        help="Ignore a re-read by tracking_id more than this far (m) from that buoy's "
+             "position -- a bad fix, not a moved buoy (default: 4.0)",
     )
     ap.add_argument(
         "--geofence-topic", default=DEFAULT_GEOFENCE_TOPIC,
@@ -432,9 +451,11 @@ def main():
     status_publisher = None
     safe_passage_publisher = None
     ros_node = None
-    buoy_field = _BuoyField(args.buoy_merge_m)
+    buoy_field = _BuoyField(args.buoy_merge_m, args.buoy_max_jump_m)
     pending_fence = None   # latest UavGeofence not yet handed to the uploader
     run_start = None       # {run_id, acked, last_sent, sends} being relayed to the UAV
+    alert_parts = {}       # "ALERT k/n" parts of the alert being received
+    last_alert = ("", 0.0) # (text, time) of the last alert logged -- repeats are dropped
     restart_req = None     # {id, last_sent, started} remote restart being relayed
     uav_armed = None       # armed flag from the latest UAV heartbeat (None = none yet)
     onboard_publisher = fence_status_publisher = None
@@ -473,6 +494,13 @@ def main():
                 print(f"[beacon-ground] [runstart] ignored malformed RunStart: {msg.data!r}")
                 return
             if run_start is None or run_start["run_id"] != run_id:
+                # New run, new field: the drone only surveys after RunStart (the
+                # flight scripts hold on the ground until it), so anything mapped
+                # before is from an earlier run -- don't resend it as obstacles.
+                if buoy_field.buoys:
+                    print(f"[beacon-ground] [runstart] new run: cleared "
+                          f"{len(buoy_field.buoys)} buoy(s) from the previous field")
+                buoy_field.buoys.clear()
                 run_start = dict(run_id=run_id, acked=False, last_sent=0.0, sends=0)
                 print(f"[beacon-ground] [runstart] RunStart run_id={run_id} verified by the OCS "
                       f"-- relaying to the UAV")
@@ -778,6 +806,22 @@ def main():
                         print(f"[beacon-ground] [restart] drone: {result} -- {detail} "
                               f"(request {restart_req['id']})", flush=True)
                         restart_req = None
+                    continue
+                # "ALERT k/n <part>" from the drone's beacon_mavlink_bridge.py
+                # (e.g. why the UAV didn't arm): join the parts, log once (the
+                # bridge sends each alert several times).
+                m = ALERT_RE.match(str(msg.text).rstrip("\x00"))
+                if m:
+                    k, n, part = int(m.group(1)), int(m.group(2)), m.group(3)
+                    if k == 1:
+                        alert_parts = {}
+                    alert_parts[k] = part
+                    if len(alert_parts) == n and all(i in alert_parts for i in range(1, n + 1)):
+                        full = "".join(alert_parts[i] for i in range(1, n + 1)).strip()
+                        alert_parts = {}
+                        if full != last_alert[0] or now - last_alert[1] > ALERT_DEDUP_S:
+                            print(f"[beacon-ground] [alert] {args.vehicle_id}: {full}", flush=True)
+                        last_alert = (full, now)
                     continue
                 task = _parse_task_statustext(msg.text)
                 if task is not None and task != current_task:

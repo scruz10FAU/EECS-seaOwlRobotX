@@ -91,6 +91,7 @@ except ImportError:
 
 # RoboCommand start gate (same directory): every vehicle-side step before the run.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import mission_gate  # noqa: E402  (mission_gate.last_failure: why the gate failed)
 from mission_gate import run_gate  # noqa: E402
 
 
@@ -252,7 +253,12 @@ PX4_HEARTBEAT_TIMEOUT_S     = 20.0
 
 # ── Safety ────────────────────────────────────────────────────────────────────
 #BATTERY_RTL_PERCENT  = 0.30   # trigger RTL when battery.remaining_percent < this (0.0–1.0)
+DETECTOR_CHECK       = True   # don't arm unless /seabird/beacon_map (beacon_overlay) is live
 DETECTOR_TIMEOUT_S   = 30.0   # abort pre-flight if no message from beacon detector within this time
+# Pre-flight abort reasons go to the ground: published (latched) here, relayed by
+# beacon_mavlink_bridge.py over ELRS as a WARNING STATUSTEXT "SEABIRD_ALERT ...",
+# shown by QGC and logged by beacon_mavlink_ground.py.
+GROUND_ALERT_TOPIC   = "/seabird/ground_alert"
 
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -261,6 +267,23 @@ DETECTOR_TIMEOUT_S   = 30.0   # abort pre-flight if no message from beacon detec
 
 def log(msg: str) -> None:
     print(f"[{time.strftime('%F %T')}] {msg}", file=sys.stderr, flush=True)
+
+
+def alert_ground(reason: str) -> None:
+    """Log a pre-flight abort and send its reason to the ground station
+    (GROUND_ALERT_TOPIC -> beacon_mavlink_bridge.py -> ELRS STATUSTEXT)."""
+    log(f"[rrt] ABORT: {reason} — not arming")
+    if _alert_pub is None:
+        log("[rrt]   (ROS not up: reason NOT sent to the ground)")
+        return
+    try:
+        _alert_pub.publish(String(data=f"NOT ARMED: {reason}"))
+    except Exception as e:
+        log(f"[rrt]   ground alert not published: {e}")
+        return
+    # The mission returns (and the process may exit) right after an abort; give
+    # DDS time to deliver the latched alert to beacon_mavlink_bridge.py.
+    time.sleep(3.0)
 
 
 # ── Shared detection state ────────────────────────────────────────────────────
@@ -297,6 +320,7 @@ _rrt_node_pub   = None
 _rrt_node_msg   = None
 _rclpy_node     = None
 _task_pub       = None
+_alert_pub      = None   # GROUND_ALERT_TOPIC publisher (see alert_ground())
 _gate           = None   # mission_gate.GateResult once the start gate opened
 
 # RobotX RxTask (rx_common.proto) this mission is attempting, republished on
@@ -312,7 +336,7 @@ _current_task     = TASK_NONE
 def _rclpy_thread_fn() -> None:
     global _path_pub, _path_msg, _marker_pub, _marker_msg
     global _rrt_edge_pub, _rrt_edge_msg, _rrt_node_pub, _rrt_node_msg, _rclpy_node
-    global _task_pub
+    global _task_pub, _alert_pub
 
     try:
         # Give the listener its OWN rclpy context. The downward classifier spins
@@ -370,6 +394,12 @@ def _rclpy_thread_fn() -> None:
 
         # ── Current RobotX task — republished so a late-starting bridge hears it ──
         _task_pub = node.create_publisher(UInt8, "/seabird/current_task", 10)
+
+        # ── Pre-flight abort reasons for the ground (latched: a bridge that
+        #    starts late still relays the last one) ──
+        from rclpy.qos import DurabilityPolicy as _Durability, QoSProfile as _QoS
+        _alert_pub = node.create_publisher(
+            String, GROUND_ALERT_TOPIC, _QoS(depth=1, durability=_Durability.TRANSIENT_LOCAL))
         # (mission_gate publishes it instead while the start gate is in use)
         node.create_timer(TASK_REPUBLISH_S,
                           lambda: _gate is None and _task_pub.publish(UInt8(data=_current_task)))
@@ -1497,22 +1527,23 @@ async def classify_and_record(drone: System, target, down_m: float) -> None:
         #traceback.print_exc()
 
 
-#async def wait_for_detector() -> bool:
-    #"""
-    #Wait up to DETECTOR_TIMEOUT_S for at least one message on /seabird/beacon_detections.
-    #Returns True if the detector is confirmed live, False on timeout.
-    #"""
-    #log(f"[rrt] Waiting for beacon detector on /seabird/beacon_detections "
-        #f"({DETECTOR_TIMEOUT_S:.0f}s timeout)...")
-    #t0 = asyncio.get_event_loop().time()
-    #while asyncio.get_event_loop().time() - t0 < DETECTOR_TIMEOUT_S:
-        #if _detector_alive.is_set():
-            #log("[rrt] ✓ Beacon detector is publishing")
-            #return True
-        #await asyncio.sleep(0.5)
-    #log("[rrt] ERROR: No message on /seabird/beacon_detections — "
-        #"is beacon_detector_config.py running?")
-   # return False
+async def wait_for_detector() -> bool:
+    """
+    Wait up to DETECTOR_TIMEOUT_S for a message on /seabird/beacon_map
+    (beacon_overlay, Stage 1 -- it publishes every processed frame once it has
+    a valid PX4 pose, beacons or not). True if live, False on timeout.
+    """
+    log(f"[rrt] Waiting for the beacon map on /seabird/beacon_map "
+        f"({DETECTOR_TIMEOUT_S:.0f}s timeout)...")
+    t0 = asyncio.get_event_loop().time()
+    while asyncio.get_event_loop().time() - t0 < DETECTOR_TIMEOUT_S:
+        if _detector_alive.is_set():
+            log("[rrt] ✓ Beacon map is publishing")
+            return True
+        await asyncio.sleep(0.5)
+    log("[rrt] ERROR: no message on /seabird/beacon_map — is beacon_overlay running, "
+        "with GPS and a valid PX4 position?")
+    return False
 
 
 # ── Mission ───────────────────────────────────────────────────────────────────
@@ -1573,18 +1604,18 @@ async def run_mission() -> None:
     # ── PX4 geofence as the search area ──────────────────────────────────────
     if SEARCH_AREA_SHAPE == "fence":
         if not await load_fence(drone):
-            log("[rrt] ABORT: no usable PX4 geofence — not arming")
+            alert_ground("no usable PX4 geofence")
             return
         # The tree grows from takeoff in RRT_STEP_M steps; outside the fence it
         # could never add a node and the search loop would spin forever.
         if not in_fence(_state.north_m, _state.east_m, margin_m=0.0):
-            log("[rrt] ABORT: takeoff position is outside the PX4 geofence — not arming")
+            alert_ground("takeoff position outside the PX4 geofence")
             return
 
     # ── Detector pre-flight check ─────────────────────────────────────────────
-    #if not await wait_for_detector():
-        #log("[rrt] ABORT: beacon detector not detected — not arming")
-        #return
+    if DETECTOR_CHECK and not await wait_for_detector():
+        alert_ground(f"no beacon map for {DETECTOR_TIMEOUT_S:.0f}s (beacon_overlay down?)")
+        return
 
     # ── RoboCommand start gate (mission_gate.py): fence on the UAV, current_task,
     #    AUTONOMOUS on the ground (MISSION until arming), fresh RunStart ────────
@@ -1592,7 +1623,8 @@ async def run_mission() -> None:
         global _gate, _run_start_id
         gate = await run_gate(drone, run_task=TASK_SAFE_PASSAGE, mission_alt_m=TAKEOFF_ALT_M)
         if gate is None:
-            log("[rrt] ABORT: start gate failed (see [gate] above) — not arming")
+            why = (mission_gate.last_failure or "start gate failed").replace("FAIL ", "gate ", 1)
+            alert_ground(why)
             return
         _gate = gate
         _run_start_id = gate.run_id
@@ -1609,10 +1641,12 @@ async def run_mission() -> None:
         await drone.action.arm()
     except ActionError as e:
         log(f"[rrt] Arm failed: {e}")
+        alert_ground(f"PX4 refused arming: {e}")
         return
-    except Exception:
+    except Exception as e:
         log("[rrt] ERROR: arm() exception")
         traceback.print_exc()
+        alert_ground(f"arm() error: {type(e).__name__}")
         return
     log("[rrt] ✓ Armed")
 
