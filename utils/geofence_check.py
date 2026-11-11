@@ -360,41 +360,143 @@ def clip_transit(course, transit, fraction):
     return _closed([_latlon(q, origin) for q in out])
 
 
-def merge_transit(course, transit, tol_m=0.5):
+def merge_transit(course, transit, tol_m=FENCE_TOLERANCE_M):
     """
-    The course and a transit area that share a full edge (both corners within
-    tol_m), joined into one closed ring along that edge -- one outline that can
-    be uploaded to PX4 and declared to RoboCommand as the same fence. Raises
-    ValueError if they share no edge or the joined outline self-intersects.
+    The union of the course and the transit area as ONE closed ring -- an
+    outline that can be uploaded to PX4 and declared to RoboCommand as the same
+    fence, with no gap between the two areas. Handles a full shared edge, a
+    partly shared edge (transit narrower/wider or shifted along it), corners
+    that don't quite match, overlapping areas, and a gap of up to tol_m: transit
+    corners within tol_m of the course are first snapped onto it (to its corner
+    if one is that close, else onto its edge).
+
+    Raises ValueError if the union is not one simple polygon: the areas are
+    further apart than tol_m, touch only at a point, or would enclose a hole.
     """
-    c_open, t_open = _open(course), _open(transit)
+    EPS = 1e-6   # metres: points this close are the same point
+    c_open = _open(course)
     origin = c_open[0]
     c = [_xy(p, origin) for p in c_open]
-    t = [_xy(p, origin) for p in t_open]
-    # Both counter-clockwise: a shared edge then runs in opposite directions.
+    t = [_xy(p, origin) for p in _open(transit)]
     if _signed_area(c) < 0:
-        c_open, c = c_open[::-1], c[::-1]
+        c = c[::-1]
     if _signed_area(t) < 0:
-        t_open, t = t_open[::-1], t[::-1]
+        t = t[::-1]
 
-    def near(a, b):
-        return math.hypot(a[0] - b[0], a[1] - b[1]) <= tol_m
+    def closest_on_seg(p, a, b):
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        seg2 = dx * dx + dy * dy
+        u = 0.0 if seg2 == 0 else max(0.0, min(1.0, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / seg2))
+        return (a[0] + u * dx, a[1] + u * dy)
 
-    n, m = len(c), len(t)
-    for i in range(n):
-        a, b = c[i], c[(i + 1) % n]              # course edge a -> b
-        for j in range(m):
-            if near(t[j], b) and near(t[(j + 1) % m], a):   # transit edge b -> a
-                # Course from b round to a, then the transit's corners between
-                # a and b (its own copies of a and b dropped).
-                ring_ll = [c_open[(i + 1 + k) % n] for k in range(n)]
-                ring_ll += [t_open[(j + 2 + k) % m] for k in range(m - 2)]
-                xy = [_xy(p, origin) for p in ring_ll]
-                if len(_unique(xy)) < 3 or _self_intersects(xy):
-                    raise ValueError("course and transit area joined along their shared "
-                                     "edge give a self-intersecting outline")
-                return _closed(ring_ll)
-    raise ValueError(f"course and transit area share no edge (corners within {tol_m:g} m)")
+    def dist(a, b):
+        return math.hypot(a[0] - b[0], a[1] - b[1])
+
+    # 1. Snap transit corners near the course onto it (closes small gaps and
+    #    makes "almost shared" edges exactly shared).
+    snapped = []
+    for p in t:
+        corner = min(c, key=lambda q: dist(p, q))
+        if dist(p, corner) <= tol_m:
+            snapped.append(corner)
+            continue
+        best = min((closest_on_seg(p, c[i - 1], c[i]) for i in range(len(c))),
+                   key=lambda q: dist(p, q))
+        snapped.append(best if dist(p, best) <= tol_m else p)
+    t = [p for i, p in enumerate(snapped) if dist(p, snapped[i - 1]) > EPS]
+    if len(t) < 3 or abs(_signed_area(t)) < MIN_FENCE_AREA_M2:
+        raise ValueError("transit area collapses when snapped onto the course")
+    if _signed_area(t) < 0:
+        t = t[::-1]
+
+    # 2. Split every edge of each polygon where it meets the other polygon.
+    def seg_hits(a, b, q1, q2):
+        """Parameters along a-b where segment q1-q2 touches it."""
+        out = []
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        ex, ey = q2[0] - q1[0], q2[1] - q1[1]
+        seg2 = dx * dx + dy * dy
+        if seg2 == 0:
+            return out
+        denom = dx * ey - dy * ex
+        if abs(denom) > 1e-12:
+            s = ((q1[0] - a[0]) * ey - (q1[1] - a[1]) * ex) / denom
+            u = ((q1[0] - a[0]) * dy - (q1[1] - a[1]) * dx) / denom
+            if -1e-9 <= s <= 1 + 1e-9 and -1e-9 <= u <= 1 + 1e-9:
+                out.append(min(1.0, max(0.0, s)))
+        # Endpoints of q lying on a-b (covers collinear overlap too).
+        for q in (q1, q2):
+            s = ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / seg2
+            if 0 <= s <= 1 and dist(q, (a[0] + s * dx, a[1] + s * dy)) <= EPS:
+                out.append(s)
+        return out
+
+    def split(poly, other):
+        edges = []
+        for i in range(len(poly)):
+            a, b = poly[i], poly[(i + 1) % len(poly)]
+            ts = {0.0, 1.0}
+            for j in range(len(other)):
+                ts.update(seg_hits(a, b, other[j], other[(j + 1) % len(other)]))
+            pts = [(a[0] + s * (b[0] - a[0]), a[1] + s * (b[1] - a[1])) for s in sorted(ts)]
+            pts[0], pts[-1] = a, b
+            edges += [(pts[k], pts[k + 1]) for k in range(len(pts) - 1)
+                      if dist(pts[k], pts[k + 1]) > EPS]
+        return edges
+
+    def on_boundary(p, poly):
+        return _dist_to_edges(p, poly) <= EPS
+
+    def key(p):
+        return (round(p[0], 5), round(p[1], 5))
+
+    # 3. Keep the pieces on the union's outline: outside the other polygon, or
+    #    on a shared edge running the same way (kept once). A shared edge
+    #    running opposite ways is the seam between the two areas -- dropped.
+    c_edges, t_edges = split(c, t), split(t, c)
+    t_keys = {(key(a), key(b)) for a, b in t_edges}
+    kept = []
+    for edges, other, is_course in ((c_edges, t, True), (t_edges, c, False)):
+        for a, b in edges:
+            mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+            if on_boundary(mid, other):
+                same_way = (key(a), key(b)) in t_keys if is_course else False
+                if is_course and same_way:
+                    kept.append((a, b))      # outer edge both share: keep one copy
+                continue                     # seam, or the transit's copy
+            if not _inside(mid, other):
+                kept.append((a, b))
+
+    # 4. Chain the kept pieces into one ring.
+    nxt = {}
+    for a, b in kept:
+        if key(a) in nxt:
+            raise ValueError("course and transit area touch at a single point only -- "
+                             "not one closed outline")
+        nxt[key(a)] = (a, b)
+    if not kept:
+        raise ValueError("course and transit area have no outline")
+    start = key(kept[0][0])
+    ring, k = [], start
+    for _ in range(len(kept)):
+        a, b = nxt[k]
+        ring.append(a)
+        k = key(b)
+        if k == start:
+            break
+    if k != start or len(ring) != len(kept):
+        raise ValueError(f"course and transit area are more than {tol_m:g} m apart or "
+                         "enclose a hole -- not one closed outline")
+
+    # 5. Drop corners that sit on a straight line (from the edge splits).
+    clean = []
+    for i, p in enumerate(ring):
+        prev, nx = ring[i - 1], ring[(i + 1) % len(ring)]
+        if abs(_cross(prev, p, nx)) > 1e-6 * max(1.0, dist(prev, nx)):
+            clean.append(p)
+    if len(clean) < 3 or _self_intersects(clean):
+        raise ValueError("course and transit area give a self-intersecting outline")
+    return _closed([_latlon(q, origin) for q in clean])
 
 
 def fence_problems(fence, course, transit=None, tolerance_m=FENCE_TOLERANCE_M,
