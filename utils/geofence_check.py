@@ -297,6 +297,106 @@ def inset_polygon(ring, meters):
     return _closed([_latlon(q, origin) for q in out])
 
 
+def clip_transit(course, transit, fraction):
+    """
+    The part of the transit area nearest the course, as a closed ring: the
+    course edge facing the transit area is found, and the transit area is cut
+    by a line parallel to it at `fraction` of the transit's depth from it
+    (0.5 = the half next to the course; >= 1 returns the transit unchanged).
+    Raises ValueError if the transit area doesn't lie outside a course edge or
+    the cut leaves nothing.
+    """
+    t_open = _open(transit)
+    if fraction >= 1.0:
+        return _closed(t_open)
+    if fraction <= 0.0:
+        raise ValueError(f"transit fraction must be > 0 (got {fraction:g})")
+    c_open = _open(course)
+    origin = c_open[0]
+    cxy = [_xy(p, origin) for p in c_open]
+    txy = [_xy(p, origin) for p in t_open]
+    sign = 1.0 if _signed_area(cxy) > 0 else -1.0   # CCW: interior left of each edge
+    tc = (sum(x for x, _ in txy) / len(txy), sum(y for _, y in txy) / len(txy))
+
+    # Course edge facing the transit area: the transit centroid is on its
+    # outer side, and it is the nearest such edge to that centroid.
+    best = None
+    n = len(cxy)
+    for i in range(n):
+        (ax, ay), (bx, by) = cxy[i], cxy[(i + 1) % n]
+        dx, dy = bx - ax, by - ay
+        length = math.hypot(dx, dy)
+        if length == 0:
+            continue
+        nx, ny = dy / length * sign, -dx / length * sign   # outward normal
+        if (tc[0] - ax) * nx + (tc[1] - ay) * ny <= 0:
+            continue
+        d = _dist_to_edges(tc, [(ax, ay), (bx, by)])
+        if best is None or d < best[0]:
+            best = (d, (ax, ay), (nx, ny))
+    if best is None:
+        raise ValueError("transit area is not outside any course edge")
+    _, (ax, ay), (nx, ny) = best
+
+    def depth(q):
+        return (q[0] - ax) * nx + (q[1] - ay) * ny
+
+    cut = fraction * max(depth(q) for q in txy)
+    if cut <= 0:
+        raise ValueError("transit area has no depth beyond the course edge")
+
+    # Sutherland-Hodgman against the half-plane depth <= cut.
+    out = []
+    for i in range(len(txy)):
+        p, q = txy[i - 1], txy[i]
+        dp, dq = depth(p) - cut, depth(q) - cut
+        if (dp <= 0) != (dq <= 0):
+            t = dp / (dp - dq)
+            out.append((p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t))
+        if dq <= 0:
+            out.append(q)
+    if len(_unique(out)) < 3 or abs(_signed_area(out)) < MIN_FENCE_AREA_M2:
+        raise ValueError(f"cutting the transit area at {fraction:g} of its depth leaves nothing")
+    return _closed([_latlon(q, origin) for q in out])
+
+
+def merge_transit(course, transit, tol_m=0.5):
+    """
+    The course and a transit area that share a full edge (both corners within
+    tol_m), joined into one closed ring along that edge -- one outline that can
+    be uploaded to PX4 and declared to RoboCommand as the same fence. Raises
+    ValueError if they share no edge or the joined outline self-intersects.
+    """
+    c_open, t_open = _open(course), _open(transit)
+    origin = c_open[0]
+    c = [_xy(p, origin) for p in c_open]
+    t = [_xy(p, origin) for p in t_open]
+    # Both counter-clockwise: a shared edge then runs in opposite directions.
+    if _signed_area(c) < 0:
+        c_open, c = c_open[::-1], c[::-1]
+    if _signed_area(t) < 0:
+        t_open, t = t_open[::-1], t[::-1]
+
+    def near(a, b):
+        return math.hypot(a[0] - b[0], a[1] - b[1]) <= tol_m
+
+    n, m = len(c), len(t)
+    for i in range(n):
+        a, b = c[i], c[(i + 1) % n]              # course edge a -> b
+        for j in range(m):
+            if near(t[j], b) and near(t[(j + 1) % m], a):   # transit edge b -> a
+                # Course from b round to a, then the transit's corners between
+                # a and b (its own copies of a and b dropped).
+                ring_ll = [c_open[(i + 1 + k) % n] for k in range(n)]
+                ring_ll += [t_open[(j + 2 + k) % m] for k in range(m - 2)]
+                xy = [_xy(p, origin) for p in ring_ll]
+                if len(_unique(xy)) < 3 or _self_intersects(xy):
+                    raise ValueError("course and transit area joined along their shared "
+                                     "edge give a self-intersecting outline")
+                return _closed(ring_ll)
+    raise ValueError(f"course and transit area share no edge (corners within {tol_m:g} m)")
+
+
 def fence_problems(fence, course, transit=None, tolerance_m=FENCE_TOLERANCE_M,
                    step_m=EDGE_STEP_M):
     """

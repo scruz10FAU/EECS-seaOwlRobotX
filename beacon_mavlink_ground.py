@@ -64,7 +64,8 @@ from utils.beacon_mavlink_protocol import (
 )
 from utils.px4_fence import FenceUploader
 from utils.geofence_check import (
-    MAX_UAV_ALTITUDE_HAE_M, fence_problems, inset_polygon, min_clearance_m,
+    MAX_UAV_ALTITUDE_HAE_M, clip_transit, fence_problems, inset_polygon, merge_transit,
+    min_clearance_m,
     validate_altitude, validate_course, course_warnings, simple_ring,
 )
 
@@ -379,6 +380,12 @@ def main():
              "(default: on; --no-fence-include-transit uploads the course boundary only)",
     )
     ap.add_argument(
+        "--transit-fraction", type=float, default=0.5,
+        help="Upload only the part of the transit area within this fraction of its depth "
+             "from the course edge it adjoins (default: 0.5 = the half next to the course; "
+             "1 = the whole transit area)",
+    )
+    ap.add_argument(
         "--onboard-topic", default=DEFAULT_ONBOARD_TOPIC,
         help="UavGeofence topic for the fence + ceiling READ BACK from PX4, for "
              f"seaowls_ocs to declare (default: {DEFAULT_ONBOARD_TOPIC})",
@@ -612,10 +619,23 @@ def main():
                     # 3. Inset (refused if it collapses the polygon).
                     polygons = []
                     if not problems:
+                        # PX4 gets ONE polygon: the OCS declares the first read-back
+                        # polygon to RoboCommand, so the drone's fence and the
+                        # declared fence are the same outline. With the transit
+                        # area, that is the course joined to the course-side part
+                        # of the transit area (the full area is still what the
+                        # readback is checked against; the joined one lies inside
+                        # course + transit). If they can't be joined, course only.
+                        outline = course
+                        if args.fence_include_transit and transit:
+                            try:
+                                outline = merge_transit(course, clip_transit(
+                                    course, transit, args.transit_fraction))
+                            except ValueError as e:
+                                warnings.append(f"transit area not uploaded ({e}) -- "
+                                                "fence is the course boundary only")
                         try:
-                            polygons.append(inset_polygon(course, args.fence_inset_m)[:-1])
-                            if args.fence_include_transit and transit:
-                                polygons.append(inset_polygon(transit, args.fence_inset_m)[:-1])
+                            polygons.append(inset_polygon(outline, args.fence_inset_m)[:-1])
                         except ValueError as e:
                             problems.append(str(e))
                     if problems:
@@ -664,6 +684,9 @@ def main():
                     problems = []
                     if not rb:
                         problems.append("PX4 returned no inclusion polygon")
+                    elif len(rb) > 1:
+                        problems.append(f"PX4 holds {len(rb)} inclusion polygons; only the "
+                                        "first would be declared to RoboCommand")
                     else:
                         onboard = rb[0] + rb[0][:1]
                         problems += [f"UAV readback: {p}" for p in
