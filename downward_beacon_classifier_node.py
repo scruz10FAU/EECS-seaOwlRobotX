@@ -460,18 +460,6 @@ def classify_beacon_downward_once(
         print(f"[downward] Depth used for GPS: {result.get('depth_m', float('nan')):.2f} m "
               f"({result.get('depth_src', '?')})")
 
-        if log_file:
-            # A bare file name goes in this run's folder (under debug_down/ by
-            # default, even with debug images off) rather than the cwd; a
-            # path with a folder is used as given.
-            if not os.path.dirname(log_file):
-                log_file = os.path.join(run_dir, log_file)
-            os.makedirs(os.path.dirname(log_file), exist_ok=True)
-            log_path = _build_log_path(log_file, target_color, target_blinking, ts_tag)
-            _write_log_row(log_path, result, target_color, target_blinking)
-            frames_path = _build_log_path(log_file, target_color, target_blinking, ts_tag, suffix="_frames")
-            _write_frame_log(frames_path, frame_log, target_color, target_blinking)
-
         if publish:
             if n_frames_used > 0:
                 msg = String()
@@ -495,6 +483,25 @@ def classify_beacon_downward_once(
                     rclpy.spin_once(pose_source, timeout_sec=0.1)
             else:
                 print("[downward] No frames matched the expected circle -- nothing published")
+
+        # Logs AFTER publishing, and a write failure (e.g. disk full) only
+        # costs the log -- never the detection.
+        if log_file:
+            try:
+                # A bare file name goes in this run's folder (under debug_down/ by
+                # default, even with debug images off) rather than the cwd; a
+                # path with a folder is used as given.
+                if not os.path.dirname(log_file):
+                    log_file = os.path.join(run_dir, log_file)
+                os.makedirs(os.path.dirname(log_file), exist_ok=True)
+                log_path = _build_log_path(log_file, target_color, target_blinking, ts_tag)
+                _write_log_row(log_path, result, target_color, target_blinking)
+                frames_path = _build_log_path(log_file, target_color, target_blinking, ts_tag,
+                                              suffix="_frames")
+                _write_frame_log(frames_path, frame_log, target_color, target_blinking)
+            except OSError as e:
+                print(f"[downward] WARNING: result log not written ({e}) -- "
+                      f"detection was still published")
 
         return result
     finally:

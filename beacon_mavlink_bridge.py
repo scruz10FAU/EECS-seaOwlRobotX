@@ -169,18 +169,28 @@ class BeaconMavlinkBridge(Node):
                 BEACON_MAVLINK_ADDRESS, BEACON_MAVLINK_VERSION, 0, value
             )
             if self._log_writer is not None:
-                now = time.time()
-                self._log_writer.writerow([
-                    datetime.fromtimestamp(now).isoformat(timespec="milliseconds"),
-                    f"{now:.6f}", copy, *log_fields,
-                ])
-                self._log_file.flush()
+                # A logging failure (e.g. disk full) must never stop the relay:
+                # warn once and stop logging.
+                try:
+                    now = time.time()
+                    self._log_writer.writerow([
+                        datetime.fromtimestamp(now).isoformat(timespec="milliseconds"),
+                        f"{now:.6f}", copy, *log_fields,
+                    ])
+                    self._log_file.flush()
+                except OSError as e:
+                    self.get_logger().error(f"--log write failed ({e}) -- logging stopped, "
+                                            "relay continues")
+                    self._log_writer = None
 
     def close_log(self) -> None:
         # Under the lock so a pending repeat timer can't write to a closed file.
         with self._lock:
             if self._log_file is not None:
-                self._log_file.close()
+                try:
+                    self._log_file.close()   # can re-raise a failed flush (disk full)
+                except OSError:
+                    pass
             self._log_file = self._log_writer = None
 
     def _on_detection(self, msg: String) -> None:
