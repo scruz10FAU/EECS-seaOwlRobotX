@@ -3,9 +3,9 @@
 # (ROS 2 bag) and every MAVLink message handed to / received from the ELRS
 # radio (packet capture), into a new folder per run. Nothing is overwritten.
 #
-#   sudo voxl/record_flight.sh                 # record until Ctrl-C
-#   sudo DURATION=900 voxl/record_flight.sh    # or stop by itself after 900 s
-#   voxl/record_flight.sh decode <dir>/elrs.pcap [out.csv]   # MAVLink CSV (drone or laptop)
+#   sudo ./record_flight.sh                 # record until Ctrl-C
+#   sudo DURATION=900 ./record_flight.sh    # or stop by itself after 900 s
+#   ./record_flight.sh decode <dir>/elrs.pcap [out.csv]   # MAVLink CSV (drone or laptop)
 #
 # What is captured
 #   bag/       ros2 bag of $TOPICS (beacon detections, beacon map, current_task,
@@ -29,8 +29,12 @@
 #   DURATION       stop after this many seconds (default: until Ctrl-C)
 #   MIN_FREE_MB    1024 -- don't start, or stop cleanly, below this much free
 #                  space on $OUT_ROOT's disk (leaves room for PX4's own flight log)
+#   ROS_IMAGE      voxl2-humble -- Docker image with ROS 2 Humble; ros2 bag runs
+#                  in a container of it (--network host --ipc host, like
+#                  voxl/telemetry_stream/run.sh), since the VOXL host has no Humble
 #
-# Needs root (tcpdump + ip netns), tcpdump, and ROS 2 Humble on the host.
+# Run on the VOXL HOST (not inside a container), as root: tcpdump + ip netns
+# need the host. Needs tcpdump, docker and the $ROS_IMAGE image.
 
 set -u
 
@@ -43,7 +47,7 @@ decode() {
     fi
     # Beacon payloads are decoded when this repo's utils/ is importable.
     local repo
-    repo=$(cd "$(dirname "$0")/.." && pwd)
+    repo=$(cd "$(dirname "$0")" && pwd)   # this script sits at the repo root
     PYTHONPATH="$repo${PYTHONPATH:+:$PYTHONPATH}" python3 - "$pcap" "$out" <<'PY'
 import csv, struct, sys
 from datetime import datetime, timezone
@@ -130,7 +134,19 @@ NETNS=${NETNS-rfdns}
 PORTS=${PORTS:-"14550 14570 14571"}
 DURATION=${DURATION:-}
 MIN_FREE_MB=${MIN_FREE_MB:-1024}
+ROS_IMAGE=${ROS_IMAGE:-voxl2-humble}
+BAG_CONTAINER=seabird_record_bag
 free_mb() { df -Pm "$1" 2>/dev/null | awk 'NR==2 {print $4}'; }
+# ros2 in a Humble container on the host network (sees the same DDS topics).
+ros2_docker() {   # ros2_docker [docker run options...] -- <ros2 args...>
+    local opts=()
+    while [ "$1" != "--" ]; do opts+=("$1"); shift; done
+    shift
+    # --init: ros2 isn't PID 1, so the SIGINT from stop() reaches it.
+    docker run --rm --init --network host --ipc host -e ROS_DOMAIN_ID="$ROS_DOMAIN_ID" \
+        "${opts[@]}" "$ROS_IMAGE" \
+        bash -c 'source /opt/ros/humble/setup.bash && exec ros2 "$@"' _ "$@"
+}
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "run as root (sudo): tcpdump and ip netns need it" >&2
@@ -141,8 +157,12 @@ if [ -n "$NETNS" ] && ! ip netns list | grep -qw "$NETNS"; then
     echo "network namespace '$NETNS' not found (is elrs-mavlink running? NETNS= for host)" >&2
     exit 1
 fi
-# shellcheck disable=SC1091
-source /opt/ros/humble/setup.bash || { echo "ROS 2 Humble not found" >&2; exit 1; }
+command -v docker >/dev/null || { echo "docker not found" >&2; exit 1; }
+docker image inspect "$ROS_IMAGE" >/dev/null 2>&1 || {
+    echo "Docker image '$ROS_IMAGE' not found (ROS_IMAGE= to use another Humble image)" >&2
+    exit 1
+}
+docker rm -f "$BAG_CONTAINER" >/dev/null 2>&1 || true   # a bag container left from a crash
 
 # New folder per run; never reuse an existing one.
 base="$OUT_ROOT/$(date +%Y%m%d_%H%M%S)"
@@ -161,7 +181,7 @@ say() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG"; }
 say "${avail:-?} MB free on $OUT_ROOT; stopping below $MIN_FREE_MB MB"
 
 say "recording to $OUT (ROS_DOMAIN_ID=$ROS_DOMAIN_ID, netns=${NETNS:-host}, ports $PORTS)"
-present=$(timeout 10 ros2 topic list 2>/dev/null)
+present=$(timeout 30 ros2_docker -- topic list 2>/dev/null)
 for t in $TOPICS; do
     grep -qx "$t" <<<"$present" || say "WARNING: $t not visible yet -- it is recorded if it appears later"
 done
@@ -173,14 +193,26 @@ netns_cmd=()
 "${netns_cmd[@]}" tcpdump -i any -U -n -w "$OUT/elrs.pcap" "$filter" >>"$LOG" 2>&1 &
 TCPDUMP_PID=$!
 
+# ros2 bag in a Humble container; the run folder is mounted at /rec.
 # shellcheck disable=SC2086
-ros2 bag record -o "$OUT/bag" $TOPICS >>"$LOG" 2>&1 &
-BAG_PID=$!
+ros2_docker --name "$BAG_CONTAINER" -v "$OUT":/rec -- bag record -o /rec/bag $TOPICS \
+    >>"$LOG" 2>&1 &
+BAG_PID=$!   # the docker client: exits when the container does
 
 stop() {
+    trap - INT TERM
     say "stopping..."
-    kill -INT "$BAG_PID" 2>/dev/null      # SIGINT: ros2 bag finalises metadata.yaml
+    # SIGINT to ros2 bag inside the container: it finalises metadata.yaml.
+    docker kill --signal=INT "$BAG_CONTAINER" >/dev/null 2>&1
     kill -INT "$TCPDUMP_PID" 2>/dev/null
+    for _ in $(seq 15); do
+        kill -0 "$BAG_PID" 2>/dev/null || break
+        sleep 1
+    done
+    if kill -0 "$BAG_PID" 2>/dev/null; then
+        say "WARNING: ros2 bag did not stop in 15 s -- stopping its container"
+        docker stop -t 5 "$BAG_CONTAINER" >/dev/null 2>&1
+    fi
     wait "$BAG_PID" "$TCPDUMP_PID" 2>/dev/null
     say "done: $OUT"
     ls -la "$OUT" "$OUT/bag" 2>/dev/null | tee -a "$LOG"
