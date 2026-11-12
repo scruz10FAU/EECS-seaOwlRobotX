@@ -1,0 +1,478 @@
+ELRS router | COM1 @ 460800
+Radio -> QGC: ('127.0.0.1', 14550), WSL: ('127.0.0.1', 14551)
+QGC -> radio: 127.0.0.1:14600
+WiFi link: drone 192.168.1.145:14550 (local port 57911); SEABIRD_* also to 192.168.1.145:14572; uplink over WiFi while drone heartbeats arrive within 3 s, else ELRS
+Only this router should open COM port. Ctrl+C to stop.
+Connected to COM1
+Uplink now over ELRS (no drone heartbeat over WiFi)
+Last interval: serial_bytes=2176 valid_frames=62 lost_frames_estimate=401 duplicate_frames=4 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=19 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=62 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=19(runs 1)
+    e.g. bad_prefix (19 bytes, 'Bad prefix'): 20 74 6f 6f 20 68 69 67 68 00 00 00 00 00 00 75 01 99 e7
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, UNKNOWN_410=3, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2023 valid_frames=56 lost_frames_estimate=451 duplicate_frames=1 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=56 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2057 valid_frames=59 lost_frames_estimate=458 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2014 valid_frames=56 lost_frames_estimate=460 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=56 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=14, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2207 valid_frames=62 lost_frames_estimate=477 duplicate_frames=4 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=62 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2201 valid_frames=61 lost_frames_estimate=465 duplicate_frames=5 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=61 wsl_failed=0 qgc_sent=61 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=61 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, STATUSTEXT=4, UNKNOWN_410=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2055 valid_frames=59 lost_frames_estimate=458 duplicate_frames=2 out_of_order_frames=30 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2020 valid_frames=56 lost_frames_estimate=458 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=56 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2054 valid_frames=59 lost_frames_estimate=453 duplicate_frames=2 out_of_order_frames=28 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2033 valid_frames=57 lost_frames_estimate=463 duplicate_frames=2 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=57 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2040 valid_frames=58 lost_frames_estimate=464 duplicate_frames=1 out_of_order_frames=27 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=58 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2034 valid_frames=57 lost_frames_estimate=461 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=57 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, STATUSTEXT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2058 valid_frames=59 lost_frames_estimate=456 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2021 valid_frames=56 lost_frames_estimate=456 duplicate_frames=1 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=56 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2055 valid_frames=59 lost_frames_estimate=445 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2015 valid_frames=56 lost_frames_estimate=454 duplicate_frames=2 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=56 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=14, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2007 valid_frames=57 lost_frames_estimate=433 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=57 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=9, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2031 valid_frames=57 lost_frames_estimate=458 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=57 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, STATUSTEXT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2293 valid_frames=65 lost_frames_estimate=459 duplicate_frames=7 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=65 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, UNKNOWN_410=5, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2292 valid_frames=62 lost_frames_estimate=456 duplicate_frames=5 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=62 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, STATUSTEXT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, UNKNOWN_410=4
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2128 valid_frames=61 lost_frames_estimate=458 duplicate_frames=4 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=61 wsl_failed=0 qgc_sent=61 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=61 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, SYS_STATUS=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2036 valid_frames=57 lost_frames_estimate=454 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=57 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2042 valid_frames=58 lost_frames_estimate=444 duplicate_frames=1 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=58 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2369 valid_frames=65 lost_frames_estimate=462 duplicate_frames=8 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=65 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=6, STATUSTEXT=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2055 valid_frames=59 lost_frames_estimate=447 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2355 valid_frames=64 lost_frames_estimate=466 duplicate_frames=7 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=64 wsl_failed=0 qgc_sent=64 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=64 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=6, GLOBAL_POSITION_INT=5, STATUSTEXT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2058 valid_frames=59 lost_frames_estimate=460 duplicate_frames=2 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2036 valid_frames=57 lost_frames_estimate=460 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=57 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2042 valid_frames=58 lost_frames_estimate=459 duplicate_frames=1 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=58 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2038 valid_frames=57 lost_frames_estimate=463 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=57 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2057 valid_frames=59 lost_frames_estimate=455 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2000 valid_frames=55 lost_frames_estimate=435 duplicate_frames=1 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=55 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=14, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2469 valid_frames=68 lost_frames_estimate=457 duplicate_frames=9 out_of_order_frames=31 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=68 wsl_failed=0 qgc_sent=68 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=68 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=9, UNKNOWN_410=7, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2038 valid_frames=57 lost_frames_estimate=457 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=57 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2052 valid_frames=59 lost_frames_estimate=459 duplicate_frames=3 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2316 valid_frames=64 lost_frames_estimate=461 duplicate_frames=7 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=64 wsl_failed=0 qgc_sent=64 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=64 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=6, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, UNKNOWN_410=5, STATUSTEXT=4
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2014 valid_frames=58 lost_frames_estimate=481 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=58 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2022 valid_frames=56 lost_frames_estimate=462 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=56 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2329 valid_frames=66 lost_frames_estimate=461 duplicate_frames=8 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=66 wsl_failed=0 qgc_sent=66 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=66 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=6, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=4, STATUSTEXT=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2467 valid_frames=67 lost_frames_estimate=461 duplicate_frames=9 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=67 wsl_failed=0 qgc_sent=67 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=67 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=7, STATUSTEXT=6, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2044 valid_frames=58 lost_frames_estimate=454 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=58 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2036 valid_frames=57 lost_frames_estimate=464 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=57 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, STATUSTEXT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2052 valid_frames=59 lost_frames_estimate=453 duplicate_frames=2 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2020 valid_frames=56 lost_frames_estimate=462 duplicate_frames=1 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=56 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2055 valid_frames=59 lost_frames_estimate=456 duplicate_frames=2 out_of_order_frames=27 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2034 valid_frames=57 lost_frames_estimate=459 duplicate_frames=2 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0 elrs_frames=57 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+ELRS router | COM1 @ 460800
+Radio -> QGC: ('127.0.0.1', 14550), WSL: ('127.0.0.1', 14551)
+QGC -> radio: 127.0.0.1:14600
+WiFi link: drone 192.168.70.229:14550 (local port 61175); SEABIRD_* also to 192.168.70.229:14572; uplink over WiFi while drone heartbeats arrive within 3 s, else ELRS
+Only this router should open COM port. Ctrl+C to stop.
+Connected to COM1
+Uplink now over ELRS (no drone heartbeat over WiFi)
+Uplink now over WIFI
+Last interval: serial_bytes=2009 valid_frames=497 lost_frames_estimate=138 duplicate_frames=33 out_of_order_frames=7 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=497 wsl_failed=0 qgc_sent=497 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=4 qgc_rx_bad_data=0 elrs_frames=11 wifi_frames=486 wifi_bytes=22250 dup_dropped=48 qgc_to_wifi_bytes=84 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=128, ATTITUDE=75, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, RC_CHANNELS=25, GLOBAL_POSITION_INT=25, VFR_HUD=21, HEARTBEAT=16
+  QGC TX messages: HEARTBEAT=4
+Last interval: serial_bytes=2029 valid_frames=500 lost_frames_estimate=127 duplicate_frames=33 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=500 wsl_failed=0 qgc_sent=500 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=3 qgc_rx_bad_data=0 elrs_frames=8 wifi_frames=492 wifi_bytes=22525 dup_dropped=53 qgc_to_wifi_bytes=63 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=127, ATTITUDE=76, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, RC_CHANNELS=26, GLOBAL_POSITION_INT=25, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=3
+Last interval: serial_bytes=2056 valid_frames=476 lost_frames_estimate=126 duplicate_frames=35 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=476 wsl_failed=0 qgc_sent=476 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=9 wifi_frames=467 wifi_bytes=21461 dup_dropped=56 qgc_to_wifi_bytes=115 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=122, ATTITUDE=72, ATTITUDE_QUATERNION=49, MISSION_CURRENT=44, GLOBAL_POSITION_INT=24, RC_CHANNELS=24, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=3, PING=2
+Last interval: serial_bytes=2022 valid_frames=508 lost_frames_estimate=72 duplicate_frames=33 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=508 wsl_failed=0 qgc_sent=508 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=4 qgc_rx_bad_data=0 elrs_frames=4 wifi_frames=504 wifi_bytes=22978 dup_dropped=54 qgc_to_wifi_bytes=84 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=131, ATTITUDE=78, ATTITUDE_QUATERNION=51, MISSION_CURRENT=48, GLOBAL_POSITION_INT=26, RC_CHANNELS=26, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=4
+Last interval: serial_bytes=2057 valid_frames=486 lost_frames_estimate=61 duplicate_frames=35 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=486 wsl_failed=0 qgc_sent=486 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=3 qgc_rx_bad_data=0 elrs_frames=3 wifi_frames=483 wifi_bytes=21974 dup_dropped=57 qgc_to_wifi_bytes=63 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=125, ATTITUDE=74, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, GLOBAL_POSITION_INT=25, RC_CHANNELS=24, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=3
+Last interval: serial_bytes=2034 valid_frames=491 lost_frames_estimate=127 duplicate_frames=34 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=491 wsl_failed=0 qgc_sent=491 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=7 wifi_frames=484 wifi_bytes=22153 dup_dropped=53 qgc_to_wifi_bytes=115 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=125, ATTITUDE=74, ATTITUDE_QUATERNION=49, MISSION_CURRENT=44, RC_CHANNELS=25, GLOBAL_POSITION_INT=24, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=3, PING=2
+Last interval: serial_bytes=2066 valid_frames=498 lost_frames_estimate=118 duplicate_frames=34 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=498 wsl_failed=0 qgc_sent=498 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=5 wifi_frames=493 wifi_bytes=22598 dup_dropped=55 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=132, ATTITUDE=76, ATTITUDE_QUATERNION=51, MISSION_CURRENT=47, GLOBAL_POSITION_INT=26, RC_CHANNELS=25, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2420 valid_frames=507 lost_frames_estimate=42 duplicate_frames=42 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=507 wsl_failed=0 qgc_sent=507 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=4 qgc_rx_bad_data=0 elrs_frames=5 wifi_frames=502 wifi_bytes=22830 dup_dropped=65 qgc_to_wifi_bytes=84 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=127, ATTITUDE=75, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, RC_CHANNELS=26, GLOBAL_POSITION_INT=25, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=4
+Last interval: serial_bytes=2023 valid_frames=494 lost_frames_estimate=90 duplicate_frames=35 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=494 wsl_failed=0 qgc_sent=494 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=4 qgc_rx_bad_data=0 elrs_frames=5 wifi_frames=489 wifi_bytes=22433 dup_dropped=56 qgc_to_wifi_bytes=94 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=130, ATTITUDE=76, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=2, PING=2
+Last interval: serial_bytes=2552 valid_frames=502 lost_frames_estimate=270 duplicate_frames=38 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=502 wsl_failed=0 qgc_sent=502 qgc_failed=0 qgc_to_serial_bytes=301 qgc_rx_frames=30 qgc_rx_bad_data=0 elrs_frames=19 wifi_frames=483 wifi_bytes=22278 dup_dropped=58 qgc_to_wifi_bytes=804 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=124, ATTITUDE=73, ATTITUDE_QUATERNION=50, MISSION_CURRENT=45, GLOBAL_POSITION_INT=24, RC_CHANNELS=24, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=19, STATUSTEXT=7, PING=4
+Last interval: serial_bytes=2614 valid_frames=394 lost_frames_estimate=201 duplicate_frames=44 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=394 wsl_failed=0 qgc_sent=394 qgc_failed=0 qgc_to_serial_bytes=32 qgc_rx_frames=19 qgc_rx_bad_data=0 elrs_frames=9 wifi_frames=385 wifi_bytes=15682 dup_dropped=75 qgc_to_wifi_bytes=519 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=77, ATTITUDE_QUATERNION=50, MISSION_CURRENT=47, GLOBAL_POSITION_INT=26, RC_CHANNELS=26, VFR_HUD=20, SET_POSITION_TARGET_LOCAL_NED=14, HEARTBEAT=11
+  QGC TX messages: HEARTBEAT=5, MISSION_ITEM_INT=4, MISSION_REQUEST_INT=4, MISSION_COUNT=1, PARAM_SET=1, MISSION_REQUEST_LIST=1, MISSION_ACK=1, PARAM_REQUEST_READ=1
+Last interval: serial_bytes=2107 valid_frames=349 lost_frames_estimate=39 duplicate_frames=37 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=349 wsl_failed=0 qgc_sent=349 qgc_failed=0 qgc_to_serial_bytes=64 qgc_rx_frames=9 qgc_rx_bad_data=0 elrs_frames=2 wifi_frames=347 wifi_bytes=13646 dup_dropped=57 qgc_to_wifi_bytes=221 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=72, ATTITUDE_QUATERNION=49, MISSION_CURRENT=45, GLOBAL_POSITION_INT=24, RC_CHANNELS=24, VFR_HUD=20, HEARTBEAT=10, ATTITUDE_TARGET=10
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2, PING=2
+Last interval: serial_bytes=1949 valid_frames=357 lost_frames_estimate=261 duplicate_frames=35 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=357 wsl_failed=0 qgc_sent=357 qgc_failed=0 qgc_to_serial_bytes=64 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=5 wifi_frames=352 wifi_bytes=13788 dup_dropped=52 qgc_to_wifi_bytes=169 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=77, ATTITUDE_QUATERNION=51, MISSION_CURRENT=48, GLOBAL_POSITION_INT=26, RC_CHANNELS=25, VFR_HUD=20, HEARTBEAT=10, ATTITUDE_TARGET=10
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2
+Last interval: serial_bytes=1755 valid_frames=352 lost_frames_estimate=161 duplicate_frames=34 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=352 wsl_failed=0 qgc_sent=352 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=2 wifi_frames=350 wifi_bytes=13834 dup_dropped=49 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=75, ATTITUDE_QUATERNION=50, MISSION_CURRENT=45, RC_CHANNELS=25, GLOBAL_POSITION_INT=25, VFR_HUD=20, ATTITUDE_TARGET=10, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=1833 valid_frames=344 lost_frames_estimate=35 duplicate_frames=35 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=344 wsl_failed=0 qgc_sent=344 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=1 wifi_frames=343 wifi_bytes=13401 dup_dropped=52 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=74, ATTITUDE_QUATERNION=49, MISSION_CURRENT=46, RC_CHANNELS=25, GLOBAL_POSITION_INT=24, VFR_HUD=20, ATTITUDE_TARGET=10, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1739 valid_frames=350 lost_frames_estimate=34 duplicate_frames=32 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=350 wsl_failed=0 qgc_sent=350 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=2 wifi_frames=348 wifi_bytes=13760 dup_dropped=48 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=74, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=20, ATTITUDE_TARGET=10, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2398 valid_frames=363 lost_frames_estimate=46 duplicate_frames=45 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=363 wsl_failed=0 qgc_sent=363 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=2 wifi_frames=361 wifi_bytes=14180 dup_dropped=65 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=76, ATTITUDE_QUATERNION=50, MISSION_CURRENT=47, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=20, ATTITUDE_TARGET=10, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1949 valid_frames=366 lost_frames_estimate=331 duplicate_frames=38 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=366 wsl_failed=0 qgc_sent=366 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=7 wifi_frames=359 wifi_bytes=14319 dup_dropped=53 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=77, ATTITUDE_QUATERNION=52, MISSION_CURRENT=47, GLOBAL_POSITION_INT=26, RC_CHANNELS=26, VFR_HUD=20, ATTITUDE_TARGET=10, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2317 valid_frames=348 lost_frames_estimate=321 duplicate_frames=42 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=348 wsl_failed=0 qgc_sent=348 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=4 wifi_frames=344 wifi_bytes=13710 dup_dropped=63 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=72, ATTITUDE_QUATERNION=47, MISSION_CURRENT=44, GLOBAL_POSITION_INT=24, RC_CHANNELS=24, VFR_HUD=20, ATTITUDE_TARGET=10, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1754 valid_frames=364 lost_frames_estimate=35 duplicate_frames=35 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=364 wsl_failed=0 qgc_sent=364 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=1 wifi_frames=363 wifi_bytes=14258 dup_dropped=49 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=78, ATTITUDE_QUATERNION=53, MISSION_CURRENT=48, GLOBAL_POSITION_INT=26, RC_CHANNELS=26, VFR_HUD=20, ATTITUDE_TARGET=10, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=1814 valid_frames=342 lost_frames_estimate=36 duplicate_frames=35 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=342 wsl_failed=0 qgc_sent=342 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=1 wifi_frames=341 wifi_bytes=13305 dup_dropped=51 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=73, ATTITUDE_QUATERNION=49, MISSION_CURRENT=46, GLOBAL_POSITION_INT=24, RC_CHANNELS=24, VFR_HUD=20, ATTITUDE_TARGET=10, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1734 valid_frames=356 lost_frames_estimate=90 duplicate_frames=33 out_of_order_frames=6 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=356 wsl_failed=0 qgc_sent=356 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=10 wifi_frames=346 wifi_bytes=13964 dup_dropped=47 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=76, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, GLOBAL_POSITION_INT=26, RC_CHANNELS=26, VFR_HUD=20, ATTITUDE_TARGET=10, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=1831 valid_frames=341 lost_frames_estimate=216 duplicate_frames=35 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=341 wsl_failed=0 qgc_sent=341 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=8 wifi_frames=333 wifi_bytes=13291 dup_dropped=52 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=73, ATTITUDE_QUATERNION=49, MISSION_CURRENT=45, GLOBAL_POSITION_INT=24, RC_CHANNELS=24, VFR_HUD=20, ATTITUDE_TARGET=10, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1963 valid_frames=369 lost_frames_estimate=94 duplicate_frames=34 out_of_order_frames=3 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=369 wsl_failed=0 qgc_sent=369 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=4 wifi_frames=365 wifi_bytes=14255 dup_dropped=53 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=77, ATTITUDE_QUATERNION=51, MISSION_CURRENT=47, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=20, HEARTBEAT=15, ATTITUDE_TARGET=10
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2497 valid_frames=374 lost_frames_estimate=33 duplicate_frames=34 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=374 wsl_failed=0 qgc_sent=374 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=3 wifi_frames=371 wifi_bytes=14237 dup_dropped=69 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=73, ATTITUDE_QUATERNION=48, MISSION_CURRENT=45, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=20, HEARTBEAT=15, ATTITUDE_TARGET=10
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2026 valid_frames=370 lost_frames_estimate=138 duplicate_frames=33 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=370 wsl_failed=0 qgc_sent=370 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=5 wifi_frames=365 wifi_bytes=14174 dup_dropped=54 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=75, ATTITUDE_QUATERNION=51, MISSION_CURRENT=47, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=20, HEARTBEAT=15, ATTITUDE_TARGET=10
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2794 valid_frames=391 lost_frames_estimate=40 duplicate_frames=40 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=391 wsl_failed=0 qgc_sent=391 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=7 wifi_frames=384 wifi_bytes=14813 dup_dropped=73 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=74, ATTITUDE_QUATERNION=49, MISSION_CURRENT=45, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=19, HEARTBEAT=15, STATUSTEXT=11
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2694 valid_frames=406 lost_frames_estimate=180 duplicate_frames=52 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=406 wsl_failed=0 qgc_sent=406 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=4 wifi_frames=402 wifi_bytes=15647 dup_dropped=75 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=79, ATTITUDE_QUATERNION=52, MISSION_CURRENT=49, GLOBAL_POSITION_INT=26, RC_CHANNELS=26, VFR_HUD=22, UNKNOWN_410=18, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2576 valid_frames=446 lost_frames_estimate=44 duplicate_frames=42 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=446 wsl_failed=0 qgc_sent=446 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=5 wifi_frames=441 wifi_bytes=19081 dup_dropped=67 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: ATTITUDE=74, SET_POSITION_TARGET_LOCAL_NED=69, ATTITUDE_QUATERNION=50, MISSION_CURRENT=45, GLOBAL_POSITION_INT=25, RC_CHANNELS=24, VFR_HUD=19, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2638 valid_frames=515 lost_frames_estimate=44 duplicate_frames=42 out_of_order_frames=3 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=515 wsl_failed=0 qgc_sent=515 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=5 wifi_frames=510 wifi_bytes=23367 dup_dropped=69 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=132, ATTITUDE=75, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, RC_CHANNELS=26, GLOBAL_POSITION_INT=25, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2186 valid_frames=494 lost_frames_estimate=75 duplicate_frames=37 out_of_order_frames=6 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=494 wsl_failed=0 qgc_sent=494 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=12 wifi_frames=482 wifi_bytes=22321 dup_dropped=57 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=127, ATTITUDE=75, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, GLOBAL_POSITION_INT=25, RC_CHANNELS=24, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2055 valid_frames=504 lost_frames_estimate=85 duplicate_frames=34 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=504 wsl_failed=0 qgc_sent=504 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=8 wifi_frames=496 wifi_bytes=22754 dup_dropped=56 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=132, ATTITUDE=76, ATTITUDE_QUATERNION=50, MISSION_CURRENT=47, RC_CHANNELS=26, GLOBAL_POSITION_INT=25, VFR_HUD=21, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2065 valid_frames=492 lost_frames_estimate=37 duplicate_frames=37 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=492 wsl_failed=0 qgc_sent=492 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=5 wifi_frames=487 wifi_bytes=22199 dup_dropped=55 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=126, ATTITUDE=75, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=19, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2209 valid_frames=501 lost_frames_estimate=94 duplicate_frames=36 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=501 wsl_failed=0 qgc_sent=501 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=7 wifi_frames=494 wifi_bytes=22450 dup_dropped=57 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=124, ATTITUDE=75, ATTITUDE_QUATERNION=51, MISSION_CURRENT=47, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=21, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2034 valid_frames=490 lost_frames_estimate=57 duplicate_frames=35 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=490 wsl_failed=0 qgc_sent=490 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=5 wifi_frames=485 wifi_bytes=22029 dup_dropped=53 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=124, ATTITUDE=75, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2055 valid_frames=487 lost_frames_estimate=157 duplicate_frames=34 out_of_order_frames=5 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=487 wsl_failed=0 qgc_sent=487 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=10 wifi_frames=477 wifi_bytes=21937 dup_dropped=56 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=125, ATTITUDE=74, ATTITUDE_QUATERNION=48, MISSION_CURRENT=45, GLOBAL_POSITION_INT=25, RC_CHANNELS=24, VFR_HUD=19, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2021 valid_frames=497 lost_frames_estimate=74 duplicate_frames=34 out_of_order_frames=7 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=497 wsl_failed=0 qgc_sent=497 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=10 wifi_frames=487 wifi_bytes=22362 dup_dropped=53 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=127, ATTITUDE=77, ATTITUDE_QUATERNION=52, MISSION_CURRENT=47, RC_CHANNELS=26, GLOBAL_POSITION_INT=25, VFR_HUD=21, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2038 valid_frames=493 lost_frames_estimate=75 duplicate_frames=33 out_of_order_frames=3 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=493 wsl_failed=0 qgc_sent=493 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=8 wifi_frames=485 wifi_bytes=22195 dup_dropped=53 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=126, ATTITUDE=74, ATTITUDE_QUATERNION=49, MISSION_CURRENT=46, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=19, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2301 valid_frames=498 lost_frames_estimate=151 duplicate_frames=39 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=498 wsl_failed=0 qgc_sent=498 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=8 wifi_frames=490 wifi_bytes=22379 dup_dropped=59 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=127, ATTITUDE=75, ATTITUDE_QUATERNION=50, MISSION_CURRENT=46, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=20, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2039 valid_frames=494 lost_frames_estimate=109 duplicate_frames=34 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=494 wsl_failed=0 qgc_sent=494 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=7 qgc_rx_bad_data=0 elrs_frames=7 wifi_frames=487 wifi_bytes=22190 dup_dropped=55 qgc_to_wifi_bytes=157 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=125, ATTITUDE=75, ATTITUDE_QUATERNION=50, MISSION_CURRENT=47, GLOBAL_POSITION_INT=25, RC_CHANNELS=25, VFR_HUD=21, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5, PING=2
+Last interval: serial_bytes=2033 valid_frames=487 lost_frames_estimate=53 duplicate_frames=35 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=487 wsl_failed=0 qgc_sent=487 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=5 wifi_frames=482 wifi_bytes=21907 dup_dropped=53 qgc_to_wifi_bytes=105 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=126, ATTITUDE=74, ATTITUDE_QUATERNION=50, MISSION_CURRENT=45, GLOBAL_POSITION_INT=25, RC_CHANNELS=24, VFR_HUD=19, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2223 valid_frames=507 lost_frames_estimate=61 duplicate_frames=37 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=507 wsl_failed=0 qgc_sent=507 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=7 wifi_frames=500 wifi_bytes=22807 dup_dropped=60 qgc_to_wifi_bytes=110 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=wifi
+  radio RX messages: SET_POSITION_TARGET_LOCAL_NED=127, ATTITUDE=77, ATTITUDE_QUATERNION=51, MISSION_CURRENT=48, RC_CHANNELS=26, GLOBAL_POSITION_INT=25, VFR_HUD=21, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=4, PING=1
+ELRS router | COM1 @ 460800
+Radio -> QGC: ('127.0.0.1', 14550), WSL: ('127.0.0.1', 14551)
+QGC -> radio: 127.0.0.1:14600
+Only this router should open COM port. Ctrl+C to stop.
+Connected to COM1
+Last interval: serial_bytes=2607 valid_frames=69 lost_frames_estimate=427 duplicate_frames=10 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=69 wsl_failed=0 qgc_sent=69 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=14, UNKNOWN_410=10, ATTITUDE=10, STATUSTEXT=7, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2052 valid_frames=59 lost_frames_estimate=451 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2036 valid_frames=57 lost_frames_estimate=441 duplicate_frames=2 out_of_order_frames=13 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2003 valid_frames=57 lost_frames_estimate=436 duplicate_frames=1 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=9, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2420 valid_frames=66 lost_frames_estimate=442 duplicate_frames=9 out_of_order_frames=13 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=66 wsl_failed=0 qgc_sent=66 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=7, STATUSTEXT=6, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2059 valid_frames=59 lost_frames_estimate=447 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2021 valid_frames=56 lost_frames_estimate=442 duplicate_frames=1 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2221 valid_frames=63 lost_frames_estimate=450 duplicate_frames=5 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2106 valid_frames=59 lost_frames_estimate=455 duplicate_frames=4 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=3, UNKNOWN_410=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2264 valid_frames=63 lost_frames_estimate=459 duplicate_frames=6 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, UNKNOWN_410=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=4, STATUSTEXT=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2393 valid_frames=66 lost_frames_estimate=456 duplicate_frames=8 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=66 wsl_failed=0 qgc_sent=66 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=6, UNKNOWN_410=6, SYS_STATUS=5, STATUSTEXT=5, GLOBAL_POSITION_INT=5, VFR_HUD=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2098 valid_frames=60 lost_frames_estimate=454 duplicate_frames=4 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=60 wsl_failed=0 qgc_sent=60 qgc_failed=0 qgc_to_serial_bytes=148 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1, MISSION_COUNT=1
+Last interval: serial_bytes=2571 valid_frames=74 lost_frames_estimate=471 duplicate_frames=1 out_of_order_frames=28 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=74 wsl_failed=0 qgc_sent=74 qgc_failed=0 qgc_to_serial_bytes=552 qgc_rx_frames=19 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=6, MISSION_REQUEST_INT=5, SYS_STATUS=5, STATUSTEXT=5, GLOBAL_POSITION_INT=5, VFR_HUD=5
+  QGC TX messages: MISSION_ITEM_INT=5, HEARTBEAT=5, MISSION_REQUEST_INT=4, PARAM_SET=1, MISSION_REQUEST_LIST=1, MISSION_ACK=1, PARAM_REQUEST_READ=1, STATUSTEXT=1
+Last interval: serial_bytes=2108 valid_frames=60 lost_frames_estimate=463 duplicate_frames=5 out_of_order_frames=29 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=60 wsl_failed=0 qgc_sent=60 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=9, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=4, GPS_RAW_INT=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2097 valid_frames=59 lost_frames_estimate=449 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=11, VFR_HUD=6, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1967 valid_frames=56 lost_frames_estimate=454 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=9, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2065 valid_frames=58 lost_frames_estimate=446 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=6, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, STATUSTEXT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2097 valid_frames=60 lost_frames_estimate=455 duplicate_frames=4 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=60 wsl_failed=0 qgc_sent=60 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=2302 valid_frames=63 lost_frames_estimate=452 duplicate_frames=6 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=148 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=5, GLOBAL_POSITION_INT=5, UNKNOWN_410=5
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=1
+Last interval: serial_bytes=1902 valid_frames=55 lost_frames_estimate=351 duplicate_frames=5 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=11, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=1732 valid_frames=47 lost_frames_estimate=324 duplicate_frames=1 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=9, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=4, BATTERY_STATUS=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1778 valid_frames=51 lost_frames_estimate=333 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=51 wsl_failed=0 qgc_sent=51 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=1804 valid_frames=50 lost_frames_estimate=301 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1975 valid_frames=56 lost_frames_estimate=359 duplicate_frames=6 out_of_order_frames=27 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, UNKNOWN_410=4, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=1790 valid_frames=49 lost_frames_estimate=299 duplicate_frames=1 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=49 wsl_failed=0 qgc_sent=49 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1739 valid_frames=50 lost_frames_estimate=334 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=1905 valid_frames=53 lost_frames_estimate=314 duplicate_frames=5 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=53 wsl_failed=0 qgc_sent=53 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_410=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2068 valid_frames=58 lost_frames_estimate=354 duplicate_frames=8 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=7, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=1806 valid_frames=50 lost_frames_estimate=296 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1765 valid_frames=50 lost_frames_estimate=348 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=1806 valid_frames=50 lost_frames_estimate=309 duplicate_frames=2 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1766 valid_frames=50 lost_frames_estimate=326 duplicate_frames=2 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=2
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=1965 valid_frames=55 lost_frames_estimate=302 duplicate_frames=6 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4, UNKNOWN_410=4, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1764 valid_frames=50 lost_frames_estimate=345 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, PING=1
+Last interval: serial_bytes=1804 valid_frames=50 lost_frames_estimate=320 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, BATTERY_STATUS=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1759 valid_frames=48 lost_frames_estimate=325 duplicate_frames=1 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=48 wsl_failed=0 qgc_sent=48 qgc_failed=0 qgc_to_serial_bytes=174 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=9, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=1, PING=1
+Last interval: serial_bytes=1830 valid_frames=52 lost_frames_estimate=325 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=52 wsl_failed=0 qgc_sent=52 qgc_failed=0 qgc_to_serial_bytes=201 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3
+Last interval: serial_bytes=1715 valid_frames=48 lost_frames_estimate=295 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=48 wsl_failed=0 qgc_sent=48 qgc_failed=0 qgc_to_serial_bytes=195 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, UNKNOWN_411=2, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2, PING=1
+Last interval: serial_bytes=1813 valid_frames=51 lost_frames_estimate=326 duplicate_frames=1 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=51 wsl_failed=0 qgc_sent=51 qgc_failed=0 qgc_to_serial_bytes=201 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3
+Last interval: serial_bytes=1853 valid_frames=52 lost_frames_estimate=326 duplicate_frames=5 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=52 wsl_failed=0 qgc_sent=52 qgc_failed=0 qgc_to_serial_bytes=195 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, UNKNOWN_410=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2, PING=1
+Last interval: serial_bytes=2233 valid_frames=62 lost_frames_estimate=328 duplicate_frames=10 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=169 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, UNKNOWN_410=8, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2
+Last interval: serial_bytes=1737 valid_frames=48 lost_frames_estimate=328 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=48 wsl_failed=0 qgc_sent=48 qgc_failed=0 qgc_to_serial_bytes=227 qgc_rx_frames=9 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3, PING=1
+Last interval: serial_bytes=2036 valid_frames=58 lost_frames_estimate=337 duplicate_frames=8 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=169 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, UNKNOWN_410=6, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2
+Last interval: serial_bytes=1751 valid_frames=49 lost_frames_estimate=321 duplicate_frames=2 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=49 wsl_failed=0 qgc_sent=49 qgc_failed=0 qgc_to_serial_bytes=227 qgc_rx_frames=9 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, UNKNOWN_411=2, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3, PING=1
+Last interval: serial_bytes=2225 valid_frames=62 lost_frames_estimate=332 duplicate_frames=10 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=169 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, UNKNOWN_410=8, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2
+Last interval: serial_bytes=1737 valid_frames=48 lost_frames_estimate=320 duplicate_frames=1 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=48 wsl_failed=0 qgc_sent=48 qgc_failed=0 qgc_to_serial_bytes=227 qgc_rx_frames=9 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3, PING=1
+Last interval: serial_bytes=1831 valid_frames=52 lost_frames_estimate=341 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=52 wsl_failed=0 qgc_sent=52 qgc_failed=0 qgc_to_serial_bytes=169 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2
+Last interval: serial_bytes=1751 valid_frames=49 lost_frames_estimate=316 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=49 wsl_failed=0 qgc_sent=49 qgc_failed=0 qgc_to_serial_bytes=227 qgc_rx_frames=9 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3, PING=1
+Last interval: serial_bytes=1780 valid_frames=50 lost_frames_estimate=322 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=50 wsl_failed=0 qgc_sent=50 qgc_failed=0 qgc_to_serial_bytes=169 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2
+Last interval: serial_bytes=1948 valid_frames=54 lost_frames_estimate=331 duplicate_frames=6 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=54 wsl_failed=0 qgc_sent=54 qgc_failed=0 qgc_to_serial_bytes=227 qgc_rx_frames=9 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, UNKNOWN_410=4, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3, PING=1
+Last interval: serial_bytes=2011 valid_frames=56 lost_frames_estimate=328 duplicate_frames=5 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=169 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, UNKNOWN_410=4, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2
+Last interval: serial_bytes=1751 valid_frames=49 lost_frames_estimate=323 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=49 wsl_failed=0 qgc_sent=49 qgc_failed=0 qgc_to_serial_bytes=227 qgc_rx_frames=9 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, UNKNOWN_411=2, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3, PING=1
+Last interval: serial_bytes=2099 valid_frames=58 lost_frames_estimate=340 duplicate_frames=7 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=169 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, UNKNOWN_410=5, GPS_RAW_INT=4, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2
+Last interval: serial_bytes=1967 valid_frames=55 lost_frames_estimate=337 duplicate_frames=7 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=195 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=6, GPS_RAW_INT=6, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2, PING=1
+Last interval: serial_bytes=2130 valid_frames=60 lost_frames_estimate=325 duplicate_frames=9 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=60 wsl_failed=0 qgc_sent=60 qgc_failed=0 qgc_to_serial_bytes=201 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, UNKNOWN_410=7, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=5, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3
+Last interval: serial_bytes=1721 valid_frames=48 lost_frames_estimate=326 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=48 wsl_failed=0 qgc_sent=48 qgc_failed=0 qgc_to_serial_bytes=195 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=4, UNKNOWN_411=2, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2, PING=1
+Last interval: serial_bytes=1954 valid_frames=55 lost_frames_estimate=312 duplicate_frames=5 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=201 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, UNKNOWN_410=4, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3
+Last interval: serial_bytes=1746 valid_frames=49 lost_frames_estimate=341 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=49 wsl_failed=0 qgc_sent=49 qgc_failed=0 qgc_to_serial_bytes=195 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, UNKNOWN_411=2, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2, PING=1
+Last interval: serial_bytes=1933 valid_frames=55 lost_frames_estimate=309 duplicate_frames=5 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=201 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3
+Last interval: serial_bytes=1738 valid_frames=48 lost_frames_estimate=343 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=48 wsl_failed=0 qgc_sent=48 qgc_failed=0 qgc_to_serial_bytes=195 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2, PING=1
+Last interval: serial_bytes=1834 valid_frames=52 lost_frames_estimate=310 duplicate_frames=2 out_of_order_frames=27 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=52 wsl_failed=0 qgc_sent=52 qgc_failed=0 qgc_to_serial_bytes=201 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3
+Last interval: serial_bytes=1732 valid_frames=48 lost_frames_estimate=328 duplicate_frames=2 out_of_order_frames=27 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=48 wsl_failed=0 qgc_sent=48 qgc_failed=0 qgc_to_serial_bytes=195 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=9, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, UNKNOWN_411=2, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2, PING=1
+Last interval: serial_bytes=2029 valid_frames=57 lost_frames_estimate=342 duplicate_frames=6 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=137 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, UNKNOWN_410=4, MISSION_CURRENT=3
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=1
+Last interval: serial_bytes=1839 valid_frames=51 lost_frames_estimate=335 duplicate_frames=4 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=51 wsl_failed=0 qgc_sent=51 qgc_failed=0 qgc_to_serial_bytes=131 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, GLOBAL_POSITION_INT=5, UNKNOWN_410=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5, PING=1

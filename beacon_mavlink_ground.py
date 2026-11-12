@@ -89,13 +89,59 @@ POSITION_PRINT_S = 5.0
 # router's GCS heartbeat) use.
 GROUND_MAVLINK_SYSID = 246
 
-# PX4 modes (mavutil.mode_string_v10 names) reported as STATE_AUTO; any other
-# mode is STATE_MANUAL. Arming doesn't affect the state -- only
-# EMERGENCY/FLIGHT_TERMINATION system_status counts as STATE_KILLED.
+# PX4 modes (px4_mode() names) reported as STATE_AUTO; any other mode is
+# STATE_MANUAL. Every AUTO.* sub-mode and OFFBOARD fly without the pilot.
+# Arming doesn't affect the state -- only EMERGENCY/FLIGHT_TERMINATION
+# system_status counts as STATE_KILLED.
 _AUTO_MODES = {"OFFBOARD", "MISSION", "RTL", "LAND", "TAKEOFF", "LOITER",
-               "FOLLOWME", "RTGS", "PRECLAND"}
+               "FOLLOWME", "RTGS", "PRECLAND", "VTOL_TAKEOFF", "AUTO_READY", "AUTO"}
 _KILLED_SYSTEM_STATUS = {mavutil.mavlink.MAV_STATE_EMERGENCY,
                          mavutil.mavlink.MAV_STATE_FLIGHT_TERMINATION}
+
+# PX4 custom_mode (px4_custom_mode.h): main mode in bits 16-23, AUTO sub-mode
+# in bits 24-31. Decoded here from custom_mode alone: pymavlink's
+# mode_string_v10 (2.4.49 in WSL) also requires base_mode flags and returned
+# "UNKNOWN" for the UAV's mode after takeoff on 2026-11-12 -- reported to
+# RoboCommand as STATE_MANUAL during an autonomous flight.
+_PX4_MAIN = {1: "MANUAL", 2: "ALTCTL", 3: "POSCTL", 4: "AUTO", 5: "ACRO", 6: "OFFBOARD",
+             7: "STABILIZED", 8: "RATTITUDE", 9: "SIMPLE", 10: "TERMINATION",
+             11: "ALTITUDE_CRUISE"}
+_PX4_AUTO_SUB = {1: "AUTO_READY", 2: "TAKEOFF", 3: "LOITER", 4: "MISSION", 5: "RTL",
+                 6: "LAND", 7: "RTGS", 8: "FOLLOWME", 9: "PRECLAND", 10: "VTOL_TAKEOFF"}
+_PX4_POSCTL_SUB = {1: "ORBIT", 2: "POSCTL_SLOW"}
+_PX4_AUTO_MAIN = 4
+_PX4_EXTERNAL_SUB_FIRST = 11   # AUTO.EXTERNAL1..8: ROS 2 external modes -- autonomous
+_unknown_modes_logged = set()
+
+
+def px4_mode(heartbeat) -> str:
+    """Flight-mode name of a HEARTBEAT, from PX4's custom_mode (see above).
+    Non-PX4 autopilots fall back to pymavlink. An unrecognised mode is
+    logged once with its raw values; an unrecognised AUTO sub-mode still
+    counts as AUTO."""
+    if heartbeat.autopilot != mavutil.mavlink.MAV_AUTOPILOT_PX4:
+        return mavutil.mode_string_v10(heartbeat)
+    custom = heartbeat.custom_mode
+    main, sub = (custom >> 16) & 0xFF, (custom >> 24) & 0xFF
+    if main == _PX4_AUTO_MAIN:
+        if sub in _PX4_AUTO_SUB:
+            return _PX4_AUTO_SUB[sub]
+        name = f"EXTERNAL{sub - _PX4_EXTERNAL_SUB_FIRST + 1}" \
+            if sub >= _PX4_EXTERNAL_SUB_FIRST else "AUTO"
+        _AUTO_MODES.add(name)
+    elif main == 3 and sub in _PX4_POSCTL_SUB:
+        return _PX4_POSCTL_SUB[sub]
+    elif main in _PX4_MAIN:
+        return _PX4_MAIN[main]
+    else:
+        name = "UNKNOWN"
+    if (main, sub) not in _unknown_modes_logged:
+        _unknown_modes_logged.add((main, sub))
+        print(f"[beacon-ground] [mode] unrecognised PX4 mode: custom_mode=0x{custom:08X} "
+              f"(main {main}, sub {sub}), base_mode=0x{heartbeat.base_mode:02X} -- "
+              f"reported as {'STATE_AUTO' if name in _AUTO_MODES else 'STATE_MANUAL'}",
+              flush=True)
+    return name
 
 # robotx rx_common.proto FlightPhase.
 _FLIGHT_PHASE_UNKNOWN, _FLIGHT_PHASE_GROUNDED, _FLIGHT_PHASE_AIRBORNE = 0, 1, 2
@@ -159,7 +205,7 @@ def _is_uav_heartbeat(msg) -> bool:
 def _is_auto(heartbeat) -> bool:
     """The heartbeat maps to STATE_AUTO (same rule as _build_vehicle_status)."""
     return (heartbeat.system_status not in _KILLED_SYSTEM_STATUS
-            and mavutil.mode_string_v10(heartbeat) in _AUTO_MODES)
+            and px4_mode(heartbeat) in _AUTO_MODES)
 
 
 def _parse_task_statustext(text):
@@ -207,7 +253,7 @@ def _build_vehicle_status(VehicleStatus, stamp, vehicle_id, heartbeat, cache, cu
         out.state = VehicleStatus.STATE_UNKNOWN
     elif heartbeat.system_status in _KILLED_SYSTEM_STATUS:
         out.state = VehicleStatus.STATE_KILLED
-    elif mavutil.mode_string_v10(heartbeat) in _AUTO_MODES:
+    elif px4_mode(heartbeat) in _AUTO_MODES:
         out.state = VehicleStatus.STATE_AUTO
     else:
         out.state = VehicleStatus.STATE_MANUAL
@@ -783,7 +829,7 @@ def main():
                     gap = now - last_heartbeat_t
                     if hold_logged_t is None or now - hold_logged_t >= 5.0:
                         print(f"[beacon-ground] [link] no UAV heartbeat for {gap:.0f} s -- "
-                              f"holding STATE_AUTO ({mavutil.mode_string_v10(last_heartbeat)}) "
+                              f"holding STATE_AUTO ({px4_mode(last_heartbeat)}) "
                               f"for RoboCommand", flush=True)
                         hold_logged_t = now
                 else:
@@ -809,7 +855,7 @@ def main():
                     last_status_t = now
                     # Log every flight-mode / RoboCommand-state change (same rule as
                     # _build_vehicle_status), e.g. to show the UAV AUTONOMOUS before RunStart.
-                    mode = mavutil.mode_string_v10(msg)
+                    mode = px4_mode(msg)
                     state = ("STATE_KILLED" if msg.system_status in _KILLED_SYSTEM_STATUS
                              else "STATE_AUTO" if mode in _AUTO_MODES else "STATE_MANUAL")
                     armed = bool(msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
