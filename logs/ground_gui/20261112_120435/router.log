@@ -1,0 +1,797 @@
+ELRS router | COM1 @ 460800
+Radio -> QGC: ('127.0.0.1', 14550), WSL: ('127.0.0.1', 14551)
+QGC -> radio: 127.0.0.1:14600
+Only this router should open COM port. Ctrl+C to stop.
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Connected to COM1
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=214 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=214 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  bad_data by reason: bad_prefix=214(runs 1)
+    e.g. bad_prefix (214 bytes, 'Bad prefix'): f8 f8 78 00 80 00 80 00 80 78 f8 80 f8 80 80 00 80 78 78 f8 f8 78 78 00 78 f8 78 f8 f8 78 80 f8 78 80 78 80 78 78 78 78 78 80 f8 78 78 f8 00 78 ...
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=835 valid_frames=26 lost_frames_estimate=122 duplicate_frames=2 out_of_order_frames=6 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=26 wsl_failed=0 qgc_sent=26 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=5, HEARTBEAT=4, GPS_RAW_INT=3, SYS_STATUS=3, VFR_HUD=3, EXTENDED_SYS_STATE=2, UNKNOWN_411=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1534 valid_frames=44 lost_frames_estimate=288 duplicate_frames=2 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1495 valid_frames=44 lost_frames_estimate=289 duplicate_frames=1 out_of_order_frames=12 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, MISSION_CURRENT=3, BATTERY_STATUS=2
+Last interval: serial_bytes=1534 valid_frames=44 lost_frames_estimate=281 duplicate_frames=2 out_of_order_frames=13 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, UNKNOWN_411=2, EXTENDED_SYS_STATE=2
+Last interval: serial_bytes=1508 valid_frames=45 lost_frames_estimate=296 duplicate_frames=2 out_of_order_frames=13 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, MISSION_CURRENT=3, UNKNOWN_411=2
+Last interval: serial_bytes=1521 valid_frames=43 lost_frames_estimate=282 duplicate_frames=1 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=43 wsl_failed=0 qgc_sent=43 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=2, MISSION_CURRENT=2
+Last interval: serial_bytes=1508 valid_frames=45 lost_frames_estimate=296 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, MISSION_CURRENT=3, UNKNOWN_411=2
+Last interval: serial_bytes=2300 valid_frames=63 lost_frames_estimate=293 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, COMMAND_LONG=11, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, STATUSTEXT=3
+Last interval: serial_bytes=2437 valid_frames=67 lost_frames_estimate=300 duplicate_frames=1 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=67 wsl_failed=0 qgc_sent=67 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, COMMAND_LONG=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3, STATUSTEXT=3
+Last interval: serial_bytes=2377 valid_frames=71 lost_frames_estimate=288 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=71 wsl_failed=0 qgc_sent=71 qgc_failed=0 qgc_to_serial_bytes=367 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, COMMAND_LONG=10, MISSION_REQUEST_INT=6, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3
+  QGC TX messages: MISSION_ITEM_INT=7, MISSION_COUNT=1
+Last interval: serial_bytes=2677 valid_frames=75 lost_frames_estimate=311 duplicate_frames=9 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=75 wsl_failed=0 qgc_sent=75 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: COMMAND_LONG=15, HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3
+Last interval: serial_bytes=2411 valid_frames=67 lost_frames_estimate=297 duplicate_frames=8 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=67 wsl_failed=0 qgc_sent=67 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, COMMAND_LONG=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3
+Last interval: serial_bytes=2624 valid_frames=73 lost_frames_estimate=295 duplicate_frames=9 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=73 wsl_failed=0 qgc_sent=73 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: COMMAND_LONG=15, HEARTBEAT=15, ATTITUDE=9, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, EXTENDED_SYS_STATE=3
+Last interval: serial_bytes=2437 valid_frames=69 lost_frames_estimate=302 duplicate_frames=9 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=69 wsl_failed=0 qgc_sent=69 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, COMMAND_LONG=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3
+Last interval: serial_bytes=2379 valid_frames=65 lost_frames_estimate=284 duplicate_frames=1 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: COMMAND_LONG=15, HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4, EXTENDED_SYS_STATE=3, STATUSTEXT=3
+Last interval: serial_bytes=2216 valid_frames=62 lost_frames_estimate=300 duplicate_frames=2 out_of_order_frames=13 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, COMMAND_LONG=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+Last interval: serial_bytes=2441 valid_frames=67 lost_frames_estimate=285 duplicate_frames=2 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=67 wsl_failed=0 qgc_sent=67 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: COMMAND_LONG=15, HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, EXTENDED_SYS_STATE=3, STATUSTEXT=3
+Last interval: serial_bytes=2200 valid_frames=61 lost_frames_estimate=299 duplicate_frames=1 out_of_order_frames=13 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=61 wsl_failed=0 qgc_sent=61 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, COMMAND_LONG=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+Last interval: serial_bytes=2442 valid_frames=67 lost_frames_estimate=291 duplicate_frames=2 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=67 wsl_failed=0 qgc_sent=67 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: COMMAND_LONG=15, HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, EXTENDED_SYS_STATE=3, STATUSTEXT=3
+Last interval: serial_bytes=2215 valid_frames=62 lost_frames_estimate=298 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, COMMAND_LONG=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+Last interval: serial_bytes=2391 valid_frames=65 lost_frames_estimate=292 duplicate_frames=1 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: COMMAND_LONG=15, HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=4, EXTENDED_SYS_STATE=3, STATUSTEXT=3
+Last interval: serial_bytes=2253 valid_frames=63 lost_frames_estimate=298 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, COMMAND_LONG=10, GPS_RAW_INT=6, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+Last interval: serial_bytes=2385 valid_frames=66 lost_frames_estimate=299 duplicate_frames=2 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=66 wsl_failed=0 qgc_sent=66 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: COMMAND_LONG=15, HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, VFR_HUD=5, GPS_RAW_INT=4, EXTENDED_SYS_STATE=3, STATUSTEXT=3
+Last interval: serial_bytes=2646 valid_frames=75 lost_frames_estimate=314 duplicate_frames=15 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=75 wsl_failed=0 qgc_sent=75 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=14, ATTITUDE=10, COMMAND_LONG=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3
+Last interval: serial_bytes=2664 valid_frames=74 lost_frames_estimate=311 duplicate_frames=9 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=74 wsl_failed=0 qgc_sent=74 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+  radio RX messages: COMMAND_LONG=15, HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=7, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, EXTENDED_SYS_STATE=3
+Last interval: serial_bytes=2323 valid_frames=65 lost_frames_estimate=302 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=191 qgc_rx_frames=6 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, COMMAND_LONG=10, GPS_RAW_INT=5, SYS_STATUS=5, VFR_HUD=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+  QGC TX messages: HEARTBEAT=3, COMMAND_LONG=3
+Last interval: serial_bytes=3510 valid_frames=100 lost_frames_estimate=377 duplicate_frames=2 out_of_order_frames=32 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=100 wsl_failed=0 qgc_sent=100 qgc_failed=0 qgc_to_serial_bytes=470 qgc_rx_frames=14 qgc_rx_bad_data=0
+  radio RX messages: PARAM_VALUE=47, HEARTBEAT=15, COMMAND_LONG=10, COMMAND_ACK=6, ATTITUDE=6, GPS_RAW_INT=3, SYS_STATUS=3, EXTENDED_SYS_STATE=2
+  QGC TX messages: COMMAND_LONG=8, HEARTBEAT=5, PARAM_REQUEST_LIST=1
+Last interval: serial_bytes=3994 valid_frames=114 lost_frames_estimate=214 duplicate_frames=0 out_of_order_frames=42 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=114 wsl_failed=0 qgc_sent=114 qgc_failed=0 qgc_to_serial_bytes=457 qgc_rx_frames=13 qgc_rx_bad_data=0
+  radio RX messages: PARAM_VALUE=100, HEARTBEAT=14
+  QGC TX messages: COMMAND_LONG=8, HEARTBEAT=5
+Last interval: serial_bytes=3981 valid_frames=114 lost_frames_estimate=277 duplicate_frames=0 out_of_order_frames=41 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=114 wsl_failed=0 qgc_sent=114 qgc_failed=0 qgc_to_serial_bytes=369 qgc_rx_frames=11 qgc_rx_bad_data=0
+  radio RX messages: PARAM_VALUE=99, HEARTBEAT=15
+  QGC TX messages: COMMAND_LONG=6, HEARTBEAT=5
+Last interval: serial_bytes=4012 valid_frames=115 lost_frames_estimate=309 duplicate_frames=0 out_of_order_frames=43 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=115 wsl_failed=0 qgc_sent=115 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: PARAM_VALUE=100, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=3979 valid_frames=114 lost_frames_estimate=328 duplicate_frames=1 out_of_order_frames=55 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=114 wsl_failed=0 qgc_sent=114 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: PARAM_VALUE=99, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=4016 valid_frames=115 lost_frames_estimate=322 duplicate_frames=1 out_of_order_frames=50 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=115 wsl_failed=0 qgc_sent=115 qgc_failed=0 qgc_to_serial_bytes=191 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: PARAM_VALUE=100, HEARTBEAT=15
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2
+Last interval: serial_bytes=4004 valid_frames=113 lost_frames_estimate=105 duplicate_frames=1 out_of_order_frames=41 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=113 wsl_failed=0 qgc_sent=113 qgc_failed=0 qgc_to_serial_bytes=234 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: PARAM_VALUE=102, HEARTBEAT=10, COMMAND_ACK=1
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3
+Last interval: serial_bytes=3993 valid_frames=112 lost_frames_estimate=245 duplicate_frames=0 out_of_order_frames=41 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=112 wsl_failed=0 qgc_sent=112 qgc_failed=0 qgc_to_serial_bytes=191 qgc_rx_frames=7 qgc_rx_bad_data=0
+  radio RX messages: PARAM_VALUE=102, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=2
+Last interval: serial_bytes=4012 valid_frames=113 lost_frames_estimate=289 duplicate_frames=0 out_of_order_frames=50 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=113 wsl_failed=0 qgc_sent=113 qgc_failed=0 qgc_to_serial_bytes=234 qgc_rx_frames=8 qgc_rx_bad_data=0
+  radio RX messages: PARAM_VALUE=103, HEARTBEAT=10
+  QGC TX messages: HEARTBEAT=5, STATUSTEXT=3
+Last interval: serial_bytes=3967 valid_frames=105 lost_frames_estimate=260 duplicate_frames=1 out_of_order_frames=74 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=105 wsl_failed=0 qgc_sent=105 qgc_failed=0 qgc_to_serial_bytes=579 qgc_rx_frames=19 qgc_rx_bad_data=0
+  radio RX messages: COMMAND_LONG=43, PARAM_VALUE=28, COMMAND_ACK=16, HEARTBEAT=10, STATUSTEXT=8
+  QGC TX messages: COMMAND_LONG=7, HEARTBEAT=5, MISSION_REQUEST_LIST=3, STATUSTEXT=2, SYSTEM_TIME=2
+Last interval: serial_bytes=3679 valid_frames=97 lost_frames_estimate=646 duplicate_frames=11 out_of_order_frames=32 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=97 wsl_failed=0 qgc_sent=97 qgc_failed=0 qgc_to_serial_bytes=457 qgc_rx_frames=22 qgc_rx_bad_data=0
+  radio RX messages: COMMAND_LONG=22, STATUSTEXT=19, MISSION_ITEM_INT=11, HEARTBEAT=10, UNKNOWN_410=8, MISSION_COUNT=5, COMMAND_ACK=4, VFR_HUD=3
+  QGC TX messages: MISSION_REQUEST_INT=11, HEARTBEAT=5, MISSION_REQUEST_LIST=2, COMMAND_LONG=2, STATUSTEXT=1, MISSION_ACK=1
+Last interval: serial_bytes=3315 valid_frames=92 lost_frames_estimate=421 duplicate_frames=33 out_of_order_frames=31 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=92 wsl_failed=0 qgc_sent=92 qgc_failed=0 qgc_to_serial_bytes=433 qgc_rx_frames=22 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=31, ATTITUDE=10, MISSION_ITEM_INT=9, HEARTBEAT=9, STATUSTEXT=5, VFR_HUD=4, GPS_RAW_INT=4, SYS_STATUS=4
+  QGC TX messages: MISSION_REQUEST_INT=9, HEARTBEAT=5, MISSION_REQUEST_LIST=3, MISSION_ACK=2, PARAM_SET=1, PARAM_REQUEST_READ=1, STATUSTEXT=1
+Last interval: serial_bytes=1755 valid_frames=49 lost_frames_estimate=200 duplicate_frames=7 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=49 wsl_failed=0 qgc_sent=49 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=9, UNKNOWN_410=6, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=2, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1627 valid_frames=47 lost_frames_estimate=313 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2060 valid_frames=58 lost_frames_estimate=292 duplicate_frames=14 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=12, HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=2, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1615 valid_frames=46 lost_frames_estimate=318 duplicate_frames=1 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1805 valid_frames=51 lost_frames_estimate=303 duplicate_frames=8 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=51 wsl_failed=0 qgc_sent=51 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, UNKNOWN_410=6, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, UNKNOWN_411=2, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1629 valid_frames=47 lost_frames_estimate=300 duplicate_frames=2 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=47 wsl_failed=0 qgc_sent=47 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=10, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1601 valid_frames=45 lost_frames_estimate=293 duplicate_frames=1 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=45 wsl_failed=0 qgc_sent=45 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=11, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=2, BATTERY_STATUS=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1934 valid_frames=55 lost_frames_estimate=302 duplicate_frames=2 out_of_order_frames=28 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=14, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2122 valid_frames=60 lost_frames_estimate=304 duplicate_frames=9 out_of_order_frames=27 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=60 wsl_failed=0 qgc_sent=60 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=4, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2620 valid_frames=76 lost_frames_estimate=332 duplicate_frames=12 out_of_order_frames=36 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=76 wsl_failed=0 qgc_sent=76 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=11, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, COMMAND_LONG=5, STATUSTEXT=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2332 valid_frames=68 lost_frames_estimate=303 duplicate_frames=8 out_of_order_frames=35 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=68 wsl_failed=0 qgc_sent=68 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=6, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, COMMAND_LONG=5, MISSION_REQUEST_INT=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2377 valid_frames=70 lost_frames_estimate=303 duplicate_frames=7 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=70 wsl_failed=0 qgc_sent=70 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, UNKNOWN_410=5, COMMAND_LONG=5, MISSION_REQUEST_INT=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=3359 valid_frames=99 lost_frames_estimate=334 duplicate_frames=27 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=99 wsl_failed=0 qgc_sent=99 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=26, HEARTBEAT=15, MISSION_REQUEST_INT=8, ATTITUDE=6, COMMAND_LONG=6, STATUSTEXT=6, MISSION_ITEM_INT=5, VFR_HUD=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2128 valid_frames=59 lost_frames_estimate=339 duplicate_frames=3 out_of_order_frames=29 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=4, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2723 valid_frames=75 lost_frames_estimate=452 duplicate_frames=7 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=75 wsl_failed=0 qgc_sent=75 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=5, UNKNOWN_410=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2910 valid_frames=76 lost_frames_estimate=478 duplicate_frames=12 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=76 wsl_failed=0 qgc_sent=76 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=11, ATTITUDE=10, STATUSTEXT=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2813 valid_frames=76 lost_frames_estimate=460 duplicate_frames=13 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=76 wsl_failed=0 qgc_sent=76 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=11, ATTITUDE=9, STATUSTEXT=9, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2031 valid_frames=57 lost_frames_estimate=462 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2939 valid_frames=78 lost_frames_estimate=481 duplicate_frames=13 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=78 wsl_failed=0 qgc_sent=78 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=12, ATTITUDE=10, STATUSTEXT=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2837 valid_frames=75 lost_frames_estimate=468 duplicate_frames=13 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=75 wsl_failed=0 qgc_sent=75 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=11, ATTITUDE=10, STATUSTEXT=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2049 valid_frames=59 lost_frames_estimate=458 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1976 valid_frames=55 lost_frames_estimate=449 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=9, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2049 valid_frames=59 lost_frames_estimate=453 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2683 valid_frames=72 lost_frames_estimate=478 duplicate_frames=12 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=72 wsl_failed=0 qgc_sent=72 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=10, STATUSTEXT=9, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1966 valid_frames=56 lost_frames_estimate=461 duplicate_frames=1 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2095 valid_frames=59 lost_frames_estimate=482 duplicate_frames=2 out_of_order_frames=28 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1983 valid_frames=57 lost_frames_estimate=454 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2079 valid_frames=58 lost_frames_estimate=455 duplicate_frames=1 out_of_order_frames=29 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1932 valid_frames=56 lost_frames_estimate=471 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=4, MISSION_CURRENT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2096 valid_frames=59 lost_frames_estimate=457 duplicate_frames=2 out_of_order_frames=28 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1970 valid_frames=56 lost_frames_estimate=463 duplicate_frames=1 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=3, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2120 valid_frames=58 lost_frames_estimate=467 duplicate_frames=3 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=4, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2562 valid_frames=72 lost_frames_estimate=473 duplicate_frames=11 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=72 wsl_failed=0 qgc_sent=72 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=9, STATUSTEXT=7, VFR_HUD=6, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2056 valid_frames=57 lost_frames_estimate=461 duplicate_frames=1 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=4, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1946 valid_frames=56 lost_frames_estimate=431 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=9, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2713 valid_frames=73 lost_frames_estimate=469 duplicate_frames=11 out_of_order_frames=28 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=73 wsl_failed=0 qgc_sent=73 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=9, STATUSTEXT=8, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2583 valid_frames=70 lost_frames_estimate=474 duplicate_frames=10 out_of_order_frames=28 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=70 wsl_failed=0 qgc_sent=70 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=9, STATUSTEXT=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2097 valid_frames=59 lost_frames_estimate=484 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1985 valid_frames=57 lost_frames_estimate=457 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2085 valid_frames=58 lost_frames_estimate=430 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2321 valid_frames=64 lost_frames_estimate=490 duplicate_frames=7 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=64 wsl_failed=0 qgc_sent=64 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=14, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=5, UNKNOWN_410=5, GLOBAL_POSITION_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2804 valid_frames=75 lost_frames_estimate=473 duplicate_frames=12 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=75 wsl_failed=0 qgc_sent=75 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=10, ATTITUDE=10, STATUSTEXT=9, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1970 valid_frames=56 lost_frames_estimate=448 duplicate_frames=1 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2096 valid_frames=59 lost_frames_estimate=467 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1984 valid_frames=57 lost_frames_estimate=454 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2085 valid_frames=58 lost_frames_estimate=462 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1985 valid_frames=57 lost_frames_estimate=456 duplicate_frames=2 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2954 valid_frames=79 lost_frames_estimate=471 duplicate_frames=16 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=79 wsl_failed=0 qgc_sent=79 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=14, STATUSTEXT=10, ATTITUDE=9, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1966 valid_frames=56 lost_frames_estimate=447 duplicate_frames=1 out_of_order_frames=13 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2714 valid_frames=73 lost_frames_estimate=459 duplicate_frames=11 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=73 wsl_failed=0 qgc_sent=73 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=9, STATUSTEXT=8, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2335 valid_frames=63 lost_frames_estimate=455 duplicate_frames=8 out_of_order_frames=13 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, STATUSTEXT=6, UNKNOWN_410=6, VFR_HUD=5, GPS_RAW_INT=4, SYS_STATUS=4, GLOBAL_POSITION_INT=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2508 valid_frames=69 lost_frames_estimate=469 duplicate_frames=6 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=69 wsl_failed=0 qgc_sent=69 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=6, SYS_STATUS=6, STATUSTEXT=6, GLOBAL_POSITION_INT=5, VFR_HUD=5, UNKNOWN_410=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1979 valid_frames=57 lost_frames_estimate=462 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2098 valid_frames=59 lost_frames_estimate=459 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1919 valid_frames=55 lost_frames_estimate=455 duplicate_frames=1 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4, MISSION_CURRENT=3, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2099 valid_frames=59 lost_frames_estimate=461 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1987 valid_frames=57 lost_frames_estimate=468 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2046 valid_frames=57 lost_frames_estimate=438 duplicate_frames=1 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=9, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2341 valid_frames=65 lost_frames_estimate=481 duplicate_frames=7 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, STATUSTEXT=5, UNKNOWN_410=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2455 valid_frames=67 lost_frames_estimate=448 duplicate_frames=7 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=67 wsl_failed=0 qgc_sent=67 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, STATUSTEXT=6, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, UNKNOWN_410=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2033 valid_frames=56 lost_frames_estimate=483 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=4, STATUSTEXT=3, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2797 valid_frames=76 lost_frames_estimate=437 duplicate_frames=12 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=76 wsl_failed=0 qgc_sent=76 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=10, ATTITUDE=10, STATUSTEXT=9, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1987 valid_frames=57 lost_frames_estimate=488 duplicate_frames=2 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2084 valid_frames=58 lost_frames_estimate=430 duplicate_frames=1 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=58 wsl_failed=0 qgc_sent=58 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1987 valid_frames=57 lost_frames_estimate=496 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2098 valid_frames=59 lost_frames_estimate=445 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1974 valid_frames=56 lost_frames_estimate=469 duplicate_frames=1 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=3, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2098 valid_frames=59 lost_frames_estimate=456 duplicate_frames=2 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2403 valid_frames=66 lost_frames_estimate=474 duplicate_frames=8 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=66 wsl_failed=0 qgc_sent=66 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=9, STATUSTEXT=6, UNKNOWN_410=6, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2440 valid_frames=66 lost_frames_estimate=495 duplicate_frames=6 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=66 wsl_failed=0 qgc_sent=66 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, STATUSTEXT=6, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, UNKNOWN_410=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1987 valid_frames=57 lost_frames_estimate=459 duplicate_frames=2 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=57 wsl_failed=0 qgc_sent=57 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, MISSION_CURRENT=3, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2100 valid_frames=59 lost_frames_estimate=458 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, BATTERY_STATUS=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1934 valid_frames=54 lost_frames_estimate=443 duplicate_frames=1 out_of_order_frames=20 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=54 wsl_failed=0 qgc_sent=54 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=4, MISSION_CURRENT=2, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2111 valid_frames=60 lost_frames_estimate=438 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=60 wsl_failed=0 qgc_sent=60 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2425 valid_frames=66 lost_frames_estimate=486 duplicate_frames=8 out_of_order_frames=21 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=66 wsl_failed=0 qgc_sent=66 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, STATUSTEXT=6, UNKNOWN_410=6, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2453 valid_frames=67 lost_frames_estimate=470 duplicate_frames=6 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=67 wsl_failed=0 qgc_sent=67 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, STATUSTEXT=6, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, UNKNOWN_410=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1974 valid_frames=56 lost_frames_estimate=459 duplicate_frames=2 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, UNKNOWN_411=2, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2091 valid_frames=59 lost_frames_estimate=439 duplicate_frames=2 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=14, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2578 valid_frames=69 lost_frames_estimate=468 duplicate_frames=10 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=69 wsl_failed=0 qgc_sent=69 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=9, STATUSTEXT=7, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2462 valid_frames=68 lost_frames_estimate=466 duplicate_frames=7 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=68 wsl_failed=0 qgc_sent=68 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, STATUSTEXT=6, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, UNKNOWN_410=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1973 valid_frames=56 lost_frames_estimate=454 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=2, UNKNOWN_411=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2099 valid_frames=59 lost_frames_estimate=461 duplicate_frames=1 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1955 valid_frames=55 lost_frames_estimate=463 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=14, ATTITUDE=10, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5, UNKNOWN_411=2, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2568 valid_frames=70 lost_frames_estimate=546 duplicate_frames=8 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=70 wsl_failed=0 qgc_sent=70 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, STATUSTEXT=7, UNKNOWN_410=6, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2843 valid_frames=75 lost_frames_estimate=406 duplicate_frames=15 out_of_order_frames=31 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=75 wsl_failed=0 qgc_sent=75 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=14, STATUSTEXT=10, ATTITUDE=9, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2544 valid_frames=70 lost_frames_estimate=456 duplicate_frames=8 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=70 wsl_failed=0 qgc_sent=70 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=6, GLOBAL_POSITION_INT=6, STATUSTEXT=6, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2746 valid_frames=74 lost_frames_estimate=452 duplicate_frames=16 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=74 wsl_failed=0 qgc_sent=74 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=14, ATTITUDE=9, STATUSTEXT=8, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, GLOBAL_POSITION_INT=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2869 valid_frames=76 lost_frames_estimate=458 duplicate_frames=10 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=76 wsl_failed=0 qgc_sent=76 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=11, STATUSTEXT=10, UNKNOWN_410=9, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2327 valid_frames=64 lost_frames_estimate=461 duplicate_frames=7 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=64 wsl_failed=0 qgc_sent=64 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=5, UNKNOWN_410=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2112 valid_frames=60 lost_frames_estimate=452 duplicate_frames=2 out_of_order_frames=12 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=60 wsl_failed=0 qgc_sent=60 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1920 valid_frames=54 lost_frames_estimate=413 duplicate_frames=1 out_of_order_frames=11 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=54 wsl_failed=0 qgc_sent=54 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=9, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=2, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2111 valid_frames=60 lost_frames_estimate=454 duplicate_frames=2 out_of_order_frames=12 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=60 wsl_failed=0 qgc_sent=60 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, BATTERY_STATUS=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2231 valid_frames=62 lost_frames_estimate=462 duplicate_frames=6 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, STATUSTEXT=4, UNKNOWN_410=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2626 valid_frames=72 lost_frames_estimate=461 duplicate_frames=11 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=72 wsl_failed=0 qgc_sent=72 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=10, STATUSTEXT=6, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2412 valid_frames=65 lost_frames_estimate=448 duplicate_frames=6 out_of_order_frames=11 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, STATUSTEXT=7, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5, UNKNOWN_410=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2726 valid_frames=74 lost_frames_estimate=455 duplicate_frames=11 out_of_order_frames=12 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=74 wsl_failed=0 qgc_sent=74 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=9, STATUSTEXT=8, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2617 valid_frames=70 lost_frames_estimate=463 duplicate_frames=11 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=70 wsl_failed=0 qgc_sent=70 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=10, STATUSTEXT=8, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, SYS_STATUS=4
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2488 valid_frames=68 lost_frames_estimate=470 duplicate_frames=9 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=68 wsl_failed=0 qgc_sent=68 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=7, STATUSTEXT=6, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2909 valid_frames=78 lost_frames_estimate=716 duplicate_frames=14 out_of_order_frames=19 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=78 wsl_failed=0 qgc_sent=78 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=12, STATUSTEXT=10, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2449 valid_frames=67 lost_frames_estimate=463 duplicate_frames=6 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=67 wsl_failed=0 qgc_sent=67 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, STATUSTEXT=6, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, UNKNOWN_410=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1969 valid_frames=56 lost_frames_estimate=458 duplicate_frames=2 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, UNKNOWN_411=2, MISSION_CURRENT=2
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2110 valid_frames=60 lost_frames_estimate=453 duplicate_frames=2 out_of_order_frames=25 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=60 wsl_failed=0 qgc_sent=60 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5, MISSION_CURRENT=3, STATUSTEXT=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2723 valid_frames=72 lost_frames_estimate=474 duplicate_frames=12 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=72 wsl_failed=0 qgc_sent=72 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, UNKNOWN_410=11, ATTITUDE=10, STATUSTEXT=8, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=2572 valid_frames=70 lost_frames_estimate=468 duplicate_frames=9 out_of_order_frames=24 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=70 wsl_failed=0 qgc_sent=70 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: HEARTBEAT=15, ATTITUDE=10, UNKNOWN_410=7, STATUSTEXT=7, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=3278 valid_frames=88 lost_frames_estimate=478 duplicate_frames=24 out_of_order_frames=23 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=88 wsl_failed=0 qgc_sent=88 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: UNKNOWN_410=22, HEARTBEAT=15, STATUSTEXT=12, ATTITUDE=9, SYS_STATUS=5, GLOBAL_POSITION_INT=5, VFR_HUD=5, GPS_RAW_INT=5
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=227 valid_frames=7 lost_frames_estimate=56 duplicate_frames=0 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=7 wsl_failed=0 qgc_sent=7 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=2, HEARTBEAT=2, SYS_STATUS=1, GLOBAL_POSITION_INT=1, MISSION_CURRENT=1
+  QGC TX messages: HEARTBEAT=5
+Serial disconnected: ClearCommError failed (PermissionError(13, 'Access is denied.', None, 5)); reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s

@@ -266,7 +266,18 @@ PX4_HEARTBEAT_TIMEOUT_S     = 20.0
 
 # ── Safety ────────────────────────────────────────────────────────────────────
 #BATTERY_RTL_PERCENT  = 0.30   # trigger RTL when battery.remaining_percent < this (0.0–1.0)
-DETECTOR_CHECK       = True   # don't arm unless /seabird/beacon_map (beacon_overlay) is live
+EARLY_MISSION_MODE   = True   # switch PX4 to MISSION (disarmed) as soon as the start
+                              #   position is known, before the fence / detector checks
+                              #   -- whether or not it will be able to arm
+FENCE_LOAD_WAIT_S    = 600.0  # keep retrying the PX4 geofence download this long, in
+                              #   MISSION. The fence always reaches the UAV before RunStart
+                              #   (the OCS declares the read-back fence, RunStart follows),
+                              #   so this matches RUNSTART_WAIT_MAX_S: a late course never
+                              #   costs the run. Also covers PX4 busy with another transfer.
+FENCE_LOAD_EVERY_S   = 5.0    # seconds between tries
+FENCE_LOAD_TRY_S     = 10.0   # per-try download timeout
+DETECTOR_CHECK       = False  # True: don't arm unless /seabird/beacon_map (beacon_overlay)
+                              #   is live. Off: arming doesn't wait for beacon_overlay.
 DETECTOR_TIMEOUT_S   = 30.0   # abort pre-flight if no message from beacon detector within this time
 # Pre-flight abort reasons go to the ground: published (latched) here, relayed by
 # beacon_mavlink_bridge.py over ELRS as a WARNING STATUSTEXT "SEABIRD_ALERT ...",
@@ -427,11 +438,13 @@ def _rclpy_thread_fn() -> None:
                 data = json.loads(msg.data)
             except json.JSONDecodeError:
                 return
-            received = float(data.get("received", 0.0) or 0.0)
-            if received and received < _SCRIPT_STARTED:
-                log(f"[rrt] ignoring RunStart run_id={data.get('run_id')} from before this "
-                    f"script started (latched from an earlier run)")
+            # Same rule as the start gate: an early RunStart counts if no attempt
+            # has armed on it yet and it's recent (mission_gate.runstart_accept).
+            ok, why = mission_gate.runstart_accept(data, _SCRIPT_STARTED)
+            if not ok:
+                log(f"[rrt] ignoring RunStart run_id={data.get('run_id')}: {why}")
                 return
+            log(f"[rrt] RunStart run_id={data.get('run_id')}: {why}")
             _run_start_id = data.get("run_id")
             _run_start_event.set()
 
@@ -842,39 +855,55 @@ def fence_pull_inside(n_in: float, e_in: float,
 async def load_fence(drone: System) -> bool:
     """
     Download PX4's geofence, keep its inclusion polygons as _fence_ne, and size
-    the RRT budgets to them. False (caller must not arm) if there's nothing
-    usable.
+    the RRT budgets to them. Retries for FENCE_LOAD_WAIT_S (the fence may still
+    be uploading from the ground, or PX4 busy with another transfer). False
+    (caller must not arm) if there's still nothing usable after that.
     """
     global _SEARCH_SPAN_M, _SEARCH_AREA_M2, BEACON_MAX_LEGS, RRT_MAX_NODES
     if not hasattr(drone.mission_raw, "download_geofence"):
         log("[rrt] ERROR: this MAVSDK has no mission_raw.download_geofence() -- "
             "upgrade mavsdk or use SEARCH_AREA_SHAPE = 'disc'")
         return False
-    try:
-        items = await asyncio.wait_for(drone.mission_raw.download_geofence(), 30.0)
-    except Exception as e:
-        log(f"[rrt] ERROR: geofence download failed: {e}")
-        return False
-    origin = await _ekf_origin(drone)
-    if origin is None:
-        return False
-
-    inclusion = 5001   # MAV_CMD_NAV_FENCE_POLYGON_VERTEX_INCLUSION
-    polygons, current, skipped = [], [], 0
-    for item in sorted(items, key=lambda it: it.seq):
-        if item.command != inclusion:
-            skipped += 1   # exclusion polygons, circles, return point
-            continue
-        current.append(_gps_to_ne(item.x * 1e-7, item.y * 1e-7, origin))
-        if len(current) >= int(item.param1):   # param1 = vertices in this polygon
-            if len(current) >= 3:
-                polygons.append(current)
-            current = []
-    if skipped:
-        log(f"[rrt] ⚠ ignoring {skipped} geofence item(s) that aren't inclusion-polygon vertices")
-    if not polygons:
-        log(f"[rrt] ERROR: PX4 geofence has no inclusion polygon ({len(items)} items)")
-        return False
+    tries = max(1, int(FENCE_LOAD_WAIT_S // FENCE_LOAD_EVERY_S) + 1)
+    polygons, last_why = [], None
+    for attempt in range(1, tries + 1):
+        why = None
+        try:
+            items = await asyncio.wait_for(drone.mission_raw.download_geofence(), FENCE_LOAD_TRY_S)
+        except Exception as e:
+            why = f"download failed: {type(e).__name__}: {e}"
+        if why is None:
+            origin = await _ekf_origin(drone)
+            if origin is None:
+                why = "no EKF origin yet"
+        if why is None:
+            inclusion = 5001   # MAV_CMD_NAV_FENCE_POLYGON_VERTEX_INCLUSION
+            polygons, current, skipped = [], [], 0
+            for item in sorted(items, key=lambda it: it.seq):
+                if item.command != inclusion:
+                    skipped += 1   # exclusion polygons, circles, return point
+                    continue
+                current.append(_gps_to_ne(item.x * 1e-7, item.y * 1e-7, origin))
+                if len(current) >= int(item.param1):   # param1 = vertices in this polygon
+                    if len(current) >= 3:
+                        polygons.append(current)
+                    current = []
+            if skipped:
+                log(f"[rrt] ⚠ ignoring {skipped} geofence item(s) that aren't inclusion-polygon vertices")
+            if not polygons:
+                why = f"PX4 geofence has no inclusion polygon ({len(items)} items)"
+        if why is None:
+            break
+        if attempt == tries:
+            log(f"[rrt] ERROR: no usable PX4 geofence after {attempt} tries "
+                f"({FENCE_LOAD_WAIT_S:.0f} s): {why}")
+            return False
+        # Log the first try, any new reason, and then every ~30 s (not every 5 s).
+        if attempt == 1 or why != last_why or attempt % max(1, int(30 // FENCE_LOAD_EVERY_S)) == 0:
+            log(f"[rrt] waiting for PX4 geofence (try {attempt}/{tries}, "
+                f"{(attempt - 1) * FENCE_LOAD_EVERY_S:.0f} s): {why}")
+        last_why = why
+        await asyncio.sleep(FENCE_LOAD_EVERY_S)
 
     _fence_ne[:] = polygons
     ns = [n for p in polygons for n, _ in p]
@@ -1594,6 +1623,26 @@ async def classify_and_record(drone: System, target, down_m: float) -> None:
         #traceback.print_exc()
 
 
+async def enter_mission_mode_early(drone: System) -> bool:
+    """Upload the gate's hover mission at the current GPS position and switch
+    PX4 to MISSION (disarmed), using mission_gate's own code. Logs and returns
+    False on any problem -- never aborts the mission (the gate retries)."""
+    try:
+        pos = await asyncio.wait_for(drone.telemetry.position().__anext__(), 10.0)
+    except Exception as e:
+        log(f"[rrt] ⚠ early MISSION: no GPS position ({type(e).__name__}) -- the gate will retry")
+        return False
+    modes = mission_gate.ModeWatcher(drone)
+    watcher = asyncio.ensure_future(modes.run())
+    try:
+        ok = await mission_gate.enter_mission_mode(
+            drone, pos.latitude_deg, pos.longitude_deg, modes, TAKEOFF_ALT_M, 20.0)
+    finally:
+        watcher.cancel()
+    log(f"[rrt] {'✓ PX4 in MISSION (disarmed), before the fence / detector checks' if ok else '⚠ early MISSION switch failed -- the gate will retry'}")
+    return ok
+
+
 async def wait_for_detector() -> bool:
     """
     Wait up to DETECTOR_TIMEOUT_S for a message on /seabird/beacon_map
@@ -1668,6 +1717,12 @@ async def run_mission() -> None:
     log(f"[rrt] Start position: N={_state.north_m:.2f}  E={_state.east_m:.2f}  "
         f"D={_state.down_m:.2f}")
 
+    # ── MISSION mode early (disarmed), before the fence / detector checks ─────
+    #    Same hover mission + switch as the start gate's step 4 (which repeats
+    #    it, harmlessly). A failure here only warns: the gate tries again.
+    if EARLY_MISSION_MODE and RUNSTART_GATE:
+        await enter_mission_mode_early(drone)
+
     # ── PX4 geofence as the search area ──────────────────────────────────────
     if SEARCH_AREA_SHAPE == "fence":
         if not await load_fence(drone):
@@ -1716,6 +1771,8 @@ async def run_mission() -> None:
         alert_ground(f"arm() error: {type(e).__name__}")
         return
     log("[rrt] ✓ Armed")
+    # This RunStart has now started a flight: never let it start another one.
+    mission_gate.mark_runstart_used(_run_start_id)
 
     # ── Takeoff ───────────────────────────────────────────────────────────────
     log(f"[rrt] Taking off to {TAKEOFF_ALT_M}m...")

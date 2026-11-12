@@ -1,0 +1,212 @@
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4 (with transit area), inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 0 — listening for beacon messages
+[beacon-ground] [mode] UAV1 POSCTL -> STATE_MANUAL (disarmed)
+[beacon-ground] [pos] no GPS fix (fix_type=0)
+[beacon-ground] [fence] WARNING course 'ALPHA': transit area not uploaded (transit area is not outside any course edge) -- fence is the course boundary only
+[beacon-ground] [fence] UPLOADING course 'ALPHA'
+[beacon-ground] [fence] Uploading 1 inclusion polygon(s), 4 vertices, to system 1
+[beacon-ground] [fence] ✓ Fence accepted by PX4
+[beacon-ground] [fence] Waiting: no home position (HOME_POSITION) and no 3D GPS fix with ellipsoid height (GPS_RAW_INT) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] [fence] WAITING course 'ALPHA': no home position (HOME_POSITION) and no 3D GPS fix with ellipsoid height (GPS_RAW_INT) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] [pos] 3D fix lat=1.2812441 lon=103.8543591 sats=5
+[beacon-ground] [fence] WAITING course 'ALPHA': no home position (HOME_POSITION) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] [fence] ✓ GF_MAX_VER_DIST = 35.6 m above home (49.0 m HAE)
+[beacon-ground] [fence] Reading the fence back from PX4
+[beacon-ground] [fence] note: PX4 returns the fence items with mission_type=0; accepting them (fence commands, our download)
+[beacon-ground] [fence] ✓ Read back from PX4: 1 inclusion polygon(s), 4 vertices
+[beacon-ground] [fence] ✓ Read back GF_MAX_VER_DIST = 35.6 m above home (49.0 m HAE)
+[beacon-ground] [fence] VALID course 'ALPHA'
+[beacon-ground] [pos] 3D fix lat=1.2812675 lon=103.8543764 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812673 lon=103.8543708 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812125 lon=103.8542899 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812349 lon=103.8543239 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812349 lon=103.8543246 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812377 lon=103.8543328 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812557 lon=103.8543609 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812571 lon=103.8543668 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812847 lon=103.8544124 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813017 lon=103.8544410 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813320 lon=103.8544862 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813461 lon=103.8545059 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813871 lon=103.8545560 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813651 lon=103.8545273 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814103 lon=103.8545668 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814820 lon=103.8546306 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814418 lon=103.8545978 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814273 lon=103.8545845 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814186 lon=103.8545787 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814120 lon=103.8545740 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813998 lon=103.8545623 sats=5
+[beacon-ground] [alert] UAV1: NOT ARMED: no usable PX4 geofence
+[beacon-ground] [pos] 3D fix lat=1.2813966 lon=103.8545512 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813873 lon=103.8545422 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813907 lon=103.8545305 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813775 lon=103.8545144 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814049 lon=103.8545442 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812970 lon=103.8544308 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812632 lon=103.8543855 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812461 lon=103.8543605 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812302 lon=103.8543331 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812643 lon=103.8543745 sats=5
+[beacon-ground] [alert] UAV1: NOT ARMED: no usable PX4 geofence
+[beacon-ground] [pos] 3D fix lat=1.2812307 lon=103.8543219 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813009 lon=103.8543934 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813782 lon=103.8544804 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814700 lon=103.8545980 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814448 lon=103.8545895 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814325 lon=103.8545899 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814171 lon=103.8545881 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813991 lon=103.8545872 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813667 lon=103.8545740 sats=5
+[beacon-ground] [alert] UAV1: NOT ARMED: no usable PX4 geofence
+[beacon-ground] [pos] 3D fix lat=1.2813653 lon=103.8545692 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813750 lon=103.8545688 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813833 lon=103.8545684 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813814 lon=103.8545692 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813250 lon=103.8545503 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812255 lon=103.8544402 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812269 lon=103.8544641 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2812492 lon=103.8544946 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814175 lon=103.8547317 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814995 lon=103.8548462 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2815978 lon=103.8549683 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2816295 lon=103.8550020 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2815271 lon=103.8548174 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813904 lon=103.8546005 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813752 lon=103.8545628 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2814091 lon=103.8546020 sats=6
+[beacon-ground] [pos] 3D fix lat=1.2813975 lon=103.8545775 sats=6
+[beacon-ground] [pos] 3D fix lat=1.2813956 lon=103.8545699 sats=6
+[beacon-ground] [pos] 3D fix lat=1.2813923 lon=103.8545649 sats=6
+[beacon-ground] [pos] 3D fix lat=1.2813932 lon=103.8545627 sats=6
+[beacon-ground] [pos] 3D fix lat=1.2813971 lon=103.8545642 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2814365 lon=103.8546044 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2814176 lon=103.8545813 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2813901 lon=103.8545476 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2813993 lon=103.8545560 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2814216 lon=103.8545822 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2814333 lon=103.8545956 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2814416 lon=103.8546049 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2814256 lon=103.8545855 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813998 lon=103.8545584 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813901 lon=103.8545413 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813872 lon=103.8545289 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813853 lon=103.8545221 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813854 lon=103.8545209 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813811 lon=103.8545192 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813763 lon=103.8545265 sats=8
+[beacon-ground] [mode] UAV1 MISSION -> STATE_AUTO (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2813766 lon=103.8545358 sats=8
+[beacon-ground] [runstart] RunStart run_id=18 verified by the OCS -- relaying to the UAV
+[beacon-ground] [runstart] UAV acknowledged RunStart run_id=18
+[beacon-ground] [pos] 3D fix lat=1.2813726 lon=103.8545498 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813667 lon=103.8545629 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813621 lon=103.8545770 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813557 lon=103.8545837 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813456 lon=103.8545827 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813451 lon=103.8545847 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813436 lon=103.8545835 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813437 lon=103.8545752 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813461 lon=103.8545737 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813438 lon=103.8545725 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813422 lon=103.8545790 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813310 lon=103.8545792 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813290 lon=103.8545829 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813288 lon=103.8545821 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813287 lon=103.8545728 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813319 lon=103.8545634 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813375 lon=103.8545630 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813310 lon=103.8545687 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813338 lon=103.8545604 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813314 lon=103.8545508 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813378 lon=103.8545395 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813514 lon=103.8545329 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813634 lon=103.8545297 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813684 lon=103.8545256 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813732 lon=103.8545245 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813707 lon=103.8545226 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813672 lon=103.8545194 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813683 lon=103.8545289 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813630 lon=103.8545377 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813570 lon=103.8545375 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813524 lon=103.8545338 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813525 lon=103.8545379 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813546 lon=103.8545411 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813547 lon=103.8545368 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813541 lon=103.8545377 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813547 lon=103.8545400 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813548 lon=103.8545398 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813543 lon=103.8545403 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813570 lon=103.8545447 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813590 lon=103.8545509 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813619 lon=103.8545535 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813676 lon=103.8545566 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813697 lon=103.8545583 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813645 lon=103.8545579 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813617 lon=103.8545614 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813591 lon=103.8545715 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813557 lon=103.8545845 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813458 lon=103.8545875 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813407 lon=103.8545849 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813393 lon=103.8545767 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813370 lon=103.8545699 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813333 lon=103.8545702 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813303 lon=103.8545715 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813315 lon=103.8545635 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813317 lon=103.8545583 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813337 lon=103.8545510 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813393 lon=103.8545490 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813433 lon=103.8545551 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813431 lon=103.8545571 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813444 lon=103.8545586 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813414 lon=103.8545498 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813390 lon=103.8545446 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813364 lon=103.8545495 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813490 lon=103.8545768 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813505 lon=103.8545865 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813492 lon=103.8545915 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813512 lon=103.8545984 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813475 lon=103.8545935 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813466 lon=103.8545889 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813518 lon=103.8545921 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813636 lon=103.8546195 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813631 lon=103.8546236 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813583 lon=103.8546169 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813578 lon=103.8546104 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813540 lon=103.8545951 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813516 lon=103.8545844 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813494 lon=103.8545710 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813507 lon=103.8545685 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2813538 lon=103.8545708 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813528 lon=103.8545743 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813491 lon=103.8545706 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813447 lon=103.8545656 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813389 lon=103.8545558 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813363 lon=103.8545504 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813360 lon=103.8545489 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813341 lon=103.8545541 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813402 lon=103.8545512 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813452 lon=103.8545489 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813501 lon=103.8545392 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813529 lon=103.8545365 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813515 lon=103.8545356 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813509 lon=103.8545343 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2813520 lon=103.8545364 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2813500 lon=103.8545269 sats=11
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 904, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 900, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241

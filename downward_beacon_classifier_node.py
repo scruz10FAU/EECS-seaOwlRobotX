@@ -144,7 +144,8 @@ class _DownwardImageGrabber(Node):
     BeaconCamera -- no depth sync, no pose/gps, no detector backend.
     """
 
-    def __init__(self, image_topic: str, max_sample_hz: float = None, detections_topic: str = None):
+    def __init__(self, image_topic: str, max_sample_hz: float = None, detections_topic: str = None,
+                 beacon_info_topic: str = None):
         """
         max_sample_hz: if set, drop frames arriving sooner than 1/max_sample_hz
         after the last one kept, instead of buffering every frame the topic
@@ -160,6 +161,10 @@ class _DownwardImageGrabber(Node):
         separate from the oblique pipeline's topics.detections_pub (different
         JSON shape; see topics.downward_detections_pub in beacon_detector_config.py).
         None (default) leaves self.detection_pub unset.
+        beacon_info_topic: if set, creates self.beacon_info_pub -- the same
+        minimal JSON beacon_mavlink_ground.py publishes on /seabird/beacon_info
+        (see beacon_info_json()), so the drone has that stream too without
+        waiting on the radio link. None leaves self.beacon_info_pub = None.
         """
         super().__init__("downward_image_grabber")
         self._frames = []
@@ -177,6 +182,10 @@ class _DownwardImageGrabber(Node):
         if detections_topic:
             self.detection_pub = self.create_publisher(String, detections_topic, 10)
 
+        self.beacon_info_pub = None
+        if beacon_info_topic:
+            self.beacon_info_pub = self.create_publisher(String, beacon_info_topic, 10)
+
     def _on_image(self, msg: Image) -> None:
         ts = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         if self._last_kept_ts is not None and (ts - self._last_kept_ts) < self._min_interval:
@@ -189,6 +198,29 @@ class _DownwardImageGrabber(Node):
         """Return and clear all frames buffered so far."""
         out, self._frames[:] = list(self._frames), []
         return out
+
+
+DEFAULT_BEACON_INFO_TOPIC = "/seabird/beacon_info"
+
+
+def beacon_info_json(result: dict):
+    """
+    The ground station's /seabird/beacon_info payload (beacon_mavlink_ground.py
+    _build_detection_json) built from a downward result, with the same field
+    mapping beacon_mavlink_bridge.py relays: color = blink_color,
+    is_blinking = blink. None if there's no GPS position -- the bridge
+    doesn't relay those either.
+    """
+    gps = result.get("gps_position") or {}
+    if gps.get("latitude") is None or gps.get("longitude") is None:
+        return None
+    return {
+        "latitude":    gps["latitude"],
+        "longitude":   gps["longitude"],
+        "color":       result.get("blink_color", "unknown"),
+        "is_blinking": result.get("blink"),
+        "tracking_id": result.get("tracking_id", -1),
+    }
 
 
 def _box_mode(cfg: dict) -> bool:
@@ -336,6 +368,7 @@ def setup_downward_classifier(cfg: dict, max_sample_hz: float = None, pose_wait_
     image_grabber = _DownwardImageGrabber(
         down_cfg["image_topic"], max_sample_hz=max_sample_hz,
         detections_topic=cfg["topics"]["downward_detections_pub"],
+        beacon_info_topic=cfg["topics"].get("beacon_info_pub", DEFAULT_BEACON_INFO_TOPIC),
     )
     if max_sample_hz:
         print(f"[downward] Sampling downward camera frames at up to {max_sample_hz:.1f} Hz")
@@ -466,6 +499,12 @@ def classify_beacon_downward_once(
                 msg.data = json.dumps(result)
                 image_grabber.detection_pub.publish(msg)
                 print(f"[downward] Published to {cfg['topics']['downward_detections_pub']}")
+                info = beacon_info_json(result)
+                if image_grabber.beacon_info_pub is not None and info is not None:
+                    image_grabber.beacon_info_pub.publish(String(data=json.dumps(info)))
+                    print(f"[downward] Published beacon_info: {json.dumps(info)}")
+                elif image_grabber.beacon_info_pub is not None:
+                    print("[downward] No GPS position -- beacon_info not published")
                 # detection_pub (created in _DownwardImageGrabber.__init__) uses
                 # the default VOLATILE durability (no explicit QoSProfile) -- a
                 # subscriber only receives messages published *after* it finishes

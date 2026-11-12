@@ -1,0 +1,46 @@
+# /etc/systemd/system/seabird-exposure.service
+#
+# Starts exposure_controller.py (tracking_front exposure for the beacons) at boot,
+# via run_exposure_controller.sh, and stops it at shutdown -- the stop sends
+# "start_ae", so the camera is back on auto exposure.
+#
+# Install (on the drone, as root):
+#   sudo cp seabird-exposure.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now seabird-exposure.service
+#   systemctl status seabird-exposure        # "active (exited)" is normal (oneshot)
+#   sudo /home/voxluser/seabirdDocker/EECS-seaOwlRobotX/run_exposure_controller.sh logs
+#
+# EXPOSURE_ARGS=--dry-run (default here): the controller only measures and
+# records (/seabird/exposure, its log) -- the camera stays on auto exposure.
+# The charlie_v1 beacon model was trained on auto-exposure frames, so keep the
+# dry run until a model has been trained on controlled-exposure frames.
+# To let it control the exposure:
+#   sudo systemctl edit --full seabird-exposure   -> Environment=EXPOSURE_ARGS=
+#   sudo systemctl restart seabird-exposure
+#
+# Stop now (camera back to auto):  sudo systemctl stop seabird-exposure
+# Don't start at boot:             sudo systemctl disable seabird-exposure
+#
+# ROS_DOMAIN_ID must match the /tracking_front publisher (voxl_mpa_to_ros2):
+# 8 worked on starling2-max D0012 (indoor test, 2026-11-11). beacon_overlay's
+# run.sh defaults to 0 -- check all Seabird containers use the same domain.
+# Logs of each run are kept in /data/exposure_controller_logs/.
+
+[Unit]
+Description=Seabird exposure controller (tracking_front, beacons)
+After=docker.service voxl-camera-server.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/voxluser/seabirdDocker/EECS-seaOwlRobotX
+Environment=ROS_DOMAIN_ID=8
+Environment=EXPOSURE_ARGS=--dry-run
+ExecStart=/home/voxluser/seabirdDocker/EECS-seaOwlRobotX/run_exposure_controller.sh start $EXPOSURE_ARGS
+ExecStop=/home/voxluser/seabirdDocker/EECS-seaOwlRobotX/run_exposure_controller.sh stop
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

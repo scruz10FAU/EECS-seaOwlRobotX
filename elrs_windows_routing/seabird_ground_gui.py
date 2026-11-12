@@ -75,6 +75,9 @@ DEFAULTS = {
         "mqtt_port": "1883",   # RoboCommand MQTT broker port (Handbook 3.4.3: 1883)
         "com_port": "COM6",
         "baud": "460800",
+        # Drone's static IP on the shared WiFi access point: the router adds
+        # WiFi as a second link (elrs_windows_router.py --wifi). Blank = ELRS only.
+        "drone_wifi_ip": "",
         "team_id": "FLAU",
         "vehicles": "UAV1",
         "pilot_first_name": "",
@@ -370,7 +373,8 @@ class GroundGui(tk.Tk):
         f = ttk.LabelFrame(left, text="Settings (both profiles)", padding=6)
         f.pack(fill="x")
         rows = [
-            ("ELRS COM port", "com_port"), ("Baud", "baud"), ("Team ID", "team_id"),
+            ("ELRS COM port", "com_port"), ("Baud", "baud"),
+            ("Drone WiFi IP (blank = ELRS only)", "drone_wifi_ip"), ("Team ID", "team_id"),
             ("Vehicles (comma)", "vehicles"), ("Pilot first name", "pilot_first_name"),
             ("UAPL ID (blank for Ground Validation)", "uapl_id"),
             ("Team code", "team_code"), ("CAAS sticker number", "caas_sticker"),
@@ -592,7 +596,15 @@ class GroundGui(tk.Tk):
     def _parse(self, name, line):
         if name == "Router":
             m = re.search(r"serial_bytes=(\d+)", line)
-            if m:
+            w = re.search(r"wifi_frames=(\d+).*uplink=(\w+)", line)
+            if m and w:
+                # WiFi redundancy on: OK while either link delivers.
+                elrs, wifi, up = int(m.group(1)) > 0, int(w.group(1)) > 0, w.group(2)
+                self._set("Router", f"ELRS: {'OK' if elrs else 'NOTHING'} ({m.group(1)} B)  |  "
+                          f"WiFi: {'OK' if wifi else 'NOTHING'} ({w.group(1)} frames)  |  "
+                          f"uplink: {up.upper()}",
+                          "#1b7f1b" if elrs and wifi else "#a86b00" if elrs or wifi else "#c0182b")
+            elif m:
                 ok = int(m.group(1)) > 0
                 self._set("Router", f"radio bytes in last interval: {m.group(1)}"
                           + ("" if ok else "  — nothing from the radio: wrong COM port?"),
@@ -1037,8 +1049,12 @@ class GroundGui(tk.Tk):
         self._save_settings()
         c = {k[1]: v.get() for k, v in self.vars.items() if k[0] == "common"}
         if key == "Router":
-            self.procs["Router"].start([sys.executable, "-u", str(HERE / "elrs_windows_router.py"),
-                                        "--com", c["com_port"], "--baud", c["baud"]])
+            cmd = [sys.executable, "-u", str(HERE / "elrs_windows_router.py"),
+                   "--com", c["com_port"], "--baud", c["baud"]]
+            wifi_ip = c.get("drone_wifi_ip", "").strip()
+            if wifi_ip:
+                cmd += ["--wifi", wifi_ip if ":" in wifi_ip else f"{wifi_ip}:14550"]
+            self.procs["Router"].start(cmd)
         elif key == "Broker":
             if self.profile.get() == "Competition":
                 messagebox.showinfo("Broker", "Competition uses RoboCommand's broker; no local broker.")

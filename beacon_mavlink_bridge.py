@@ -75,6 +75,14 @@ TASK_RESEND_S = 2.0
 # bridge's --onboard-ip/--onboard-port (default 127.0.0.1:14570).
 DEFAULT_ONBOARD_LISTEN = "udpin:127.0.0.1:14570"
 DEFAULT_RUN_START_TOPIC = "/seabird/run_start"
+# WiFi redundancy (elrs_windows_router.py --wifi): the ground router sends its
+# heartbeats and SEABIRD_* STATUSTEXT (RunStart) here over WiFi. RunStart is
+# handled exactly like the ELRS copy (published once per run_id, ACK on every
+# copy), and everything this bridge sends (beacons, SEABIRD_TASK, ALERT,
+# RunStart ACKs) also goes back to every router that has sent here -- --mavlink-
+# endpoint goes straight to the ELRS bridge, not through voxl-mavlink-server,
+# so none of it would reach the WiFi link otherwise. "none" disables it.
+DEFAULT_WIFI_LISTEN = "udpin:0.0.0.0:14572"
 # Pre-flight abort reasons from the flight script (latched std_msgs/String),
 # relayed as WARNING STATUSTEXT so QGC shows them and beacon_mavlink_ground.py
 # logs them. STATUSTEXT holds 50 chars (MAVLink 1, no chunking): longer text
@@ -98,9 +106,11 @@ class BeaconMavlinkBridge(Node):
                  log_path: str = None, task_topic: str = DEFAULT_TASK_TOPIC,
                  onboard_listen: str = DEFAULT_ONBOARD_LISTEN,
                  run_start_topic: str = DEFAULT_RUN_START_TOPIC,
-                 alert_topic: str = DEFAULT_ALERT_TOPIC):
+                 alert_topic: str = DEFAULT_ALERT_TOPIC,
+                 wifi_listen: str = DEFAULT_WIFI_LISTEN):
         super().__init__("beacon_mavlink_bridge")
         self._lock = threading.Lock()
+        self._run_lock = threading.Lock()   # ELRS and WiFi listeners share _run_id
         self._repeat = max(1, repeat)
         self._repeat_gap = max(0.0, repeat_gap)
         self._next_msg_id = 0
@@ -144,29 +154,59 @@ class BeaconMavlinkBridge(Node):
         self._run_start_pub = self.create_publisher(
             String, run_start_topic, QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
         self._onboard = mavutil.mavlink_connection(onboard_listen)
-        threading.Thread(target=self._listen_onboard, daemon=True).start()
+        threading.Thread(target=self._listen_onboard, args=(self._onboard, "ELRS"),
+                         daemon=True).start()
         self.get_logger().info(f"Listening on {onboard_listen} for '{RUNSTART_PREFIX} <run_id>' "
                                f"from the ground — publishing RunStart on {run_start_topic}")
 
-    def _listen_onboard(self) -> None:
-        """Ground STATUSTEXT copied onboard by the drone ELRS bridge."""
+        self._wifi = None
+        if wifi_listen and wifi_listen.lower() != "none":
+            self._wifi = mavutil.mavlink_connection(
+                wifi_listen, source_system=1, source_component=191)
+            threading.Thread(target=self._listen_onboard, args=(self._wifi, "WiFi"),
+                             daemon=True).start()
+            self.get_logger().info(f"WiFi: listening on {wifi_listen} for RunStart; beacons, "
+                                   f"task, alerts and ACKs also sent to the ground routers "
+                                   f"that send there")
+
+    def _mav_send(self, send) -> None:
+        """send(connection) on the ELRS link and, if any ground router has
+        reached it, the WiFi link. A WiFi failure never blocks the ELRS copy."""
+        with self._lock:
+            send(self._mav)
+            if self._wifi is not None:
+                try:
+                    send(self._wifi)
+                except OSError:
+                    pass
+
+    def _listen_onboard(self, conn, label: str) -> None:
+        """Ground STATUSTEXT: copied onboard by the drone ELRS bridge, or sent
+        over WiFi by elrs_windows_router.py --wifi."""
         while self._running:
-            msg = self._onboard.recv_match(type="STATUSTEXT", blocking=True, timeout=1.0)
+            try:
+                msg = conn.recv_match(type="STATUSTEXT", blocking=True, timeout=1.0)
+            except OSError:
+                time.sleep(1.0)
+                continue
             if msg is None:
                 continue
             parts = str(msg.text).strip("\x00 ").split()
             if len(parts) != 2 or parts[0] != RUNSTART_PREFIX or not parts[1].isdigit():
                 continue
             run_id = int(parts[1])
-            if run_id != self._run_id:
-                self._run_id = run_id
-                self._run_start_pub.publish(String(data=json.dumps(
-                    {"run_id": run_id, "received": time.time()})))
-                self.get_logger().info(f"RunStart run_id={run_id} received from the ground — "
-                                       f"the sweep may begin the run")
-            with self._lock:   # every copy: the ground resends until it sees this
-                self._mav.mav.statustext_send(
-                    mavutil.mavlink.MAV_SEVERITY_INFO, f"{RUNSTART_ACK_PREFIX} {run_id}".encode())
+            with self._run_lock:
+                new = run_id != self._run_id
+                if new:
+                    self._run_id = run_id
+                    self._run_start_pub.publish(String(data=json.dumps(
+                        {"run_id": run_id, "received": time.time()})))
+            if new:
+                self.get_logger().info(f"RunStart run_id={run_id} received from the ground "
+                                       f"({label}) — the sweep may begin the run")
+            # Every copy: the ground resends until it sees this.
+            self._mav_send(lambda m: m.mav.statustext_send(
+                mavutil.mavlink.MAV_SEVERITY_INFO, f"{RUNSTART_ACK_PREFIX} {run_id}".encode()))
 
     def _on_alert(self, msg: String) -> None:
         text = " ".join(str(msg.data).split())   # one line
@@ -182,11 +222,13 @@ class BeaconMavlinkBridge(Node):
 
     def _send_alert(self, parts: list) -> None:
         n = len(parts)
-        with self._lock:
+
+        def send(m):
             for k, part in enumerate(parts, 1):
-                self._mav.mav.statustext_send(
+                m.mav.statustext_send(
                     mavutil.mavlink.MAV_SEVERITY_WARNING,
                     f"{ALERT_PREFIX} {k}/{n} {part}".encode()[:50])
+        self._mav_send(send)
 
     def _on_task(self, msg: UInt8) -> None:
         if msg.data == self._current_task:
@@ -199,14 +241,12 @@ class BeaconMavlinkBridge(Node):
         if self._current_task is None:
             return
         text = f"{TASK_STATUSTEXT_PREFIX} {self._current_task}".encode()
-        with self._lock:
-            self._mav.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO, text)
+        self._mav_send(lambda m: m.mav.statustext_send(mavutil.mavlink.MAV_SEVERITY_INFO, text))
 
     def _send(self, value: list, copy: int, log_fields: list) -> None:
+        self._mav_send(lambda m: m.mav.memory_vect_send(
+            BEACON_MAVLINK_ADDRESS, BEACON_MAVLINK_VERSION, 0, value))
         with self._lock:
-            self._mav.mav.memory_vect_send(
-                BEACON_MAVLINK_ADDRESS, BEACON_MAVLINK_VERSION, 0, value
-            )
             if self._log_writer is not None:
                 # A logging failure (e.g. disk full) must never stop the relay:
                 # warn once and stop logging.
@@ -321,12 +361,17 @@ def main():
         help="Latched std_msgs/String alerts (e.g. why the UAV didn't arm) relayed as WARNING "
              f"STATUSTEXT (default: {DEFAULT_ALERT_TOPIC})",
     )
+    ap.add_argument(
+        "--wifi-listen", default=DEFAULT_WIFI_LISTEN,
+        help="WiFi redundancy: RunStart from the ground router over WiFi, and where everything "
+             f"sent is also copied back to it; 'none' disables (default: {DEFAULT_WIFI_LISTEN})",
+    )
     args = ap.parse_args()
 
     rclpy.init()
     node = BeaconMavlinkBridge(args.mavlink_endpoint, args.topic, args.repeat, args.repeat_gap,
                                args.log, args.task_topic, args.onboard_listen, args.run_start_topic,
-                               args.alert_topic)
+                               args.alert_topic, args.wifi_listen)
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

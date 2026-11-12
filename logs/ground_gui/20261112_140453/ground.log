@@ -1,0 +1,92 @@
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4 (with transit area), inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 0 — listening for beacon messages
+[beacon-ground] [mode] UAV1 POSCTL -> STATE_MANUAL (disarmed)
+[beacon-ground] [fence] WARNING course 'ALPHA': transit area not uploaded (transit area is not outside any course edge) -- fence is the course boundary only
+[beacon-ground] [fence] UPLOADING course 'ALPHA'
+[beacon-ground] [fence] Uploading 1 inclusion polygon(s), 4 vertices, to system 1
+[beacon-ground] [pos] no GPS fix (fix_type=0)
+[beacon-ground] [fence] ✓ Fence accepted by PX4
+[beacon-ground] [fence] Waiting: no home position (HOME_POSITION) and no 3D GPS fix with ellipsoid height (GPS_RAW_INT) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] [fence] WAITING course 'ALPHA': no home position (HOME_POSITION) and no 3D GPS fix with ellipsoid height (GPS_RAW_INT) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] [pos] 3D fix lat=1.2838627 lon=103.8540845 sats=4
+[beacon-ground] [fence] WAITING course 'ALPHA': no home position (HOME_POSITION) from the UAV yet -- needed to convert the HAE ceiling
+[beacon-ground] [pos] 3D fix lat=1.2839059 lon=103.8543129 sats=4
+[beacon-ground] [pos] no GPS fix (fix_type=0)
+[beacon-ground] [pos] 3D fix lat=1.2813408 lon=103.8544964 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813473 lon=103.8545720 sats=6
+[beacon-ground] [fence] ✓ GF_MAX_VER_DIST = 19.9 m above home (49.0 m HAE)
+[beacon-ground] [fence] Reading the fence back from PX4
+[beacon-ground] [fence] note: PX4 returns the fence items with mission_type=0; accepting them (fence commands, our download)
+[beacon-ground] [fence] ✓ Read back from PX4: 1 inclusion polygon(s), 4 vertices
+[beacon-ground] [fence] ✓ Read back GF_MAX_VER_DIST = 19.9 m above home (49.0 m HAE)
+[beacon-ground] [fence] VALID course 'ALPHA'
+[beacon-ground] [pos] 3D fix lat=1.2813427 lon=103.8545481 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2813431 lon=103.8545451 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2813447 lon=103.8545469 sats=7
+[beacon-ground] [pos] 3D fix lat=1.2813437 lon=103.8545451 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2813429 lon=103.8545420 sats=6
+[beacon-ground] [pos] 3D fix lat=1.2813951 lon=103.8546667 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814181 lon=103.8546734 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814083 lon=103.8546610 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2813901 lon=103.8546230 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814573 lon=103.8547093 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814953 lon=103.8547418 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814962 lon=103.8547134 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814648 lon=103.8546447 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814338 lon=103.8545986 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814104 lon=103.8545508 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814151 lon=103.8545743 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814262 lon=103.8545969 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814237 lon=103.8545904 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814200 lon=103.8545696 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814057 lon=103.8545445 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813922 lon=103.8545013 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813868 lon=103.8544773 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813887 lon=103.8544761 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2813996 lon=103.8544910 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814173 lon=103.8545240 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814159 lon=103.8545264 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814151 lon=103.8545244 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814319 lon=103.8545462 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814662 lon=103.8545932 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814888 lon=103.8546106 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2815113 lon=103.8546282 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2815116 lon=103.8546368 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814921 lon=103.8546171 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814812 lon=103.8546085 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814757 lon=103.8546161 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814773 lon=103.8546216 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814848 lon=103.8546221 sats=10
+[beacon-ground] [mode] UAV1 MISSION -> STATE_AUTO (disarmed)
+[beacon-ground] [runstart] RunStart run_id=21 verified by the OCS -- relaying to the UAV
+[beacon-ground] [runstart] UAV acknowledged RunStart run_id=21
+[beacon-ground] [pos] 3D fix lat=1.2814801 lon=103.8545948 sats=10
+[beacon-ground] [restart] request 141156 sent to UAV1
+[beacon-ground] [restart] drone: OK -- seabird-mission restarting (request 141156)
+[beacon-ground] [pos] 3D fix lat=1.2814881 lon=103.8545911 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2815220 lon=103.8546259 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2815244 lon=103.8546308 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2815135 lon=103.8546043 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2814936 lon=103.8545734 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814718 lon=103.8545185 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2814730 lon=103.8545497 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2814693 lon=103.8545634 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2814586 lon=103.8545638 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814364 lon=103.8545720 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2814475 lon=103.8546168 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2814715 lon=103.8546510 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2814715 lon=103.8546466 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2814955 lon=103.8546883 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2814787 lon=103.8546711 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2814660 lon=103.8546627 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2814967 lon=103.8547256 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2815371 lon=103.8548114 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2815486 lon=103.8548208 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2815507 lon=103.8547886 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2815345 lon=103.8547090 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2815265 lon=103.8546402 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2815059 lon=103.8545583 sats=11

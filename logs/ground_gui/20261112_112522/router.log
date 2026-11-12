@@ -1,0 +1,98 @@
+ELRS router | COM1 @ 460800
+Radio -> QGC: ('127.0.0.1', 14550), WSL: ('127.0.0.1', 14551)
+QGC -> radio: 127.0.0.1:14600
+Only this router should open COM port. Ctrl+C to stop.
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Connected to COM1
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=21 qgc_rx_frames=1 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=1
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=0 qgc_rx_frames=0 qgc_rx_bad_data=0
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=51 qgc_rx_frames=3 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=3
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Serial disconnected: ClearCommError failed (PermissionError(13, 'Access is denied.', None, 5)); reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s
+Serial disconnected: Attempting to use a port that is not open; reconnecting
+Connected to COM1
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=170 qgc_rx_frames=10 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=10
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+ELRS router | COM1 @ 460800
+Radio -> QGC: ('127.0.0.1', 14550), WSL: ('127.0.0.1', 14551)
+QGC -> radio: 127.0.0.1:14600
+Only this router should open COM port. Ctrl+C to stop.
+Connected to COM1
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=169 valid_frames=6 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=4 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=6 wsl_failed=0 qgc_sent=6 qgc_failed=0 qgc_to_serial_bytes=85 qgc_rx_frames=5 qgc_rx_bad_data=0
+  radio RX messages: ATTITUDE=1, EXTENDED_SYS_STATE=1, GPS_RAW_INT=1, SYS_STATUS=1, VFR_HUD=1, MISSION_CURRENT=1
+  QGC TX messages: HEARTBEAT=5
+Serial disconnected: ClearCommError failed (PermissionError(13, 'Access is denied.', None, 5)); reconnecting
+Unable to open COM1: could not open port 'COM1': FileNotFoundError(2, 'The system cannot find the file specified.', None, 2); retrying in 3s

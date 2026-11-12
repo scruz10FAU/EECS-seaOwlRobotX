@@ -98,7 +98,52 @@ AUTONOMOUS_MODES = {m for m in (getattr(FlightMode, n, None) for n in (
     "PRECISION_LAND")) if m is not None}
 
 FENCE_INCLUSION_VERTEX = 5001   # MAV_CMD_NAV_FENCE_POLYGON_VERTEX_INCLUSION
-_GATE_STARTED = time.time()     # RunStarts received before this are stale
+_GATE_STARTED = time.time()     # RunStarts received before this need runstart_accept()'s checks
+
+# A RunStart can reach the UAV before the flight script starts (e.g. while the
+# launcher waits for the RC trigger). It is still accepted if no earlier attempt
+# has ARMED on that run_id (the ledger below) and it is at most
+# RUNSTART_EARLY_MAX_S old -- so an early RunStart for this attempt starts the
+# run, but a RunStart a previous attempt already flew on never does.
+RUNSTART_EARLY_MAX_S = 600.0
+RUNSTART_LEDGER = os.environ.get("SEABIRD_RUNSTART_LEDGER", os.path.join("logs", "runstart_used.txt"))
+
+
+def runstart_used_ids():
+    """run_ids some attempt already armed on (from RUNSTART_LEDGER)."""
+    try:
+        with open(RUNSTART_LEDGER) as f:
+            return {line.split()[0] for line in f if line.strip()}
+    except OSError:
+        return set()
+
+
+def mark_runstart_used(run_id):
+    """Record that the UAV armed on this run_id: it won't start another attempt."""
+    if run_id is None:
+        return
+    try:
+        os.makedirs(os.path.dirname(RUNSTART_LEDGER) or ".", exist_ok=True)
+        with open(RUNSTART_LEDGER, "a") as f:
+            f.write(f"{run_id} armed {time.strftime('%Y-%m-%dT%H:%M:%S')}\n")
+    except OSError as e:
+        log(f"WARNING: couldn't record RunStart {run_id} as used in {RUNSTART_LEDGER} ({e}) -- "
+            f"only the {RUNSTART_EARLY_MAX_S:.0f} s age limit protects against reusing it")
+
+
+def runstart_accept(data, started):
+    """(accept, reason) for a RunStart message (dict with run_id, received)
+    seen by a script that started at `started` (time.time())."""
+    run_id = data.get("run_id")
+    received = float(data.get("received", 0.0) or 0.0)
+    if not received or received >= started:
+        return True, "received after this script started"
+    if str(run_id) in runstart_used_ids():
+        return False, f"run_id={run_id} was already used to arm (in {RUNSTART_LEDGER})"
+    age = time.time() - received
+    if age > RUNSTART_EARLY_MAX_S:
+        return False, f"run_id={run_id} is {age:.0f} s old (> {RUNSTART_EARLY_MAX_S:.0f} s)"
+    return True, f"received {age:.0f} s before this script started, not yet used"
 
 
 last_failure = None   # text of the last "FAIL step N: ..." -- why run_gate returned None
@@ -170,12 +215,12 @@ class GateRos:
             data = json.loads(msg.data)
         except json.JSONDecodeError:
             return
-        received = float(data.get("received", 0.0))
-        if received and received < _GATE_STARTED:
-            log(f"ignoring RunStart run_id={data.get('run_id')} from before the gate started "
-                f"(latched from an earlier run)")
+        ok, why = runstart_accept(data, _GATE_STARTED)
+        if not ok:
+            log(f"ignoring RunStart run_id={data.get('run_id')}: {why}")
             return
         if not self.event.is_set():
+            log(f"accepting RunStart run_id={data.get('run_id')}: {why}")
             self.run_id = data.get("run_id")
             self.event.set()
 
