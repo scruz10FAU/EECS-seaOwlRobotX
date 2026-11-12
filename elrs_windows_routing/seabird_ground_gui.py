@@ -1045,9 +1045,63 @@ class GroundGui(tk.Tk):
             gws = []
         return gws[0] if gws else ""
 
+    def _leftovers_ok(self, key) -> bool:
+        """Before starting Ground / OCS: a copy already running in WSL that this
+        window didn't start (an earlier GUI, a closed window) would publish
+        too -- a stale ground script sends its old status (frozen altitude,
+        STATE_UNKNOWN), a second OCS talks to RoboCommand as the team. Offer to
+        stop them. False = don't start. If WSL can't be checked, warn and start."""
+        managed = self.procs[key]
+        if managed.running or not managed.stop_pattern:
+            return True
+        distro = self.common("wsl_distro")
+        try:
+            out = subprocess.run(["wsl.exe", "-d", distro, "--", "ps", "-eo", "pid=,lstart=,args="],
+                                 capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                 timeout=15, creationflags=CREATE_NO_WINDOW).stdout
+        except (OSError, subprocess.SubprocessError) as e:
+            self.log(key, f"WARNING: couldn't check WSL for a {key} already running ({e}) -- "
+                          f"starting anyway\n")
+            return True
+        # pid, 5 lstart fields (e.g. "Thu Nov 12 15:27:21 2026"), args
+        found = []
+        for line in out.splitlines():
+            parts = line.split(None, 6)
+            if len(parts) == 7 and managed.stop_pattern in parts[6]:
+                found.append((parts[0], " ".join(parts[2:5]), parts[6][:90]))
+        if not found:
+            return True
+        listing = "\n".join(f"  PID {pid}  started {t}\n    {args}" for pid, t, args in found)
+        if not messagebox.askyesno(
+                f"{key} already running",
+                f"{len(found)} {key} process(es) are already running in WSL, not started by this "
+                f"window:\n\n{listing}\n\nA second copy would also publish to the OCS / "
+                f"RoboCommand (stale status, mode flipping).\n\nStop them and start a fresh {key}?"):
+            self.log(key, f"not started: {len(found)} {key} process(es) already running in WSL\n")
+            return False
+        pids = [pid for pid, _, _ in found]
+        self.log(key, f"stopping leftover {key} PID(s) {' '.join(pids)}\n")
+        for sig, wait in (("-INT", 5.0), ("-TERM", 3.0), ("-KILL", 1.0)):
+            subprocess.run(["wsl.exe", "-d", distro, "--", "kill", sig, *pids],
+                           capture_output=True, timeout=15, creationflags=CREATE_NO_WINDOW)
+            deadline = time.monotonic() + wait
+            while time.monotonic() < deadline:
+                alive = subprocess.run(["wsl.exe", "-d", distro, "--", "ps", "-o", "pid=", "-p",
+                                        ",".join(pids)], capture_output=True, text=True,
+                                       timeout=15, creationflags=CREATE_NO_WINDOW).stdout.split()
+                if not alive:
+                    return True
+                pids = alive
+                time.sleep(0.5)
+        self.log(key, f"WARNING: PID(s) {' '.join(pids)} still running -- not starting {key}\n")
+        messagebox.showerror(key, f"Couldn't stop PID(s) {' '.join(pids)}; {key} not started.")
+        return False
+
     def start_one(self, key):
         self._save_settings()
         c = {k[1]: v.get() for k, v in self.vars.items() if k[0] == "common"}
+        if key in ("OCS", "Ground") and not self._leftovers_ok(key):
+            return
         if key == "Router":
             cmd = [sys.executable, "-u", str(HERE / "elrs_windows_router.py"),
                    "--com", c["com_port"], "--baud", c["baud"]]

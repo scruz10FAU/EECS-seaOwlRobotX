@@ -79,6 +79,8 @@ DEFAULT_FENCE_STATUS_TOPIC = "/seaowls/uav1/mission/geofence_status"
 
 # No UAV heartbeat for this long -> publish STATE_UNKNOWN.
 HEARTBEAT_STALE_S = 3.0
+# VehicleStatus altitude uses GLOBAL_POSITION_INT only if it's this recent (s).
+ALT_STALE_S = 5.0
 # Upper bound on VehicleStatus publish rate (heartbeat + position-driven).
 STATUS_MAX_HZ = 5.0
 # '[pos]' line interval while the UAV has a 3D GPS fix.
@@ -152,6 +154,12 @@ def _is_uav_heartbeat(msg) -> bool:
     router's own sysid 255 heartbeat) or a companion component."""
     return (msg.type != mavutil.mavlink.MAV_TYPE_GCS
             and msg.get_srcComponent() == mavutil.mavlink.MAV_COMP_ID_AUTOPILOT1)
+
+
+def _is_auto(heartbeat) -> bool:
+    """The heartbeat maps to STATE_AUTO (same rule as _build_vehicle_status)."""
+    return (heartbeat.system_status not in _KILLED_SYSTEM_STATUS
+            and mavutil.mode_string_v10(heartbeat) in _AUTO_MODES)
 
 
 def _parse_task_statustext(text):
@@ -240,14 +248,18 @@ def _build_vehicle_status(VehicleStatus, stamp, vehicle_id, heartbeat, cache, cu
     out.roll_deg = math.degrees(att.roll) if att else nan
     out.pitch_deg = math.degrees(att.pitch) if att else nan
 
-    # Height above ellipsoid when GPS_RAW_INT carries it (MAVLink 2
-    # extension, 0 if unset), else AMSL from GLOBAL_POSITION_INT / VFR_HUD.
-    if gps_fix and getattr(gps, "alt_ellipsoid", 0):
+    # Height above the ellipsoid. Preferred: PX4's EKF altitude (AMSL, fused
+    # with the barometer -- no GPS height spikes) plus the ellipsoid-AMSL
+    # offset the GPS reports (alt_ellipsoid - alt: the local geoid height,
+    # steady even when the GPS height itself is noisy; HAE_OFFSET_M, kept
+    # from the last 3D fix). Else the raw GPS ellipsoid height. Never an AMSL
+    # value in this HAE field -- NaN instead.
+    offset = cache.get("HAE_OFFSET_M")
+    gpos_fresh = gpos is not None and time.time() - getattr(gpos, "_timestamp", 0) < ALT_STALE_S
+    if gpos_fresh and offset is not None:
+        out.altitude_hae_m = gpos.alt / 1000.0 + offset
+    elif gps_fix and getattr(gps, "alt_ellipsoid", 0):
         out.altitude_hae_m = gps.alt_ellipsoid / 1000.0
-    elif gpos:
-        out.altitude_hae_m = gpos.alt / 1000.0
-    elif hud:
-        out.altitude_hae_m = float(hud.alt)
     else:
         out.altitude_hae_m = nan
     return out
@@ -606,6 +618,7 @@ def main():
     last_mode = None       # (PX4 mode, RoboCommand state, armed) last logged
     last_unknown_t = 0.0
     last_status_t = 0.0
+    hold_logged_t = None   # set while holding STATE_AUTO through a link gap
     try:
         while True:
             if ros_node is not None:
@@ -757,10 +770,24 @@ def main():
                 blocking=True, timeout=0.1 if ros_node is not None else 1.0,
             )
             now = time.monotonic()
-            # Link stale: keep publishing STATE_UNKNOWN at ~1 Hz.
+            # Link stale: publish at ~1 Hz so the OCS doesn't suppress the
+            # heartbeat. If the last heartbeat said AUTO, HOLD it: leaving AUTO
+            # during a run disqualifies, and a radio gap is not a mode change --
+            # a real one (pilot takeover, kill) arrives in the next heartbeat.
+            # PX4's RC-loss failsafe (RTL / LAND) is AUTO too. Otherwise
+            # STATE_UNKNOWN, as the link really is unknown.
             if (now - last_heartbeat_t >= HEARTBEAT_STALE_S
                     and now - last_unknown_t >= 1.0):
-                publish_status(None)
+                if last_heartbeat is not None and _is_auto(last_heartbeat):
+                    publish_status(last_heartbeat)
+                    gap = now - last_heartbeat_t
+                    if hold_logged_t is None or now - hold_logged_t >= 5.0:
+                        print(f"[beacon-ground] [link] no UAV heartbeat for {gap:.0f} s -- "
+                              f"holding STATE_AUTO ({mavutil.mode_string_v10(last_heartbeat)}) "
+                              f"for RoboCommand", flush=True)
+                        hold_logged_t = now
+                else:
+                    publish_status(None)
                 last_unknown_t = now
             if msg is None:
                 continue
@@ -772,6 +799,10 @@ def main():
                 continue  # fence uploader only
             if msg_type == "HEARTBEAT":
                 if _is_uav_heartbeat(msg):
+                    if hold_logged_t is not None:
+                        print(f"[beacon-ground] [link] UAV heartbeat back after "
+                              f"{now - last_heartbeat_t:.0f} s", flush=True)
+                        hold_logged_t = None
                     last_heartbeat_t = now
                     last_heartbeat = msg
                     publish_status(msg)
@@ -836,6 +867,11 @@ def main():
                 cache[msg_type] = msg
                 if msg_type == "GPS_RAW_INT":
                     report_position(now)
+                    # Ellipsoid - AMSL offset for the VehicleStatus altitude
+                    # (see _build_vehicle_status); only from a 3D fix that
+                    # carries both heights.
+                    if msg.fix_type >= 3 and getattr(msg, "alt_ellipsoid", 0) and msg.alt:
+                        cache["HAE_OFFSET_M"] = (msg.alt_ellipsoid - msg.alt) / 1000.0
                 # 1 Hz heartbeats alone can trip seaowls_ocs's 2 s stale check
                 # after one dropped packet -- also publish on ATTITUDE (the
                 # fastest stream over ELRS), capped at STATUS_MAX_HZ, while the
