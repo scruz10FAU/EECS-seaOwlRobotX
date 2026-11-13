@@ -1,0 +1,43 @@
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/tests/mock_robocommand_course.py", line 366, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/tests/mock_robocommand_course.py", line 238, in main
+    client.connect(args.host, args.port)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 1435, in connect
+    return self.reconnect()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 1598, in reconnect
+    self._sock = self._create_socket()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 4609, in _create_socket
+    sock = self._create_socket_connection()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 4640, in _create_socket_connection
+    return socket.create_connection(addr, timeout=self._connect_timeout, source_address=source)
+  File "/usr/lib/python3.10/socket.py", line 845, in create_connection
+    raise err
+  File "/usr/lib/python3.10/socket.py", line 833, in create_connection
+    sock.connect(sa)
+TimeoutError: timed out
+Published RxCourse (retained) -> robocommand/robotx/course on localhost:1914
+RxCourse course_id='MOCK' pinger_freq_hz=25000
+  corners: 5 points
+    1.28173000, 103.85391000
+    1.28164000, 103.85407000
+    1.28147000, 103.85398000
+    1.28158000, 103.85381000
+    1.28173000, 103.85391000
+  uav_transit_area: 0 points (empty)
+[mock RoboCommand] serving team FLAU: waiting for a RunDeclaration (RunStart without waiting for AUTO)
+[mock RoboCommand] RunDeclaration seq=1 ACCEPTED: vehicles=['UAV1'] tiers=[TIER_ADVANCED, TIER_NONE, TIER_NONE, TIER_NONE]
+[mock RoboCommand] --no-wait-auto: RunStart in 3 s
+[mock RoboCommand] RunStart sent: declaration_seq=1 run_id=1
+[mock RoboCommand] RunDeclaration seq=2 ACCEPTED: vehicles=['UAV1'] tiers=[TIER_ADVANCED, TIER_NONE, TIER_NONE, TIER_NONE]
+[mock RoboCommand] --no-wait-auto: RunStart in 3 s
+[mock RoboCommand] RunStart sent: declaration_seq=2 run_id=2
+[mock RoboCommand] RunDeclaration seq=3 ACCEPTED: vehicles=['UAV1'] tiers=[TIER_ADVANCED, TIER_NONE, TIER_NONE, TIER_NONE]
+[mock RoboCommand] --no-wait-auto: RunStart in 3 s
+[mock RoboCommand] RunStart sent: declaration_seq=3 run_id=3
+[mock RoboCommand] RunDeclaration seq=4 ACCEPTED: vehicles=['UAV1'] tiers=[TIER_ADVANCED, TIER_NONE, TIER_NONE, TIER_NONE]
+[mock RoboCommand] --no-wait-auto: RunStart in 3 s
+[mock RoboCommand] RunStart sent: declaration_seq=4 run_id=4
+[mock RoboCommand] RunDeclaration seq=5 ACCEPTED: vehicles=['UAV1'] tiers=[TIER_ADVANCED, TIER_NONE, TIER_NONE, TIER_NONE]
+[mock RoboCommand] --no-wait-auto: RunStart in 3 s
+[mock RoboCommand] RunStart sent: declaration_seq=5 run_id=5

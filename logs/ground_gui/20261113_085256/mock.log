@@ -1,0 +1,10 @@
+Published RxCourse (retained) -> robocommand/robotx/course on localhost:1914
+RxCourse course_id='MOCK' pinger_freq_hz=25000
+  corners: 5 points
+    1.28173000, 103.85391000
+    1.28164000, 103.85407000
+    1.28147000, 103.85398000
+    1.28158000, 103.85381000
+    1.28173000, 103.85391000
+  uav_transit_area: 0 points (empty)
+[mock RoboCommand] serving team FLAU: waiting for a RunDeclaration (RunStart without waiting for AUTO)

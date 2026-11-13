@@ -1,0 +1,240 @@
+ELRS router | COM1 @ 460800
+Radio -> QGC: ('127.0.0.1', 14550), WSL: ('127.0.0.1', 14551)
+QGC -> radio: 127.0.0.1:14600
+WiFi link: drone 192.168.70.229:14550 (local port 58207); SEABIRD_* also to 192.168.70.229:14572; uplink over WiFi while drone heartbeats arrive within 3 s, else ELRS
+Only this router should open COM port. Ctrl+C to stop.
+Connected to COM1
+Uplink now over ELRS (no drone heartbeat over WiFi)
+Last interval: serial_bytes=2356 valid_frames=74 lost_frames_estimate=320 duplicate_frames=31 out_of_order_frames=15 memory_vect=0 beacons=0 bad_data=37 parser_errors=0 wsl_sent=74 wsl_failed=0 qgc_sent=74 qgc_failed=0 qgc_to_serial_bytes=951 qgc_rx_frames=52 qgc_rx_bad_data=0 elrs_frames=74 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=35(runs 3) crc=2(runs 2)
+    e.g. bad_prefix (6 bytes, 'Bad prefix'): 08 00 04 03 74 ac
+    e.g. crc (21 bytes, 'invalid MAVLink CRC in msgID 0 0x0000 should be 0x7760'): fd 09 00 00 e4 01 01 00 00 00 00 00 04 04 02 0c 1d 03 11 00 00
+  radio RX messages: UNKNOWN_413=15, UNKNOWN_410=15, HEARTBEAT=8, ATTITUDE=8, GLOBAL_POSITION_INT=5, VFR_HUD=4, SYS_STATUS=4, GPS_RAW_INT=4
+  QGC TX messages: UNKNOWN_412=47, HEARTBEAT=5
+Last interval: serial_bytes=1984 valid_frames=65 lost_frames_estimate=259 duplicate_frames=35 out_of_order_frames=12 memory_vect=0 beacons=0 bad_data=73 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=1059 qgc_rx_frames=58 qgc_rx_bad_data=0 elrs_frames=65 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=73(runs 2)
+    e.g. bad_prefix (55 bytes, 'Bad prefix'): 69 67 68 74 3a 20 47 50 53 20 56 65 72 74 69 63 61 6c 20 50 6f 73 20 44 72 69 66 74 20 74 6f 6f 20 68 69 67 6f af 01 23 ef 0d 00 ca 02 00 00 44 ...
+  radio RX messages: UNKNOWN_413=25, UNKNOWN_410=8, ATTITUDE=7, HEARTBEAT=7, SYS_STATUS=3, GPS_RAW_INT=3, VFR_HUD=3, BATTERY_STATUS=2
+  QGC TX messages: UNKNOWN_412=53, HEARTBEAT=5
+Last interval: serial_bytes=2294 valid_frames=63 lost_frames_estimate=350 duplicate_frames=40 out_of_order_frames=9 memory_vect=0 beacons=0 bad_data=217 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=933 qgc_rx_frames=51 qgc_rx_bad_data=0 elrs_frames=63 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=209(runs 14) crc=6(runs 5) length=2(runs 2)
+    e.g. crc (120 bytes, 'invalid MAVLink CRC in msgID 253 0x78d6 should be 0x57a9'): fd 35 00 00 29 01 01 fd 00 00 02 50 72 65 66 6c 69 67 68 74 20 46 61 69 6c 3a 20 ce ff fd 06 00 00 2d 01 01 9d 01 00 b5 02 ba 02 ff be 4f 83 fd ...
+    e.g. bad_prefix (14 bytes, 'Bad prefix'): 00 00 00 00 00 04 04 02 0c 1d 03 03 bc ea
+    e.g. length (117 bytes, 'invalid incompat_flags 0x6c 0xfd 12'): fd 69 6c 3a 20 47 65 6f 66 65 6e 63 65 20 76 69 6f 6c 61 74 69 6f 6e 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 01 f2 f6 fd 1e 00 00 ad ...
+  radio RX messages: UNKNOWN_413=34, HEARTBEAT=5, VFR_HUD=4, GLOBAL_POSITION_INT=3, ATTITUDE=3, GPS_RAW_INT=2, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: UNKNOWN_412=46, HEARTBEAT=5
+Last interval: serial_bytes=2170 valid_frames=59 lost_frames_estimate=380 duplicate_frames=32 out_of_order_frames=12 memory_vect=0 beacons=0 bad_data=213 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=951 qgc_rx_frames=52 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=206(runs 13) crc=7(runs 7)
+    e.g. bad_prefix (38 bytes, 'Bad prefix'): 00 00 57 01 01 1e 00 00 c7 0a 0e 00 8f a6 da bc 61 fb 9a bc a2 54 12 c0 85 54 89 ba 6c 7f d3 3a 80 ae 2f 38 a3 42
+    e.g. crc (21 bytes, 'invalid MAVLink CRC in msgID 0 0xbeff should be 0xdf69'): fd 09 00 00 8f 01 64 00 00 00 00 00 00 00 1e ba 02 be 02 ff be
+  radio RX messages: UNKNOWN_413=22, UNKNOWN_410=7, HEARTBEAT=5, SYS_STATUS=4, GPS_RAW_INT=4, GLOBAL_POSITION_INT=3, ATTITUDE=2, MISSION_CURRENT=2
+  QGC TX messages: UNKNOWN_412=47, HEARTBEAT=5
+Last interval: serial_bytes=2170 valid_frames=62 lost_frames_estimate=493 duplicate_frames=35 out_of_order_frames=9 memory_vect=0 beacons=0 bad_data=242 parser_errors=0 wsl_sent=62 wsl_failed=0 qgc_sent=62 qgc_failed=0 qgc_to_serial_bytes=969 qgc_rx_frames=53 qgc_rx_bad_data=0 elrs_frames=62 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=237(runs 14) crc=3(runs 3) length=2(runs 2)
+    e.g. bad_prefix (16 bytes, 'Bad prefix'): 13 02 27 00 00 3d 01 00 00 34 02 00 00 b5 3a 4b
+    e.g. length (198 bytes, 'invalid incompat_flags 0xd0 0xfd 12'): fd ba d0 27 61 3a 30 cc db b9 de e2 fd 06 00 00 af 01 01 9d 01 00 be 02 c3 02 ff be a2 7c fd 2b 00 00 a6 01 01 18 00 00 02 3b 19 37 00 00 00 00 ...
+    e.g. crc (21 bytes, 'invalid MAVLink CRC in msgID 0 0x0018 should be 0x8af5'): fd 09 00 00 94 01 64 00 00 00 11 f9 fd 2b 00 00 f9 01 01 18 00
+  radio RX messages: UNKNOWN_413=27, HEARTBEAT=7, VFR_HUD=4, UNKNOWN_410=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3, SYS_STATUS=3, ATTITUDE=3
+  QGC TX messages: UNKNOWN_412=48, HEARTBEAT=5
+Last interval: serial_bytes=2294 valid_frames=59 lost_frames_estimate=390 duplicate_frames=31 out_of_order_frames=10 memory_vect=0 beacons=0 bad_data=286 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=951 qgc_rx_frames=52 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=279(runs 16) crc=6(runs 6) length=1(runs 1)
+    e.g. crc (52 bytes, 'invalid MAVLink CRC in msgID 1 0x0001 should be 0x6be9'): fd 28 00 00 ea 01 01 01 00 00 2d 80 21 02 2d 80 21 02 3f 80 21 22 12 00 00 00 00 00 00 00 54 00 00 00 00 00 00 00 00 01 99 06 fd 06 00 00 18 01 ...
+    e.g. bad_prefix (8 bytes, 'Bad prefix'): c7 02 cc 02 ff be ba 77
+    e.g. length (44 bytes, 'invalid incompat_flags 0x73 0xfd 12'): fd 13 73 01 b9 b0 5d 79 3a 60 31 5f b9 18 95 fd 2b 00 00 27 01 01 18 00 00 5e 3d 93 37 00 00 00 00 f2 91 c3 00 36 dc e6 3d 06 13 00
+  radio RX messages: UNKNOWN_413=16, UNKNOWN_410=9, ATTITUDE=8, GLOBAL_POSITION_INT=4, HEARTBEAT=4, VFR_HUD=4, SYS_STATUS=3, EXTENDED_SYS_STATE=2
+  QGC TX messages: UNKNOWN_412=47, HEARTBEAT=5
+Last interval: serial_bytes=2170 valid_frames=35 lost_frames_estimate=293 duplicate_frames=23 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=459 parser_errors=0 wsl_sent=35 wsl_failed=0 qgc_sent=35 qgc_failed=0 qgc_to_serial_bytes=951 qgc_rx_frames=52 qgc_rx_bad_data=0 elrs_frames=35 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=447(runs 22) crc=8(runs 8) length=4(runs 4)
+    e.g. bad_prefix (27 bytes, 'Bad prefix'): a3 01 01 9a 01 00 d9 5d c8 01 23 ef 0d 00 cc 02 00 00 33 ff ff ff ff 14 02 be 3b
+    e.g. crc (40 bytes, 'invalid MAVLink CRC in msgID 30 0x021c should be 0x06af'): fd 1c 00 00 bd 01 01 1e 00 00 00 42 0e 00 f1 ae ea bc 44 39 89 bc ec 57 12 c0 d6 13 14 b9 38 35 8d 3a 00 d5 6d 39 1c 02
+    e.g. length (30 bytes, 'invalid incompat_flags 0x2 0xfd 12'): fd 12 02 00 72 59 49 ef fd 12 00 00 ed 01 01 9a 01 00 27 37 1d 01 23 ef 0d 00 cd 02 00 00
+  radio RX messages: UNKNOWN_410=20, ATTITUDE=3, VFR_HUD=3, GLOBAL_POSITION_INT=2, HEARTBEAT=2, UNKNOWN_116890=1, SYS_STATUS=1, UNKNOWN_3604890=1
+  QGC TX messages: UNKNOWN_412=47, HEARTBEAT=5
+Last interval: serial_bytes=1984 valid_frames=44 lost_frames_estimate=456 duplicate_frames=28 out_of_order_frames=2 memory_vect=0 beacons=0 bad_data=380 parser_errors=0 wsl_sent=44 wsl_failed=0 qgc_sent=44 qgc_failed=0 qgc_to_serial_bytes=969 qgc_rx_frames=53 qgc_rx_bad_data=0 elrs_frames=44 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=369(runs 19) crc=10(runs 10) length=1(runs 1)
+    e.g. bad_prefix (10 bytes, 'Bad prefix'): 00 00 00 00 ff bf ff ff 24 58
+    e.g. crc (65 bytes, 'invalid MAVLink CRC in msgID 253 0x0000 should be 0x0cd5'): fd 35 00 00 6e 01 01 fd 00 00 02 50 72 65 66 6c 69 67 68 74 20 3a 20 47 65 6f 66 65 6e 63 65 20 76 69 6f 6c 61 74 69 6f 6e 00 00 00 00 00 00 00 ...
+    e.g. length (13 bytes, 'invalid incompat_flags 0x64 0xfd 12'): fd 01 64 00 00 00 00 00 00 00 1e 08 00
+  radio RX messages: UNKNOWN_413=17, HEARTBEAT=6, UNKNOWN_410=3, ATTITUDE=3, VFR_HUD=2, EXTENDED_SYS_STATE=2, UNKNOWN_3667=1, UNKNOWN_114208=1
+  QGC TX messages: UNKNOWN_412=48, HEARTBEAT=5
+Last interval: serial_bytes=2418 valid_frames=49 lost_frames_estimate=418 duplicate_frames=33 out_of_order_frames=5 memory_vect=0 beacons=0 bad_data=364 parser_errors=0 wsl_sent=49 wsl_failed=0 qgc_sent=49 qgc_failed=0 qgc_to_serial_bytes=933 qgc_rx_frames=51 qgc_rx_bad_data=0 elrs_frames=49 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=354(runs 21) crc=8(runs 8) length=2(runs 2)
+    e.g. bad_prefix (16 bytes, 'Bad prefix'): 00 00 aa 01 01 9d 01 00 cf 02 d5 02 ff be fa 6e
+    e.g. crc (29 bytes, 'invalid MAVLink CRC in msgID 0 0x1cfd should be 0x9e68'): fd 11 00 00 a7 01 01 00 00 00 00 00 a3 31 10 3e c1 1d b5 41 3b 9d 69 3d e4 9b 8a fd 1c
+    e.g. length (53 bytes, 'invalid incompat_flags 0x6f 0xfd 12'): fd 1c 6f 59 84 32 fd 06 00 00 bd 01 01 9d 01 00 cf 02 d5 02 ff be 69 2c fd 06 00 00 c1 01 01 9d 01 00 cf 02 d5 02 ff be 94 9b fd 06 00 00 c9 01 ...
+  radio RX messages: UNKNOWN_413=14, UNKNOWN_410=12, HEARTBEAT=5, ATTITUDE=3, GLOBAL_POSITION_INT=2, MISSION_CURRENT=2, UNKNOWN_411=2, VFR_HUD=2
+  QGC TX messages: UNKNOWN_412=46, HEARTBEAT=5
+Last interval: serial_bytes=2418 valid_frames=65 lost_frames_estimate=389 duplicate_frames=39 out_of_order_frames=9 memory_vect=0 beacons=0 bad_data=285 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=969 qgc_rx_frames=53 qgc_rx_bad_data=0 elrs_frames=65 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=279(runs 10) crc=5(runs 5) length=1(runs 1)
+    e.g. bad_prefix (10 bytes, 'Bad prefix'): 00 33 ff ff ff ff 14 02 4f fc
+    e.g. length (13 bytes, 'invalid incompat_flags 0x4a 0xfd 12'): fd 01 4a 00 00 00 00 00 00 04 51 bc 3c
+    e.g. crc (52 bytes, 'invalid MAVLink CRC in msgID 1 0x0101 should be 0x5fda'): fd 28 00 00 70 01 01 01 00 00 2d 80 21 02 2d 80 21 02 1f 80 21 22 12 02 1f 3f 2d 00 00 00 00 00 00 00 00 00 00 00 00 00 54 00 00 11 d8 fd 06 00 ...
+  radio RX messages: UNKNOWN_413=27, HEARTBEAT=8, UNKNOWN_410=7, ATTITUDE=6, GLOBAL_POSITION_INT=4, SYS_STATUS=3, VFR_HUD=3, EXTENDED_SYS_STATE=2
+  QGC TX messages: UNKNOWN_412=48, HEARTBEAT=5
+Last interval: serial_bytes=1922 valid_frames=46 lost_frames_estimate=272 duplicate_frames=27 out_of_order_frames=6 memory_vect=0 beacons=0 bad_data=239 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=915 qgc_rx_frames=50 qgc_rx_bad_data=0 elrs_frames=46 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=233(runs 11) crc=3(runs 3) length=3(runs 3)
+    e.g. bad_prefix (1 bytes, 'Bad prefix'): be
+    e.g. length (34 bytes, 'invalid incompat_flags 0xfd 0xfd 12'): fd 09 fd 09 00 00 b1 01 64 00 00 00 00 00 00 00 1e 08 00 04 03 ed c8 fd 1c 00 00 f0 01 01 1e 00 00 1d
+    e.g. crc (52 bytes, 'invalid MAVLink CRC in msgID 1 0x9d00 should be 0x536b'): fd 28 00 00 fd 01 01 01 00 00 2d 80 21 02 2d 80 21 02 3f 80 21 01 30 f8 fd 06 00 00 30 01 01 9d 01 00 d9 02 de 02 ff be 52 7e fd 06 00 00 33 01 ...
+  radio RX messages: UNKNOWN_413=22, ATTITUDE=6, HEARTBEAT=4, UNKNOWN_410=3, SYS_STATUS=2, MISSION_CURRENT=2, VFR_HUD=2, GLOBAL_POSITION_INT=2
+  QGC TX messages: UNKNOWN_412=45, HEARTBEAT=5
+Last interval: serial_bytes=2418 valid_frames=63 lost_frames_estimate=493 duplicate_frames=42 out_of_order_frames=6 memory_vect=0 beacons=0 bad_data=354 parser_errors=0 wsl_sent=63 wsl_failed=0 qgc_sent=63 qgc_failed=0 qgc_to_serial_bytes=987 qgc_rx_frames=54 qgc_rx_bad_data=0 elrs_frames=63 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=347(runs 19) crc=6(runs 6) length=1(runs 1)
+    e.g. bad_prefix (16 bytes, 'Bad prefix'): 00 00 23 01 01 9d 01 00 de 02 e2 02 ff be 8c 4e
+    e.g. crc (52 bytes, 'invalid MAVLink CRC in msgID 1 0x0000 should be 0xf8fb'): fd 28 00 00 f2 01 01 01 00 00 29 01 01 9d 01 00 de 02 e2 02 ff be be 68 fd 06 00 00 2f 01 01 9d 01 00 de 02 e2 02 ff be 50 75 fd 09 00 00 b5 01 ...
+    e.g. length (278 bytes, 'invalid incompat_flags 0x13 0xfd 12'): fd fd 13 00 00 a4 01 01 9a ff 14 02 0e d0 fd 28 00 00 7b 01 01 01 00 00 2d 80 21 02 2d 80 21 02 3f 80 21 22 12 02 1c 3f 2e 00 00 00 00 00 00 00 ...
+  radio RX messages: UNKNOWN_413=26, UNKNOWN_410=8, HEARTBEAT=6, VFR_HUD=6, ATTITUDE=3, MISSION_CURRENT=2, GLOBAL_POSITION_INT=2, UNKNOWN_12226761=1
+  QGC TX messages: UNKNOWN_412=49, HEARTBEAT=5
+Last interval: serial_bytes=2232 valid_frames=55 lost_frames_estimate=327 duplicate_frames=33 out_of_order_frames=11 memory_vect=0 beacons=0 bad_data=306 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=951 qgc_rx_frames=52 qgc_rx_bad_data=0 elrs_frames=55 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=293(runs 15) crc=13(runs 13)
+    e.g. crc (40 bytes, 'invalid MAVLink CRC in msgID 33 0x02e5 should be 0x1a05'): fd 1c 00 00 e9 01 01 21 00 00 26 b5 0e 00 70 91 c3 00 6e dc e6 3d 9b 39 60 f9 fd 06 00 00 fa 01 01 9d 01 00 e2 02 e5 02
+    e.g. bad_prefix (4 bytes, 'Bad prefix'): ff be 66 ce
+  radio RX messages: UNKNOWN_413=28, HEARTBEAT=5, ATTITUDE=4, UNKNOWN_410=4, GLOBAL_POSITION_INT=3, SYS_STATUS=2, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: UNKNOWN_412=47, HEARTBEAT=5
+Last interval: serial_bytes=2232 valid_frames=52 lost_frames_estimate=482 duplicate_frames=33 out_of_order_frames=8 memory_vect=0 beacons=0 bad_data=318 parser_errors=0 wsl_sent=52 wsl_failed=0 qgc_sent=52 qgc_failed=0 qgc_to_serial_bytes=987 qgc_rx_frames=54 qgc_rx_bad_data=0 elrs_frames=52 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=307(runs 19) crc=10(runs 10) length=1(runs 1)
+    e.g. bad_prefix (4 bytes, 'Bad prefix'): ff be 45 ac
+    e.g. crc (21 bytes, 'invalid MAVLink CRC in msgID 0 0xfd1d should be 0xf416'): fd 09 00 00 49 01 01 00 00 00 86 a8 41 89 30 d1 3e e4 0c 1d fd
+    e.g. length (129 bytes, 'invalid incompat_flags 0x5d 0xfd 12'): fd 68 5d fd 06 00 00 c5 01 01 9d 01 00 ea 02 f0 02 ff be c5 58 fd 1c 00 00 c9 01 01 1e 00 00 4a d9 0e 00 8a 3f d2 bc 2c 41 8e bc a0 6a 12 c0 f3 ...
+  radio RX messages: UNKNOWN_413=22, UNKNOWN_410=9, ATTITUDE=4, HEARTBEAT=4, MISSION_CURRENT=3, EXTENDED_SYS_STATE=2, GPS_RAW_INT=2, VFR_HUD=2
+  QGC TX messages: UNKNOWN_412=49, HEARTBEAT=5
+Last interval: serial_bytes=2604 valid_frames=75 lost_frames_estimate=394 duplicate_frames=42 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=206 parser_errors=0 wsl_sent=75 wsl_failed=0 qgc_sent=75 qgc_failed=0 qgc_to_serial_bytes=1005 qgc_rx_frames=55 qgc_rx_bad_data=0 elrs_frames=75 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=195(runs 13) crc=11(runs 11)
+    e.g. crc (52 bytes, 'invalid MAVLink CRC in msgID 1 0x9d01 should be 0xd2cc'): fd 28 00 00 ec 01 01 01 00 00 2d 80 21 02 2d 80 21 02 3f 80 21 32 12 02 1e 3f 2d 00 00 00 00 00 00 00 00 00 00 00 00 00 54 00 00 00 00 06 00 00 ...
+    e.g. bad_prefix (10 bytes, 'Bad prefix'): 01 00 ea 02 f0 02 ff be d5 50
+  radio RX messages: UNKNOWN_413=34, ATTITUDE=7, HEARTBEAT=7, GPS_RAW_INT=4, UNKNOWN_410=4, GLOBAL_POSITION_INT=3, VFR_HUD=3, MISSION_CURRENT=2
+  QGC TX messages: UNKNOWN_412=50, HEARTBEAT=5
+Last interval: serial_bytes=2418 valid_frames=59 lost_frames_estimate=369 duplicate_frames=33 out_of_order_frames=10 memory_vect=0 beacons=0 bad_data=281 parser_errors=0 wsl_sent=59 wsl_failed=0 qgc_sent=59 qgc_failed=0 qgc_to_serial_bytes=969 qgc_rx_frames=53 qgc_rx_bad_data=0 elrs_frames=59 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=272(runs 14) crc=7(runs 7) length=2(runs 2)
+    e.g. bad_prefix (25 bytes, 'Bad prefix'): 00 58 01 01 9a 01 00 c7 1d 2f 01 8b b4 0e 00 63 01 01 f5 00 00 00 01 4b 2e
+    e.g. crc (40 bytes, 'invalid MAVLink CRC in msgID 43 0x0085 should be 0xbc10'): fd 1c 00 00 78 01 01 2b 00 00 64 01 01 18 00 00 2d 15 7f 3a 00 00 00 00 ff 90 c3 00 9d dc e6 3d d1 13 00 00 4f 00 85 00
+    e.g. length (43 bytes, 'invalid incompat_flags 0x33 0xfd 12'): fd 12 33 00 40 00 00 14 9e 86 fd 1c 00 00 e3 01 01 21 00 00 24 00 0f 00 ff 90 c3 00 a2 57 00 00 4b 00 00 00 00 00 00 00 f3 ff 6d
+  radio RX messages: UNKNOWN_413=16, UNKNOWN_410=13, HEARTBEAT=6, ATTITUDE=5, GLOBAL_POSITION_INT=4, GPS_RAW_INT=3, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: UNKNOWN_412=48, HEARTBEAT=5
+Last interval: serial_bytes=2666 valid_frames=46 lost_frames_estimate=373 duplicate_frames=30 out_of_order_frames=4 memory_vect=0 beacons=0 bad_data=334 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=986 qgc_rx_frames=54 qgc_rx_bad_data=0 elrs_frames=46 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=325(runs 19) crc=7(runs 7) length=2(runs 2)
+    e.g. bad_prefix (31 bytes, 'Bad prefix'): 00 12 06 0f 00 58 93 e1 bc ba 65 99 bc 93 67 12 c0 5a 48 b6 b9 60 62 5f 3a b0 a0 70 b9 36 3c
+    e.g. crc (53 bytes, 'invalid MAVLink CRC in msgID 83 0x0eb4 should be 0xbbba'): fd 29 00 00 fb 01 01 53 00 00 00 00 01 da 36 fd 09 00 00 46 01 01 00 00 00 00 00 04 04 02 0c 1d 03 03 64 aa fd 12 00 00 74 01 01 9a 01 00 27 37 ...
+    e.g. length (58 bytes, 'invalid incompat_flags 0xb4 0xfd 12'): fd 2e b4 41 bb 0a da 3d e4 93 d4 fd 1c 00 00 73 01 01 21 00 00 2e 07 0f 00 fd 90 c3 00 9b dc e6 3d f9 57 00 00 a1 00 00 00 00 00 00 00 f6 ff 6d ...
+  radio RX messages: UNKNOWN_410=24, ATTITUDE=7, GPS_RAW_INT=2, UNKNOWN_411=2, HEARTBEAT=2, GLOBAL_POSITION_INT=2, SYS_STATUS=1, UNKNOWN_16253338=1
+  QGC TX messages: UNKNOWN_412=48, HEARTBEAT=5, MISSION_COUNT=1
+Last interval: serial_bytes=3162 valid_frames=80 lost_frames_estimate=469 duplicate_frames=38 out_of_order_frames=16 memory_vect=0 beacons=0 bad_data=239 parser_errors=0 wsl_sent=80 wsl_failed=0 qgc_sent=80 qgc_failed=0 qgc_to_serial_bytes=1501 qgc_rx_frames=63 qgc_rx_bad_data=0 elrs_frames=80 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=233(runs 16) crc=5(runs 5) length=1(runs 1)
+    e.g. crc (52 bytes, 'invalid MAVLink CRC in msgID 1 0xbfff should be 0xe05b'): fd 28 00 00 90 01 01 01 00 00 2d 80 21 02 2d 80 00 00 d5 01 01 9a 01 00 e0 93 a8 01 93 bc 0e 00 f9 02 00 00 88 00 00 00 10 00 08 00 00 00 ff bf ...
+    e.g. bad_prefix (4 bytes, 'Bad prefix'): ff ff ba 1a
+    e.g. length (280 bytes, 'invalid incompat_flags 0xfd 0xfd 12'): fd ff fd ff 02 00 6e 59 e1 3a fd 12 00 00 ab 01 01 9a 01 00 cc 3c 57 01 93 bc 0e 00 fa 02 00 00 44 ff ff ff ff 03 b5 74 fd 05 00 00 b4 01 01 33 ...
+  radio RX messages: UNKNOWN_410=32, MISSION_REQUEST_INT=11, HEARTBEAT=7, ATTITUDE=7, SYS_STATUS=4, EXTENDED_SYS_STATE=3, GPS_RAW_INT=3, GLOBAL_POSITION_INT=2
+  QGC TX messages: UNKNOWN_412=47, MISSION_ITEM_INT=11, HEARTBEAT=5
+Last interval: serial_bytes=3100 valid_frames=90 lost_frames_estimate=395 duplicate_frames=43 out_of_order_frames=18 memory_vect=0 beacons=0 bad_data=261 parser_errors=0 wsl_sent=90 wsl_failed=0 qgc_sent=90 qgc_failed=0 qgc_to_serial_bytes=1701 qgc_rx_frames=67 qgc_rx_bad_data=0 elrs_frames=90 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=258(runs 14) crc=2(runs 2) length=1(runs 1)
+    e.g. bad_prefix (28 bytes, 'Bad prefix'): 0f 00 51 c8 de bc 78 48 94 bc 16 60 12 c0 2e 84 e1 3a c0 46 83 38 a0 97 17 39 7d ed
+    e.g. crc (40 bytes, 'invalid MAVLink CRC in msgID 33 0xfdae should be 0xcea5'): fd 1c 00 00 9a 01 01 21 00 00 b9 3a 0f 00 bd 90 c3 00 7c dc e6 3d 50 5a 00 00 a7 01 01 33 00 00 02 00 f6 00 01 02 ae fd
+    e.g. length (12 bytes, 'invalid incompat_flags 0x54 0xfd 12'): fd 00 54 00 00 00 00 00 00 00 00 01
+  radio RX messages: UNKNOWN_410=35, MISSION_REQUEST_INT=15, HEARTBEAT=9, ATTITUDE=5, SYS_STATUS=4, VFR_HUD=3, GPS_RAW_INT=3, GLOBAL_POSITION_INT=2
+  QGC TX messages: UNKNOWN_412=47, MISSION_ITEM_INT=15, HEARTBEAT=5
+Last interval: serial_bytes=3038 valid_frames=84 lost_frames_estimate=333 duplicate_frames=41 out_of_order_frames=17 memory_vect=0 beacons=0 bad_data=129 parser_errors=0 wsl_sent=84 wsl_failed=0 qgc_sent=84 qgc_failed=0 qgc_to_serial_bytes=1133 qgc_rx_frames=55 qgc_rx_bad_data=0 elrs_frames=84 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=127(runs 9) crc=1(runs 1) length=1(runs 1)
+    e.g. bad_prefix (12 bytes, 'Bad prefix'): 01 9a 01 00 d6 6f af 01 6d cd 0e 00
+    e.g. crc (53 bytes, 'invalid MAVLink CRC in msgID 147 0xc700 should be 0x83d2'): fd 29 00 00 ad 01 01 93 00 00 9a 00 a6 4c 0f 00 55 f2 e0 bc 74 b8 9b bc 98 60 12 c0 60 d8 ee b9 44 3c 87 3a 00 77 6f 38 f5 27 fd 12 00 00 22 01 ...
+    e.g. length (265 bytes, 'invalid incompat_flags 0x2 0xfd 12'): fd fd 02 00 00 1d 01 01 9b 01 00 0a 03 8b 85 fd 09 00 00 fa 01 01 00 00 00 00 00 04 04 02 0c 1d 03 03 5e 1c fd 04 00 00 28 01 01 2f 00 00 f6 00 ...
+  radio RX messages: UNKNOWN_410=39, ATTITUDE=8, HEARTBEAT=7, MISSION_ACK=7, SYS_STATUS=5, MISSION_REQUEST_INT=4, GPS_RAW_INT=4, MISSION_CURRENT=2
+  QGC TX messages: UNKNOWN_412=46, HEARTBEAT=5, MISSION_ITEM_INT=4
+Last interval: serial_bytes=2852 valid_frames=65 lost_frames_estimate=369 duplicate_frames=41 out_of_order_frames=10 memory_vect=0 beacons=0 bad_data=314 parser_errors=0 wsl_sent=65 wsl_failed=0 qgc_sent=65 qgc_failed=0 qgc_to_serial_bytes=969 qgc_rx_frames=53 qgc_rx_bad_data=0 elrs_frames=65 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=308(runs 18) crc=4(runs 4) length=2(runs 2)
+    e.g. crc (53 bytes, 'invalid MAVLink CRC in msgID 147 0x01be should be 0x9566'): fd 29 00 00 50 01 01 93 00 00 9a 00 00 00 ff ff ff ff ff 7f 1b 3f ff ff ff ff ff ff ff ff ff ff ff ff 2e 00 00 01 01 53 00 00 00 00 01 db c1 fd ...
+    e.g. bad_prefix (34 bytes, 'Bad prefix'): 01 1e 00 00 bb 54 0f 00 ca 42 e1 bc 8a c1 9e bc 3f 61 12 c0 de 9b bc 3a a0 c9 47 39 20 da 87 39 71 55
+    e.g. length (42 bytes, 'invalid incompat_flags 0xa 0xfd 12'): fd 1e 0a 3c 00 00 00 00 93 90 c3 00 31 dc e6 3d 4b 23 00 00 51 00 88 00 04 00 ec 66 04 12 b2 3b 00 00 60 01 00 00 cc 02 00 00
+  radio RX messages: UNKNOWN_410=38, ATTITUDE=5, HEARTBEAT=4, SYS_STATUS=4, GPS_RAW_INT=3, GLOBAL_POSITION_INT=3, UNKNOWN_411=2, VFR_HUD=2
+  QGC TX messages: UNKNOWN_412=48, HEARTBEAT=5
+Last interval: serial_bytes=3410 valid_frames=94 lost_frames_estimate=437 duplicate_frames=50 out_of_order_frames=22 memory_vect=0 beacons=0 bad_data=190 parser_errors=0 wsl_sent=94 wsl_failed=0 qgc_sent=94 qgc_failed=0 qgc_to_serial_bytes=969 qgc_rx_frames=53 qgc_rx_bad_data=0 elrs_frames=94 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=189(runs 7) crc=1(runs 1)
+    e.g. bad_prefix (59 bytes, 'Bad prefix'): e0 93 a8 01 5f 68 0f 00 0f 03 00 00 88 00 00 00 12 00 08 00 00 00 c1 2f 81 ff ff bf ff ff 5f ed 00 50 01 01 9a 01 00 ee 03 93 01 5f 68 0f 00 10 ...
+    e.g. crc (21 bytes, 'invalid MAVLink CRC in msgID 0 0x12fd should be 0xec10'): fd 09 00 00 23 00 00 00 00 00 04 04 02 0c 1d 03 03 15 d1 fd 12
+  radio RX messages: UNKNOWN_410=46, ATTITUDE=9, HEARTBEAT=9, VFR_HUD=5, GLOBAL_POSITION_INT=5, GPS_RAW_INT=4, SYS_STATUS=4, BATTERY_STATUS=3
+  QGC TX messages: UNKNOWN_412=48, HEARTBEAT=5
+Last interval: serial_bytes=2852 valid_frames=53 lost_frames_estimate=405 duplicate_frames=33 out_of_order_frames=6 memory_vect=0 beacons=0 bad_data=375 parser_errors=0 wsl_sent=53 wsl_failed=0 qgc_sent=53 qgc_failed=0 qgc_to_serial_bytes=951 qgc_rx_frames=52 qgc_rx_bad_data=0 elrs_frames=53 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=369(runs 20) crc=5(runs 5) length=1(runs 1)
+    e.g. bad_prefix (3 bytes, 'Bad prefix'): ff ff b1
+    e.g. length (265 bytes, 'invalid incompat_flags 0x1e 0xfd 12'): fd fd 1e 00 00 39 01 01 9a 01 00 e0 93 a8 01 e3 e1 0e 00 04 03 00 00 88 00 00 00 12 00 00 00 00 00 c1 2f 81 ff ff bf ff ff 51 e6 fd 12 00 00 46 ...
+    e.g. crc (40 bytes, 'invalid MAVLink CRC in msgID 33 0x7ed0 should be 0x6386'): fd 1c 00 00 54 01 01 21 00 00 d9 81 0f 00 a4 90 c3 00 f5 db e6 3d 65 5a 00 00 93 01 e3 e1 0e 00 05 03 00 00 33 3e d0 7e
+  radio RX messages: UNKNOWN_410=19, UNKNOWN_413=9, ATTITUDE=5, HEARTBEAT=4, VFR_HUD=3, GPS_RAW_INT=2, EXTENDED_SYS_STATE=2, MISSION_CURRENT=2
+  QGC TX messages: UNKNOWN_412=47, HEARTBEAT=5
+Last interval: serial_bytes=1736 valid_frames=51 lost_frames_estimate=285 duplicate_frames=26 out_of_order_frames=12 memory_vect=0 beacons=0 bad_data=72 parser_errors=0 wsl_sent=51 wsl_failed=0 qgc_sent=51 qgc_failed=0 qgc_to_serial_bytes=951 qgc_rx_frames=52 qgc_rx_bad_data=0 elrs_frames=51 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=69(runs 5) crc=3(runs 3)
+    e.g. bad_prefix (1 bytes, 'Bad prefix'): d1
+    e.g. crc (40 bytes, 'invalid MAVLink CRC in msgID 33 0x0003 should be 0xbfdf'): fd 1c 00 00 48 01 01 21 00 00 10 9a 0f 00 87 90 c3 00 de db 12 00 00 4f 01 01 9a 01 00 27 37 1d 01 e3 e1 0e 00 07 03 00
+  radio RX messages: UNKNOWN_413=14, UNKNOWN_410=10, HEARTBEAT=5, ATTITUDE=5, VFR_HUD=4, SYS_STATUS=3, GPS_RAW_INT=3, GLOBAL_POSITION_INT=2
+  QGC TX messages: UNKNOWN_412=47, HEARTBEAT=5
+Last interval: serial_bytes=2728 valid_frames=38 lost_frames_estimate=139 duplicate_frames=22 out_of_order_frames=6 memory_vect=0 beacons=0 bad_data=613 parser_errors=0 wsl_sent=38 wsl_failed=0 qgc_sent=38 qgc_failed=0 qgc_to_serial_bytes=951 qgc_rx_frames=52 qgc_rx_bad_data=0 elrs_frames=38 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=594(runs 31) crc=18(runs 18) length=1(runs 1)
+    e.g. crc (52 bytes, 'invalid MAVLink CRC in msgID 1 0x0000 should be 0x7325'): fd 28 00 00 90 01 01 01 00 00 2d 80 21 02 2d 80 21 02 3f 80 21 04 04 02 0c 1d 03 03 08 8a fd 12 00 00 b0 01 01 9a 01 00 27 37 1d 01 e3 e1 0e 00 ...
+    e.g. bad_prefix (8 bytes, 'Bad prefix'): 88 00 8a 19 02 28 0c 3f
+    e.g. length (279 bytes, 'invalid incompat_flags 0x33 0xfd 12'): fd fe 33 01 01 bf fd 06 53 45 41 42 49 52 44 5f 54 41 53 4b 20 31 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ...
+  radio RX messages: UNKNOWN_410=16, EXTENDED_SYS_STATE=3, HEARTBEAT=3, MISSION_COUNT=3, MISSION_ITEM_INT=3, UNKNOWN_4342085=1, UNKNOWN_4096=1, UNKNOWN_108691=1
+  QGC TX messages: UNKNOWN_412=47, HEARTBEAT=5
+Last interval: serial_bytes=3534 valid_frames=73 lost_frames_estimate=541 duplicate_frames=40 out_of_order_frames=12 memory_vect=0 beacons=0 bad_data=567 parser_errors=0 wsl_sent=73 wsl_failed=0 qgc_sent=73 qgc_failed=0 qgc_to_serial_bytes=951 qgc_rx_frames=52 qgc_rx_bad_data=0 elrs_frames=73 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=554(runs 22) crc=13(runs 13)
+    e.g. bad_prefix (25 bytes, 'Bad prefix'): 01 01 9a 01 00 c7 1d 2f 01 ee e9 0e 00 09 03 00 00 33 00 40 00 00 14 32 20
+    e.g. crc (59 bytes, 'invalid MAVLink CRC in msgID 253 0x0012 should be 0x55f6'): fe 33 02 01 bf fd 06 42 49 52 44 5f 54 41 53 4b 20 31 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ...
+  radio RX messages: UNKNOWN_410=34, HEARTBEAT=11, ATTITUDE=5, VFR_HUD=4, GLOBAL_POSITION_INT=3, SYS_STATUS=2, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: UNKNOWN_412=47, HEARTBEAT=5
+Last interval: serial_bytes=4402 valid_frames=142 lost_frames_estimate=458 duplicate_frames=75 out_of_order_frames=26 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=142 wsl_failed=0 qgc_sent=142 qgc_failed=0 qgc_to_serial_bytes=1113 qgc_rx_frames=61 qgc_rx_bad_data=0 elrs_frames=142 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: UNKNOWN_410=46, UNKNOWN_413=27, HEARTBEAT=18, ATTITUDE=12, SYS_STATUS=6, GPS_RAW_INT=6, VFR_HUD=6, GLOBAL_POSITION_INT=6
+  QGC TX messages: UNKNOWN_412=56, HEARTBEAT=5
+Last interval: serial_bytes=2522 valid_frames=78 lost_frames_estimate=256 duplicate_frames=45 out_of_order_frames=9 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=78 wsl_failed=0 qgc_sent=78 qgc_failed=0 qgc_to_serial_bytes=1095 qgc_rx_frames=60 qgc_rx_bad_data=0 elrs_frames=78 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: UNKNOWN_410=37, HEARTBEAT=10, UNKNOWN_413=7, ATTITUDE=6, SYS_STATUS=3, GPS_RAW_INT=3, VFR_HUD=3, GLOBAL_POSITION_INT=3
+  QGC TX messages: UNKNOWN_412=55, HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=915 qgc_rx_frames=50 qgc_rx_bad_data=0 elrs_frames=0 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  QGC TX messages: UNKNOWN_412=45, HEARTBEAT=5
+Last interval: serial_bytes=52 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=1 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=915 qgc_rx_frames=50 qgc_rx_bad_data=0 elrs_frames=0 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: crc=1(runs 1)
+    e.g. crc (52 bytes, 'invalid MAVLink CRC in msgID 1 0x4b00 should be 0x1fa7'): fd 28 00 00 20 01 01 01 00 00 2d 80 21 02 2d 80 21 02 3f 80 21 32 12 00 18 03 00 00 88 00 00 00 10 00 00 00 00 00 ff bf ff ff ff bf ff ff 65 74 ...
+  QGC TX messages: UNKNOWN_412=45, HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=933 qgc_rx_frames=51 qgc_rx_bad_data=0 elrs_frames=0 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  QGC TX messages: UNKNOWN_412=46, HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=915 qgc_rx_frames=50 qgc_rx_bad_data=0 elrs_frames=0 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  QGC TX messages: UNKNOWN_412=45, HEARTBEAT=5
+Last interval: serial_bytes=0 valid_frames=0 lost_frames_estimate=0 duplicate_frames=0 out_of_order_frames=0 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=0 wsl_failed=0 qgc_sent=0 qgc_failed=0 qgc_to_serial_bytes=915 qgc_rx_frames=50 qgc_rx_bad_data=0 elrs_frames=0 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  QGC TX messages: UNKNOWN_412=45, HEARTBEAT=5
+Last interval: serial_bytes=701 valid_frames=23 lost_frames_estimate=180 duplicate_frames=13 out_of_order_frames=1 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=23 wsl_failed=0 qgc_sent=23 qgc_failed=0 qgc_to_serial_bytes=717 qgc_rx_frames=39 qgc_rx_bad_data=0 elrs_frames=23 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: UNKNOWN_410=10, UNKNOWN_413=2, ATTITUDE=2, VFR_HUD=2, HEARTBEAT=2, MISSION_CURRENT=1, EXTENDED_SYS_STATE=1, GPS_RAW_INT=1
+  QGC TX messages: UNKNOWN_412=34, HEARTBEAT=5
+Last interval: serial_bytes=1890 valid_frames=56 lost_frames_estimate=286 duplicate_frames=17 out_of_order_frames=9 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=56 wsl_failed=0 qgc_sent=56 qgc_failed=0 qgc_to_serial_bytes=609 qgc_rx_frames=33 qgc_rx_bad_data=0 elrs_frames=56 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: UNKNOWN_410=15, ATTITUDE=10, HEARTBEAT=9, GPS_RAW_INT=5, SYS_STATUS=4, VFR_HUD=4, BATTERY_STATUS=3, UNKNOWN_411=2
+  QGC TX messages: UNKNOWN_412=28, HEARTBEAT=5
+Last interval: serial_bytes=2542 valid_frames=78 lost_frames_estimate=270 duplicate_frames=43 out_of_order_frames=11 memory_vect=0 beacons=0 bad_data=31 parser_errors=0 wsl_sent=78 wsl_failed=0 qgc_sent=78 qgc_failed=0 qgc_to_serial_bytes=717 qgc_rx_frames=39 qgc_rx_bad_data=0 elrs_frames=78 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=30(runs 2) crc=1(runs 1)
+    e.g. bad_prefix (4 bytes, 'Bad prefix'): 02 28 06 5f
+    e.g. crc (21 bytes, 'invalid MAVLink CRC in msgID 0 0x0000 should be 0x5859'): fd 09 00 00 16 01 64 00 00 00 1e 08 00 04 03 ba 15 fd 12 00 00
+  radio RX messages: UNKNOWN_410=41, HEARTBEAT=8, ATTITUDE=8, SYS_STATUS=5, VFR_HUD=4, GPS_RAW_INT=4, MISSION_CURRENT=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: UNKNOWN_412=34, HEARTBEAT=5
+Last interval: serial_bytes=1674 valid_frames=49 lost_frames_estimate=316 duplicate_frames=6 out_of_order_frames=14 memory_vect=0 beacons=0 bad_data=1 parser_errors=0 wsl_sent=49 wsl_failed=0 qgc_sent=49 qgc_failed=0 qgc_to_serial_bytes=105 qgc_rx_frames=5 qgc_rx_bad_data=0 elrs_frames=49 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: crc=1(runs 1)
+    e.g. crc (53 bytes, 'invalid MAVLink CRC in msgID 147 0x6224 should be 0xccad'): fd 29 00 00 14 01 01 93 00 00 02 00 00 00 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff 2e 00 00 01 01 53 00 00 ...
+  radio RX messages: ATTITUDE=10, HEARTBEAT=10, VFR_HUD=6, UNKNOWN_410=5, GPS_RAW_INT=5, SYS_STATUS=5, MISSION_CURRENT=3, EXTENDED_SYS_STATE=3
+  QGC TX messages: HEARTBEAT=5
+Last interval: serial_bytes=1488 valid_frames=46 lost_frames_estimate=217 duplicate_frames=10 out_of_order_frames=8 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=46 wsl_failed=0 qgc_sent=46 qgc_failed=0 qgc_to_serial_bytes=322 qgc_rx_frames=10 qgc_rx_bad_data=0 elrs_frames=46 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: ATTITUDE=8, UNKNOWN_410=8, HEARTBEAT=7, GPS_RAW_INT=4, MISSION_REQUEST=4, SYS_STATUS=3, VFR_HUD=3, BATTERY_STATUS=2
+  QGC TX messages: HEARTBEAT=5, MISSION_ITEM_INT=4, MISSION_COUNT=1
+Last interval: serial_bytes=930 valid_frames=32 lost_frames_estimate=146 duplicate_frames=0 out_of_order_frames=10 memory_vect=0 beacons=0 bad_data=0 parser_errors=0 wsl_sent=32 wsl_failed=0 qgc_sent=32 qgc_failed=0 qgc_to_serial_bytes=655 qgc_rx_frames=16 qgc_rx_bad_data=0 elrs_frames=32 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  radio RX messages: MISSION_REQUEST=9, HEARTBEAT=5, ATTITUDE=5, SYS_STATUS=3, VFR_HUD=3, GPS_RAW_INT=2, MISSION_REQUEST_INT=2, BATTERY_STATUS=1
+  QGC TX messages: MISSION_ITEM_INT=11, HEARTBEAT=5
+Last interval: serial_bytes=1922 valid_frames=36 lost_frames_estimate=515 duplicate_frames=8 out_of_order_frames=7 memory_vect=0 beacons=0 bad_data=369 parser_errors=0 wsl_sent=36 wsl_failed=0 qgc_sent=36 qgc_failed=0 qgc_to_serial_bytes=871 qgc_rx_frames=28 qgc_rx_bad_data=0 elrs_frames=36 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=353(runs 16) crc=14(runs 13) length=2(runs 2)
+    e.g. crc (21 bytes, 'invalid MAVLink CRC in msgID 0 0xd2c0 should be 0x6e72'): fd 09 00 00 22 01 64 00 00 00 00 00 00 00 1e 08 00 04 2d c0 d2
+    e.g. bad_prefix (13 bytes, 'Bad prefix'): ba 60 3a e0 77 d7 38 80 68 db 38 2f 73
+    e.g. length (56 bytes, 'invalid incompat_flags 0x5c 0xfd 12'): fd 2c 5c 54 03 05 01 b9 02 00 84 17 00 00 c2 11 00 00 65 01 a2 88 fd 1c 00 00 e0 01 01 1e 00 00 b6 b2 00 00 79 af 73 ba 0e 20 89 3c b6 47 2d c0 ...
+  radio RX messages: MISSION_REQUEST_INT=11, UNKNOWN_410=5, HEARTBEAT=4, ATTITUDE=4, SYS_STATUS=2, UNKNOWN_411=2, VFR_HUD=2, BATTERY_STATUS=1
+  QGC TX messages: UNKNOWN_412=12, MISSION_ITEM_INT=11, HEARTBEAT=5
+Last interval: serial_bytes=2790 valid_frames=64 lost_frames_estimate=369 duplicate_frames=24 out_of_order_frames=8 memory_vect=0 beacons=0 bad_data=217 parser_errors=0 wsl_sent=64 wsl_failed=0 qgc_sent=64 qgc_failed=0 qgc_to_serial_bytes=1659 qgc_rx_frames=70 qgc_rx_bad_data=0 elrs_frames=64 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=208(runs 12) crc=9(runs 9)
+    e.g. crc (40 bytes, 'invalid MAVLink CRC in msgID 30 0x6867 should be 0xb62c'): fd 1c 00 00 4e 01 01 1e 00 00 07 c7 00 00 2a df 7e 3d cc 9b 9f fd 34 00 00 6d 01 01 fd 00 00 02 50 72 65 66 6c 69 67 68
+    e.g. bad_prefix (45 bytes, 'Bad prefix'): 74 3a 20 6e 6f 74 20 65 6e 6f 75 67 68 20 47 50 53 20 53 61 74 65 6c 6c 69 74 65 73 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 db 17
+  radio RX messages: UNKNOWN_410=22, MISSION_REQUEST_INT=12, HEARTBEAT=7, ATTITUDE=6, SYS_STATUS=5, GPS_RAW_INT=3, BATTERY_STATUS=2, EXTENDED_SYS_STATE=2
+  QGC TX messages: UNKNOWN_412=53, MISSION_ITEM_INT=12, HEARTBEAT=5
+Last interval: serial_bytes=2232 valid_frames=55 lost_frames_estimate=276 duplicate_frames=35 out_of_order_frames=4 memory_vect=0 beacons=0 bad_data=367 parser_errors=0 wsl_sent=55 wsl_failed=0 qgc_sent=55 qgc_failed=0 qgc_to_serial_bytes=965 qgc_rx_frames=51 qgc_rx_bad_data=0 elrs_frames=55 wifi_frames=0 wifi_bytes=0 dup_dropped=0 qgc_to_wifi_bytes=0 uplink_dropped=0 wifi_bad_data=0 wifi_send_failed=0 rc_override_blocked_wifi=0 wifi_foreign=0 uplink=elrs
+  bad_data by reason: bad_prefix=362(runs 17) crc=5(runs 5)
+    e.g. bad_prefix (1 bytes, 'Bad prefix'): 25
+    e.g. crc (53 bytes, 'invalid MAVLink CRC in msgID 147 0x61a2 should be 0xa123'): fd 29 00 00 fe 01 01 93 00 00 05 00 00 00 00 00 01 a1 24 fd 09 00 00 f9 01 01 00 00 00 00 00 04 04 02 0c 1d 03 03 7f 86 fd 2c 00 00 03 01 01 18 ...
+  radio RX messages: UNKNOWN_410=27, HEARTBEAT=4, ATTITUDE=4, MISSION_ACK=3, GPS_RAW_INT=2, VFR_HUD=2, EXTENDED_SYS_STATE=1, MISSION_REQUEST_INT=1
+  QGC TX messages: UNKNOWN_412=45, HEARTBEAT=5, MISSION_ITEM_INT=1

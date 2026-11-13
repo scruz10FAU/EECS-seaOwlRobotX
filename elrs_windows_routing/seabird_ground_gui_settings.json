@@ -1,5 +1,5 @@
 {
-  "profile": "Competition",
+  "profile": "Test",
   "common": {
     "wsl_distro": "Ubuntu-22.04",
     "robocommand_repo": "C:\\Users\\Precision 3571\\seaowls-robotx-robocommand",
@@ -13,7 +13,7 @@
     "uapl_id": "U2636188",
     "team_code": "FLAU",
     "caas_sticker": "53556",
-    "altitude_limit_hae_m": "50",
+    "altitude_limit_hae_m": "14",
     "competition_max_hae_m": "60",
     "fence_inset_m": "1.0",
     "ceiling_margin_m": "1.0",
@@ -30,12 +30,14 @@
   },
   "Test": {
     "robocommand_host": "localhost",
-    "mock_use_gps": "1",
+    "mock_use_gps": "0",
     "mock_center": "1.3662891, 103.7349081",
-    "mock_size": "25,25",
+    "mock_size": "7, 7",
     "mock_invalid": "VALID course",
     "bench_home_hae_m": "0",
     "task4_vehicle_type": "UAV",
-    "mock_no_wait_auto": "1"
+    "mock_no_wait_auto": "1",
+    "mock_corners": "1.28173, 103.85391; 1.28164, 103.85407; 1.28147, 103.85398; 1.28158, 103.85381",
+    "mock_transit_corners": ""
   }
 }

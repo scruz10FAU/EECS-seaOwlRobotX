@@ -81,6 +81,9 @@ DEFAULT_FENCE_STATUS_TOPIC = "/seaowls/uav1/mission/geofence_status"
 HEARTBEAT_STALE_S = 3.0
 # VehicleStatus altitude uses GLOBAL_POSITION_INT only if it's this recent (s).
 ALT_STALE_S = 5.0
+# ...and with neither EKF message fresh, keep the last EKF-based altitude this
+# long (s) before falling back to the raw GPS height.
+ALT_HOLD_S = 30.0
 # Upper bound on VehicleStatus publish rate (heartbeat + position-driven).
 STATUS_MAX_HZ = 5.0
 # '[pos]' line interval while the UAV has a 3D GPS fix.
@@ -300,10 +303,26 @@ def _build_vehicle_status(VehicleStatus, stamp, vehicle_id, heartbeat, cache, cu
     # steady even when the GPS height itself is noisy; HAE_OFFSET_M, kept
     # from the last 3D fix). Else the raw GPS ellipsoid height. Never an AMSL
     # value in this HAE field -- NaN instead.
+    # The EKF altitude comes from GLOBAL_POSITION_INT.alt or VFR_HUD.alt (PX4
+    # fills both from the same EKF AMSL height); over ELRS GLOBAL_POSITION_INT
+    # rarely arrives, and switching to the raw GPS height between messages
+    # flipped the value by the EKF's power-on height error (30 m on
+    # 2026-11-13). So: either EKF message if fresh, else the last EKF-based
+    # value for ALT_HOLD_S, and only then the raw GPS height.
     offset = cache.get("HAE_OFFSET_M")
-    gpos_fresh = gpos is not None and time.time() - getattr(gpos, "_timestamp", 0) < ALT_STALE_S
-    if gpos_fresh and offset is not None:
-        out.altitude_hae_m = gpos.alt / 1000.0 + offset
+    now_t = time.time()
+
+    def fresh(m):
+        return m is not None and now_t - getattr(m, "_timestamp", 0) < ALT_STALE_S
+
+    ekf_amsl = (gpos.alt / 1000.0 if fresh(gpos)
+                else float(hud.alt) if fresh(hud) else None)
+    last_ekf = cache.get("EKF_HAE")   # (value, time) of the last EKF-based altitude
+    if ekf_amsl is not None and offset is not None:
+        out.altitude_hae_m = ekf_amsl + offset
+        cache["EKF_HAE"] = (out.altitude_hae_m, now_t)
+    elif last_ekf is not None and now_t - last_ekf[1] < ALT_HOLD_S:
+        out.altitude_hae_m = last_ekf[0]
     elif gps_fix and getattr(gps, "alt_ellipsoid", 0):
         out.altitude_hae_m = gps.alt_ellipsoid / 1000.0
     else:

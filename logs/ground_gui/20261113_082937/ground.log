@@ -1,0 +1,261 @@
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4 (with transit area), inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 0 — listening for beacon messages
+[beacon-ground] BENCH: assuming home 0 m HAE until the UAV reports a GPS fix / home
+[beacon-ground] [pos] 3D fix lat=1.2815815 lon=103.8539086 sats=8
+[beacon-ground] [mode] UAV1 MISSION -> STATE_AUTO (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816341 lon=103.8539594 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2816563 lon=103.8539788 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2816534 lon=103.8539768 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2816617 lon=103.8539695 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2816717 lon=103.8539602 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2816624 lon=103.8539361 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2816543 lon=103.8539289 sats=10
+[beacon-ground] [fence] UPLOADING course 'MOCK'
+[beacon-ground] [fence] Uploading 1 inclusion polygon(s), 4 vertices, to system 1
+[beacon-ground] [fence] ✓ Fence accepted by PX4
+[beacon-ground] [fence] ✓ GF_MAX_VER_DIST = 7.9 m above home (26.0 m HAE)
+[beacon-ground] [fence] Reading the fence back from PX4
+[beacon-ground] [fence] note: PX4 returns the fence items with mission_type=0; accepting them (fence commands, our download)
+[beacon-ground] [fence] ✓ Read back from PX4: 1 inclusion polygon(s), 4 vertices
+[beacon-ground] [fence] ✓ Read back GF_MAX_VER_DIST = 7.9 m above home (26.0 m HAE)
+[beacon-ground] [fence] VALID course 'MOCK'
+[beacon-ground] [pos] 3D fix lat=1.2816508 lon=103.8539296 sats=10
+[beacon-ground] [runstart] RunStart run_id=1 verified by the OCS -- relaying to the UAV
+[beacon-ground] [runstart] UAV acknowledged RunStart run_id=1
+[beacon-ground] [pos] 3D fix lat=1.2816529 lon=103.8539414 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2816571 lon=103.8539527 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2816556 lon=103.8539652 sats=10
+[beacon-ground] [runstart] RunStart run_id=2 verified by the OCS -- relaying to the UAV
+[beacon-ground] [runstart] UAV acknowledged RunStart run_id=2
+[beacon-ground] [pos] 3D fix lat=1.2816326 lon=103.8539677 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2816127 lon=103.8539632 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2816110 lon=103.8539589 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2816227 lon=103.8539716 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2816252 lon=103.8539908 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2816246 lon=103.8540173 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2816240 lon=103.8540172 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2816211 lon=103.8540111 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2816158 lon=103.8539986 sats=10
+[beacon-ground] current_task 1 -> 2
+[beacon-ground] [mode] UAV1 TAKEOFF -> STATE_AUTO (armed)
+[beacon-ground] [pos] 3D fix lat=1.2816216 lon=103.8540003 sats=12
+[beacon-ground] [mode] UAV1 LOITER -> STATE_AUTO (armed)
+[beacon-ground] [pos] 3D fix lat=1.2816158 lon=103.8539981 sats=12
+[beacon-ground] [mode] UAV1 POSCTL -> STATE_MANUAL (armed)
+[beacon-ground] [pos] 3D fix lat=1.2816182 lon=103.8539981 sats=11
+[beacon-ground] [mode] UAV1 POSCTL -> STATE_KILLED (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816162 lon=103.8540039 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2815914 lon=103.8539895 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2815912 lon=103.8539680 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2815850 lon=103.8539632 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2815822 lon=103.8539510 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2815847 lon=103.8539493 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2815880 lon=103.8539497 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2815888 lon=103.8539503 sats=12
+[beacon-ground] [pos] 3D fix lat=1.2815894 lon=103.8539486 sats=13
+[beacon-ground] [pos] 3D fix lat=1.2815988 lon=103.8539523 sats=13
+[beacon-ground] [pos] 3D fix lat=1.2816032 lon=103.8539566 sats=13
+[beacon-ground] [pos] 3D fix lat=1.2816069 lon=103.8539590 sats=13
+[beacon-ground] [pos] 3D fix lat=1.2816046 lon=103.8539546 sats=14
+[beacon-ground] [restart] request 083906 sent to UAV1
+[beacon-ground] [restart] drone: OK -- seabird-mission restarting (request 083906)
+[beacon-ground] [pos] 3D fix lat=1.2816007 lon=103.8539467 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2815942 lon=103.8539359 sats=13
+[beacon-ground] [mode] UAV1 MISSION -> STATE_KILLED (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2815936 lon=103.8539209 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2815954 lon=103.8539194 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2816055 lon=103.8539223 sats=13
+[beacon-ground] [runstart] RunStart run_id=3 verified by the OCS -- relaying to the UAV
+[beacon-ground] [runstart] UAV acknowledged RunStart run_id=3
+[beacon-ground] [pos] 3D fix lat=1.2816027 lon=103.8539093 sats=13
+[beacon-ground] [pos] 3D fix lat=1.2815996 lon=103.8539024 sats=13
+[beacon-ground] [pos] 3D fix lat=1.2816048 lon=103.8539083 sats=13
+[beacon-ground] current_task 2 -> 1
+[beacon-ground] [pos] 3D fix lat=1.2816124 lon=103.8539168 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2816222 lon=103.8539250 sats=15
+[beacon-ground] [pos] 3D fix lat=1.2816161 lon=103.8539219 sats=14
+[beacon-ground] current_task 1 -> 2
+[beacon-ground] [alert] UAV1: NOT ARMED: PX4 refused arming: COMMAND_DENIED: 'Command Denied'; origin: arm(); params: ()
+[beacon-ground] [mode] UAV1 LOITER -> STATE_KILLED (disarmed)
+[beacon-ground] current_task 2 -> 1
+[beacon-ground] [pos] 3D fix lat=1.2816127 lon=103.8539214 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2816109 lon=103.8539253 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2816097 lon=103.8539282 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2816116 lon=103.8539311 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2816203 lon=103.8539286 sats=15
+[beacon-ground] [mode] UAV1 LOITER -> STATE_AUTO (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816432 lon=103.8539298 sats=15
+[beacon-ground] [mode] UAV1 POSCTL -> STATE_MANUAL (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816539 lon=103.8539311 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2816472 lon=103.8539313 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2816437 lon=103.8539315 sats=14
+[beacon-ground] [pos] 3D fix lat=1.2816391 lon=103.8539275 sats=15
+[beacon-ground] [pos] 3D fix lat=1.2816380 lon=103.8539221 sats=15
+[beacon-ground] [restart] request 084101 sent to UAV1
+[beacon-ground] [restart] drone: OK -- seabird-mission restarting (request 084101)
+[beacon-ground] [pos] 3D fix lat=1.2816456 lon=103.8539206 sats=16
+[beacon-ground] [pos] 3D fix lat=1.2816498 lon=103.8539158 sats=17
+[beacon-ground] [runstart] RunStart run_id=4 verified by the OCS -- relaying to the UAV
+[beacon-ground] [mode] UAV1 MISSION -> STATE_AUTO (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816474 lon=103.8539056 sats=16
+[beacon-ground] [runstart] UAV acknowledged RunStart run_id=4
+[beacon-ground] [pos] 3D fix lat=1.2816479 lon=103.8539023 sats=15
+[beacon-ground] [pos] 3D fix lat=1.2816490 lon=103.8539029 sats=16
+[beacon-ground] [pos] 3D fix lat=1.2816530 lon=103.8539061 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2816627 lon=103.8539095 sats=16
+[beacon-ground] [mode] UAV1 MISSION -> STATE_KILLED (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816721 lon=103.8539109 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2816838 lon=103.8539136 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2816905 lon=103.8539191 sats=15
+[beacon-ground] [pos] 3D fix lat=1.2816838 lon=103.8539184 sats=16
+[beacon-ground] current_task 1 -> 2
+[beacon-ground] [mode] UAV1 LOITER -> STATE_KILLED (disarmed)
+[beacon-ground] [alert] UAV1: NOT ARMED: PX4 refused arming: COMMAND_DENIED: 'Command Denied'; origin: arm(); params: ()
+[beacon-ground] [pos] 3D fix lat=1.2816792 lon=103.8539192 sats=17
+[beacon-ground] current_task 2 -> 1
+[beacon-ground] [restart] request 084210 sent to UAV1
+[beacon-ground] [restart] drone: OK -- seabird-mission restarting (request 084210)
+[beacon-ground] [mode] UAV1 LOITER -> STATE_AUTO (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816473 lon=103.8539166 sats=17
+[beacon-ground] [mode] UAV1 LOITER -> STATE_KILLED (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816324 lon=103.8539143 sats=16
+[beacon-ground] [pos] 3D fix lat=1.2816244 lon=103.8539177 sats=15
+[beacon-ground] [runstart] RunStart run_id=5 verified by the OCS -- relaying to the UAV
+[beacon-ground] [runstart] UAV acknowledged RunStart run_id=5
+[beacon-ground] [pos] 3D fix lat=1.2816151 lon=103.8539188 sats=15
+[beacon-ground] [mode] UAV1 LOITER -> STATE_AUTO (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816093 lon=103.8539195 sats=16
+[beacon-ground] [mode] UAV1 LOITER -> STATE_KILLED (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816051 lon=103.8539195 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2816061 lon=103.8539264 sats=18
+[beacon-ground] [mode] UAV1 LOITER -> STATE_AUTO (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816116 lon=103.8539353 sats=17
+[beacon-ground] [restart] request 084251 sent to UAV1
+[beacon-ground] [restart] drone: OK -- seabird-mission restarting (request 084251)
+[beacon-ground] [pos] 3D fix lat=1.2816104 lon=103.8539415 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2815977 lon=103.8539387 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815862 lon=103.8539400 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815796 lon=103.8539381 sats=16
+[beacon-ground] [pos] 3D fix lat=1.2815792 lon=103.8539399 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2815826 lon=103.8539435 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2815818 lon=103.8539417 sats=17
+[beacon-ground] [mode] UAV1 MISSION -> STATE_AUTO (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2815786 lon=103.8539396 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815793 lon=103.8539378 sats=16
+[beacon-ground] [pos] 3D fix lat=1.2815741 lon=103.8539323 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815844 lon=103.8539315 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815831 lon=103.8539277 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2815904 lon=103.8539289 sats=16
+[beacon-ground] [pos] 3D fix lat=1.2815950 lon=103.8539273 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815976 lon=103.8539257 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815938 lon=103.8539253 sats=16
+[beacon-ground] [pos] 3D fix lat=1.2815854 lon=103.8539266 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815817 lon=103.8539359 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815795 lon=103.8539396 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815772 lon=103.8539413 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2815832 lon=103.8539461 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815890 lon=103.8539489 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2815970 lon=103.8539563 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2816016 lon=103.8539572 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2816019 lon=103.8539529 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2815966 lon=103.8539449 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2815928 lon=103.8539317 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2816000 lon=103.8539366 sats=16
+[beacon-ground] [pos] 3D fix lat=1.2816071 lon=103.8539477 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2816086 lon=103.8539523 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2816100 lon=103.8539525 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2816066 lon=103.8539523 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815958 lon=103.8539445 sats=18
+[beacon-ground] [mode] UAV1 MISSION -> STATE_KILLED (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2815840 lon=103.8539390 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2815812 lon=103.8539367 sats=17
+[beacon-ground] [pos] 3D fix lat=1.2815709 lon=103.8539303 sats=18
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 986, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 982, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4 (with transit area), inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 0 — listening for beacon messages
+[beacon-ground] BENCH: assuming home 0 m HAE until the UAV reports a GPS fix / home
+[beacon-ground] [mode] UAV1 MISSION -> STATE_KILLED (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816549 lon=103.8539872 sats=17
+[beacon-ground] [restart] request 084641 sent to UAV1
+[beacon-ground] [pos] 3D fix lat=1.2816497 lon=103.8539829 sats=17
+[beacon-ground] [restart] drone: OK -- seabird-mission restarting (request 084641)
+[beacon-ground] [pos] 3D fix lat=1.2816464 lon=103.8539780 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2816392 lon=103.8539679 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2816342 lon=103.8539613 sats=19
+[beacon-ground] [pos] 3D fix lat=1.2816368 lon=103.8539624 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2816449 lon=103.8539667 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2816509 lon=103.8539720 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2816581 lon=103.8539787 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2816613 lon=103.8539848 sats=18
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 986, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 982, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4 (with transit area), inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 1 — listening for beacon messages
+[beacon-ground] BENCH: assuming home 0 m HAE until the UAV reports a GPS fix / home
+[beacon-ground] [pos] 3D fix lat=1.2816507 lon=103.8539664 sats=16
+[beacon-ground] [mode] UAV1 MISSION -> STATE_AUTO (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816509 lon=103.8539671 sats=18
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 5 s
+[beacon-ground] [pos] 3D fix lat=1.2816589 lon=103.8539710 sats=18
+[beacon-ground] [pos] 3D fix lat=1.2816671 lon=103.8539753 sats=15
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 4 s
+[beacon-ground] [pos] 3D fix lat=1.2816951 lon=103.8539885 sats=17
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 4 s
+[beacon-ground] [pos] 3D fix lat=1.2816994 lon=103.8539890 sats=16
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 4 s
+[beacon-ground] [pos] 3D fix lat=1.2816994 lon=103.8539890 sats=17
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [pos] 3D fix lat=1.2816973 lon=103.8539880 sats=18
+[beacon-ground] [link] UAV heartbeat back after 4 s
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 986, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 982, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241

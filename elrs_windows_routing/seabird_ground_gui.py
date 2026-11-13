@@ -100,6 +100,9 @@ DEFAULTS = {
         "mock_center": "",
         "mock_size": "25,25",
         "mock_invalid": "VALID course",
+        # Practice tent (about 20 x 20 m). Blank = the centre + size square.
+        "mock_corners": "1.28173, 103.85391; 1.28164, 103.85407; 1.28147, 103.85398; 1.28158, 103.85381",
+        "mock_transit_corners": "",
         "bench_home_hae_m": "0",
         "task4_vehicle_type": "USV",   # vehicle type the Task 4 rehearsal addresses
         "mock_no_wait_auto": "1",      # mock RoboCommand: RunStart without waiting for AUTO
@@ -447,16 +450,24 @@ class GroundGui(tk.Tk):
             row=5, column=0, sticky="w")
         ttk.Entry(self.test_frame, textvariable=self._var("Test", "bench_home_hae_m")).grid(
             row=5, column=1, sticky="ew")
+        ttk.Label(self.test_frame, text="Course corners LAT,LON; LAT,LON; ...\n"
+                                        "(>= 3, in order; blank = square above)").grid(
+            row=6, column=0, sticky="w")
+        ttk.Entry(self.test_frame, textvariable=self._var("Test", "mock_corners")).grid(
+            row=6, column=1, sticky="ew")
+        ttk.Label(self.test_frame, text="Transit corners (optional)").grid(row=7, column=0, sticky="w")
+        ttk.Entry(self.test_frame, textvariable=self._var("Test", "mock_transit_corners")).grid(
+            row=7, column=1, sticky="ew")
         b = ttk.Frame(self.test_frame)
-        b.grid(row=6, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        b.grid(row=8, column=0, columnspan=2, sticky="w", pady=(4, 0))
         ttk.Button(b, text="Publish mock course", command=self.publish_mock).pack(side="left")
         ttk.Button(b, text="Clear mock course", command=self.clear_mock).pack(side="left", padx=6)
         ttk.Checkbutton(self.test_frame,
                         text="Mock RoboCommand sends RunStart without waiting for AUTO (props-off bench)",
                         variable=self._var("Test", "mock_no_wait_auto"), onvalue="1", offvalue="0").grid(
-            row=8, column=0, columnspan=2, sticky="w", pady=(2, 0))
+            row=10, column=0, columnspan=2, sticky="w", pady=(2, 0))
         t4 = ttk.Frame(self.test_frame)
-        t4.grid(row=7, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        t4.grid(row=9, column=0, columnspan=2, sticky="w", pady=(4, 0))
         ttk.Button(t4, text="Rehearse Task 4", command=self.rehearse_task4).pack(side="left")
         ttk.Label(t4, text=" addressing ").pack(side="left")
         ttk.Combobox(t4, textvariable=self._var("Test", "task4_vehicle_type"), values=("USV", "UUV", "UAV"),
@@ -1394,10 +1405,54 @@ class GroundGui(tk.Tk):
         # stop() can take seconds (pkill in WSL): keep the window responsive.
         threading.Thread(target=start, daemon=True).start()
 
+    @staticmethod
+    def _parse_corners(text, what):
+        """'LAT,LON; LAT,LON; ...' (';' or newlines) -> [(lat, lon), ...];
+        [] if blank. Raises ValueError with a readable reason."""
+        pts = []
+        for i, part in enumerate(p for p in re.split(r"[;\n]+", text) if p.strip()):
+            try:
+                lat, lon = (float(v) for v in part.split(","))
+            except ValueError:
+                raise ValueError(f"{what} point {i + 1} {part.strip()!r} is not LAT,LON")
+            if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+                raise ValueError(f"{what} point {i + 1} ({lat}, {lon}) is out of range")
+            pts.append((lat, lon))
+        if pts and pts[0] == pts[-1]:
+            pts = pts[:-1]   # a closed ring is fine too
+        if pts and len(set(pts)) < 3:
+            raise ValueError(f"{what}: need at least 3 distinct points, got {len(set(pts))}")
+        return pts
+
     def publish_mock(self):
         self._save_settings()
-        size = self.vars[("Test", "mock_size")].get().replace(" ", "") or "25,25"
+        try:
+            corners = self._parse_corners(self.vars[("Test", "mock_corners")].get(), "Course corners")
+            transit = self._parse_corners(self.vars[("Test", "mock_transit_corners")].get(),
+                                          "Transit corners")
+        except ValueError as e:
+            messagebox.showerror("Mock course", str(e))
+            return
+        # '=' form: argparse would read a negative "-27.4,153.0" as an option, not a value.
+        transit_args = "".join(f" --transit-corner={a:.8f},{b:.8f}" for a, b in transit)
         kind = self.vars[("Test", "mock_invalid")].get()
+        if corners:
+            extra = "".join(f" --corner={a:.8f},{b:.8f}" for a, b in corners).strip()
+            self.log("Mock", f"publishing the entered corners ({len(corners)} points"
+                             + (f", transit {len(transit)} points" if transit else "")
+                             + ") -- centre, size and GPS centring not used\n")
+            if COURSE_KINDS.get(_OLD_KIND_LABELS.get(kind, kind)):
+                self.log("Mock", f"note: course kind {kind!r} only applies to the square -- "
+                                 f"publishing the corners as entered\n")
+            extra += transit_args
+            extra += f" --serve --max-alt-hae {float(self.common('competition_max_hae_m') or 50):g}"
+            if self.vars[("Test", "mock_no_wait_auto")].get() == "1":
+                extra += " --no-wait-auto"
+            if not self.procs["Ground"].running:
+                self.log("Mock", "note: Ground isn't running -- start it to upload this course\n")
+            self._mock(extra)
+            return
+        size = self.vars[("Test", "mock_size")].get().replace(" ", "") or "25,25"
         manual = self.vars[("Test", "mock_center")].get().replace(" ", "")
         manual_ok = re.match(r"^-?\d+(\.\d+)?,-?\d+(\.\d+)?$", manual)
         pos = self.drone_position() if self.vars[("Test", "mock_use_gps")].get() == "1" else None
@@ -1416,8 +1471,7 @@ class GroundGui(tk.Tk):
                 "No recent 3D GPS fix from the drone and no manual centre.\n\n"
                 "Enter the manual centre as LAT,LON (used whenever there's no fix).")
             return
-        # '=' form: argparse would read a negative "-27.4,153.0" as an option, not a value.
-        extra = f"--center={center} --size={size}"
+        extra = f"--center={center} --size={size}" + transit_args
         invalid = COURSE_KINDS.get(_OLD_KIND_LABELS.get(kind, kind))
         if invalid:
             extra += f" --invalid {invalid}"

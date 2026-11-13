@@ -1,0 +1,109 @@
+[beacon-ground] Publishing decoded beacons to ROS2 topic /seabird/beacon_info
+[beacon-ground] Publishing UAV status to ROS2 topic /seaowls/uav1/status
+[beacon-ground] Publishing SafePassage to ROS2 topic /seaowls/uav1/report/safe_passage
+[beacon-ground] Uploading geofence from ROS2 topic /seaowls/uav1/mission/geofence to PX4 (with transit area), inset 1 m, ceiling 1 m under the limit; readback on /seaowls/uav1/mission/geofence_onboard
+[beacon-ground] Connecting to udpin:0.0.0.0:14551 ...
+[beacon-ground] Heartbeat received from system 0 — listening for beacon messages
+[beacon-ground] BENCH: assuming home 0 m HAE until the UAV reports a GPS fix / home
+[beacon-ground] [mode] UAV1 MISSION -> STATE_AUTO (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2806959 lon=103.8529310 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2810721 lon=103.8533117 sats=5
+[beacon-ground] [pos] 3D fix lat=1.2815206 lon=103.8537106 sats=7
+[beacon-ground] [fence] UPLOADING course 'MOCK'
+[beacon-ground] [fence] Uploading 1 inclusion polygon(s), 4 vertices, to system 1
+[beacon-ground] [pos] 3D fix lat=1.2816423 lon=103.8538260 sats=8
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 4 s
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [pos] 3D fix lat=1.2817086 lon=103.8539048 sats=9
+[beacon-ground] [link] no UAV heartbeat for 8 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 12 s
+[beacon-ground] [pos] 3D fix lat=1.2817233 lon=103.8539284 sats=8
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [fence] ✓ Fence accepted by PX4
+[beacon-ground] [fence] FAILED: ceiling 25.0 m HAE is not above home (50.6 m HAE)
+[beacon-ground] [fence] FAILED course 'MOCK': ceiling 25.0 m HAE is not above home (50.6 m HAE)
+[beacon-ground] [link] no UAV heartbeat for 8 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 10 s
+[beacon-ground] [pos] 3D fix lat=1.2817292 lon=103.8539486 sats=8
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] no UAV heartbeat for 8 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] no UAV heartbeat for 14 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 14 s
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 6 s
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 7 s
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 5 s
+[beacon-ground] [pos] 3D fix lat=1.2817028 lon=103.8539574 sats=9
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 5 s
+[beacon-ground] [pos] 3D fix lat=1.2817037 lon=103.8539573 sats=9
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 6 s
+[beacon-ground] [pos] 3D fix lat=1.2817063 lon=103.8539585 sats=9
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] no UAV heartbeat for 8 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [pos] 3D fix lat=1.2817028 lon=103.8539604 sats=9
+[beacon-ground] [link] UAV heartbeat back after 12 s
+[beacon-ground] [pos] 3D fix lat=1.2816863 lon=103.8539695 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2816336 lon=103.8539757 sats=10
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] no UAV heartbeat for 8 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] no UAV heartbeat for 14 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] no UAV heartbeat for 19 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [pos] 3D fix lat=1.2816268 lon=103.8539758 sats=9
+[beacon-ground] [link] no UAV heartbeat for 24 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 26 s
+[beacon-ground] [pos] 3D fix lat=1.2816229 lon=103.8539796 sats=11
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 4 s
+[beacon-ground] [pos] 3D fix lat=1.2816229 lon=103.8539796 sats=10
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [link] UAV heartbeat back after 5 s
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [pos] 3D fix lat=1.2816340 lon=103.8539687 sats=10
+[beacon-ground] [link] UAV heartbeat back after 4 s
+[beacon-ground] [pos] 3D fix lat=1.2816340 lon=103.8539676 sats=9
+[beacon-ground] [link] no UAV heartbeat for 3 s -- holding STATE_AUTO (MISSION) for RoboCommand
+[beacon-ground] [pos] 3D fix lat=1.2816346 lon=103.8539685 sats=10
+[beacon-ground] [link] UAV heartbeat back after 7 s
+[beacon-ground] [mode] UAV1 ALTCTL -> STATE_MANUAL (disarmed)
+[beacon-ground] [mode] UAV1 ALTCTL -> STATE_KILLED (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816346 lon=103.8539697 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2816349 lon=103.8539849 sats=8
+[beacon-ground] [mode] UAV1 ALTCTL -> STATE_MANUAL (disarmed)
+[beacon-ground] [mode] UAV1 ALTCTL -> STATE_MANUAL (armed)
+[beacon-ground] [pos] 3D fix lat=1.2816281 lon=103.8539876 sats=9
+[beacon-ground] [mode] UAV1 POSCTL -> STATE_MANUAL (armed)
+[beacon-ground] [pos] 3D fix lat=1.2816247 lon=103.8539825 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2816145 lon=103.8539768 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2815975 lon=103.8539735 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2815986 lon=103.8539765 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2815785 lon=103.8539623 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2815863 lon=103.8539624 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2815846 lon=103.8539623 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2815886 lon=103.8539571 sats=10
+[beacon-ground] [pos] 3D fix lat=1.2815988 lon=103.8539423 sats=11
+[beacon-ground] [mode] UAV1 LOITER -> STATE_AUTO (armed)
+[beacon-ground] [pos] 3D fix lat=1.2816151 lon=103.8539464 sats=11
+[beacon-ground] [mode] UAV1 POSCTL -> STATE_KILLED (disarmed)
+[beacon-ground] [mode] UAV1 POSCTL -> STATE_MANUAL (disarmed)
+[beacon-ground] [pos] 3D fix lat=1.2816174 lon=103.8539428 sats=11
+[beacon-ground] [pos] 3D fix lat=1.2816184 lon=103.8539337 sats=8
+[beacon-ground] [pos] 3D fix lat=1.2816347 lon=103.8539277 sats=9
+[beacon-ground] [pos] 3D fix lat=1.2816595 lon=103.8539270 sats=10
+[beacon-ground] 0 unique beacon messages, 0 duplicates skipped
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 986, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/beacon_mavlink_ground.py", line 982, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
