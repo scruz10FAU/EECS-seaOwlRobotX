@@ -8,3 +8,21 @@ RxCourse course_id='MOCK' pinger_freq_hz=25000
     1.28173000, 103.85391000
   uav_transit_area: 0 points (empty)
 [mock RoboCommand] serving team FLAU: waiting for a RunDeclaration (RunStart without waiting for AUTO)
+Traceback (most recent call last):
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/tests/mock_robocommand_course.py", line 366, in <module>
+    main()
+  File "/mnt/c/Users/Precision 3571/EECS-seaOwlRobotX/tests/mock_robocommand_course.py", line 238, in main
+    client.connect(args.host, args.port)
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 1435, in connect
+    return self.reconnect()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 1598, in reconnect
+    self._sock = self._create_socket()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 4609, in _create_socket
+    sock = self._create_socket_connection()
+  File "/home/jeston/.local/lib/python3.10/site-packages/paho/mqtt/client.py", line 4640, in _create_socket_connection
+    return socket.create_connection(addr, timeout=self._connect_timeout, source_address=source)
+  File "/usr/lib/python3.10/socket.py", line 845, in create_connection
+    raise err
+  File "/usr/lib/python3.10/socket.py", line 833, in create_connection
+    sock.connect(sa)
+TimeoutError: timed out
