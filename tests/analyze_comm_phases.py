@@ -12,7 +12,7 @@ Inputs (read-only):
   QGroundControl .tlog files (default: %USERPROFILE%/OneDrive/Documents/QGroundControl/Telemetry)
 
 Outputs (always a NEW folder, nothing is overwritten):
-  analysis/comm_phases_<YYYYmmdd_HHMMSS>/
+  tests/elrs_testing/analysis/comm_phases_<YYYYmmdd_HHMMSS>/
       sessions.csv    one row per ground-GUI session
       flights.csv     one row per armed segment found in the tlogs
       roundtrip.csv   RoboCommand RunStart -> drone ACK, restart request -> drone ACK
@@ -1112,7 +1112,7 @@ def main():
     ap.add_argument("--tlog-dir", type=Path, action="append",
                     help=f"tlog folder (repeatable; default {DEFAULT_TLOG_DIR})")
     ap.add_argument("--max-tlog-mb", type=float, default=200.0, help="skip tlogs larger than this")
-    ap.add_argument("--out", type=Path, default=REPO / "analysis")
+    ap.add_argument("--out", type=Path, default=REPO / "tests" / "elrs_testing" / "analysis")
     ap.add_argument("--package", type=Path, action="append",
                     help="competition log package folder (router_wsl*.csv, ocs_*.log, ground.log, qgc_tlogs/); repeatable")
     a = ap.parse_args()
