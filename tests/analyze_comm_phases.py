@@ -300,10 +300,11 @@ def parse_ocs(lines):
 # ── broker.log (mosquitto) ────────────────────────────────────────────────────
 
 def parse_broker(lines):
+    first = next((float(m.group(1)) for m in (re.match(r"^(\d{9,11}):", l) for l in lines) if m), None)
     conn = sum(1 for l in lines if "New client connected" in l)
     disc = sum(1 for l in lines if re.search(r"Client \S+ (closed its connection|disconnected)", l))
     tout = sum(1 for l in lines if "has exceeded timeout" in l)
-    return {"b_client_connects": conn, "b_client_disconnects": disc, "b_client_timeouts": tout}
+    return {"b_client_connects": conn, "b_client_disconnects": disc, "b_client_timeouts": tout, "b_first_t": first}
 
 
 # ── tlogs ─────────────────────────────────────────────────────────────────────
@@ -553,8 +554,13 @@ def parse_package_ocs(lines):
     return hb, stale, nan, rx, fwd, runstarts, teensy
 
 
+PKG_DATA = []    # raw arrays kept for the charts, one dict per --package
+
+
 def analyze_package(pkg, out_dir, write_csv):
     pkg = Path(pkg)
+    keep = {"name": pkg.name, "runs": {}, "ocs": {}}
+    PKG_DATA.append(keep)
     md = [f"\n## Competition runs alongside the USV (log package `{pkg.name}`)\n",
           "Source: per-message router CSVs (UTC epoch arrival times), OCS log, ground.log, QGC tlogs. "
           f"Airborne = GLOBAL_POSITION_INT relative altitude > {AIRBORNE_REL_ALT_M} m.\n"]
@@ -576,6 +582,7 @@ def analyze_package(pkg, out_dir, write_csv):
         wins3 = airborne_windows(rows)
         wins = [(a, b) for a, b, n in wins3]
         airborne_all += [(label, a, b) for a, b in wins]
+        keep["runs"][label] = {"rows": rows, "wins": wins3}
         segs = [("whole log", t0, t1)]
         if wins:
             segs.append(("on ground (outside airborne)", None, None))
@@ -607,6 +614,7 @@ def analyze_package(pkg, out_dir, write_csv):
     for op in sorted(pkg.rglob("ocs_*.log")):
         label = str(op.parent.relative_to(pkg)).replace("\\", "/")
         hb, stale, nan, rx, fwd, runstarts, teensy = parse_package_ocs(read_lines(op))
+        keep["ocs"][label] = {"hb": hb, "runstarts": runstarts}
         for veh in sorted(hb):
             st = gap_stats(hb[veh], "hb")
             row = {"run": label, "vehicle": veh, "scope": "whole log", **st,
@@ -631,6 +639,7 @@ def analyze_package(pkg, out_dir, write_csv):
             md.append(f"\nUSV status in `{label}` OCS log (TeensyStatus samples): " +
                       ", ".join(f"{k[0]} {k[1]}{' +kill' if k[2] else ''}={v}" for k, v in sorted(teensy.items())) + "\n")
 
+    keep.update({"link_rows": link_rows, "ocs_rows": ocs_rows, "rtt_rows": rtt_rows, "acks": acks})
     write_csv("package_link.csv", link_rows)
     write_csv("package_ocs.csv", ocs_rows)
     write_csv("package_roundtrip.csv", rtt_rows)
@@ -665,12 +674,424 @@ The 11-13 runs include the crash flight. Router CSV and OCS ran on the same lapt
     return md
 
 
+# ── charts (style copied from tests/elrs_testing/evaluate_beacon_tests.py) ───
+
+SURFACE, INK, INK2, MUTED, GRID, AXIS = "#fcfcfb", "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7"
+SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
+STATUS = {"good": "#0ca30c", "warning": "#fab219", "serious": "#ec835a", "critical": "#d03b3b"}
+
+
+def _plt():
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib import font_manager
+    installed = {f.name for f in font_manager.fontManager.ttflist}
+    family = next((f for f in ("Segoe UI", "Helvetica", "Arial") if f in installed), "DejaVu Sans")
+    plt.rcParams.update({
+        "font.family": [family, "DejaVu Sans"],
+        "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
+        "axes.edgecolor": AXIS, "axes.labelcolor": INK2, "xtick.color": MUTED, "ytick.color": MUTED,
+        "xtick.labelcolor": INK2, "ytick.labelcolor": INK2, "text.color": INK,
+        "axes.titlesize": 11, "axes.labelsize": 9, "xtick.labelsize": 8.5, "ytick.labelsize": 8.5,
+        "legend.fontsize": 8.5, "legend.frameon": False, "savefig.dpi": 150,
+    })
+    return plt
+
+
+def _style(ax, title=None, ylabel=None, xlabel=None, grid="y"):
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    if grid:
+        ax.grid(axis=grid, color=GRID, linewidth=0.8)
+    ax.set_axisbelow(True)
+    if title:
+        ax.set_title(title, loc="left", color=INK, fontweight="semibold", pad=8)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if xlabel:
+        ax.set_xlabel(xlabel)
+
+
+def _num(v):
+    try:
+        return float(v) if v is not None and v != "" else float("nan")
+    except (TypeError, ValueError):
+        return float("nan")
+
+
+def _labels(ax, x, vals, fmt, pad_frac=0.02, color=INK2):
+    import math
+    top = max([v for v in vals if not math.isnan(v)] or [1])
+    dense = len(vals) > 15
+    fs, rot = (6.5, 90) if dense else (8, 0)
+    for xi, v in zip(x, vals):
+        if math.isnan(v):
+            ax.text(xi, top * 0.03, "n/a", ha="center", va="bottom", fontsize=fs, color=MUTED, rotation=rot)
+        else:
+            ax.text(xi, v + top * pad_frac, fmt.format(v), ha="center", va="bottom", fontsize=fs, color=color,
+                    rotation=rot)
+
+
+def _ref(ax, x, y, label):
+    ax.plot(x, [y] * len(x), linestyle="none", marker="_", markersize=30, markeredgewidth=2, color=INK, label=label)
+
+
+def _day(t):
+    return dt.datetime.fromtimestamp(t, tz=dt.timezone.utc).strftime("%m-%d")
+
+
+def chart_competition(out_dir, keep):
+    import math
+    import numpy as np
+    from matplotlib.patches import Patch
+    plt = _plt()
+    days = sorted({_day(w[0]) for run in keep["runs"].values() for w in run["wins"]})
+    day_color = {d: SERIES[i % len(SERIES)] for i, d in enumerate(days)}
+
+    # segments: every airborne window >= 5 s, plus "on ground" for runs that flew
+    seg, nth = [], defaultdict(int)
+    for x in keep["link_rows"]:
+        if x["segment"].startswith("airborne") and (x["duration_s"] or 0) >= 5:
+            nth[x["from_utc"][5:10]] += 1
+            seg.append((x, f"{x['from_utc'][5:10]}\nflight {nth[x['from_utc'][5:10]]}\n{x['from_utc'][11:16]}Z", True))
+    flown = {x["run"] for x, _, _ in seg}
+    for x in keep["link_rows"]:
+        if x["segment"].startswith("on ground") and x["run"] in flown:
+            seg.append((x, f"{x['from_utc'][5:10]}\nground\n{x['from_utc'][11:16]}Z log", False))
+    if not seg:
+        return []
+    xs = np.arange(len(seg))
+    cols = [day_color.get(s[0]["from_utc"][5:10], SERIES[2]) for s in seg]
+    alph = [1.0 if s[2] else 0.45 for s in seg]
+    names = [s[1] for s in seg]
+    V = lambda k: [_num(s[0].get(k)) for s in seg]
+
+    fig, axes = plt.subplots(2, 3, figsize=(16, 9.5))
+
+    def bars(ax, vals, title, ylabel, fmt, ref=None, ref_label=None, flights_only=False):
+        idx = [i for i in range(len(seg)) if seg[i][2] or not flights_only]
+        px = np.arange(len(idx))
+        v2 = [vals[i] for i in idx]
+        for xi, i, v in zip(px, idx, v2):
+            ax.bar(xi, 0 if math.isnan(v) else v, 0.6, color=cols[i], alpha=alph[i])
+        _labels(ax, px, v2, fmt)
+        if ref is not None:
+            _ref(ax, px, ref, ref_label)
+            ax.legend(loc="upper right")
+        ax.set_xticks(px, [names[i] for i in idx])
+        _style(ax, title, ylabel)
+
+    bars(axes[0, 0], V("msgs_per_s"), "Messages received from the UAV", "messages per second", "{:.1f}")
+    bars(axes[0, 1], V("bad_per_100_good"), "Corrupted frames", "per 100 good frames", "{:.1f}")
+
+    ax = axes[0, 2]
+    w = 0.38
+    sb, px = V("seabird_seq_loss_pct"), V("px4_seq_loss_pct")
+    ax.bar(xs - w / 2, [0 if math.isnan(v) else v for v in sb], w, color=SERIES[0], label="Seabird status msgs lost (radio)")
+    ax.bar(xs + w / 2, [0 if math.isnan(v) else v for v in px], w, color=SERIES[1],
+           label="PX4 telemetry gaps (incl. onboard rate limit)")
+    _labels(ax, xs - w / 2, sb, "{:.0f}%")
+    ax.set_xticks(xs, names)
+    ax.set_ylim(0, 115)
+    ax.legend(loc="upper left")
+    _style(ax, "Message loss (sequence gaps)", "% of messages")
+
+    bars(axes[1, 0], V("hb_gap_max_s"), "Worst outage in flight (longest UAV heartbeat gap)", "seconds", "{:.1f}s",
+         ref=1.0, ref_label="Heartbeat period (1 s)", flights_only=True)
+
+    ax = axes[1, 1]
+    orows = keep["ocs_rows"]
+    scopes = list(dict.fromkeys(x["scope"] for x in orows))
+    vehs = sorted({x["vehicle"] for x in orows})
+    if orows:
+        sx = np.arange(len(scopes))
+        w = 0.8 / max(1, len(vehs))
+        for i, v in enumerate(vehs):
+            vals = [_num(next((x.get("hb_rate_hz") for x in orows if x["vehicle"] == v and x["scope"] == s), None)) for s in scopes]
+            gmax = [_num(next((x.get("hb_gap_max_s") for x in orows if x["vehicle"] == v and x["scope"] == s), None)) for s in scopes]
+            pos = sx - 0.4 + w * (i + 0.5)
+            ax.bar(pos, [0 if math.isnan(q) else q for q in vals], w * 0.9, color=SERIES[i], label=v)
+            for p, q, g in zip(pos, vals, gmax):
+                if not math.isnan(q):
+                    ax.text(p, q / 2, f"{q:.2f} Hz\nmax gap\n{g:.1f}s", ha="center", va="center", fontsize=7.5,
+                            color="white", fontweight="semibold")
+        _ref(ax, sx, 2.0, "Target 2 Hz")
+        ax.set_xticks(sx, [s.replace("UAV airborne", "during UAV flight") for s in scopes])
+        ax.set_ylim(0, 2.6)
+        ax.legend(loc="upper right")
+    _style(ax, "OCS heartbeats to RoboCommand", "heartbeats per second (Hz)")
+
+    ax = axes[1, 2]
+    rr = [x for x in keep["rtt_rows"] if x.get("latency_s") is not None]
+    if rr:
+        ys = np.arange(len(rr))
+        vals = [x["latency_s"] for x in rr]
+        ax.barh(ys, vals, 0.5, color=[SERIES[2] if "forwarded" in x["kind"] else SERIES[0] for x in rr])
+        for y, v in zip(ys, vals):
+            ax.text(v + max(vals) * 0.02, y, f"{v * 1000:.0f} ms" if v < 1 else f"{v:.2f} s", va="center", fontsize=9, color=INK2)
+        ax.set_yticks(ys, [("RoboCommand run_start\n-> USV + UAV (OCS)" if "forwarded" in x["kind"]
+                            else f"RunStart {x['id']} -> UAV\n-> ACK at ground") for x in rr])
+        ax.set_xlim(0, max(vals) * 1.3)
+        ax.invert_yaxis()
+    _style(ax, "Command latency (competition run)", xlabel="seconds", grid="x")
+
+    handles = [Patch(color=c, label=f"{d} (UTC)") for d, c in day_color.items()]
+    handles.append(Patch(color=MUTED, alpha=0.45, label="faded = drone on the ground"))
+    fig.legend(handles=handles, loc="upper right", ncol=len(handles), bbox_to_anchor=(0.99, 0.985))
+    fig.suptitle("UAV -> ground -> RoboCommand/USV: competition runs", x=0.01, y=0.985, ha="left",
+                 fontsize=15, fontweight="semibold", color=INK)
+    fig.text(0.01, 0.005,
+             "Flight = GLOBAL_POSITION_INT relative altitude > 1 m (windows padded 1 s). "
+             "Seabird status = drone mission/gate messages (comp 191/192), not rate-limited: best radio-loss measure.\n"
+             "No beacon messages were sent in these flights. 11-13 includes the crash flight. "
+             "Source: router per-message CSV, OCS log, QGC tlogs from the log package.",
+             fontsize=8, color=INK2, va="bottom", ha="left")
+    fig.tight_layout(rect=(0, 0.04, 1, 0.95))
+    fig.savefig(out_dir / "competition_overview.png")
+    plt.close(fig)
+    return ["competition_overview.png"]
+
+
+def chart_timeline(out_dir, keep):
+    import numpy as np
+    import matplotlib.dates as mdates
+    plt = _plt()
+    runs = [(k, v) for k, v in keep["runs"].items() if any(b - a >= 5 for a, b, n in v["wins"])]
+    if not runs:
+        return []
+    fig, axes = plt.subplots(len(runs), 2, figsize=(16, 3.6 * len(runs)), squeeze=False,
+                             gridspec_kw={"width_ratios": [1.6, 1]})
+    tz = dt.timezone.utc
+    D = lambda t: dt.datetime.fromtimestamp(t, tz=tz)
+    for row, (label, run) in enumerate(runs):
+        rows = run["rows"]
+        good = np.array([x["t"] for x in rows if x["status"] == "SENT"])
+        bad = np.array([x["t"] for x in rows if x["status"] != "SENT"])
+        acks = [x["t"] for x in rows if (x.get("text") or "").startswith("SEABIRD_RUNSTART_ACK")]
+        sent = [t for (_, t) in keep["ocs"].get(label, {}).get("runstarts", [])]
+        fl = [(a, b) for a, b, n in run["wins"] if b - a >= 5]
+        zoom = (min(a for a, b in fl) - 60, max(b for a, b in fl) + 60)
+        for col, (t0, t1, bin_s) in enumerate([(rows[0]["t"], rows[-1]["t"], 10.0), (zoom[0], zoom[1], 1.0)]):
+            ax = axes[row, col]
+            edges = np.arange(t0, t1 + bin_s, bin_s)
+            if len(edges) < 2:
+                continue
+            g, _ = np.histogram(good, edges)
+            b, _ = np.histogram(bad, edges)
+            mids = [D(t) for t in (edges[:-1] + bin_s / 2)]
+            ax.plot(mids, g / bin_s, color=SERIES[0], linewidth=1.1, label="Good messages / s")
+            ax.plot(mids, b / bin_s, color=STATUS["critical"], linewidth=1.1, label="Corrupted frames / s")
+            for a, bb, n in run["wins"]:
+                if bb >= t0 and a <= t1:
+                    ax.axvspan(D(max(a, t0)), D(min(bb, t1)), color=STATUS["good"], alpha=0.15, linewidth=0)
+            for t in sent:
+                if t0 <= t <= t1:
+                    ax.axvline(D(t), color=INK, linestyle="--", linewidth=1)
+            ymax = max(1.0, (g / bin_s).max() if len(g) else 1)
+            ack_in = [D(t) for t in acks if t0 <= t <= t1]
+            if ack_in:
+                ax.plot(ack_in, [ymax * 1.05] * len(ack_in), linestyle="none", marker="v", markersize=7,
+                        color=SERIES[2], label="RunStart ACK from UAV")
+            ax.set_xlim(D(t0), D(t1))
+            ax.set_ylim(0, ymax * 1.15)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M" if col == 0 else "%H:%M:%S", tz=tz))
+            title = (f"{label.split('/')[-1]}  —  whole log ({bin_s:.0f} s bins)" if col == 0
+                     else f"zoom on flight ({bin_s:.0f} s bins)")
+            _style(ax, title, "per second" if col == 0 else None, "UTC" if row == len(runs) - 1 else None)
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+    fig.legend(handles=[Line2D([], [], color=SERIES[0], label="Good messages / s"),
+                        Line2D([], [], color=STATUS["critical"], label="Corrupted frames / s"),
+                        Patch(color=STATUS["good"], alpha=0.15, label="UAV airborne"),
+                        Line2D([], [], color=INK, linestyle="--", label="RunStart from RoboCommand (OCS)"),
+                        Line2D([], [], marker="v", linestyle="none", color=SERIES[2], label="RunStart ACK from UAV")],
+               loc="upper right", ncol=5, bbox_to_anchor=(0.99, 0.995))
+    fig.suptitle("UAV -> ground link over time", x=0.01, y=0.995, ha="left", fontsize=15,
+                 fontweight="semibold", color=INK)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.savefig(out_dir / "competition_timeline.png")
+    plt.close(fig)
+    return ["competition_timeline.png"]
+
+
+def chart_intervals(out_dir, keep, sessions, flights):
+    import numpy as np
+    plt = _plt()
+    panels = []    # (title, intervals, nominal period)
+    for label, run in keep["runs"].items():
+        fl = [(a, b) for a, b, n in run["wins"] if b - a >= 5]
+        if not fl:
+            continue
+        hb = [x["t"] for x in run["rows"] if x["status"] == "SENT" and x["type"] == "HEARTBEAT" and x["comp"] == "1"
+              and any(a <= x["t"] <= b for a, b in fl)]
+        iv = []                       # per flight, so the gap between two flights is not counted
+        for a, b in fl:
+            iv += gaps([t for t in hb if a <= t <= b])
+        panels.append((f"UAV heartbeat at ground, in flight ({_day(fl[0][0])})", iv, 1.0))
+    for label, o in keep["ocs"].items():
+        fl = [(a, b) for r in keep["runs"].values() for a, b, n in r["wins"] if b - a >= 5]
+        for veh, ts in sorted(o["hb"].items()):
+            iv = [g for g in gaps(ts) if g <= RUN_SPLIT_S]
+            panels.append((f"OCS {veh} heartbeat to RoboCommand, whole run ({_day(ts[0])})", iv, 0.5))
+    lap, n_used = [], 0
+    for f in flights:
+        s = next((s for s in sessions if s["session"] == f.get("session")), None)
+        if s:
+            g = gaps([t for t in s.get("_hb_t", []) if f["_t0"] <= t <= f["_t1"]])
+            n_used += 1 if g else 0
+            lap += g
+    if lap:
+        panels.append((f"OCS UAV1 heartbeat during laptop-log flights (Nov 9-13, {n_used} flights with OCS running)",
+                       lap, 0.5))
+    panels = [p for p in panels if len(p[1]) >= 2]
+    if not panels:
+        return []
+    cols = 2
+    rows_n = (len(panels) + 1 + cols - 1) // cols      # +1 slot for the explanation note
+    fig, axes = plt.subplots(rows_n, cols, figsize=(15, 2.9 * rows_n), squeeze=False)
+    for ax in axes.flat:
+        ax.set_visible(False)
+    for ax, (title, iv, nominal) in zip(axes.flat, panels):
+        ax.set_visible(True)
+        iv = np.array(iv)
+        xmax = max(3 * nominal, min(float(np.percentile(iv, 99.5)) * 1.2, 10.0))
+        over = int((iv > xmax).sum())
+        ax.hist(np.clip(iv, 0, xmax), bins=np.linspace(0, xmax, 60), color=SERIES[0], rwidth=0.85)
+        ax.axvline(nominal, color=INK, linewidth=2)
+        ax.text(nominal, ax.get_ylim()[1] * 0.92, f" expected period {nominal:g}s", fontsize=8, color=INK)
+        hz = len(iv) / iv.sum() if iv.sum() > 0 else float("nan")
+        _style(ax, f"{title}\n{hz:.2f} Hz achieved, max gap {iv.max():.2f}s"
+                   + (f", {over} gap(s) > {xmax:.1f}s shown at the edge" if over else ""), "count")
+    axes.flat[len(panels) - 1].set_xlabel("seconds between consecutive messages")
+    note = axes.flat[len(panels)] if len(panels) < rows_n * cols else None
+    if note is not None:
+        note.set_visible(True)
+        note.axis("off")
+        note.text(0.5, 0.5, "Bars: time between consecutive messages at the ground.\n"
+                            "Mass to the right of the expected-period line = missed / late updates.",
+                  ha="center", va="center", fontsize=10, color=INK2, transform=note.transAxes)
+    fig.suptitle("Update intervals", x=0.01, y=0.995, ha="left", fontsize=15, fontweight="semibold", color=INK)
+    fig.tight_layout(rect=(0, 0, 1, 0.97))
+    fig.savefig(out_dir / "update_intervals.png")
+    plt.close(fig)
+    return ["update_intervals.png"]
+
+
+def chart_laptop_flights(out_dir, flights, sessions, rtt):
+    import math
+    import numpy as np
+    from matplotlib.patches import Patch
+    plt = _plt()
+    if not flights:
+        return []
+    fl = sorted(flights, key=lambda f: f["_t0"])
+    sess = {s["session"]: s for s in sessions}
+
+    def link(f):
+        s = sess.get(f.get("session"))
+        if not s:
+            return "no ground session"
+        return "WiFi + ELRS" if (s.get("router_wifi_frames") or 0) > 0 else "ELRS only"
+
+    kinds = ["ELRS only", "WiFi + ELRS", "no ground session"]
+    kc = {"ELRS only": SERIES[0], "WiFi + ELRS": SERIES[1], "no ground session": AXIS}
+    cols = [kc[link(f)] for f in fl]
+    xs = np.arange(len(fl))
+    names = [utc(f["_t0"])[5:16].replace(" ", " ") for f in fl]     # "MM-DD HH:MM" UTC
+    V = lambda k: [_num(f.get(k)) for f in fl]
+
+    fig, axes = plt.subplots(2, 3, figsize=(17, 9.5))
+
+    def bars(ax, vals, title, ylabel, fmt, ref=None, ref_label=None):
+        ax.bar(xs, [0 if math.isnan(v) else v for v in vals], 0.7, color=cols)
+        _labels(ax, xs, vals, fmt)
+        if ref is not None:
+            ax.axhline(ref, color=INK, linewidth=1.5, label=ref_label)
+            ax.legend(loc="upper right")
+        ax.set_xticks(xs, names, fontsize=6.5, rotation=90)
+        _style(ax, title, ylabel)
+
+    bars(axes[0, 0], V("uav_msgs_per_s"), "Messages received from the UAV", "messages per second", "{:.0f}")
+    bars(axes[0, 1], V("seabird_seq_loss_pct"), "Seabird status messages lost (radio loss)", "% of messages", "{:.0f}")
+    bars(axes[0, 2], V("px4_hb_gap_max_s"), "Worst outage (longest UAV heartbeat gap)", "seconds", "{:.1f}",
+         ref=1.0, ref_label="Heartbeat period (1 s)")
+    bars(axes[1, 0], V("ocs_hb_inflight_gap_max_s"), "OCS -> RoboCommand: longest heartbeat gap in flight",
+         "seconds", "{:.2f}", ref=0.5, ref_label="Heartbeat period (0.5 s)")
+
+    for ax, kind, title in ((axes[1, 1], "RunStart", "RunStart: RoboCommand -> OCS -> UAV -> ACK"),
+                            (axes[1, 2], "Restart", "Restart: ground -> UAV -> ACK (1 s resolution)")):
+        groups = [("Phase 3\nbench", "3"), ("Phase 4\nflight", "4")]
+        for gi, (gname, ph) in enumerate(groups):
+            v = np.array([x["rtt_s"] for x in rtt if x["kind"].startswith(kind) and ph in x["phase"] and x["rtt_s"] is not None])
+            n = sum(1 for x in rtt if x["kind"].startswith(kind) and ph in x["phase"])
+            if len(v):
+                jitter = (np.random.default_rng(0).random(len(v)) - 0.5) * 0.25
+                ax.scatter(gi + jitter, v, s=22, color=SERIES[gi], edgecolors=SURFACE, linewidths=0.6, zorder=3)
+                med = float(np.median(v))
+                ax.plot([gi - 0.25, gi + 0.25], [med, med], color=INK, linewidth=2)
+                ax.text(gi + 0.28, med, f"median {med:.2f}s", va="center", fontsize=8, color=INK2)
+            ax.text(gi, 0.02, f"{len(v)} of {n} matched", transform=ax.get_xaxis_transform(), ha="center",
+                    fontsize=8, color=MUTED)
+        ax.set_yscale("log")
+        ax.set_xticks([0, 1], [g[0] for g in groups])
+        ax.set_xlim(-0.6, 1.9)
+        _style(ax, title, "seconds (log scale)")
+
+    fig.legend(handles=[Patch(color=kc[k], label=k) for k in kinds], loc="upper right", ncol=3,
+               bbox_to_anchor=(0.99, 0.985))
+    fig.suptitle("Laptop-log flights, Nov 9-13 (phases 2 and 4)", x=0.01, y=0.985, ha="left", fontsize=15,
+                 fontweight="semibold", color=INK)
+    fig.text(0.01, 0.005,
+             "One bar per armed segment in the QGC tlogs (armed time, UTC). Colour = link used in that ground session "
+             "(router saw WiFi frames or not). n/a = no Seabird status messages / no OCS in that flight.\n"
+             "Long round trips include waiting for the drone's mission script to start, not only transit time.",
+             fontsize=8, color=INK2, va="bottom", ha="left")
+    fig.tight_layout(rect=(0, 0.04, 1, 0.95))
+    fig.savefig(out_dir / "laptop_flights_overview.png")
+    plt.close(fig)
+    return ["laptop_flights_overview.png"]
+
+
+def make_charts(out_dir, sessions, flights, rtt):
+    made = []
+    for name, fn in [("laptop flights", lambda: chart_laptop_flights(out_dir, flights, sessions, rtt))] + \
+            [(f"competition {k['name']}", (lambda k=k: chart_competition(out_dir, k) + chart_timeline(out_dir, k)
+                                            + chart_intervals(out_dir, k, sessions, flights))) for k in PKG_DATA]:
+        try:
+            made += fn()
+        except Exception as e:      # a chart problem must not lose the tables/CSVs
+            import traceback
+            print(f"[charts] {name} failed: {e}")
+            traceback.print_exc()
+    return made
+
+
 # ── main ──────────────────────────────────────────────────────────────────────
 
-def session_window(sdir):
+SITE_UTC_OFFSETS_H = (8, -5, -4)   # Singapore (SGT), Florida (EST / EDT): where the GUI ran
+
+
+def session_window(sdir, first_epoch=None, last_epoch=None):
+    """Session folder names are the GUI laptop's LOCAL time, and the laptop changed time zone
+    between Florida and Singapore. Pick the site offset that puts the folder time just before the
+    first timestamped event (OCS / broker), else just before the newest log file's mtime."""
     d = dt.datetime.strptime(sdir.name, "%Y%m%d_%H%M%S")
     mt = [p.stat().st_mtime for p in sdir.glob("*.log")]
-    return d, d.timestamp(), (max(mt) if mt else d.timestamp())
+    ref = first_epoch if first_epoch is not None else (max(mt) if mt else None)
+    naive_utc = d.replace(tzinfo=dt.timezone.utc).timestamp()
+    if ref is None:
+        off = SITE_UTC_OFFSETS_H[0]
+    else:
+        # implied offset; an OCS log can start before the folder (OCS already running), so take the
+        # nearest site offset rather than requiring the log to start after the folder time
+        implied_h = (naive_utc - ref) / 3600.0
+        off = min(SITE_UTC_OFFSETS_H, key=lambda o: abs(o - implied_h))
+    start = naive_utc - off * 3600
+    if first_epoch is not None:
+        start = min(start, first_epoch)
+    end = last_epoch if last_epoch is not None else (max(mt) if mt else start)
+    return d, start, max(end, start), off
 
 
 def agg(rows, key, fn=sum):
@@ -702,17 +1123,17 @@ def main():
     # ── sessions ──
     sessions = []
     for sdir in sorted(p for p in a.logs.iterdir() if p.is_dir()):
-        try:
-            day, t0, t1 = session_window(sdir)
-        except ValueError:
+        if not re.fullmatch(r"\d{8}_\d{6}", sdir.name):
             continue
-        row = {"session": sdir.name, "start_epoch": t0, "end_epoch": t1, "_day": day}
+        row = {"session": sdir.name}
         row.update(parse_router(read_lines(sdir / "router.log")))
         row.update(parse_ground(read_lines(sdir / "ground.log")))
         row.update(parse_ocs(read_lines(sdir / "ocs.log")))
         row.update(parse_broker(read_lines(sdir / "broker.log")))
-        if row.get("o_last_t"):
-            row["end_epoch"] = max(row["end_epoch"], row["o_last_t"])
+        firsts = [x for x in (row.get("o_first_t"), row.get("b_first_t")) if x]
+        day, t0, t1, off = session_window(sdir, min(firsts) if firsts else None, row.get("o_last_t"))
+        row.update({"start_epoch": t0, "end_epoch": t1, "utc_offset_h": off, "_day": day,
+                    "start_utc": utc(t0)})
         sessions.append(row)
     if not sessions:
         sys.exit(f"no sessions under {a.logs}")
@@ -744,7 +1165,7 @@ def main():
                 if f1 - f0 < 5:
                     continue          # arm/disarm blips
                 row = {"tlog": p.name, "flight": i,
-                       "armed_at": dt.datetime.fromtimestamp(f0).isoformat(timespec="seconds"),
+                       "armed_at_utc": utc(f0),
                        "_t0": f0, "_t1": f1}
                 row.update(window_stats(msgs, f0, f1))
                 sess = next((s for s in sessions if s["start_epoch"] - 60 <= f0 <= s["end_epoch"]), None)
@@ -774,7 +1195,12 @@ def main():
                         "id": run_id, "sent": dt.datetime.fromtimestamp(t).isoformat(timespec="milliseconds"),
                         "rtt_s": r(min(cand) - t) if cand else None})
         for rid in s.get("_restart_ids", []):
-            t = local_epoch(s["_day"], int(rid[:2]), int(rid[2:4]), int(rid[4:]))
+            # request id is HHMMSS in the GUI laptop's local time on the session date
+            off = s.get("utc_offset_h") or 0
+            loc = dt.datetime(s["_day"].year, s["_day"].month, s["_day"].day, int(rid[:2]), int(rid[2:4]), int(rid[4:]))
+            if loc < s["_day"] - dt.timedelta(hours=1):
+                loc += dt.timedelta(days=1)            # session ran past midnight
+            t = (loc - dt.timedelta(hours=off)).replace(tzinfo=dt.timezone.utc).timestamp()
             cand = [x for x in rst_acks.get(rid, []) if -1 <= x - t <= RTT_MAX_S]
             rtt.append({"session": s["session"], "phase": s["phase"], "kind": "Restart (ground->UAV->ACK at QGC, 1 s resolution)",
                         "id": rid, "sent": dt.datetime.fromtimestamp(t).isoformat(timespec="seconds"),
@@ -835,8 +1261,8 @@ def main():
             ("Longest silence, any UAV message (s)", max((f.get("any_msg_gap_max_s") or 0) for f in flights)),
         ]))
         md.append("\nPer flight:\n\n" + md_table(
-            ["tlog", "armed at", "dur s", "msgs/s", "PX4 loss %", "Seabird loss %", "HB gap max s", "OCS HB in flight", "OCS HB gap max s"],
-            [(f["tlog"], f["armed_at"], f["duration_s"], f["uav_msgs_per_s"], f["px4_seq_loss_pct"],
+            ["tlog", "armed at (UTC)", "dur s", "msgs/s", "PX4 loss %", "Seabird loss %", "HB gap max s", "OCS HB in flight", "OCS HB gap max s"],
+            [(f["tlog"], f["armed_at_utc"], f["duration_s"], f["uav_msgs_per_s"], f["px4_seq_loss_pct"],
               f["seabird_seq_loss_pct"], f.get("px4_hb_gap_max_s"), f.get("ocs_hb_inflight_count"),
               f.get("ocs_hb_inflight_gap_max_s")) for f in flights]))
     md.append("\nRouter, flight sessions:\n\n" + md_table(["Metric", "Value"], router_block(P2)))
@@ -899,6 +1325,9 @@ def main():
 - tlogs exist only while QGC was running; tlogs larger than --max-tlog-mb were skipped: """ + (", ".join(skipped) or "none") + "\n")
     for pkg in a.package or []:
         md.extend(analyze_package(pkg, out_dir, write_csv))
+    charts = make_charts(out_dir, sessions, flights, rtt)
+    if charts:
+        md.insert(1, "Charts: " + ", ".join(f"[{c}]({c})" for c in charts) + "\n")
     (out_dir / "summary.md").write_text("\n".join(md), encoding="utf-8")
     print(f"\nWrote {out_dir}")
 

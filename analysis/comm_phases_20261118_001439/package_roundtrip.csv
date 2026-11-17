@@ -1,3 +1,0 @@
-run,kind,id,sent_utc,targets,latency_s
-flight_2026-11-11_run2,RoboCommand run_start -> forwarded to vehicles,1,2026-11-11 01:49:31Z,"USV1,UAV1",0.001
-flight_2026-11-11_run2,RunStart OCS -> UAV -> ACK at ground,2,2026-11-11 01:49:31Z,UAV1,0.623
